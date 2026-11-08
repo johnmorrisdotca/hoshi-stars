@@ -71,6 +71,27 @@ console.log(outline.length, outline[0]);
 - A point within a few arc-seconds of a boundary can fall either side: the table is to a hundredth of a second of time and the precession is the modern one, not 1930's.
 - About 7 kB gzipped of data on top of the constellations table, and 100,000 lookups take about 40 ms.
 
+## Constellation lines
+
+`@johnmorrisdotca/hoshi-stars/lines` is its own import, about 2 kB gzipped, so a chart without lines pays nothing. Each of the 88 constellations has a stick figure: pairs of its bright stars to join with a line. The figures are our own, decided from the star data (`NOTICE.md`); every star of a line lies inside the constellation, so one figure never runs into the next.
+
+```ts
+import { figureOf, figures } from "@johnmorrisdotca/hoshi-stars/lines";
+
+const orion = figureOf("Ori");               // or "Orion", "Hunter", "オリオン座"
+console.log(orion.stars.length, orion.segments.length);
+for (const [a, b] of orion.segments) console.log(a.name ?? a.designation, "to", b.name ?? b.designation);
+console.log(figures().length);               // 88
+```
+
+| Function | Gives |
+|---|---|
+| `figures()` | all 88 figures, in the order of `constellations()` |
+| `figureOf(text)` | one, by any name `constellation` accepts: its `constellation`, the `stars` it uses and the `segments` (pairs of stars) to draw (`RangeError` for a text that is no constellation) |
+
+- Project each star with `/projection` and draw each pair as a line. On a wide projection (equirectangular, Mollweide, Hammer) skip a line whose two ends land more than half the chart apart: it crosses the edge.
+- A figure with one star and no lines is allowed where a figure makes no sense; every constellation at this version has lines.
+
 ## Map projections
 
 `@johnmorrisdotca/hoshi-stars/projection` turns a sky position into a point on a flat chart, and back. Pure maths, no dependencies, and a page that does not import it does not pay for it. The kinds are `stereographic`, `orthographic`, `gnomonic`, `equidistant`, `equirectangular`, `mollweide` and `hammer` (Hammer-Aitoff).
