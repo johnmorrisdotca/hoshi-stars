@@ -1,0 +1,43 @@
+/* This package's own look, after family.css. The chart is always a night sky, in the light page and the dark one. */
+.sky h2, .more h2 { margin: 0 0 4px; font-size: 1.15rem; }
+.lead { margin: 0 0 14px; color: var(--muted); font-size: .9rem; max-width: 60rem; }
+.sky-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .sky-grid { grid-template-columns: minmax(0, 1fr) 340px; } }
+.chart-box { position: relative; height: clamp(360px, 68vh, 640px); border: 1px solid var(--rule); border-radius: var(--radius); background: #0b1020; overflow: hidden; }
+.chart { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.chart:active { cursor: grabbing; }
+.chart:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.chart-tools { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; max-width: calc(100% - 16px); }
+.chart-tools .fam-button { background: rgba(11, 16, 32, .85); color: #e8ecff; border-color: #46578c; }
+.chart-tools .fam-button:hover:not(:disabled) { border-color: #e8ecff; }
+.under { position: absolute; left: 12px; top: 10px; margin: 0; color: #ffe49a; font-weight: 600; font-size: .95rem; pointer-events: none; text-shadow: 0 1px 3px #000; }
+.side { display: grid; gap: 16px; min-width: 0; }
+.find { display: grid; gap: 8px; }
+.find h3, .picked h3, .picked h4 { margin: 0; font-size: 1rem; }
+.picked h4 { margin-top: 12px; font-size: .85rem; color: var(--muted); }
+.find .fam-row { flex-wrap: nowrap; }
+.find input[type="search"] { flex: 1 1 auto; min-width: 0; }
+.results { display: grid; gap: 6px; }
+.results .fam-button { justify-content: space-between; width: 100%; text-align: left; }
+.results .kind { color: var(--muted); font-size: .75rem; font-weight: 500; }
+.results .fam-button[data-primary="true"] .kind { color: inherit; }
+.picked { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); padding: 14px; min-height: 120px; }
+.picked p { margin: 0; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 8px 0 0; font-size: .9rem; align-items: center; }
+.facts dt { color: var(--muted); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
+.facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; border: 1px solid var(--rule); vertical-align: -2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.controls { display: grid; gap: 10px; margin-top: 14px; }
+.controls .fam-label { min-width: 5.5rem; }
+.fam-fine { color: var(--muted); font-size: .8rem; margin: 0; }
+.fam-button, .fam-chip, .fam-field { min-height: 48px; }
+.fam-seg button { min-height: 48px; min-width: 48px; }
+.fam-range { -webkit-appearance: none; appearance: none; height: 48px; flex: 1 1 200px; min-width: 160px; max-width: 360px; margin: 0; background: transparent; cursor: pointer; }
+.fam-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--rule); }
+.fam-range::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; border-radius: 50%; background: var(--ink); border: 3px solid var(--surface); margin-top: -11px; box-shadow: 0 0 0 1px var(--ink); }
+.fam-range::-moz-range-track { height: 6px; border-radius: 3px; background: var(--rule); }
+.fam-range::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--ink); border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--ink); }
+.fam-range:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.more { margin-top: 28px; }
+kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface); --kazoku-line: var(--rule); --kazoku-accent: var(--accent); }

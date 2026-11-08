@@ -36,3 +36,22 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: The package as npm packs it installs and imports
         run: pnpm test:package
+  demo:
+    # One job a Playwright project: the four are the same tests at a desk's and a phone's width in Chromium and in WebKit.
+    name: demo (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-desk, chromium-phone, webkit-desk, webkit-phone]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps ${{ startsWith(matrix.project, 'webkit') && 'webkit' || 'chromium' }}
+      - name: The demo, played in one browser at one width (pnpm test:demo plays all four)
+        run: pnpm test:demo:one --project=${{ matrix.project }}
