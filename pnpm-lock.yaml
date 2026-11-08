@@ -24,8 +24,8 @@ importers:
         specifier: ^9.0.0
         version: 9.39.5
       '@johnmorrisdotca/kazoku-ui':
-        specifier: ^0.19.0
-        version: 0.19.0
+        specifier: ^0.20.0
+        version: 0.20.0
       '@johnmorrisdotca/wakusei-planets':
         specifier: ^0.20.0
         version: 0.20.0
@@ -365,6 +365,16 @@ packages:
   '@johnmorrisdotca/kazoku-ui@0.19.0':
     resolution: {integrity: sha512-TVrdG67TImrpdy+tY7LgFpvArmseBg61coM7FeONnq154V77FbXmNMMeFKAwY1v6KStQGkB46Qlj1eGI16pYCg==}
     engines: {node: '>=22'}
+    peerDependencies:
+      three: '>=0.160.0'
+    peerDependenciesMeta:
+      three:
+        optional: true
+
+  '@johnmorrisdotca/kazoku-ui@0.20.0':
+    resolution: {integrity: sha512-pGfHQX8Pb6gWHgirag0Hl5RBZVO79/+OK1stYNw6oissUyJhJrbk84fq1yTxE/isY3E3JaRFD6CQeUtixL0BnA==}
+    engines: {node: '>=22'}
+    hasBin: true
     peerDependencies:
       three: '>=0.160.0'
     peerDependenciesMeta:
@@ -1761,6 +1771,8 @@ snapshots:
   '@humanwhocodes/retry@0.4.3': {}
 
   '@johnmorrisdotca/kazoku-ui@0.19.0': {}
+
+  '@johnmorrisdotca/kazoku-ui@0.20.0': {}
 
   '@johnmorrisdotca/wakusei-planets@0.20.0':
     dependencies:

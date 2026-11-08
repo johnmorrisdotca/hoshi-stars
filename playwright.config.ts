@@ -13,6 +13,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: true,
   workers: process.env.CI ? 2 : 2,
+  globalSetup: "@johnmorrisdotca/kazoku-ui/testing/global-setup",
   timeout: 60_000,
   reporter: "list",
   use: { baseURL: `http://127.0.0.1:${port}`, reducedMotion: "reduce", locale: "en-US" },
