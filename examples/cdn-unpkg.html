@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A star's facts from unpkg</title>
+  </head>
+  <body>
+    <p id="facts"></p>
+    <script type="module">
+      import { starByName, starColour, starDistanceLightYears } from "https://unpkg.com/@johnmorrisdotca/hoshi-stars/dist/index.js";
+
+      const sirius = starByName("Sirius");
+      document.querySelector("#facts").textContent = `${sirius.name}: magnitude ${sirius.magnitude}, ${starDistanceLightYears(sirius).toFixed(1)} light-years, colour ${starColour(sirius)}`;
+    </script>
+  </body>
+</html>
