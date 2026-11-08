@@ -10,3 +10,5 @@ playwright-report/
 .env*
 .docs-examples/
 .usage/
+.docs-examples/
+.usage/

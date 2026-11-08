@@ -78,7 +78,7 @@ function load(): void {
 /**
  * The stars to a magnitude, brightest first. The catalogue stops at magnitude 6.0, so the default is all 5,080.
  *
- * @param options - `magnitude`: the faintest to include (a star of exactly that magnitude is in). Brighter limits give shorter lists: 1.5 is 15 stars, 4 is 518, 5 is 1,630.
+ * @param options - `magnitude`: the faintest to include (a star of exactly that magnitude is in). Brighter limits give shorter lists: 1 is 15 stars, 4 is 518, 5 is 1,630.
  * @returns A fresh array of the shared, frozen stars.
  *
  * @example

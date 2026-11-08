@@ -3,7 +3,16 @@
 // the azimuthal family in chapters 20 to 22 and 25, the cylindrical one in chapter 12, Mollweide in chapter 31 and Hammer in chapter 24 (on the unit sphere, with the centre as the origin).
 // The sky is a sphere seen from inside, so the default puts east on the LEFT (right ascension grows toward the left); `mirror: true` gives the map convention with east on the right.
 
-/** The projections: the five that show a hemisphere or less, then the two that show the whole sky. */
+/**
+ * The projections: the five that show a hemisphere or less, then the two that show the whole sky.
+ *
+ * @example
+ * ```ts
+ * import { PROJECTIONS } from "@johnmorrisdotca/hoshi-stars/projection";
+ *
+ * console.log(PROJECTIONS.join(", "));
+ * ```
+ */
 export const PROJECTIONS = ["stereographic", "orthographic", "gnomonic", "equidistant", "equirectangular", "mollweide", "hammer"] as const;
 
 /**

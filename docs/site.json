@@ -1,0 +1,54 @@
+{
+  "job": "stars you can see without a telescope, as data and as sky charts",
+  "pitch": {
+    "en": "The stars you can see without a telescope, with names, colours and distances; the 88 constellations with their lines and boundaries; the Messier objects; and seven map projections to draw them on.",
+    "ja": "肉眼で見える星の名前・色・距離、88星座の線と境界、メシエ天体、そしてそれらを描くための7種類の図法を使えます。"
+  },
+  "name": {
+    "en": "Hoshi is the Japanese word 星 for a star.",
+    "ja": "「星」(ほし) は、夜空に光って見えるものです。"
+  },
+  "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b1020'/%3E%3Cpath d='M22 70L44 44L58 58L80 28' fill='none' stroke='%236f93e0' stroke-width='3'/%3E%3Ccircle cx='22' cy='70' r='6' fill='%23ffd86b'/%3E%3Ccircle cx='44' cy='44' r='5' fill='%23f4f6ff'/%3E%3Ccircle cx='58' cy='58' r='4' fill='%23ffb27a'/%3E%3Ccircle cx='80' cy='28' r='7' fill='%23bcd0ff'/%3E%3C/svg%3E",
+  "entries": {
+    ".": {
+      "en": "Stars: names, positions, distance and colour",
+      "ja": "星の名前・位置・距離・色",
+      "platform": "neutral"
+    },
+    "./constellations": {
+      "en": "The 88 constellations, in English and Japanese",
+      "ja": "88星座 (英語と日本語)",
+      "platform": "neutral"
+    },
+    "./lines": {
+      "en": "Constellation lines",
+      "ja": "星座の線",
+      "platform": "neutral"
+    },
+    "./boundaries": {
+      "en": "Constellation boundaries and which constellation a point is in",
+      "ja": "星座の境界と、ある点がどの星座にあるか",
+      "platform": "neutral"
+    },
+    "./deep-sky": {
+      "en": "The Messier objects",
+      "ja": "メシエ天体",
+      "platform": "neutral"
+    },
+    "./deep-sky/ngc-ic": {
+      "en": "NGC and IC objects as well",
+      "ja": "NGC・IC天体も含む",
+      "platform": "neutral"
+    },
+    "./projection": {
+      "en": "Map projections for sky charts",
+      "ja": "星図の図法",
+      "platform": "neutral"
+    },
+    "./sky": {
+      "en": "Your sky: altitude and azimuth for a place and a moment",
+      "ja": "自分の空 (場所と時刻から高度と方位)",
+      "platform": "neutral"
+    }
+  }
+}

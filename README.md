@@ -179,6 +179,66 @@ An object has `id`, `messier`, `ngc`, `ic` (each a string such as `"NGC 224"`), 
 - **Magnitudes and sizes of the Messier objects** are the published visual magnitudes and major axes of NASA HEASARC's Messier table, because Wikidata's V-band magnitudes for 14 of them are more than a magnitude off (the central star's, for the four planetary nebulae). The NGC and IC magnitudes are Wikidata's, except that a planetary nebula has none (Wikidata's is its central star's); about four in ten have none, and almost none has a size.
 - **Positions** are Wikidata's. Every Messier object was compared with NED and a sample of the others too; the objects that were more than an arc-minute apart are listed in [NOTICE.md](NOTICE.md), and where Wikidata was wrong the table has NED's position.
 
+## Put a chart in a page
+
+The package gives numbers; a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
+
+```tsx
+import { starColour, stars, type Star } from "@johnmorrisdotca/hoshi-stars";
+import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+import { project } from "@johnmorrisdotca/hoshi-stars/projection";
+
+const view = { centre: { rightAscension: 84, declination: 0 }, scale: 150 };
+
+function place(star: Star): { x: number; y: number } | undefined {
+  const at = project("stereographic", star, view);
+  return at && { x: 200 + at.x, y: 200 - at.y };
+}
+
+function orionSvg(): string {
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Orion"><rect width="400" height="400" fill="#0b1020"/>`;
+  for (const [a, b] of figureOf("Ori").segments) {
+    const from = place(a);
+    const to = place(b);
+    if (from && to) svg += `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" stroke="#6f93e0"/>`;
+  }
+  for (const star of stars({ magnitude: 4 })) {
+    const at = place(star);
+    if (at) svg += `<circle cx="${at.x}" cy="${at.y}" r="${Math.max(1, 4.2 - star.magnitude * 0.7)}" fill="${starColour(star)}"/>`;
+  }
+  return svg + "</svg>";
+}
+
+export function Orion() {
+  return <div dangerouslySetInnerHTML={{ __html: orionSvg() }} />;
+}
+```
+
+For a page that cannot run script, use the embed page in an iframe; the demo's "Put it in your page" panel writes the address for the chart you are looking at:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hoshi Stars in an iframe</title>
+  </head>
+  <body>
+    <iframe
+      src="https://johnmorrisdotca.github.io/hoshi-stars/embed.html?proj=stereographic&ra=83.8&dec=0&zoom=1.5&mag=5&layers=lines,names&c=Ori"
+      title="A chart of the sky around Orion"
+      width="480"
+      height="360"
+      loading="lazy"
+      style="border: 0"
+    ></iframe>
+  </body>
+</html>
+```
+
+Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
+
 ## Where the data comes from
 
 The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package. The deep-sky objects are Wikidata's (CC0), with NASA HEASARC's Messier table and NED as checks.
