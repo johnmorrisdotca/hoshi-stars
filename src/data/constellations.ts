@@ -69,7 +69,7 @@ Pic|Pictor|Pictoris|Painter's Easel|がか
 Psc|Pisces|Piscium|Fishes|うお
 PsA|Piscis Austrinus|Piscis Austrini|Southern Fish|みなみのうお
 Pup|Puppis|Puppis|Stern|とも
-Pyx|Pyxis|Pyxidis|Compass|らしんばん
+Pyx|Pyxis|Pyxidis|Mariner's Compass|らしんばん
 Ret|Reticulum|Reticuli|Reticle|レチクル
 Sge|Sagitta|Sagittae|Arrow|や
 Sgr|Sagittarius|Sagittarii|Archer|いて

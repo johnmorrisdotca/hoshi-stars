@@ -25,9 +25,8 @@ test("abbreviations, Latin names, English names and Japanese names are each uniq
     const values = constellations().map(pick);
     assert.equal(new Set(values).size, 88);
   }
-  // The IAU gives both Circinus and Pyxis the English name "the Compass", and it is the one English name shared.
-  const english = constellations().map((c) => c.english);
-  assert.deepEqual(english.filter((e, i) => english.indexOf(e) !== i), ["Compass"]);
+  // The IAU's list calls both Circinus and Pyxis "the Compass"; Pyxis is the Mariner's Compass here, so every English name is one constellation's.
+  assert.equal(new Set(constellations().map((c) => c.english)).size, 88);
   for (const c of constellations()) {
     assert.match(c.abbreviation, /^[A-Z][A-Za-z]{2}$/, c.name);
     assert.match(c.japanese, /^[ぁ-ゖァ-ヺー]+座$/, c.name);
@@ -84,15 +83,14 @@ test("lookups ignore case and spacing, the accent on Boötes, the Japanese 座 a
 
 test("every name of every constellation finds exactly that constellation", () => {
   for (const c of constellations()) {
-    const texts = [c.abbreviation, c.name, c.genitive, c.japanese, c.reading, ...(c.english === "Compass" ? [] : [c.english])];
+    const texts = [c.abbreviation, c.name, c.genitive, c.english, c.japanese, c.reading];
     for (const text of texts) assert.equal(constellation(text)?.abbreviation, c.abbreviation, `${text} for ${c.name}`);
   }
 });
 
-test("a text that names two constellations finds neither", () => {
-  assert.equal(constellation("Compass"), undefined);
-  assert.equal(constellation("Circinus")?.english, "Compass");
-  assert.equal(constellation("Pyxis")?.english, "Compass");
+test("the two compasses are told apart", () => {
+  assert.equal(constellation("Compass")?.name, "Circinus");
+  assert.equal(constellation("Mariner's Compass")?.name, "Pyxis");
 });
 
 test("text that is no constellation gives undefined, and a non-string throws", () => {

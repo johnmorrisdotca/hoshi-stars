@@ -92,8 +92,8 @@ export function constellations(): Constellation[] {
 
 /**
  * A constellation by any of its names, ignoring case and the accent on Boötes: the IAU abbreviation (`CMa`), the Latin name (`Canis Major`), the genitive (`Canis Majoris`), the English name
- * (`Great Dog`), the Japanese name with or without 座 (`おおいぬ座`, `おおいぬ`) in katakana or hiragana, or its hiragana reading (`おおいぬざ`). A text that names two constellations
- * (the English `Compass` is both Circinus and Pyxis) finds neither.
+ * (`Great Dog`), the Japanese name with or without 座 (`おおいぬ座`, `おおいぬ`) in katakana or hiragana, or its hiragana reading (`おおいぬざ`). A text that would name two constellations finds
+ * neither.
  *
  * @param text - The name, in any of those forms.
  * @returns The constellation, or `undefined` if the text is none of them.
