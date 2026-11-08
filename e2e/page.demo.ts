@@ -106,6 +106,31 @@ test("a search by a star's name in katakana finds the star", async ({ page }) =>
   await expect.poll(() => param(page, "pick")).toBe("S:2061");
 });
 
+test("a search finds the added IAU names in English and in katakana", async ({ page }) => {
+  await open(page);
+  await page.getByTestId("search").fill("Acrux");
+  await expect(page.getByTestId("results")).toContainText("Acrux");
+  await page.getByTestId("search").press("Enter");
+  await expect(page.getByTestId("picked")).toContainText("Acrux");
+  await expect.poll(() => param(page, "pick")).toBe("S:4730");
+  await page.getByTestId("search").fill("alcyo");
+  await page.getByTestId("search").press("Enter");
+  await expect.poll(() => param(page, "pick")).toBe("S:1165");
+  await page.getByTestId("search").fill("アルコル");
+  await expect(page.getByTestId("results")).toContainText("Alcor");
+  await page.getByTestId("search").press("Enter");
+  await expect.poll(() => param(page, "pick")).toBe("S:5062");
+  await open(page, "?lang=ja");
+  await page.getByTestId("search").fill("アクルックス");
+  await expect(page.getByTestId("results")).toContainText("アクルックス");
+  await page.getByTestId("search").press("Enter");
+  await expect(page.getByTestId("picked")).toContainText("アクルックス");
+  await expect.poll(() => param(page, "pick")).toBe("S:4730");
+  await page.getByTestId("search").fill("メロペ");
+  await page.getByTestId("search").press("Enter");
+  await expect.poll(() => param(page, "pick")).toBe("S:1156");
+});
+
 test("a tap on a star picks it, with its brightness, distance and colour", async ({ page }) => {
   await open(page, "?ra=101.29&dec=-16.72&zoom=4");
   const at = await middle(page);

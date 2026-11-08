@@ -8,7 +8,7 @@ acknowledged; NOTICE.md does. Positions are J2000 (FK5) in the catalogue's own s
 NOT the Hipparcos or Tycho catalogues: ESA licenses those CC BY-NC 3.0 IGO (non-commercial), which an MIT package cannot pass on.
 
 The common names are our own list, keyed by the catalogue's Bayer designation; each is checked here against the catalogue (the star must exist and
-be as bright as the name implies). Names follow the IAU Working Group on Star Names.
+be as bright as the name implies). Names follow the IAU Working Group on Star Names (its Catalog of Star Names, IAU-CSN, last updated 2022-04-04).
 
     python3 -I scripts/make-star-data.py                 # fetches HEASARC's heasarc_bsc5p.tdat.gz (needs the network)
     python3 -I scripts/make-star-data.py --from FILE     # reads that file saved earlier (gzipped or not)
@@ -57,6 +57,51 @@ NAMES = {
     "γ Lyr": "Sulafat", "ζ Aql": "Okab", "δ Cyg": "Fawaris", "ε Cyg": "Aljanah", "η Dra": "Athebyne",
 }
 FAINTEST = {}
+
+# The other names of the IAU Catalog of Star Names (IAU-CSN, WGSN) whose star is in the 5,080, by HR number: the Pleiades and the stars with no Bayer letter need it, and
+# so does everything else the list above leaves out. Spelled as the catalogue's ASCII name column spells them.
+NAMES_BY_HR = {
+    153: "Fulu", 219: "Achird", 265: "Castula", 338: "Wurren", 361: "Revati",
+    390: "Adhil", 437: "Alpherg", 458: "Titawin", 464: "Nembus", 510: "Torcular",
+    539: "Baten Kaitos", 546: "Mesarthim", 596: "Alrescha", 804: "Kaffaljidhma", 824: "Lilii Borea",
+    834: "Miram", 838: "Bharani", 850: "Angetenar", 874: "Azha", 941: "Misam",
+    951: "Botein", 963: "Dalim", 984: "Zibal", 1084: "Ran", 1131: "Atik",
+    1136: "Rana", 1140: "Celaeno", 1142: "Electra", 1145: "Taygeta", 1149: "Maia",
+    1151: "Asterope", 1156: "Merope", 1165: "Alcyone", 1178: "Atlas", 1180: "Pleione",
+    1228: "Menkib", 1231: "Zaurak", 1298: "Beid", 1325: "Keid", 1346: "Prima Hyadum",
+    1373: "Secunda Hyadum", 1393: "Beemim", 1409: "Ain", 1412: "Chamukuy", 1464: "Theemin",
+    1481: "Sceptrum", 1543: "Tabit", 1577: "Hassaleh", 1605: "Almaaz", 1612: "Saclateni",
+    1641: "Haedus", 1666: "Cursa", 1879: "Meissa", 1899: "Hatysa", 1910: "Tianguan",
+    2095: "Mahasim", 2177: "Elkurud", 2216: "Propus", 2282: "Furud", 2286: "Tejat",
+    2473: "Mebsuta", 2484: "Alzirr", 2646: "Nganurganity", 2650: "Mekbuda", 2657: "Muliphein",
+    2777: "Wasat", 2827: "Aludra", 2845: "Gomeisa", 2930: "Jishui", 3045: "Azmidi",
+    3185: "Tureis", 3208: "Tegmine", 3249: "Tarf", 3268: "Piautos", 3275: "Alsciaukat",
+    3323: "Muscida", 3418: "Minchir", 3449: "Asellus Borealis", 3461: "Asellus Australis", 3482: "Ashlesha",
+    3485: "Alsephina", 3522: "Copernicus", 3572: "Acubens", 3594: "Alkaphrah", 3627: "Nahn",
+    3734: "Markeb", 3743: "Intercrus", 3773: "Alterf", 3845: "Ukdah", 3852: "Subra",
+    3903: "Zhang", 3905: "Rasalas", 3923: "Felis", 4031: "Adhafera", 4247: "Praecipua",
+    4277: "Chalawan", 4357: "Zosma", 4359: "Chertan", 4434: "Giausar", 4518: "Taiyangshou",
+    4540: "Zavijava", 4609: "Tonatiuh", 4656: "Imai", 4689: "Zaniah", 4700: "Ginan",
+    4730: "Acrux", 4785: "Chara", 4846: "La Superba", 4863: "Tianyi", 4910: "Minelauva",
+    4915: "Cor Caroli", 4916: "Taiyi", 4968: "Diadem", 5062: "Alcor", 5107: "Heze",
+    5315: "Kang", 5338: "Syrma", 5351: "Xuange", 5359: "Khambalia", 5409: "Elgafar",
+    5460: "Toliman", 5533: "Merga", 5603: "Brachium", 5733: "Alkalurops", 5735: "Pherkad",
+    5744: "Edasich", 5747: "Nusakan", 5787: "Zubenelhakrabi", 5879: "Gudja", 5928: "Iklil",
+    5944: "Fang", 6008: "Marsic", 6027: "Jabbah", 6056: "Yed Prior", 6075: "Yed Posterior",
+    6084: "Alniyat", 6117: "Cujam", 6149: "Marfik", 6165: "Paikauhale", 6247: "Xamidimura",
+    6252: "Pipirima", 6370: "Alrakis", 6396: "Aldhibah", 6402: "Guniibuu", 6410: "Sarin",
+    6508: "Lesath", 6526: "Maasym", 6536: "Rastaban", 6585: "Cervantes", 6618: "Alruba",
+    6630: "Fuyue", 6636: "Dziban", 6688: "Grumium", 6746: "Alnasl", 6789: "Yildun",
+    6812: "Polis", 6945: "Fafnir", 7116: "Ainalrami", 7141: "Alya", 7228: "Polaris Australis",
+    7254: "Meridiana", 7264: "Albaldah", 7298: "Aladfar", 7310: "Altais", 7337: "Arkab Prior",
+    7343: "Arkab Posterior", 7348: "Rukbat", 7405: "Anser", 7462: "Alsafi", 7479: "Sham",
+    7595: "Libertas", 7597: "Terebellum", 7754: "Algedi", 7773: "Alshat", 7852: "Aldulfin",
+    7950: "Albali", 8030: "Musica", 8131: "Kitalpha", 8238: "Alfirk", 8264: "Bunda",
+    8278: "Nashira", 8301: "Azelfafage", 8322: "Deneb Algedi", 8353: "Aldhanab", 8417: "Kurhah",
+    8450: "Biham", 8499: "Ancha", 8518: "Sadachbia", 8610: "Situla", 8634: "Homam",
+    8636: "Tiaki", 8650: "Matar", 8684: "Sadalbari", 8709: "Skat", 8729: "Helvetios",
+    8773: "Fumalsamakah", 8880: "Salm", 8905: "Alkarab", 8930: "Veritate",
+}
 
 
 def sexagesimal(text: str, hours: bool) -> float:
@@ -139,6 +184,14 @@ def main() -> None:
             problems.append(f"too faint for a common name: {key} {name} {star['v']}")
         else:
             names[star["hr"]] = name
+    by_hr = {s["hr"]: s for s in stars}
+    for hr, name in NAMES_BY_HR.items():
+        if hr not in by_hr:
+            problems.append(f"no such star: HR {hr} {name}")
+        elif hr in names:
+            problems.append(f"named twice: HR {hr} {names[hr]} and {name}")
+        else:
+            names[hr] = name
     if len(set(names.values())) != len(names):
         problems.append("a name is used twice")
     if problems:

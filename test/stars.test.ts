@@ -125,13 +125,27 @@ test("the table's size stays within its budget", async () => {
 
 test("every named star has a katakana name, and only a named star has one", () => {
   const named = stars().filter((s) => s.name !== undefined);
-  assert.equal(named.length, 136);
+  assert.equal(named.length, 335);
   for (const s of named) {
     assert.ok(s.nameJa !== undefined, `${s.name} has no katakana name`);
     assert.match(s.nameJa, /^[゠-ヿ]+$/, `${s.name}: ${s.nameJa}`);
   }
   assert.ok(stars().every((s) => s.name !== undefined || s.nameJa === undefined));
   assert.equal(new Set(named.map((s) => s.nameJa)).size, named.length);
+});
+
+test("the IAU names of the Pleiades, the Southern Cross and Alcor are there, in English and in katakana", () => {
+  const known: Array<[string, number, string]> = [
+    ["Acrux", 4730, "アクルックス"], ["Alcor", 5062, "アルコル"], ["Alcyone", 1165, "アルキオネ"], ["Merope", 1156, "メロペ"], ["Electra", 1142, "エレクトラ"],
+    ["Atlas", 1178, "アトラス"], ["Maia", 1149, "マイア"], ["Taygeta", 1145, "タイゲタ"], ["Pleione", 1180, "プレイオネ"], ["Celaeno", 1140, "ケライノ"],
+    ["Asterope", 1151, "アステロペ"], ["Rasalas", 3905, "ラスアラス"], ["Alphecca", 5793, "アルフェッカ"],
+  ];
+  for (const [name, hr, ja] of known) {
+    assert.equal(starByHr(hr)?.name, name, name);
+    assert.equal(starByName(name.toUpperCase())?.hr, hr, name);
+    assert.equal(starByName(ja)?.hr, hr, ja);
+  }
+  assert.equal(starByHr(4731)?.name, undefined);
 });
 
 test("the well-known stars have their usual Japanese names, found by starByName", () => {
