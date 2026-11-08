@@ -1,6 +1,6 @@
 // The embed page: it draws what its address says, for a site that cannot run script of its own, once and again when its frame is resized. The address is read as text:
 //   ?proj=stereographic  one of the seven projections         &ra=84&dec=0&zoom=3     where it looks (degrees) and how far in (left out: Orion, 90 degrees wide, 60 under 600 px)
-//   &mag=5               the faintest star                   &layers=lines,names,grid  or none (also boundaries, deep)
+//   &mag=5               the faintest star                   &layers=milky,lines,names,grid  or none (also boundaries, deep)
 //   &lang=ja             constellation names in Japanese     &c=Ori                  one constellation brighter, with its boundary
 import { chart } from "./chart.ts";
 import { choiceOf } from "./choice.ts";
