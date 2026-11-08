@@ -19,7 +19,7 @@ For a page that cannot run script of its own (a blog, a wiki, a CMS), the demo s
   </head>
   <body>
     <iframe
-      src="https://johnmorrisdotca.github.io/hoshi-stars/embed.html?proj=stereographic&ra=83.8&dec=0&zoom=1.5&mag=5&layers=lines,names&c=Ori"
+      src="https://johnmorrisdotca.github.io/hoshi-stars/embed.html?proj=stereographic&ra=84&dec=0&zoom=1.5&mag=5&layers=lines,names&c=Ori"
       title="A chart of the sky around Orion"
       width="480"
       height="360"
@@ -37,7 +37,7 @@ The chart fills the frame and draws again when the frame is resized. It fetches 
 | Part | Means |
 |---|---|
 | `proj` | One of `stereographic`, `orthographic`, `gnomonic`, `equidistant`, `equirectangular`, `mollweide`, `hammer`. |
-| `ra`, `dec`, `zoom` | Where it looks, in degrees, and how far in (0.6 to 60). |
+| `ra`, `dec`, `zoom` | Where it looks, in degrees, and how far in (0.6 to 60). Left out, it looks at Orion (`ra=84`, `dec=0`) about 90 degrees wide, or 60 when the frame is under 600 pixels wide. |
 | `mag` | The faintest star, 2 to 6. |
 | `layers` | A comma list of `lines`, `boundaries`, `names`, `deep` (Messier) and `grid`, or `none`. |
 | `lang` | `ja` for constellation names in Japanese. |

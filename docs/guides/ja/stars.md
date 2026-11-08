@@ -45,6 +45,7 @@ console.log(starByName("Atlantis"));
 | 項目 | 意味 |
 |---|---|
 | `hr` | カタログ番号 |
+| `nameJa` | 名前のある星のカタカナ名（`シリウス`）。`starByName` でも探せます。 |
 | `name`, `designation` | `Sirius`、`α CMa`。符号は、バイエル符号かフラムスティード番号に星座名を付けたものです。暗い星にはどちらもありません。 |
 | `constellation` | 符号がある星の、IAUの3文字略号（`CMa`）。どの星でも[`constellationAt`](constellations-and-lines.md)で分かります。 |
 | `rightAscension`, `declination` | J2000の赤経・赤緯（度） |

@@ -1,5 +1,5 @@
 // What the demo, the embed page and the code to copy all agree on: a chart as a handful of choices, and how they are written into an address.
-import { LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "./chart.ts";
+import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "./chart.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 
 export const DEFAULT_LAYERS: readonly Layer[] = ["lines", "names", "grid"];
@@ -29,8 +29,8 @@ export const layersText = (layers: ReadonlySet<Layer>): string | null => {
   return text === "" ? "none" : text === DEFAULT_LAYERS.join(",") ? null : text;
 };
 
-/** The choice an address holds, with every missing or bad part at its default. */
-export function choiceOf(query: URLSearchParams): Choice {
+/** The choice an address holds, with every missing or bad part at its default; a missing zoom is the opening view for a chart of `width` by `height` pixels. */
+export function choiceOf(query: URLSearchParams, width = 480, height = 360): Choice {
   const kind = query.get("proj") ?? "";
   const projection: Projection = (PROJECTIONS as readonly string[]).includes(kind) ? (kind as Projection) : DEFAULT_VIEW.projection;
   const named = query.get("layers");
@@ -39,7 +39,7 @@ export function choiceOf(query: URLSearchParams): Choice {
     projection,
     ra: ((number(query.get("ra"), DEFAULT_VIEW.ra, -1e6, 1e6) % 360) + 360) % 360,
     dec: number(query.get("dec"), DEFAULT_VIEW.dec, -90, 90),
-    zoom: number(query.get("zoom"), DEFAULT_VIEW.zoom, ZOOM_MIN, ZOOM_MAX),
+    zoom: number(query.get("zoom"), defaultZoom(projection, width, height), ZOOM_MIN, ZOOM_MAX),
     magnitude: number(query.get("mag"), DEFAULT_MAGNITUDE, 2, 6),
     layers: layersOf(named === "none" ? "" : named),
     lang: query.get("lang") === "ja" ? "ja" : "en",

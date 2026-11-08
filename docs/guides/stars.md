@@ -38,7 +38,7 @@ console.log(starByName("Atlantis"));
 // undefined
 ```
 
-`starByName` takes a common name (136 stars have one, spelled as the IAU Working Group on Star Names spells them) or a designation, in any case. `starByHr` takes the Bright Star Catalogue number, which never changes. Both give `undefined` for what is not there, never an error.
+`starByName` takes a common name (136 stars have one, spelled as the IAU Working Group on Star Names spells them) a katakana name (`シリウス`) or a designation, in any case. `starByHr` takes the Bright Star Catalogue number, which never changes. Both give `undefined` for what is not there, never an error.
 
 ## What a star holds
 
@@ -46,6 +46,7 @@ console.log(starByName("Atlantis"));
 |---|---|
 | `hr` | The catalogue number. |
 | `name`, `designation` | `Sirius`, `α CMa`. The designation is the Bayer letter, or the Flamsteed number, with the constellation; faint stars have neither. |
+| `nameJa` | The name in katakana (`シリウス`) for each star that has a `name`. |
 | `constellation` | The IAU abbreviation (`CMa`), where the star has a designation. For any star, [`constellationAt`](constellations-and-lines.md) gives it. |
 | `rightAscension`, `declination` | Degrees, J2000. |
 | `magnitude` | Visual magnitude. |

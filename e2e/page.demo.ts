@@ -33,7 +33,7 @@ test("a drag turns the sky and the address remembers where it looks", async ({ p
   await page.mouse.up();
   await expect.poll(() => param(page, "ra")).not.toBeNull();
   // Dragging right brings in what was to the east (a larger right ascension), dragging down what was to the north.
-  expect(Number(param(page, "ra"))).toBeGreaterThan(83.8);
+  expect(Number(param(page, "ra"))).toBeGreaterThan(84);
   expect(Number(param(page, "dec"))).toBeGreaterThan(0);
 });
 
@@ -41,9 +41,7 @@ test("the wheel and the zoom buttons zoom, within limits", async ({ page, isMobi
   await open(page);
   await page.getByTestId("zoom-in").click();
   await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(1.5);
-  await page.getByTestId("zoom-out").click();
-  await page.getByTestId("zoom-out").click();
-  await page.getByTestId("zoom-out").click();
+  for (let i = 0; i < 6; i += 1) await page.getByTestId("zoom-out").click();
   await expect.poll(() => param(page, "zoom")).toBe("0.6");
   if (!isMobile) {
     const at = await middle(page);
@@ -91,6 +89,21 @@ test("a search finds a star, a constellation in Japanese and a Messier object, a
 
   await page.getByTestId("search").fill("zzzz");
   await expect(page.getByTestId("results")).toContainText("Nothing with that name");
+});
+
+test("a search by a star's name in katakana finds the star", async ({ page }) => {
+  await open(page);
+  await page.getByTestId("search").fill("シリウス");
+  await expect(page.getByTestId("results")).toContainText("Sirius");
+  await page.getByTestId("search").press("Enter");
+  await expect(page.getByTestId("picked")).toContainText("Sirius");
+  await expect.poll(() => param(page, "pick")).toBe("S:2491");
+  await open(page, "?lang=ja");
+  await page.getByTestId("search").fill("ベテル");
+  await expect(page.getByTestId("results")).toContainText("ベテルギウス");
+  await page.getByTestId("search").press("Enter");
+  await expect(page.getByTestId("picked")).toContainText("ベテルギウス");
+  await expect.poll(() => param(page, "pick")).toBe("S:2061");
 });
 
 test("a tap on a star picks it, with its brightness, distance and colour", async ({ page }) => {
@@ -143,6 +156,51 @@ test("the Japanese page names constellations and facts in Japanese", async ({ pa
   await expect(page.locator("#chart text", { hasText: "オリオン座" }).first()).toBeVisible();
   await expect(page.getByTestId("picked")).toContainText("オリオン座");
   await expect(page.locator("#heading")).toHaveText("星空を回してみよう");
+});
+
+test("the Japanese page names the stars in katakana", async ({ page }) => {
+  await open(page, "?lang=ja");
+  await expect(page.locator("#chart text", { hasText: "シリウス" })).toHaveCount(1);
+  await expect(page.locator("#chart text", { hasText: "Sirius" })).toHaveCount(0);
+  await open(page, "?lang=ja&pick=S:2491");
+  await expect(page.getByTestId("picked")).toContainText("シリウス");
+});
+
+test("the sky opens on Orion with nothing about it in the address, and Reset comes back to it", async ({ page }) => {
+  await open(page);
+  for (const name of ["zoom", "ra", "dec"]) expect(param(page, name)).toBeNull();
+  await expect(page.locator("#chart text", { hasText: /^Orion$/ })).toHaveCount(1);
+  await expect(page.locator("#chart text", { hasText: /^Rigel$/ })).toHaveCount(1);
+  await page.getByTestId("zoom-in").click();
+  await expect.poll(() => param(page, "zoom")).not.toBeNull();
+  await page.getByTestId("reset").click();
+  await expect.poll(() => param(page, "zoom")).toBeNull();
+  await expect.poll(() => param(page, "ra")).toBeNull();
+});
+
+test("no two names touch, or cover a bright star, at the opening view, in either language and with the Messier objects on", async ({ page }) => {
+  for (const query of ["", "?lang=ja", "?layers=lines,names,deep,grid", "?lang=ja&layers=lines,names,deep,grid", "?mag=6", "?layers=names"]) {
+    await open(page, query);
+    await expect(page.locator("#chart text").first()).toBeVisible();
+    const found = await page.evaluate(() => {
+      const svg = document.querySelector("#chart")!;
+      const frame = svg.getBoundingClientRect();
+      const texts = [...svg.querySelectorAll("text")].map((t) => ({ text: t.textContent ?? "", r: t.getBoundingClientRect() }));
+      const dots = [...svg.querySelectorAll("circle:not([fill='none'])")].map((c) => ({ r: c.getBoundingClientRect(), size: Number(c.getAttribute("r")) })).filter((c) => c.size > 2.8);
+      const touch = (a: DOMRect, b: DOMRect, slack: number) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > slack && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > slack;
+      const tools = document.querySelector(".chart-tools")!.getBoundingClientRect();
+      const bad: string[] = [];
+      texts.forEach((a, i) => {
+        if (touch(a.r, tools, 1)) bad.push(`${a.text} is under the buttons`);
+        if (a.r.left < frame.left - 1 || a.r.right > frame.right + 1 || a.r.top < frame.top - 1 || a.r.bottom > frame.bottom + 1) bad.push(`${a.text} is cut by the edge`);
+        for (const b of texts.slice(i + 1)) if (touch(a.r, b.r, 1)) bad.push(`${a.text} on ${b.text}`);
+        for (const d of dots) if (touch(a.r, d.r, 2)) bad.push(`${a.text} on a star`);
+      });
+      return { count: texts.length, bad };
+    });
+    expect(found.count, query).toBeGreaterThan(10);
+    expect(found.bad, query).toEqual([]);
+  }
 });
 
 test("the embed panel's code names the choices, and its picture is the chart's own stars", async ({ page }) => {

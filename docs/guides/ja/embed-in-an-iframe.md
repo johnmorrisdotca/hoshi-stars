@@ -19,7 +19,7 @@ description: 自分のスクリプトを動かせないページに、埋め込�
   </head>
   <body>
     <iframe
-      src="https://johnmorrisdotca.github.io/hoshi-stars/embed.html?proj=stereographic&ra=83.8&dec=0&zoom=1.5&mag=5&layers=lines,names&c=Ori"
+      src="https://johnmorrisdotca.github.io/hoshi-stars/embed.html?proj=stereographic&ra=84&dec=0&zoom=1.5&mag=5&layers=lines,names&c=Ori"
       title="A chart of the sky around Orion"
       width="480"
       height="360"
@@ -37,7 +37,7 @@ description: 自分のスクリプトを動かせないページに、埋め込�
 | 部分 | 意味 |
 |---|---|
 | `proj` | `stereographic`、`orthographic`、`gnomonic`、`equidistant`、`equirectangular`、`mollweide`、`hammer`のどれか |
-| `ra`, `dec`, `zoom` | 見る方向（度）と、拡大の度合い（0.6〜60） |
+| `ra`, `dec`, `zoom` | 見る方向（度）と、拡大の度合い（0.6〜60）。省略するとオリオン座（`ra=84`、`dec=0`）を中心に、幅およそ90度（フレームの幅が600px未満なら60度）で表示 |
 | `mag` | いちばん暗い星（2〜6） |
 | `layers` | `lines`、`boundaries`、`names`、`deep`（メシエ）、`grid`をコンマでつないだもの、または`none` |
 | `lang` | `ja`にすると星座名が日本語になります |

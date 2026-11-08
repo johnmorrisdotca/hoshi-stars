@@ -6,6 +6,7 @@ import { constellations, type Constellation } from "../src/constellations.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { figures } from "../src/lines.ts";
 import { project, unproject, type Projection, type SkyPoint } from "../src/projection.ts";
+import { placeLabels, textSize, type Box } from "./labels.ts";
 
 export const LAYERS = ["lines", "boundaries", "names", "deep", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
@@ -29,6 +30,8 @@ export interface ChartOptions extends View {
   highlight?: string | undefined;
   /** The star (HR number) or Messier object (`M31`) that is picked. */
   picked?: string | undefined;
+  /** Rectangles in chart pixels that no name may cover, such as the page's own buttons laid over the chart. */
+  keepClear?: readonly Box[] | undefined;
 }
 
 /** What a tap can land on, in chart pixels. */
@@ -39,7 +42,7 @@ export interface Hit {
   key: string;
 }
 
-export const DEFAULT_VIEW: View = { projection: "stereographic", ra: 83.8, dec: 0, zoom: 1 };
+export const DEFAULT_VIEW: View = { projection: "stereographic", ra: 84, dec: 0, zoom: 1 };
 export const ZOOM_MIN = 0.6;
 export const ZOOM_MAX = 60;
 const WIDE: readonly Projection[] = ["equirectangular", "mollweide", "hammer"];
@@ -56,6 +59,14 @@ export function fitScale(kind: Projection, width: number, height: number): numbe
     case "equirectangular": return Math.min(width / (2 * Math.PI), height / Math.PI);
     default: return Math.min(width / (2 * SQRT8), height / SQRT8);
   }
+}
+
+/** The zoom that opens the chart on Orion about 90 degrees wide on a desk and 60 on a phone (a chart under 600 pixels wide), measured across the middle. */
+export function defaultZoom(kind: Projection, width: number, height: number): number {
+  const half = width < 600 ? 30 : 45;
+  const edge = project(kind, { rightAscension: DEFAULT_VIEW.ra + half, declination: DEFAULT_VIEW.dec }, { centre: { rightAscension: DEFAULT_VIEW.ra, declination: DEFAULT_VIEW.dec }, scale: fitScale(kind, width, height) });
+  const zoom = edge === undefined || edge.x === 0 ? 1 : width / 2 / Math.abs(edge.x);
+  return Math.round(Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom)) * 100) / 100;
 }
 
 const scaleOf = (o: View, width: number, height: number): number => fitScale(o.projection, width, height) * o.zoom;
@@ -182,6 +193,32 @@ function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean): st
   }
 }
 
+interface Place {
+  x: number;
+  y: number;
+  anchor: "start" | "middle" | "end";
+  box: Box;
+}
+
+interface Label {
+  rank: number;
+  places: Place[];
+  text: string;
+  size: number;
+  weight: number;
+  fill: string;
+  opacity: number;
+}
+
+/** A label for a marker at (`x`, `y`): to its right, else its left, above or below, else at a corner, `gap` pixels clear of it. */
+function besideMarker(text: string, size: number, x: number, y: number, gap: number, fill: string, opacity: number): Omit<Label, "rank"> {
+  const { w } = textSize(text, size);
+  const top = (base: number): number => base - size * 0.85;
+  const row = (base: number, left: number, anchor: Place["anchor"]): Place => ({ x: anchor === "middle" ? left + w / 2 : anchor === "end" ? left + w : left, y: base, anchor, box: { x0: left - 1, y0: top(base), x1: left + w + 1, y1: base + size * 0.3 } });
+  const places = [row(y + 4, x + gap, "start"), row(y + 4, x - gap - w, "end"), row(y - gap - 2, x - w / 2, "middle"), row(y + gap + size * 0.85, x - w / 2, "middle"), row(y - gap, x + gap * 0.6, "start"), row(y - gap, x - gap * 0.6 - w, "end"), row(y + gap + size * 0.85, x + gap * 0.6, "start"), row(y + gap + size * 0.85, x - gap * 0.6 - w, "end")];
+  return { places, text, size, weight: 400, fill, opacity };
+}
+
 export interface Chart {
   svg: string;
   hits: Hit[];
@@ -245,13 +282,17 @@ export function chart(o: ChartOptions): Chart {
     body += `<path d="${quiet}" fill="none" stroke="${COLOURS.lines}" stroke-width="1.2" stroke-opacity=".8"/><path d="${loud}" fill="none" stroke="${COLOURS.linesOn}" stroke-width="2.2"/>`;
   }
 
+  const obstacles: Box[] = [{ x0: -1e4, y0: -1e4, x1: 0, y1: 1e4 }, { x0: width, y0: -1e4, x1: 1e4, y1: 1e4 }, { x0: -1e4, y0: -1e4, x1: 1e4, y1: 0 }, { x0: -1e4, y0: height, x1: 1e4, y1: 1e4 }, ...(o.keepClear ?? [])];
+  const around = (x: number, y: number, r: number): Box => ({ x0: x - r, y0: y - r, x1: x + r, y1: y + r });
+  const deepLabels: Label[] = [];
   if (layers.has("deep")) {
     for (const object of messier()) {
       const at = place(object);
       if (at === undefined || !inside(at)) continue;
       const key = object.id;
       body += shapeOf(object, at[0], at[1], key === o.picked);
-      if (o.zoom >= 2.5 || (object.magnitude ?? 9) <= 5 || key === o.picked) body += `<text x="${round(at[0] + 8)}" y="${round(at[1] + 4)}" font-size="11" fill="${key === o.picked ? COLOURS.pick : COLOURS.deep}">${key}</text>`;
+      obstacles.push(around(at[0], at[1], 7));
+      if (o.zoom >= 2.5 || (object.magnitude ?? 9) <= 5 || key === o.picked) deepLabels.push({ rank: key === o.picked ? -1 : 2000 + (object.magnitude ?? 9), ...besideMarker(key, 11, at[0], at[1], 8, key === o.picked ? COLOURS.pick : COLOURS.deep, 1) });
       hits.push({ x: at[0], y: at[1], kind: "deep", key });
     }
   }
@@ -259,31 +300,51 @@ export function chart(o: ChartOptions): Chart {
   const grow = growOf(o.zoom);
   const namedLimit = Math.min(o.magnitude, 1.6 + Math.log2(o.zoom) * 1.1);
   let dots = "";
-  let labels = "";
   let ring = "";
+  const starLabels: Label[] = [];
   for (const star of stars({ magnitude: o.magnitude })) {
     const at = place(star);
     if (at === undefined || !inside(at)) continue;
     const r = Math.max(0.7, (o.magnitude - star.magnitude) * 0.55 + 1.1) * grow;
     dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${starColour(star)}"/>`;
     hits.push({ x: at[0], y: at[1], kind: "star", key: String(star.hr) });
+    if (r >= 2.6) obstacles.push(around(at[0], at[1], r + 1));
     if (String(star.hr) === o.picked) ring = `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
-    if (layers.has("names") && star.name !== undefined && star.magnitude <= namedLimit) labels += `<text x="${round(at[0] + r + 3)}" y="${round(at[1] + 4)}" font-size="11" fill="${COLOURS.star}" fill-opacity=".85">${escapeXml(star.name)}</text>`;
+    const text = lang === "ja" ? star.nameJa ?? star.name : star.name;
+    if (layers.has("names") && text !== undefined && star.magnitude <= namedLimit) starLabels.push({ rank: String(star.hr) === o.picked ? -1 : 1000 + star.magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
   }
-  body += `<g>${dots}</g>${ring}<g>${labels}</g>`;
 
+  const nameLabels: Label[] = [];
   if (layers.has("names")) {
-    let text = "";
     for (const c of constellations()) {
       const abbreviation = c.abbreviation;
       const middle = centroidOf(abbreviation);
       const at = middle === undefined ? undefined : place(middle);
       if (at === undefined || !inside(at, -8)) continue;
       const on = abbreviation === o.highlight;
-      text += `<text x="${round(at[0])}" y="${round(at[1])}" text-anchor="middle" font-size="${on ? 15 : 13}" font-weight="${on ? 700 : 400}" fill="${on ? COLOURS.nameOn : COLOURS.name}" fill-opacity="${on ? 1 : 0.75}">${escapeXml(lang === "ja" ? c.japanese : c.name)}</text>`;
+      const size = on ? 15 : 13;
+      const text = lang === "ja" ? c.japanese : c.name;
+      const { w, h } = textSize(text, size);
+      const places = [[0, 0], [0, -h], [0, h], [-w * 0.6, 0], [w * 0.6, 0], [0, -2 * h], [0, 2 * h], [-w * 0.6, -h], [w * 0.6, -h], [-w * 0.6, h], [w * 0.6, h], [0, -3 * h], [0, 3 * h]].map(([dx, dy]) => {
+        const x = at[0] + dx!;
+        const y = at[1] + dy!;
+        return { x, y, anchor: "middle" as const, box: { x0: x - w / 2 - 1, y0: y - size * 0.85, x1: x + w / 2 + 1, y1: y + size * 0.3 } };
+      });
+      nameLabels.push({ rank: on ? -1 : 1001.8 + 1.2 * (1 - Math.min(1, reachOfConstellation(abbreviation) / 50)), places, text, size, weight: on ? 700 : 400, fill: on ? COLOURS.nameOn : COLOURS.name, opacity: on ? 1 : 0.75 });
     }
-    body += `<g font-family="system-ui, sans-serif" pointer-events="none">${text}</g>`;
   }
+  body += `<g>${dots}</g>${ring}`;
+
+  const labels = [...starLabels, ...nameLabels, ...deepLabels].sort((a, b) => a.rank - b.rank);
+  const chosen = placeLabels(labels.map((l) => l.places.map((p) => p.box)), obstacles);
+  let text = "";
+  labels.forEach((l, i) => {
+    const at = chosen[i];
+    if (at === undefined) return;
+    const p = l.places[at]!;
+    text += `<text x="${round(p.x)}" y="${round(p.y)}" text-anchor="${p.anchor}" font-size="${l.size}" font-weight="${l.weight}" fill="${l.fill}" fill-opacity="${l.opacity}">${escapeXml(l.text)}</text>`;
+  });
+  body += `<g font-family="system-ui, sans-serif" pointer-events="none" stroke="${COLOURS.ground}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${text}</g>`;
 
   return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits };
 }

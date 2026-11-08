@@ -8,8 +8,9 @@ import { starByHr, starColour, starDistanceLightYears, stars, type Star } from "
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
-import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, dragged, fitScale, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, zoomedAbout, type Hit, type Layer, type View } from "./chart.ts";
+import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, dragged, fitScale, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, zoomedAbout, type Hit, type Layer, type View } from "./chart.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
+import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -18,7 +19,7 @@ const say = (key: string): string => (WORDS[lang()] as Record<string, string>)[k
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const wrap360 = (degrees: number): number => ((degrees % 360) + 360) % 360;
 
-const address = createAddressState({ defaults: { proj: DEFAULT_VIEW.projection, ra: DEFAULT_VIEW.ra.toFixed(2), dec: DEFAULT_VIEW.dec.toFixed(2), zoom: "1", mag: String(DEFAULT_MAGNITUDE) } });
+const address = createAddressState({ defaults: { proj: DEFAULT_VIEW.projection, ra: DEFAULT_VIEW.ra.toFixed(2), dec: DEFAULT_VIEW.dec.toFixed(2), mag: String(DEFAULT_MAGNITUDE) } });
 
 // ----- the state, read from the address -----
 let view: View = { ...DEFAULT_VIEW };
@@ -29,11 +30,13 @@ let hover: string | undefined;
 
 function read(): void {
   const kind = address.get("proj") ?? "";
+  const projection = (PROJECTIONS as readonly string[]).includes(kind) ? (kind as Projection) : DEFAULT_VIEW.projection;
+  const asked = Number(address.get("zoom"));
   view = {
-    projection: (PROJECTIONS as readonly string[]).includes(kind) ? (kind as Projection) : DEFAULT_VIEW.projection,
+    projection,
     ra: wrap360(Number(address.get("ra")) || 0),
     dec: Math.max(-90, Math.min(90, Number(address.get("dec")) || 0)),
-    zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, Number(address.get("zoom")) || 1)),
+    zoom: asked > 0 ? Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, asked)) : defaultZoom(projection, width, height),
   };
   magnitude = Math.max(2, Math.min(6, Number(address.get("mag")) || DEFAULT_MAGNITUDE));
   const named = address.get("layers");
@@ -42,14 +45,16 @@ function read(): void {
 }
 
 function writeView(): void {
-  address.setMany({ ra: view.ra.toFixed(2), dec: view.dec.toFixed(2), zoom: String(Math.round(view.zoom * 100) / 100) });
+  const zoom = Math.round(view.zoom * 100) / 100;
+  address.setMany({ ra: view.ra.toFixed(2), dec: view.dec.toFixed(2), zoom: zoom === opening() ? null : String(zoom) });
 }
 
 // ----- drawing -----
 const svg = $("chart") as unknown as SVGSVGElement;
 const box = $("chart-box");
-let width = 800;
-let height = 560;
+let width = Math.max(200, Math.round(box.clientWidth)) || 800;
+let height = Math.max(200, Math.round(box.clientHeight)) || 560;
+const opening = (): number => defaultZoom(view.projection, width, height);
 let hits: Hit[] = [];
 let queued = false;
 
@@ -61,9 +66,15 @@ const pickedConstellation = (): string | undefined => {
   return star?.constellation;
 };
 
+function clear(): Box[] {
+  const tools = $("zoom-in").parentElement!.getBoundingClientRect();
+  const at = svg.getBoundingClientRect();
+  return [{ x0: tools.left - at.left - 4, y0: tools.top - at.top - 4, x1: tools.right - at.left + 4, y1: tools.bottom - at.top + 4 }];
+}
+
 function draw(): void {
   queued = false;
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), highlight: hover ?? pickedConstellation(), picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined });
+  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined });
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
   hits = out.hits;
@@ -76,6 +87,7 @@ function schedule(): void {
 new ResizeObserver(() => {
   width = Math.max(200, Math.round(box.clientWidth));
   height = Math.max(200, Math.round(box.clientHeight));
+  if (address.get("zoom") === null) view = { ...view, zoom: opening() };
   schedule();
 }).observe(box);
 
@@ -103,6 +115,7 @@ function pressed(): void {
 function words(): void {
   seg("seg-projection", PROJECTIONS.map((kind) => [kind, say(kind)] as const), (kind) => {
     view = { ...view, projection: kind as Projection };
+    if (address.get("zoom") === null) view = { ...view, zoom: opening() };
     address.set("proj", kind);
     everything();
   });
@@ -206,7 +219,7 @@ svg.addEventListener("keydown", (event) => {
     view = dragged(view, width, height, dx, dy);
   } else if (event.key === "+" || event.key === "=") view = zoomedAbout(view, width, height, 1.4, width / 2, height / 2);
   else if (event.key === "-" || event.key === "_") view = zoomedAbout(view, width, height, 1 / 1.4, width / 2, height / 2);
-  else if (event.key === "0" || event.key === "Home") view = { ...view, ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: 1 };
+  else if (event.key === "0" || event.key === "Home") view = { ...view, ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: opening() };
   else return;
   event.preventDefault();
   schedule();
@@ -223,7 +236,7 @@ $("zoom-out").addEventListener("click", () => {
   settled();
 });
 $("reset").addEventListener("click", () => {
-  fly({ ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: 1 });
+  fly({ ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: opening() });
   address.set("pick", null);
   picked = null;
   details();
@@ -326,6 +339,8 @@ function zoomFor(abbreviation: string): number {
 const fold = (text: string): string =>
   [...text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()].map((ch) => (ch >= "ァ" && ch <= "ヶ" ? String.fromCodePoint(ch.codePointAt(0)! - 0x60) : ch)).join("").trim();
 
+const starName = (star: Star): string => (lang() === "ja" ? star.nameJa : undefined) ?? star.name ?? star.designation ?? `HR ${star.hr}`;
+
 interface Found {
   label: string;
   kind: string;
@@ -341,9 +356,10 @@ function search(text: string): Found[] {
   const contains: Found[] = [];
   for (const star of stars()) {
     if (star.name === undefined) continue;
-    const name = fold(star.name);
-    if (name.startsWith(q)) starts.push({ label: star.name, kind: say("starKind"), key: `S:${star.hr}` });
-    else if (name.includes(q)) contains.push({ label: star.name, kind: say("starKind"), key: `S:${star.hr}` });
+    const found = { label: starName(star), kind: say("starKind"), key: `S:${star.hr}` };
+    const names = [fold(star.name), ...(star.nameJa === undefined ? [] : [fold(star.nameJa)])];
+    if (names.some((name) => name.startsWith(q))) starts.push(found);
+    else if (names.some((name) => name.includes(q))) contains.push(found);
   }
   for (const c of constellations()) {
     if (out.some((one) => one.key === `C:${c.abbreviation}`)) continue;
@@ -433,7 +449,7 @@ function details(): void {
   if (picked.startsWith("S:")) {
     const star = starByHr(Number(id)) as Star | undefined;
     if (star === undefined) return;
-    title.textContent = star.name ?? star.designation ?? `HR ${star.hr}`;
+    title.textContent = starName(star);
     const light = starDistanceLightYears(star);
     const swatch = Object.assign(document.createElement("span"), { className: "swatch" });
     swatch.style.background = starColour(star);
@@ -470,21 +486,21 @@ function details(): void {
     fact(list, "fieldJapanese", `${c.japanese} (${c.reading})`);
     const chips = document.createElement("div");
     chips.className = "chips";
-    for (const star of starsIn(c.abbreviation).slice(0, 12)) chips.append(linkTo(star.name ?? star.designation ?? `HR ${star.hr}`, `S:${star.hr}`));
+    for (const star of starsIn(c.abbreviation).slice(0, 12)) chips.append(linkTo(starName(star), `S:${star.hr}`));
     host.append(Object.assign(document.createElement("h4"), { textContent: say("starsIn") }), chips);
   }
 }
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (): Choice => ({ ...view, ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
-panel.generate = ({ kind, size, preview }) => (kind === "iframe" ? frameCode(choice(), say("chartLabel"), size, preview) : (embedCode(kind, choice(), size) ?? ""));
+panel.generate = ({ kind, size, preview }) => (kind === "iframe" ? frameCode(choice(size), say("chartLabel"), size, preview) : (embedCode(kind, choice(size), size) ?? ""));
 panel.preview = ({ kind, size }) => {
   if (kind === "iframe") return undefined;
   const holder = document.createElement("div");
   holder.style.cssText = `width: ${size}px; max-width: 100%; line-height: 0`;
-  const c = choice();
+  const c = choice(size);
   holder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${heightFor(size)}" style="display:block;width:100%;height:auto">${chart({ ...c, width: size, height: heightFor(size), layers: new Set(c.layers.has("lines") ? (["lines"] as const) : []), highlight: undefined, picked: undefined }).svg}</svg>`;
   return holder;
 };
