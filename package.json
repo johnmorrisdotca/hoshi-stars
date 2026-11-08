@@ -36,6 +36,11 @@
       "import": "./dist/index.js",
       "default": "./dist/index.js"
     },
+    "./constellations": {
+      "types": "./dist/constellations.d.ts",
+      "import": "./dist/constellations.js",
+      "default": "./dist/constellations.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

@@ -26,13 +26,34 @@ console.log(stars({ magnitude: 2 }).length, "stars as bright as magnitude 2");  
 
 Counts: 15 stars to magnitude 1, 50 to 2, 174 to 3, 518 to 4, 1,630 to 5 and 5,080 to 6.
 
+## The 88 constellations
+
+Their own import, about 2 kB gzipped, so the bright-star entry stays small. Each has its IAU abbreviation, Latin name and genitive, English name, and Japanese name with its hiragana reading (`おおいぬ座`, `おおいぬざ`).
+
+```ts
+import { constellation, constellations, starsIn } from "@johnmorrisdotca/hoshi-stars/constellations";
+
+const dog = constellation("CMa")!;            // or "Canis Major", "Great Dog", "おおいぬ座", in any case
+console.log(dog.name, dog.genitive, dog.english, dog.japanese, dog.reading);   // Canis Major Canis Majoris Great Dog おおいぬ座 おおいぬざ
+console.log(constellations().length);                                          // 88
+console.log(starsIn("Ori").slice(0, 2).map((s) => s.name));                   // [ 'Rigel', 'Betelgeuse' ]
+```
+
+| Function | Gives |
+|---|---|
+| `constellations()` | all 88, alphabetical by Latin name |
+| `constellation(text)` | one, by abbreviation, Latin name, genitive, English name, Japanese name or reading; `undefined` if none (the English `Compass` is both Circinus and Pyxis, so it finds neither) |
+| `starsIn(text)` | the bright stars that lie in it, brightest first (`RangeError` for a text that is no constellation) |
+
+No lines or boundaries yet.
+
 ## Where the data comes from
 
 The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package.
 
 ## Coming
 
-Constellations with English and Japanese names, deep-sky objects, a Milky Way outline and a star-chart function, each its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
+Constellation lines and boundaries, deep-sky objects, a Milky Way outline and a star-chart function, each its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
 
 ## Licence
 

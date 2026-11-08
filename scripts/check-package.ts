@@ -19,7 +19,7 @@ try {
   const pack = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", scratch], root)) as Array<{ filename: string; files: Array<{ path: string }> }>;
   const files = pack[0]!.files.map((f) => f.path);
   if (files.some((f) => /^(demo|docs|scripts|test|e2e|site|src)\//.test(f))) throw new Error("Source, tests or the demo entered the npm package");
-  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
+  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", join(scratch, pack[0]!.filename)], scratch);
   writeFileSync(
     join(scratch, "check.mjs"),
@@ -27,6 +27,10 @@ try {
 import { createRequire } from "node:module";
 const esm = await import(${JSON.stringify(pkg.name)});
 assert.equal(esm.stars().length, 5080);
+const sub = await import(${JSON.stringify(pkg.name + "/constellations")});
+assert.equal(sub.constellations().length, 88);
+assert.equal(sub.constellation("CMa").japanese, "おおいぬ座");
+assert.ok(sub.starsIn("Ori").some((s) => s.name === "Rigel"));
 const sirius = esm.starByName("Sirius");
 assert.equal(sirius.hr, 2491);
 assert.ok(Math.abs(sirius.declination + 16.7161) < 0.001);

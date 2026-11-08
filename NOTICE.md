@@ -8,6 +8,13 @@ Hoshi Stars is original work by John Morris, under the MIT licence in `LICENSE`.
 - **Star names**: our own list after the IAU Working Group on Star Names (https://www.iau.org/science/scientific_bodies/working_groups/280/).
 - **Star colour**: Ballesteros's B-V to temperature relation (F. J. Ballesteros 2012, EPL 97, 34008) and a piecewise black-body colour fit.
 
+## The constellations
+
+- **Constellations (`@johnmorrisdotca/hoshi-stars/constellations`)**: facts typed from published lists, in our own table (`src/data/constellations.ts`), with no artwork, lines or boundaries.
+  - The 88 constellations, their three-letter abbreviations, Latin names, Latin genitives and English names: the International Astronomical Union's constellation list (https://www.iau.org/public/themes/constellations/). That address returned 404 on 2026-11-08, so the table was read on 2026-11-08 from a 2013 copy of the same IAU page ("The Constellations | IAU") kept at zfelleg.useribm.hu, and every Latin name, genitive and English name was checked against the text of that copy. Two spellings are ours: "Berenice's Hair" for Coma Berenices (the copy has "the Bernice's Hair") and "Hercules" for the constellation (the copy has "the Hercules"); the leading "the" of the English names is left off.
+  - The Japanese names: the National Astronomical Observatory of Japan, Ephemeris Computation Office, "星座の名前" (Constellation names; https://eco.mtk.nao.ac.jp/koyomi/faq/constellations.html), read 2026-11-08. It gives the abbreviation, the name in kana and the Latin name of all 88, and every abbreviation and Latin name matched the IAU table. The hiragana reading is worked out from that kana form in code.
+  - No Wikipedia text is used.
+
 ## Deliberately not used
 
 - ESA's Hipparcos, Tycho and Gaia catalogues: CC BY-NC 3.0 IGO (non-commercial), which an MIT package cannot pass on.
