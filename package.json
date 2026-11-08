@@ -60,6 +60,11 @@
       "import": "./dist/deep-sky-ngc-ic.js",
       "default": "./dist/deep-sky-ngc-ic.js"
     },
+    "./figures": {
+      "types": "./dist/figures.d.ts",
+      "import": "./dist/figures.js",
+      "default": "./dist/figures.js"
+    },
     "./projection": {
       "types": "./dist/projection.d.ts",
       "import": "./dist/projection.js",
