@@ -57,6 +57,15 @@ test("every star has an HR number nobody else has, and names and designations fi
   assert.equal(starByHr(0), undefined);
 });
 
+test("every designation is a Greek letter (with its number, no space) or a Flamsteed number, then the constellation", () => {
+  const bad = stars().filter((star) => star.designation !== undefined && !/^(\p{Script=Greek}\d?|\d+) [A-Z][A-Za-z]{2}$/u.test(star.designation));
+  assert.deepEqual(bad.map((star) => `${star.hr} ${star.designation}`), []);
+  assert.equal(starByName("μ1 Sco")?.hr, 6247);
+  assert.equal(starByName("ξ2 Cet")?.hr, 718);
+  assert.equal(starByName("ν1 Dra")?.hr, 6554);
+  assert.equal(starByName("π3 Ori")?.hr, 1543);
+});
+
 test("proper motion moves a star by the catalogue's rate, in a straight line", () => {
   const arcturus = starByName("Arcturus")!;
   const atJ2000 = starPosition(arcturus);

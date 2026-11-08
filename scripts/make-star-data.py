@@ -99,7 +99,10 @@ def designation(name: str):
     constellation = name[7:10].strip()
     letter = ""
     if bayer:
-        letter = GREEK.get(bayer[:3], bayer[:3]) + bayer[3:]
+        parts = re.fullmatch(r"([A-Za-z]+)\s*([0-9]*)", bayer)
+        if parts is None or parts.group(1) not in GREEK:
+            raise SystemExit(f"a Bayer letter this script does not know: {bayer!r} in {name!r}")
+        letter = GREEK[parts.group(1)] + parts.group(2)
     return (int(flamsteed) if flamsteed.isdigit() else 0), letter, constellation
 
 
