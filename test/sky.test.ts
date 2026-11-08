@@ -330,6 +330,7 @@ test("bad input throws, naming the argument and the value", () => {
 
 test("speed: 100,000 horizontal conversions stay inside a stated budget", () => {
   // Measured on the author's Mac (Node 24): about 26 ms for 100,000 conversions (precession, sidereal time and the horizon formulas each time). The budget is 100 ms, nearly four times that.
+  // The best of five passes after a warm-up is timed: the test files run side by side, so one pass can share the machine with another file's work.
   const BUDGET_MS = 100;
   let seed = 4242;
   const random = (): number => {
@@ -341,9 +342,13 @@ test("speed: 100,000 horizontal conversions stay inside a stated budget", () => 
   const observer = { latitude: 49.28, longitude: -123.12 };
   const when = Date.UTC(2026, 10, 8);
   let up = 0;
-  const start = performance.now();
-  for (const point of points) if (horizontal(point, observer, when).altitude > 0) up += 1;
-  const took = performance.now() - start;
+  let took = Infinity;
+  for (let pass = 0; pass < 6; pass += 1) {
+    up = 0;
+    const start = performance.now();
+    for (const point of points) if (horizontal(point, observer, when).altitude > 0) up += 1;
+    if (pass > 0) took = Math.min(took, performance.now() - start);
+  }
   assert.ok(up > 40_000 && up < 60_000, `${up} of 100,000 were up`);
   assert.ok(took < BUDGET_MS, `100,000 conversions took ${took.toFixed(0)} ms; the budget is ${BUDGET_MS} ms`);
   console.log(`100,000 horizontal conversions: ${took.toFixed(1)} ms`);
