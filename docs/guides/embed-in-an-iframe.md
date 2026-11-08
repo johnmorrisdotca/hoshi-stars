@@ -39,7 +39,7 @@ The chart fills the frame and draws again when the frame is resized. It fetches 
 | `proj` | One of `stereographic`, `orthographic`, `gnomonic`, `equidistant`, `equirectangular`, `mollweide`, `hammer`. |
 | `ra`, `dec`, `zoom` | Where it looks, in degrees, and how far in (0.6 to 60). Left out, it looks at Orion (`ra=84`, `dec=0`) about 90 degrees wide, or 60 when the frame is under 600 pixels wide. |
 | `mag` | The faintest star, 2 to 6. |
-| `layers` | A comma list of `lines`, `boundaries`, `names`, `deep` (Messier) and `grid`, or `none`. |
+| `layers` | A comma list of `milky` (the Milky Way), `lines`, `boundaries`, `names`, `deep` (Messier) and `grid`, or `none`. Left out, it is `milky,lines,names,grid`. |
 | `lang` | `ja` for constellation names in Japanese. |
 | `c` | A constellation (`Ori`) to draw brighter, with its boundary. |
 

@@ -181,6 +181,19 @@ An object has `id`, `messier`, `ngc`, `ic` (each a string such as `"NGC 224"`), 
 - **Magnitudes and sizes of the Messier objects** are the published visual magnitudes and major axes of NASA HEASARC's Messier table, because Wikidata's V-band magnitudes for 14 of them are more than a magnitude off (the central star's, for the four planetary nebulae). The NGC and IC magnitudes are Wikidata's, except that a planetary nebula has none (Wikidata's is its central star's); about four in ten have none, and almost none has a size.
 - **Positions** are Wikidata's. Every Messier object was compared with NED and a sample of the others too; the objects that were more than an arc-minute apart are listed in [NOTICE.md](NOTICE.md), and where Wikidata was wrong the table has NED's position.
 
+## The Milky Way
+
+`@johnmorrisdotca/hoshi-stars/milky-way` is a brightness map of the Milky Way in about 11 kB: the band along the galactic equator, the bright core toward Sagittarius, and the Great Rift, the Coalsack and the Cygnus Rift as dimmer places. It is made by `scripts/make-milky-way-data.py` from SAO star counts, NASA's IRAS 100 micron dust map and a bulge of our own figures (see [NOTICE.md](NOTICE.md)); no picture of the sky is traced.
+
+```ts
+import { milkyWayBands, milkyWayBrightness } from "@johnmorrisdotca/hoshi-stars/milky-way";
+
+console.log(milkyWayBrightness({ rightAscension: 266.4, declination: -28.9 }) > 0.7);  // true: the core, in Sagittarius
+console.log(milkyWayBands([0.2, 0.5]).map((band) => band.strips.length));              // ribbons of sky points to fill as soft bands
+```
+
+`milkyWayBrightness(point)` is 0 (dark sky) to 1 (the core); `milkyWayBands(levels, { step })` gives ribbons of sky points for `project`; `toGalactic` and `fromGalactic` change the frame. The demo draws it as soft bands under the stars, in every projection, and its **Milky Way** button turns it off.
+
 ## Put a chart in a page
 
 The package gives numbers; a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
@@ -243,11 +256,11 @@ Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page
 
 ## Where the data comes from
 
-The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package. The deep-sky objects are Wikidata's (CC0), with NASA HEASARC's Messier table and NED as checks.
+The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package. The deep-sky objects are Wikidata's (CC0), with NASA HEASARC's Messier table and NED as checks. The Milky Way's brightness comes from SAO star counts (NASA HEASARC; no licence stated, used with credit and removed on request) and NASA's IRAS and COBE dust maps.
 
 ## Coming
 
-A Milky Way outline and a star-chart function, each its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
+A star-chart function as its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
 
 ## The family
 

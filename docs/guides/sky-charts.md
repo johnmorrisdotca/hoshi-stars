@@ -56,6 +56,34 @@ console.log((svg + "</svg>").length > 1000);
 
 That is the whole of it: [Plain HTML and a CDN](html-and-cdn.md), [Bundlers](bundlers.md) and [Frameworks](frameworks.md) put the same drawing in a page.
 
+## The Milky Way
+
+`/milky-way` is a small brightness map of the Milky Way (about 11 kB of numbers) made from star counts and a dust map, with the bright core toward Sagittarius and the dust lanes (the Great Rift, the Coalsack, the Cygnus Rift) as dimmer places. `milkyWayBrightness(point)` gives 0 (dark sky) to 1 (the core) toward a point of the sky, and `milkyWayBands(levels)` cuts the map into ribbons of sky points, one set per level, to fill as soft bands under the stars:
+
+```js
+import { milkyWayBands, milkyWayBrightness } from "@johnmorrisdotca/hoshi-stars/milky-way";
+import { project } from "@johnmorrisdotca/hoshi-stars/projection";
+
+const core = milkyWayBrightness({ rightAscension: 266.4, declination: -28.9 });
+const pole = milkyWayBrightness({ rightAscension: 192.9, declination: 27.1 });
+console.log(core > pole);
+
+let paths = "";
+for (const band of milkyWayBands([0.15, 0.35, 0.6])) {
+  for (const strip of band.strips) {
+    const edge = [...strip.upper, ...strip.lower.slice().reverse()].map((p) => project("hammer", p, { centre: { rightAscension: 0, declination: 0 }, scale: 100 }));
+    if (edge.every(Boolean)) paths += `<path d="M${edge.map((p) => `${200 + p.x} ${150 - p.y}`).join("L")}Z" fill="#9fb0e6" fill-opacity=".2"/>`;
+  }
+}
+console.log(paths.length > 1000);
+// true
+// true
+```
+
+Each strip is the polygon `upper` forward then `lower` backward; fill the levels in turn with a low opacity so they build up, and blur the group a little for soft edges. A strip that crosses the seam of `equirectangular`, `mollweide` or `hammer`, or reaches the far side of a hemisphere, has to be cut by you (the demo's `milkyWay` in `demo/chart.ts` shows how). The demo's **Milky Way** button turns the layer on and off, and `layers=milky` is in the address and in the embed page's. The chart is always a night sky, so the bands are drawn pale on the dark ground in the light page and the dark one.
+
+The grid is 1 degree of galactic longitude by 0.5 degree of latitude and holds 32 levels, which is a map for shading, not a measurement. `toGalactic` and `fromGalactic` turn right ascension and declination into galactic longitude and latitude and back. Where the data comes from is in [Data and licences](data-and-licences.md).
+
 ## Things to decide
 
 - **Wide charts.** On `equirectangular`, `mollweide` and `hammer` the chart has a seam, where right ascension wraps. A line between two stars on opposite sides would run across the whole chart: skip a segment whose two ends are more than half the chart apart.
