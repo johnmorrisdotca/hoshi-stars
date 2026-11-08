@@ -9,6 +9,7 @@
     "yale",
     "astronomy",
     "constellations",
+    "constellation-boundaries",
     "proper-motion",
     "javascript",
     "typescript",
@@ -40,6 +41,11 @@
       "types": "./dist/constellations.d.ts",
       "import": "./dist/constellations.js",
       "default": "./dist/constellations.js"
+    },
+    "./boundaries": {
+      "types": "./dist/boundaries.d.ts",
+      "import": "./dist/boundaries.js",
+      "default": "./dist/boundaries.js"
     },
     "./projection": {
       "types": "./dist/projection.d.ts",

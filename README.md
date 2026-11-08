@@ -45,7 +45,31 @@ console.log(starsIn("Ori").slice(0, 2).map((s) => s.name));                   //
 | `constellation(text)` | one, by abbreviation, Latin name, genitive, English name, Japanese name or reading; `undefined` if none |
 | `starsIn(text)` | the bright stars that lie in it, brightest first (`RangeError` for a text that is no constellation) |
 
-No lines or boundaries yet.
+## Which constellation, and the boundaries
+
+`@johnmorrisdotca/hoshi-stars/boundaries` is its own import. `constellationAt` says which of the 88 constellations a position is in; `boundaryOf` and `boundaries` give the boundary lines to draw. The boundaries are the IAU's (Delporte 1930) as N. G. Roman (1987) tabulated them on the equinox of B1875.0 (VizieR VI/42); a position is precessed to B1875.0 first, with the IAU 1976 angles from Meeus.
+
+```ts
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { boundaryOf, constellationAt } from "@johnmorrisdotca/hoshi-stars/boundaries";
+
+console.log(constellationAt(starByName("Betelgeuse")!).name);                          // Orion
+console.log(constellationAt({ rightAscension: 0, declination: 90 }).abbreviation);      // UMi
+console.log(constellationAt({ rightAscension: 135, declination: 65 }, Date.UTC(1950, 0, 1)).abbreviation);   // a position of date: UMa
+const outline = boundaryOf("Cru").outlines[0]!;    // closed, J2000 degrees, first point repeated as the last
+console.log(outline.length, outline[0]);
+```
+
+| Function | Gives |
+|---|---|
+| `constellationAt(position, when?)` | the `Constellation` the J2000 position is in (a position of date when `when` is given); `TypeError` or `RangeError` for bad input |
+| `boundaryOf(text, { step? })` | one constellation's `outlines`: closed rings of `{ rightAscension, declination }` in J2000 degrees (Serpens has two) |
+| `boundaries({ step? })` | all 88, in the order of `constellations()` |
+
+- Every edge of the boundaries runs along a line of constant right ascension or constant declination on B1875.0, which after precession is a slightly tilted curve. Each edge is cut into pieces of at most `step` degrees of arc (1 by default, 0.01 to 90), so the whole sky is about 9,700 points at the default; join them with straight lines, and project each point (a ring that crosses 0 h jumps from near 360 to near 0 in raw degrees).
+- Checked against Roman's own 8 test positions, every one of the 2,736 bright stars whose catalogue entry names a constellation (all agree), and the areas the IAU lists (Hydra 1302.8, Crux 68.4 square degrees; the 88 add up to the whole sky, 41,253).
+- A point within a few arc-seconds of a boundary can fall either side: the table is to a hundredth of a second of time and the precession is the modern one, not 1930's.
+- About 7 kB gzipped of data on top of the constellations table, and 100,000 lookups take about 40 ms.
 
 ## Map projections
 
@@ -73,7 +97,7 @@ The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.m
 
 ## Coming
 
-Constellation lines and boundaries, deep-sky objects, a Milky Way outline and a star-chart function, each its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
+Constellation lines, deep-sky objects, a Milky Way outline and a star-chart function, each its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
 
 ## Licence
 
