@@ -125,7 +125,7 @@ test("the faintest-star slider changes how many stars are drawn", async ({ page 
   const before = await stars(page);
   await page.getByTestId("magnitude").fill("3");
   await expect(page.getByTestId("shown")).toContainText("174 stars shown");
-  expect(await stars(page)).toBeLessThan(before);
+  await expect.poll(() => stars(page)).toBeLessThan(before);
   await expect.poll(() => param(page, "mag")).toBe("3");
 });
 
