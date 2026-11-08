@@ -56,6 +56,34 @@ console.log((svg + "</svg>").length > 1000);
 
 これで全部です。[HTMLとCDN](html-and-cdn.md)、[バンドラー](bundlers.md)、[フレームワーク](frameworks.md)が、同じ絵をページに入れます。
 
+## 天の川
+
+`/milky-way`は、星の数と塵の地図から作った天の川の小さな明るさの地図です（数値は約11 kB）。いて座の方向の明るい中心部と、暗い塵の帯（グレート・リフト、石炭袋、はくちょう座の暗黒帯）が、暗い場所として入っています。`milkyWayBrightness(point)`は、空の点の明るさを0（暗い空）から1（中心部）で返します。`milkyWayBands(levels)`は、地図を明るさのレベルごとに空の点の帯に切り分けます。星の下に、やわらかい帯として塗ることができます。
+
+```js
+import { milkyWayBands, milkyWayBrightness } from "@johnmorrisdotca/hoshi-stars/milky-way";
+import { project } from "@johnmorrisdotca/hoshi-stars/projection";
+
+const core = milkyWayBrightness({ rightAscension: 266.4, declination: -28.9 });
+const pole = milkyWayBrightness({ rightAscension: 192.9, declination: 27.1 });
+console.log(core > pole);
+
+let paths = "";
+for (const band of milkyWayBands([0.15, 0.35, 0.6])) {
+  for (const strip of band.strips) {
+    const edge = [...strip.upper, ...strip.lower.slice().reverse()].map((p) => project("hammer", p, { centre: { rightAscension: 0, declination: 0 }, scale: 100 }));
+    if (edge.every(Boolean)) paths += `<path d="M${edge.map((p) => `${200 + p.x} ${150 - p.y}`).join("L")}Z" fill="#9fb0e6" fill-opacity=".2"/>`;
+  }
+}
+console.log(paths.length > 1000);
+// true
+// true
+```
+
+1本の帯（strip）は、`upper`を順に、`lower`を逆順につないだ多角形です。レベルごとに低い不透明度で重ねて塗り、グループを少しぼかすと、やわらかい縁になります。`equirectangular`、`mollweide`、`hammer`の継ぎ目をまたぐ帯や、半球の裏側に届く帯は、自分で切る必要があります（デモの`demo/chart.ts`にある`milkyWay`が例です）。デモの「天の川」ボタンでこの層を入れたり切ったりでき、`layers=milky`はアドレスにも埋め込みページにも使えます。星図はいつも夜空なので、明るいページでも暗いページでも、暗い地の上に淡い色で描きます。
+
+格子は銀経1度×銀緯0.5度で32段階です。測定値ではなく、陰影をつけるための地図です。`toGalactic`と`fromGalactic`は、赤経・赤緯と銀経・銀緯を相互に変換します。データの出どころは[データとライセンス](data-and-licences.md)にあります。
+
 ## 決めておくこと
 
 - **広い星図。** `equirectangular`、`mollweide`、`hammer`の星図には、赤経が折り返す継ぎ目があります。反対側の2つの星を結ぶ線は、図全体を横切ってしまいます。両端が図の半分より離れた線は描かないでください。

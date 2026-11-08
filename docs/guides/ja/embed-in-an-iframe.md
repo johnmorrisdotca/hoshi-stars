@@ -39,7 +39,7 @@ description: 自分のスクリプトを動かせないページに、埋め込�
 | `proj` | `stereographic`、`orthographic`、`gnomonic`、`equidistant`、`equirectangular`、`mollweide`、`hammer`のどれか |
 | `ra`, `dec`, `zoom` | 見る方向（度）と、拡大の度合い（0.6〜60）。省略するとオリオン座（`ra=84`、`dec=0`）を中心に、幅およそ90度（フレームの幅が600px未満なら60度）で表示 |
 | `mag` | いちばん暗い星（2〜6） |
-| `layers` | `lines`、`boundaries`、`names`、`deep`（メシエ）、`grid`をコンマでつないだもの、または`none` |
+| `layers` | `milky`（天の川）、`lines`、`boundaries`、`names`、`deep`（メシエ）、`grid`をコンマでつないだもの、または`none`。省略すると`milky,lines,names,grid`です。 |
 | `lang` | `ja`にすると星座名が日本語になります |
 | `c` | 明るく描く星座（`Ori`）。境界線も描きます。 |
 
