@@ -3,6 +3,7 @@
 // chapter 12 (Greenwich mean sidereal time, the IAU 1982 expression), chapter 13 (equatorial to horizontal), chapter 16 (refraction, Saemundsson's formula) and chapter 21 (precession, the IAU 1976 constants).
 // For another planet the sky turns about that planet's pole: the pole and prime meridian are the IAU Working Group on Cartographic Coordinates and Rotational Elements (WGCCRE) quantities, passed in, so the planet data stays with the caller.
 // Azimuth runs from north through east (north 0, east 90, south 180, west 270), the compass way, not Meeus's way from south.
+import { terrestrialMinusUtc } from "./time-scale.ts";
 import { J2000_MS, moment, type When } from "./when.ts";
 import type { SkyPoint } from "./projection.ts";
 
@@ -305,7 +306,7 @@ export function isAboveHorizon(position: SkyPoint, observer: Observer, when: Whe
  *
  * The stars look the same from every planet: the nearest star, Proxima Centauri, shifts only about 40 arc-seconds seen from Pluto (annual parallax 0.77 arc-seconds times Pluto's 49 AU at its farthest), and a typical star far less, so a star's J2000 position serves anywhere in the solar system. Only the pole and the turning change.
  *
- * Limits: the latitude is used as the angle from the planet's equator on a sphere (the difference between planetographic and planetocentric latitude, up to a fifth of a degree on Mars, is ignored); the pole's slow drift is the caller's to add in if wanted (`spin.pole` is read as given); there is no atmosphere, and no precession of the pole is applied. `when` is read as the time scale the IAU rates are in (TDB); passing UTC is about 69 seconds early, which turns Mars by 0.28 degrees.
+ * Limits: the latitude is used as the angle from the planet's equator on a sphere (the difference between planetographic and planetocentric latitude, up to a fifth of a degree on Mars, is ignored); the pole's slow drift is the caller's to add in if wanted (`spin.pole` is read as given); there is no atmosphere, and no precession of the pole is applied. `when` is UTC, like every moment in the package: it is turned into Terrestrial Time inside, the scale the IAU rates are in (69.184 s ahead of UTC since 2017, by the leap-second table back to 1972 and by Espenak and Meeus's delta T before it; a leap second announced after 2017 is not known until the table gets its row). TDB differs from TT by under 2 milliseconds, which is ignored. Without the conversion Mars would be turned 0.28 degrees out.
  *
  * @param position - A right ascension and declination in degrees at J2000.
  * @param spin - The planet's `pole` (right ascension and declination, degrees) and `primeMeridian` (`w0` degrees at J2000 and `rate` degrees a day).
@@ -334,7 +335,8 @@ export function horizontalFrom(position: SkyPoint, spin: PlanetSpin, observer: O
   const w0 = finite("spin.primeMeridian.w0", meridian.w0);
   const rate = finite("spin.primeMeridian.rate", meridian.rate);
   const o = place("observer", observer);
-  const days = (moment(when) - J2000_MS) / DAY_MS;
+  const utc = moment(when);
+  const days = (utc + terrestrialMinusUtc(utc) * 1000 - J2000_MS) / DAY_MS;
   const turned = (w0 + rate * days + o.longitude) * RAD;
   // The planet's frame: z toward its pole, x toward the node where its equator crosses the ICRF equator (right ascension of the pole + 90 degrees), y = z cross x.
   const a0 = spin.pole.rightAscension * RAD;

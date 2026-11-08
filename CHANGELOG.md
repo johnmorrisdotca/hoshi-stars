@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Fixed: `horizontalFrom` read its moment as TDB while everything else in the package takes UTC, so passing UTC put another planet's sky about 69 seconds early (0.28 degree on Mars). It now takes UTC and converts to Terrestrial Time inside, with the leap seconds from 1972 and Espenak and Meeus's delta T before; TDB minus TT (under 2 ms) is ignored. A caller who added the 69 seconds by hand must stop.
 - New entry points `@johnmorrisdotca/hoshi-stars/deep-sky` (the 110 Messier objects: `messier`, `deepSky`, `deepSkyObject`) and `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` (the same functions over 11,898 Messier, NGC and IC objects). Positions, types and names from Wikidata (CC0), checked against NASA/IPAC NED; each object has its cross-identifications, type, constellation, magnitude and size where known.
 - 25 more common star names (136 in all), among them Castor, Mira, Nunki, Sabik, Thuban, Alderamin, Sheliak and Sulafat, spelled as the IAU Working Group on Star Names spells them.
 - New entry point `@johnmorrisdotca/hoshi-stars/sky`: your sky. `horizontal` gives a star's altitude and azimuth (north through east) for a place and a moment, with optional refraction; also `isAboveHorizon`, `greenwichSiderealTime`, `localSiderealTime` and `precess` (J2000 to date). `horizontalFrom` does the same for a place on another planet from its IAU pole and prime meridian, passed in.

@@ -178,8 +178,9 @@ test("heightM is accepted and changes nothing", () => {
 });
 
 test("another planet: a spin equal to the Earth's gives the Earth's sky", () => {
-  // Pole at declination 90 (the right ascension 270 puts the equator's node at right ascension 0), W the Greenwich sidereal angle: 280.46061837 degrees at J2000 and 360.98564736629 a day.
-  const earth: PlanetSpin = { pole: { rightAscension: 270, declination: 90 }, primeMeridian: { w0: 280.46061837, rate: 360.98564736629 } };
+  // Pole at declination 90 (the right ascension 270 puts the equator's node at right ascension 0), W the Greenwich sidereal angle: 280.46061837 degrees at 12:00 UT on 2000 January 1 and 360.98564736629 a day.
+  // `horizontalFrom` counts from J2000.0 in Terrestrial Time, which is 64.184 s after that UTC moment, so the angle at the epoch is that much less.
+  const earth: PlanetSpin = { pole: { rightAscension: 270, declination: 90 }, primeMeridian: { w0: 280.46061837 - (360.98564736629 * 64.184) / 86400, rate: 360.98564736629 } };
   const places: Observer[] = [{ latitude: 49.28, longitude: -123.12 }, { latitude: -33.9, longitude: 151.2 }, { latitude: 0, longitude: 0 }, { latitude: 89, longitude: 40 }];
   const sky: SkyPoint[] = [starPosition(starByName("Sirius")!), starPosition(starByName("Polaris")!), starPosition(starByName("Canopus")!), { rightAscension: 12.5, declination: 3 }];
   // At J2000 itself nothing has precessed yet, so the two agree to rounding.

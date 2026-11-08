@@ -27,6 +27,7 @@ Hoshi Stars is original work by John Morris, under the MIT licence in `LICENSE`.
 ## Your sky
 
 - **Horizon view (`@johnmorrisdotca/hoshi-stars/sky`)**: written from the formulas in J. Meeus, "Astronomical Algorithms", 2nd ed. (Willmann-Bell, 1998): Greenwich mean sidereal time (the IAU 1982 expression, chapter 12), equatorial to horizontal coordinates (chapter 13), atmospheric refraction (Saemundsson's formula, chapter 16) and precession from J2000 (the IAU 1976 constants, chapter 21). The formulas are mathematics and the worked examples (12.a, 12.b, 13.b, 21.b) are used only as test values; no book text or library code is copied.
+- **UTC to Terrestrial Time (`horizontalFrom`)**: the leap seconds (TAI - UTC, 10 s in 1972 to 37 s in 2017, a table of facts published by the IERS and the BIPM) plus 32.184 s; before 1972, delta T by the polynomial fits of F. Espenak and J. Meeus ("Polynomial Expressions for Delta T", NASA Eclipse Web Site, 2006), written out as formulas in `src/time-scale.ts`; no code is copied. The test compares the leap-second part with wakusei-planets' conversion, a dev-only second opinion.
 - **Another planet**: the convention is that of the IAU Working Group on Cartographic Coordinates and Rotational Elements (pole right ascension and declination, and W = W0 + rate d), as in Archinal et al., Celestial Mechanics and Dynamical Astronomy 130, 22 (2018). The tests type in the 2015 Mars values from that report; the package itself holds no planet data.
 
 ## The deep-sky objects
