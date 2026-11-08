@@ -9,7 +9,7 @@ const desk = { viewport: { width: 1280, height: 900 } };
 
 export default defineConfig({
   testDir: "e2e",
-  testMatch: "*.demo.ts",
+  testMatch: "*.demo.{ts,mjs}",
   fullyParallel: true,
   forbidOnly: true,
   workers: process.env.CI ? 2 : 2,
