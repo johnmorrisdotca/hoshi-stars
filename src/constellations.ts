@@ -113,8 +113,8 @@ export function constellation(text: string): Constellation | undefined {
 }
 
 /**
- * The bright stars that lie in a constellation, brightest first: the stars of the Yale Bright Star Catalogue whose `constellation` is that abbreviation. Only stars with a Bayer letter or
- * a Flamsteed number carry a constellation, so the list is the named-or-numbered stars of it.
+ * The bright stars that lie in a constellation, brightest first: every star of the Yale Bright Star Catalogue (to magnitude 6.0) whose `constellation` is that abbreviation, with a Bayer
+ * letter or a Flamsteed number or without one.
  *
  * @param text - The constellation, as the IAU abbreviation (`Ori`) or any other name `constellation` accepts.
  * @returns A fresh array of the shared, frozen stars.
