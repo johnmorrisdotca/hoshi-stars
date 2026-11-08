@@ -122,3 +122,22 @@ test("the table's size stays within its budget", async () => {
   const bytes = gzipSync(readFileSync(new URL("../src/data/stars.ts", import.meta.url))).byteLength;
   assert.ok(bytes < 110_000, `the star table is ${bytes} bytes gzipped`);
 });
+
+test("every named star has a katakana name, and only a named star has one", () => {
+  const named = stars().filter((s) => s.name !== undefined);
+  assert.equal(named.length, 136);
+  for (const s of named) {
+    assert.ok(s.nameJa !== undefined, `${s.name} has no katakana name`);
+    assert.match(s.nameJa, /^[゠-ヿ]+$/, `${s.name}: ${s.nameJa}`);
+  }
+  assert.ok(stars().every((s) => s.name !== undefined || s.nameJa === undefined));
+  assert.equal(new Set(named.map((s) => s.nameJa)).size, named.length);
+});
+
+test("the well-known stars have their usual Japanese names, found by starByName", () => {
+  const known: Array<[string, string]> = [["Sirius", "シリウス"], ["Capella", "カペラ"], ["Betelgeuse", "ベテルギウス"], ["Rigel", "リゲル"], ["Vega", "ベガ"], ["Polaris", "ポラリス"]];
+  for (const [name, ja] of known) {
+    assert.equal(starByName(name)?.nameJa, ja, name);
+    assert.equal(starByName(ja)?.name, name, ja);
+  }
+});

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- New `Star.nameJa`: the katakana name (`シリウス`, `ベテルギウス`) of each of the 136 named stars, which `starByName` also finds. The spellings are the IAU names written in Japanese letters by hand, with the usual Japanese forms; see `NOTICE.md`.
+- The demo: a star's name or a constellation's is left out where it would sit on another label, bright stars first, and comes back when you zoom in; it opens about 90 degrees wide on a desk and 60 on a phone, centred on Orion; the Japanese page names the stars in katakana and the search finds a star by its katakana name.
 - Every one of the 5,080 stars now has its `constellation` (`Star.constellation` is a `string`, no longer `string | undefined`): the catalogue's for the 2,736 with a Bayer letter or Flamsteed number, and the boundaries' for the other 2,344. `starsIn` therefore lists every star in a constellation, not only the lettered ones (Orion: 128 stars, not 73). `designation` is unchanged and is still `undefined` for a star with no letter or number.
 - Fixed: a few Bayer letters were spelled in Latin and spaced from their number (`Xi 2 Cet`, `Nu 1 Dra`, `Mu Sco`, `Pi 3 Ori`; 66 stars). They are now Greek with the number joined, as every other star's: `ξ2 Cet`, `ν1 Dra`, `μ1 Sco`, `π3 Ori`, and found by those names. A name or designation typed the old way no longer finds the star.
 - Fixed: `horizontalFrom` read its moment as TDB while everything else in the package takes UTC, so passing UTC put another planet's sky about 69 seconds early (0.28 degree on Mars). It now takes UTC and converts to Terrestrial Time inside, with the leap seconds from 1972 and Espenak and Meeus's delta T before; TDB minus TT (under 2 ms) is ignored. A caller who added the 69 seconds by hand must stop.

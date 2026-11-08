@@ -2,6 +2,7 @@
 // The bright-star tier (`@johnmorrisdotca/hoshi-stars`): the table is about 100 kB gzipped and nothing else imports it. Pure: no DOM, no three.js, no state beyond the parsed table.
 import { J2000_MS } from "./when.ts";
 import { STAR_NAMES, STAR_ROWS } from "./data/stars.ts";
+import { STAR_NAMES_JA } from "./data/star-names-ja.ts";
 import { moment, type When } from "./when.ts";
 
 /**
@@ -20,6 +21,8 @@ export interface Star {
   hr: number;
   /** The common name where the star has one (the IAU Working Group on Star Names' spelling), else `undefined`. */
   name: string | undefined;
+  /** The name in katakana (`シリウス`) for every star that has a `name`, else `undefined`. */
+  nameJa: string | undefined;
   /** The Bayer letter and constellation (`α CMa`), else the Flamsteed number and constellation (`9 CMa`), else `undefined`. */
   designation: string | undefined;
   /** The IAU three-letter constellation abbreviation (`CMa`) the star lies in, for every star: the catalogue's where the star has a Bayer letter or Flamsteed number, else the one the boundaries give. */
@@ -58,6 +61,7 @@ function load(): void {
     const star: Star = Object.freeze({
       hr,
       name: STAR_NAMES[hr],
+      nameJa: STAR_NAMES_JA[hr],
       designation: letter === "" && flamsteed === "" ? undefined : designation,
       constellation,
       rightAscension: (Number(p[4]) / 2400),
@@ -71,7 +75,7 @@ function load(): void {
     });
     stored.push(star);
     byHr.set(hr, star);
-    for (const text of [star.name, star.designation]) if (text !== undefined) byText.set(text.toLowerCase(), star);
+    for (const text of [star.name, star.nameJa, star.designation]) if (text !== undefined) byText.set(text.toLowerCase(), star);
   }
 }
 
@@ -114,7 +118,7 @@ export function starByHr(hr: number): Star | undefined {
 }
 
 /**
- * A star by its common name (`Sirius`) or its designation (`α CMa`, `9 CMa`), ignoring case.
+ * A star by its common name (`Sirius`), its name in katakana (`シリウス`) or its designation (`α CMa`, `9 CMa`), ignoring case.
  *
  * @param text - The name or designation.
  * @returns The star, or `undefined`.
@@ -123,7 +127,7 @@ export function starByHr(hr: number): Star | undefined {
  * ```ts
  * import { starByName } from "@johnmorrisdotca/hoshi-stars";
  *
- * console.log(starByName("betelgeuse")?.designation, starByName("α Lyr")?.name);
+ * console.log(starByName("betelgeuse")?.designation, starByName("α Lyr")?.name, starByName("シリウス")?.hr);
  * ```
  */
 export function starByName(text: string): Star | undefined {

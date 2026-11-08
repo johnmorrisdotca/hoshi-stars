@@ -21,7 +21,7 @@ console.log(stars({ magnitude: 2 }).length, "stars as bright as magnitude 2");  
 | Function | Gives |
 |---|---|
 | `stars({ magnitude? })` | the stars as bright as a magnitude, brightest first |
-| `starByHr(hr)`, `starByName(text)` | one star by its Bright Star Catalogue number, or its name or designation |
+| `starByHr(hr)`, `starByName(text)` | one star by its Bright Star Catalogue number, or its name (English or katakana) or designation |
 | `starPosition(star, when?)` | right ascension and declination (degrees, J2000 frame) carried by proper motion |
 | `starDistanceLightYears(star)` | the distance from the parallax |
 | `starTemperatureK(bv)`, `blackBodyColour(kelvin)`, `starColour(star)` | temperature and a colour to draw |
@@ -226,7 +226,7 @@ For a page that cannot run script, use the embed page in an iframe; the demo's "
   </head>
   <body>
     <iframe
-      src="https://johnmorrisdotca.github.io/hoshi-stars/embed.html?proj=stereographic&ra=83.8&dec=0&zoom=1.5&mag=5&layers=lines,names&c=Ori"
+      src="https://johnmorrisdotca.github.io/hoshi-stars/embed.html?proj=stereographic&ra=84&dec=0&zoom=1.5&mag=5&layers=lines,names&c=Ori"
       title="A chart of the sky around Orion"
       width="480"
       height="360"
