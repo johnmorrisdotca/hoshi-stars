@@ -21,7 +21,7 @@ console.log(constellations().length, starsIn("Canis Major").slice(0, 3).map((sta
 // 88 [ 'Sirius', 'Adhara', 'Wezen' ]
 ```
 
-`constellation`は、IAUの略号、ラテン名や属格、英語名、日本語名（座の有無、カタカナでもひらがなでも）、ひらがなの読みのどれでも、大文字小文字を問わず受け付けます。見つからなければ`undefined`です。`starsIn`は、バイエル符号かフラムスティード番号を持つ明るい星を、明るい順に返します。
+`constellation`は、IAUの略号、ラテン名や属格、英語名、日本語名（座の有無、カタカナでもひらがなでも）、ひらがなの読みのどれでも、大文字小文字を問わず受け付けます。見つからなければ`undefined`です。`starsIn`は、その星座にある明るい星を、明るい順に返します。
 
 ## この点はどの星座か
 

@@ -21,7 +21,7 @@ console.log(constellations().length, starsIn("Canis Major").slice(0, 3).map((sta
 // 88 [ 'Sirius', 'Adhara', 'Wezen' ]
 ```
 
-`constellation` takes any of the names (the IAU abbreviation, the Latin name or genitive, the English name, the Japanese name with or without 座, in katakana or hiragana, or the hiragana reading) in any case, and gives `undefined` for something else. `starsIn` gives the bright stars that carry a Bayer letter or a Flamsteed number in it, brightest first.
+`constellation` takes any of the names (the IAU abbreviation, the Latin name or genitive, the English name, the Japanese name with or without 座, in katakana or hiragana, or the hiragana reading) in any case, and gives `undefined` for something else. `starsIn` gives the bright stars in it, brightest first.
 
 ## Which constellation is this point in
 
