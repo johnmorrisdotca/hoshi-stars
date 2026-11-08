@@ -22,8 +22,8 @@ export interface Star {
   name: string | undefined;
   /** The Bayer letter and constellation (`α CMa`), else the Flamsteed number and constellation (`9 CMa`), else `undefined`. */
   designation: string | undefined;
-  /** The IAU three-letter constellation abbreviation (`CMa`) where the star has a Bayer or Flamsteed name, else `undefined`. */
-  constellation: string | undefined;
+  /** The IAU three-letter constellation abbreviation (`CMa`) the star lies in, for every star: the catalogue's where the star has a Bayer letter or Flamsteed number, else the one the boundaries give. */
+  constellation: string;
   /** Right ascension in degrees at J2000, 0 up to 360. The catalogue gives it to a tenth of a second of time (1.5 arc-seconds at the equator). */
   rightAscension: number;
   /** Declination in degrees at J2000, -90 to 90. The catalogue gives it to an arc-second. */
@@ -59,7 +59,7 @@ function load(): void {
       hr,
       name: STAR_NAMES[hr],
       designation: letter === "" && flamsteed === "" ? undefined : designation,
-      constellation: constellation === "" ? undefined : constellation,
+      constellation,
       rightAscension: (Number(p[4]) / 2400),
       declination: Number(p[5]) / 3600,
       magnitude: Number(p[8]) / 100,

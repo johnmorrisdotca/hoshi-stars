@@ -116,7 +116,9 @@ test("starsIn lists the bright stars of a constellation, brightest first", () =>
   assert.ok(starsIn("UMa").some((s) => s.name === "Dubhe"));
   let total = 0;
   for (const c of constellations()) total += starsIn(c.abbreviation).length;
-  assert.equal(total, stars().filter((s) => s.constellation !== undefined).length);
+  assert.equal(total, 5080, "every star is in exactly one constellation");
+  assert.ok(starsIn("Ori").some((s) => s.designation === undefined), "faint stars with no Bayer letter or number are listed too");
+  assert.ok(starsIn("Ori").length > 100);
 });
 
 test("the table stays small: under 3,000 bytes gzipped", () => {

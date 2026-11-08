@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Every one of the 5,080 stars now has its `constellation` (`Star.constellation` is a `string`, no longer `string | undefined`): the catalogue's for the 2,736 with a Bayer letter or Flamsteed number, and the boundaries' for the other 2,344. `starsIn` therefore lists every star in a constellation, not only the lettered ones (Orion: 128 stars, not 73). `designation` is unchanged and is still `undefined` for a star with no letter or number.
 - Fixed: a few Bayer letters were spelled in Latin and spaced from their number (`Xi 2 Cet`, `Nu 1 Dra`, `Mu Sco`, `Pi 3 Ori`; 66 stars). They are now Greek with the number joined, as every other star's: `ξ2 Cet`, `ν1 Dra`, `μ1 Sco`, `π3 Ori`, and found by those names. A name or designation typed the old way no longer finds the star.
 - New entry points `@johnmorrisdotca/hoshi-stars/deep-sky` (the 110 Messier objects: `messier`, `deepSky`, `deepSkyObject`) and `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` (the same functions over 11,898 Messier, NGC and IC objects). Positions, types and names from Wikidata (CC0), checked against NASA/IPAC NED; each object has its cross-identifications, type, constellation, magnitude and size where known.
 - 25 more common star names (136 in all), among them Castor, Mira, Nunki, Sabik, Thuban, Alderamin, Sheliak and Sulafat, spelled as the IAU Working Group on Star Names spells them.

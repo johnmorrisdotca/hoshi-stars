@@ -29,11 +29,14 @@ test("Roman's own eight test positions (equinox 1950) are in the constellations 
   for (const [hours, declination, expected] of cases) assert.equal(constellationAt({ rightAscension: hours * 15, declination }, B1950).abbreviation, expected, `${hours} h ${declination}`);
 });
 
-test("every bright star with a constellation in the catalogue is in that constellation", () => {
-  const named = stars().filter((star) => star.constellation !== undefined);
-  assert.ok(named.length > 2700, `only ${named.length} stars name a constellation`);
-  const wrong = named.filter((star) => constellationAt(star).abbreviation !== star.constellation).map((star) => `${star.designation} gives ${constellationAt(star).abbreviation}`);
+test("every one of the 5,080 bright stars has the constellation the boundaries give, and the 2,736 the catalogue names agree", () => {
+  const all = stars();
+  assert.equal(all.length, 5080);
+  const wrong = all.filter((star) => constellationAt(star).abbreviation !== star.constellation).map((star) => `HR ${star.hr} is ${star.constellation}, the boundaries give ${constellationAt(star).abbreviation}`);
   assert.deepEqual(wrong, []);
+  const named = all.filter((star) => star.designation !== undefined);
+  assert.equal(named.length, 2736);
+  assert.ok(named.every((star) => star.designation!.endsWith(` ${star.constellation}`)));
 });
 
 test("the celestial poles are in Ursa Minor and Octans, at every right ascension", () => {
