@@ -141,6 +141,8 @@
     "site": "pnpm build && node scripts/site.ts",
     "dev": "pnpm site && node scripts/dev.ts",
     "test:demo": "pnpm site && node scripts/docs-site.mjs build && playwright test",
+    "images": "node scripts/images.ts",
+    "test:readme": "pnpm build && node scripts/check-readme-examples.ts",
     "family:readme": "node scripts/family-readme.mjs",
     "test:demo:one": "pnpm site && node scripts/docs-site.mjs build && playwright test",
     "test:usage": "pnpm site && node scripts/check-usage.ts",

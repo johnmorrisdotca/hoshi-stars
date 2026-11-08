@@ -4,14 +4,19 @@ import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
 import { familyBoot, renderIndex } from "./page.ts";
+
+/** What the family's card shows (scripts/images.ts makes it): the words of og:image:alt and of the README's top picture. */
+const ALT = "Hoshi Stars: a sky chart of Orion with its constellation lines, on the soft band of the Milky Way.";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const site = join(root, "site");
-const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { version: string };
+const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { name: string; version: string };
 rmSync(site, { recursive: true, force: true });
 mkdirSync(site, { recursive: true });
-writeFileSync(join(site, "index.html"), renderIndex());
+writeFileSync(join(site, "index.html"), renderIndex().replace("</head>", `${thumbnailHead(pkg, { alt: ALT })}</head>`));
+publishThumbnails(root, site);
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 for (const file of ["embed.html", "demo.css", "family.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
