@@ -10,10 +10,15 @@ Hoshi Stars is original work by John Morris, under the MIT licence in `LICENSE`.
 
 ## The constellations
 
-- **Constellations (`@johnmorrisdotca/hoshi-stars/constellations`)**: facts typed from published lists, in our own table (`src/data/constellations.ts`), with no artwork, lines or boundaries.
+- **Constellations (`@johnmorrisdotca/hoshi-stars/constellations`)**: facts typed from published lists, in our own table (`src/data/constellations.ts`), with no artwork or lines.
   - The 88 constellations, their three-letter abbreviations, Latin names, Latin genitives and English names: the International Astronomical Union's constellation list (https://www.iau.org/public/themes/constellations/). That address returned 404 on 2026-11-08, so the table was read on 2026-11-08 from a 2013 copy of the same IAU page ("The Constellations | IAU") kept at zfelleg.useribm.hu, and every Latin name, genitive and English name was checked against the text of that copy. Two spellings are ours: "Berenice's Hair" for Coma Berenices (the copy has "the Bernice's Hair") and "Hercules" for the constellation (the copy has "the Hercules"); the leading "the" of the English names is left off.
   - The Japanese names: the National Astronomical Observatory of Japan, Ephemeris Computation Office, "星座の名前" (Constellation names; https://eco.mtk.nao.ac.jp/koyomi/faq/constellations.html), read 2026-11-08. It gives the abbreviation, the name in kana and the Latin name of all 88, and every abbreviation and Latin name matched the IAU table. The hiragana reading is worked out from that kana form in code.
   - No Wikipedia text is used.
+
+## The constellation boundaries
+
+- **Boundaries (`@johnmorrisdotca/hoshi-stars/boundaries`)**: N. G. Roman (1987), "Identification of a Constellation from a Position", Publications of the Astronomical Society of the Pacific 99, 695, and VizieR catalogue VI/42, which holds her table of the constellation boundaries that the International Astronomical Union adopted from E. Delporte (1930), "Delimitation Scientifique des Constellations" (Cambridge University Press), put into electronic form by Barry Rappaport. The table (`data.dat`, 357 rows, on the equator and equinox of B1875.0) was read on 2026-11-08 from the Harvard mirror of VizieR (https://vizier.cfa.harvard.edu/ftp/cats/VI/42/), because the CDS hosts refused the connection from our machine; the ReadMe, `test.in`, `out.dat` and the FORTRAN `program.f` (for its precession, used in a test) were read there too. No licence stated; removed on request. The rows and the outlines worked out from them are written by `scripts/make-boundary-data.py` into `src/data/boundaries.ts`.
+- **Precession to B1875.0**: the rigorous angles of the IAU 1976 system as J. Meeus gives them in "Astronomical Algorithms" (2nd ed., 1998), chapter 21, written out as formulas; no code is copied. The test compares it with Herget's precession as Roman's own program applies it.
 
 ## The map projections
 
