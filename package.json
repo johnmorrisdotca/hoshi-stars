@@ -45,6 +45,11 @@
       "import": "./dist/constellations.js",
       "default": "./dist/constellations.js"
     },
+    "./lines": {
+      "types": "./dist/lines.d.ts",
+      "import": "./dist/lines.js",
+      "default": "./dist/lines.js"
+    },
     "./boundaries": {
       "types": "./dist/boundaries.d.ts",
       "import": "./dist/boundaries.js",

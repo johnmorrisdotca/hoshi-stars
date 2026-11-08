@@ -19,7 +19,7 @@ try {
   const pack = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", scratch], root)) as Array<{ filename: string; files: Array<{ path: string }> }>;
   const files = pack[0]!.files.map((f) => f.path);
   if (files.some((f) => /^(demo|docs|scripts|test|e2e|site|src)\//.test(f))) throw new Error("Source, tests or the demo entered the npm package");
-  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
+  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/lines.js", "dist/lines.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", join(scratch, pack[0]!.filename)], scratch);
   writeFileSync(
     join(scratch, "check.mjs"),
@@ -37,6 +37,9 @@ assert.ok(Math.abs(sirius.declination + 16.7161) < 0.001);
 const boundaries = await import(${JSON.stringify(pkg.name + "/boundaries")});
 assert.equal(boundaries.constellationAt(esm.starByName("Betelgeuse")).abbreviation, "Ori");
 assert.equal(boundaries.boundaries().length, 88);
+const lines = await import(${JSON.stringify(pkg.name + "/lines")});
+assert.equal(lines.figures().length, 88);
+assert.ok(lines.figureOf("Ori").segments.length > 5);
 const deep = await import(${JSON.stringify(pkg.name + "/deep-sky")});
 assert.equal(deep.messier().length, 110);
 assert.equal(deep.deepSkyObject("M31").ngc, "NGC 224");
