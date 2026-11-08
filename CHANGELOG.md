@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-08
+
 - 199 more common star names, 335 in all: every name on the IAU Catalog of Star Names whose star is in the 5,080, among them Acrux, Alcor, the Pleiades (Alcyone, Merope, Electra, Atlas, Maia, Taygeta, Pleione, Celaeno, Asterope), Rasalas, Mesarthim, Zosma and Tiaki. Each has its katakana (`アクルックス`, `アルコル`, `アルキオネ`), and the demo's search finds them in both. Adhara's katakana is now `アダーラ`, as the National Astronomical Observatory of Japan writes it. The source and its date are in `NOTICE.md`.
 
 ## [0.2.0] - 2026-11-08
