@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- New entry point `@johnmorrisdotca/hoshi-stars/figures`: our own fine line art for constellations, as paths in sky coordinates so they fit any projection. Four samples so far: Ursa Major (the Big Dipper is its body and tail), Cassiopeia (the queen on her throne), Orion (the hunter) and the Pleiades (M45, すばる). `figures`, `figure`, `figureLines` (the drawing as points on the sky) and `figurePath` (SVG path data in any of the seven projections).
 - New entry points `@johnmorrisdotca/hoshi-stars/deep-sky` (the 110 Messier objects: `messier`, `deepSky`, `deepSkyObject`) and `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` (the same functions over 11,898 Messier, NGC and IC objects). Positions, types and names from Wikidata (CC0), checked against NASA/IPAC NED; each object has its cross-identifications, type, constellation, magnitude and size where known.
 - 25 more common star names (136 in all), among them Castor, Mira, Nunki, Sabik, Thuban, Alderamin, Sheliak and Sulafat, spelled as the IAU Working Group on Star Names spells them.
 - New entry point `@johnmorrisdotca/hoshi-stars/sky`: your sky. `horizontal` gives a star's altitude and azimuth (north through east) for a place and a moment, with optional refraction; also `isAboveHorizon`, `greenwichSiderealTime`, `localSiderealTime` and `precess` (J2000 to date). `horizontalFrom` does the same for a place on another planet from its IAU pole and prime meridian, passed in.
