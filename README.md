@@ -130,13 +130,39 @@ console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date
 - A spin equal to the Earth's gives the Earth's sky (pole at declination 90 and right ascension 270, `w0` 280.46061837, `rate` 360.98564736629), apart from the precession since J2000.
 - A hundred thousand `horizontal` conversions take about 26 ms on a laptop. The formulas are from J. Meeus, *Astronomical Algorithms* (2nd ed.), chapters 12, 13, 16 and 21.
 
+## Deep-sky objects
+
+Two imports, so a page pays only for what it uses. `@johnmorrisdotca/hoshi-stars/deep-sky` is the 110 Messier objects (about 3 kB gzipped); `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` adds the NGC and IC objects, 11,898 in all (about 150 kB gzipped). Both have the same three functions. The data is Wikidata's (CC0), read on 2026-11-08 and checked against NASA/IPAC NED; the numbers are in [NOTICE.md](NOTICE.md).
+
+```ts
+import { deepSky, deepSkyObject, messier } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+
+const m31 = deepSkyObject("M31")!;              // or "NGC 224", "Messier 31", "Andromeda Galaxy", in any case
+console.log(m31.id, m31.ngc, m31.name, m31.type, m31.magnitude);                  // M31 NGC 224 Andromeda Galaxy galaxy 3.4
+console.log(m31.rightAscension.toFixed(3), m31.declination.toFixed(3));           // 10.685 41.269 (degrees, J2000)
+console.log(messier().length, deepSky({ type: "globular cluster" }).length);      // 110 29
+console.log(deepSky({ magnitude: 4 }).map((o) => o.id));                          // [ 'M7', 'M31', 'M42', 'M44', 'M45' ]
+```
+
+| Function | Gives |
+|---|---|
+| `messier()` | the 110, M1 to M110 (in `/deep-sky` only) |
+| `deepSky({ catalogue?, magnitude?, type? })` | the objects that meet the options, in catalogue order: Messier, then NGC, then IC. `catalogue` is `"messier"`, `"ngc"` or `"ic"` (objects with a number in it); `magnitude` the faintest to include |
+| `deepSkyObject(text)` | one object by `M31`, `NGC 224`, `IC 434`, any other NGC or IC number it carries, or an English name; `undefined` if none |
+
+An object has `id`, `messier`, `ngc`, `ic` (each a string such as `"NGC 224"`), `otherIds`, `name`, `type` (`galaxy`, `globular cluster`, `open cluster`, `nebula`, `planetary nebula`, `supernova remnant` or `other`), `constellation` (the IAU abbreviation), `rightAscension` and `declination` (degrees, J2000), `magnitude` (visual, or `undefined`) and `sizeArcmin` (the major axis, or `undefined`).
+
+- **M102** is the Messier object nobody can agree on: Messier's own description fits M101, and the modern lists take it for the galaxy NGC 5866, which is what this table does. **M40** is a double star (Winnecke 4) and **M73** four stars in a row; both are `other`, because Messier listed them.
+- **Magnitudes and sizes of the Messier objects** are the published visual magnitudes and major axes of NASA HEASARC's Messier table, because Wikidata's V-band magnitudes for 14 of them are more than a magnitude off (the central star's, for the four planetary nebulae). The NGC and IC magnitudes are Wikidata's, except that a planetary nebula has none (Wikidata's is its central star's); about four in ten have none, and almost none has a size.
+- **Positions** are Wikidata's. Every Messier object was compared with NED and a sample of the others too; the objects that were more than an arc-minute apart are listed in [NOTICE.md](NOTICE.md), and where Wikidata was wrong the table has NED's position.
+
 ## Where the data comes from
 
-The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package.
+The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package. The deep-sky objects are Wikidata's (CC0), with NASA HEASARC's Messier table and NED as checks.
 
 ## Coming
 
-Constellation lines, deep-sky objects, a Milky Way outline and a star-chart function, each its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
+Constellation lines, a Milky Way outline and a star-chart function, each its own import. This package is the sky behind [wakusei-planets](https://github.com/johnmorrisdotca/wakusei-planets); it does not depend on it.
 
 ## Licence
 

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- New entry points `@johnmorrisdotca/hoshi-stars/deep-sky` (the 110 Messier objects: `messier`, `deepSky`, `deepSkyObject`) and `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` (the same functions over 11,898 Messier, NGC and IC objects). Positions, types and names from Wikidata (CC0), checked against NASA/IPAC NED; each object has its cross-identifications, type, constellation, magnitude and size where known.
 - 25 more common star names (136 in all), among them Castor, Mira, Nunki, Sabik, Thuban, Alderamin, Sheliak and Sulafat, spelled as the IAU Working Group on Star Names spells them.
 - New entry point `@johnmorrisdotca/hoshi-stars/sky`: your sky. `horizontal` gives a star's altitude and azimuth (north through east) for a place and a moment, with optional refraction; also `isAboveHorizon`, `greenwichSiderealTime`, `localSiderealTime` and `precess` (J2000 to date). `horizontalFrom` does the same for a place on another planet from its IAU pole and prime meridian, passed in.
 - New entry point `@johnmorrisdotca/hoshi-stars/boundaries`: `constellationAt` says which of the 88 constellations a J2000 (or of-date) position is in, and `boundaryOf` and `boundaries` give the IAU boundaries as closed J2000 outlines to draw, with a point at least every degree along each edge. From N. G. Roman's table of Delporte's boundaries (VizieR VI/42), precessed to B1875.0; 8 of 8 of Roman's own test positions and all 2,736 bright stars that name a constellation agree.
