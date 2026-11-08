@@ -55,3 +55,28 @@ jobs:
       - run: pnpm exec playwright install --with-deps ${{ startsWith(matrix.project, 'webkit') && 'webkit' || 'chromium' }}
       - name: The demo, played in one browser at one width (pnpm test:demo plays all four)
         run: pnpm test:demo:one --project=${{ matrix.project }}
+  usage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Every way of using the package, built and opened as npm packs it
+        run: pnpm test:usage
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: The docs site builds, every example in the guides runs, every link leads somewhere
+        run: pnpm docs:check
