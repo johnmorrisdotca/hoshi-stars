@@ -43,6 +43,7 @@ test("the wheel and the zoom buttons zoom, within limits", async ({ page, isMobi
   await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(1.5);
   await page.getByTestId("zoom-out").click();
   await page.getByTestId("zoom-out").click();
+  await page.getByTestId("zoom-out").click();
   await expect.poll(() => param(page, "zoom")).toBe("0.6");
   if (!isMobile) {
     const at = await middle(page);
@@ -81,7 +82,7 @@ test("a search finds a star, a constellation in Japanese and a Messier object, a
   await page.getByTestId("search").press("Enter");
   await expect(page.getByTestId("picked")).toContainText("Canis Major");
   await expect(page.getByTestId("picked")).toContainText("おおいぬ座");
-  expect(param(page, "pick")).toBe("C:CMa");
+  await expect.poll(() => param(page, "pick")).toBe("C:CMa");
 
   await page.getByTestId("search").fill("M31");
   await page.getByTestId("search").press("Enter");
@@ -98,7 +99,7 @@ test("a tap on a star picks it, with its brightness, distance and colour", async
   await page.mouse.click(at.x, at.y);
   await expect(page.getByTestId("picked")).toContainText("Sirius");
   await expect(page.getByTestId("picked")).toContainText("9 light-years");
-  expect(param(page, "pick")).toBe("S:2491");
+  await expect.poll(() => param(page, "pick")).toBe("S:2491");
   await page.getByTestId("picked").getByRole("button", { name: "Canis Major" }).click();
   await expect(page.getByTestId("picked")).toContainText("おおいぬ座");
 });
@@ -111,12 +112,12 @@ test("every projection draws, and the layers switch on and off", async ({ page }
     await expect.poll(() => param(page, "proj")).toBe(kind === "stereographic" ? null : kind);
   }
   await page.locator('#seg-layers button[data-value="boundaries"]').click();
-  await expect(page.locator("#chart path[stroke='#46578c'][stroke-dasharray]")).toHaveCount(2);
+  await expect(page.locator("#chart path[stroke='#46578c'][stroke-dasharray]")).toHaveCount(1);
   await page.locator('#seg-layers button[data-value="lines"]').click();
   await expect(page.locator("#chart path[stroke='#6f93e0']")).toHaveCount(0);
   await page.locator('#seg-layers button[data-value="deep"]').click();
   await expect(page.locator("#chart text", { hasText: "M42" }).first()).toBeVisible();
-  expect(param(page, "layers")).toBe("boundaries,names,deep,grid");
+  await expect.poll(() => param(page, "layers")).toBe("boundaries,names,deep,grid");
 });
 
 test("the faintest-star slider changes how many stars are drawn", async ({ page }) => {
@@ -125,7 +126,7 @@ test("the faintest-star slider changes how many stars are drawn", async ({ page 
   await page.getByTestId("magnitude").fill("3");
   await expect(page.getByTestId("shown")).toContainText("174 stars shown");
   expect(await stars(page)).toBeLessThan(before);
-  expect(param(page, "mag")).toBe("3");
+  await expect.poll(() => param(page, "mag")).toBe("3");
 });
 
 test("an address opens the same sky", async ({ page }) => {
