@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- 199 more common star names, 335 in all: every name on the IAU Catalog of Star Names whose star is in the 5,080, among them Acrux, Alcor, the Pleiades (Alcyone, Merope, Electra, Atlas, Maia, Taygeta, Pleione, Celaeno, Asterope), Rasalas, Mesarthim, Zosma and Tiaki. Each has its katakana (`アクルックス`, `アルコル`, `アルキオネ`), and the demo's search finds them in both. Adhara's katakana is now `アダーラ`, as the National Astronomical Observatory of Japan writes it. The source and its date are in `NOTICE.md`.
+
 ## [0.2.0] - 2026-11-08
 
 - New entry point `@johnmorrisdotca/hoshi-stars/milky-way`: a brightness map of the Milky Way (about 11 kB of numbers) with the bright core toward Sagittarius and the Great Rift, the Coalsack and the Cygnus Rift as dimmer places. `milkyWayBrightness(point)` gives 0 to 1 toward a point of the sky, `milkyWayBands(levels, { step })` cuts it into ribbons of sky points to fill as soft bands, and `toGalactic` and `fromGalactic` change between right ascension and declination and galactic longitude and latitude. Made by `scripts/make-milky-way-data.py` from SAO star counts (NASA HEASARC; no licence stated, used with credit and removed on request), the IRAS 100 micron and COBE DIRBE dust maps (NASA, public domain) and a bulge of our own figures; see `NOTICE.md`.
