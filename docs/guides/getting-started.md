@@ -43,7 +43,7 @@ const orion = constellationAt(rigel);
 console.log(orion.name, orion.japanese);
 console.log(figureOf(orion.abbreviation).segments.length, "lines to draw");
 // Orion オリオン座
-// 12 lines to draw
+// 8 lines to draw
 ```
 
 The constellations are in [English and Japanese](constellations-and-lines.md), and each has a stick figure of its own.

@@ -302,7 +302,7 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
     return found;
   };
   let svg = "";
-  milkyWayBands(MILKY.levels, { step: view.zoom >= 5 ? 0.5 : view.zoom >= 1.8 ? 1 : 2 }).forEach((band, i) => {
+  milkyWayBands(MILKY.levels, { step: view.zoom >= 1.8 ? 1 : 2 }).forEach((band, i) => {
     let d = "";
     for (const strip of band.strips) {
       for (const polygon of polygons(strip)) {

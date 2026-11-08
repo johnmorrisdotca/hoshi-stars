@@ -1,4 +1,5 @@
 /* This package's own look, after family.css. The chart is always a night sky, in the light page and the dark one. */
+:root { --intro-room: 10rem; }
 .sky h2, .more h2 { margin: 0 0 4px; font-size: 1.15rem; }
 .lead { margin: 0 0 14px; color: var(--muted); font-size: .9rem; max-width: 60rem; }
 .sky-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); align-items: start; }

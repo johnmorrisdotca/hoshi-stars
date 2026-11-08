@@ -53,6 +53,16 @@ test("the wheel and the zoom buttons zoom, within limits", async ({ page, isMobi
   await expect.poll(() => param(page, "zoom")).toBeNull();
 });
 
+test("zooming in as far as it goes still draws the sky, with the Milky Way on, and raises no error", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await open(page);
+  for (let i = 0; i < 10; i += 1) await page.getByTestId("zoom-in").click();
+  await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(5);
+  await expect(page.locator("#chart [data-layer='milky']")).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
+
 test("a pinch zooms with two fingers", async ({ page, browserName, isMobile }) => {
   test.skip(!isMobile || browserName !== "chromium", "two touch points are Chromium's to send");
   await open(page);

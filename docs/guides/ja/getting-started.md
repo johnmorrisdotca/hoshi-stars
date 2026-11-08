@@ -43,7 +43,7 @@ const orion = constellationAt(rigel);
 console.log(orion.name, orion.japanese);
 console.log(figureOf(orion.abbreviation).segments.length, "lines to draw");
 // Orion オリオン座
-// 12 lines to draw
+// 8 lines to draw
 ```
 
 星座は[英語と日本語](constellations-and-lines.md)で引けて、それぞれに専用の星座線の図があります。
