@@ -45,7 +45,7 @@ This repo is one of the family of John Morris's npm packages. The rules every pa
 | Repo | `johnmorrisdotca/hoshi-stars` |
 | Board | `modules` |
 | Title prefix and `--area` | `hoshi-stars` |
-| Ports | 8500 to 8599: 8500 the demo and dev, 8501 the tests, 8502 the picture scripts, 8503 and up anything else |
+| Ports | 8250 to 8274 (the space packages share 8200 to 8299, 25 each: chikyu-earth 8200, wakusei-planets 8225, hoshi-stars 8250, uchusen-rockets 8275): 8250 the demo and dev, 8251 the tests, 8252 the picture scripts, 8253 to 8274 anything else |
 | Checks before a push | `pnpm check` (the demo, usage and docs checks join the list as those parts are built) |
 | Release | `release.yml` → `reusable-release.yml`; trusted publisher entry: `release.yml` |
 | Hand-off project | `hoshi-stars` |

@@ -9,7 +9,7 @@ Thank you for helping. Bug reports and ideas go in the [issues](https://github.c
 - **Data licences.** Only data a MIT package can pass on goes in. `NOTICE.md` names every source with the sentence relied on and the date read. ESA's catalogues (CC BY-NC) and CC BY-SA or GPL sets are not used.
 - **Every export has TSDoc with an `@example`**, and a test that names it.
 - **Needs Node 22 or later** to use the package and **22.18 or later** to work on it: the tests and scripts run TypeScript directly.
-- **Ports.** 8500 to 8599; check with `lsof -iTCP:<port> -sTCP:LISTEN` first and stop a server by its process id, never by name.
+- **Ports.** 8250 to 8274 (the space packages share 8200 to 8299, 25 each); 8250 is the demo, 8251 the tests, 8252 the pictures; check with `lsof -iTCP:<port> -sTCP:LISTEN` first and stop a server by its process id, never by name.
 
 ## Commands
 
