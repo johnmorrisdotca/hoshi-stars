@@ -8,6 +8,10 @@ Hoshi Stars is original work by John Morris, under the MIT licence in `LICENSE`.
 - **Star names**: our own list after the IAU Working Group on Star Names (https://www.iau.org/science/scientific_bodies/working_groups/280/).
 - **Star colour**: Ballesteros's B-V to temperature relation (F. J. Ballesteros 2012, EPL 97, 34008) and a piecewise black-body colour fit.
 
+## The map projections
+
+- **Projections (`@johnmorrisdotca/hoshi-stars/projection`)**: stereographic, orthographic, gnomonic, azimuthal equidistant, equirectangular, Mollweide and Hammer, written from the formulas in J. P. Snyder, "Map Projections: A Working Manual", U.S. Geological Survey Professional Paper 1395 (1987), a U.S. Government work in the public domain. The formulas are mathematics; no library's code is copied.
+
 ## Deliberately not used
 
 - ESA's Hipparcos, Tycho and Gaia catalogues: CC BY-NC 3.0 IGO (non-commercial), which an MIT package cannot pass on.
