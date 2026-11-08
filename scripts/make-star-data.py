@@ -50,6 +50,10 @@ NAMES = {
     "α Col": "Phact", "β Col": "Wazn", "α Phe": "Ankaa", "θ1 Eri": "Acamar",
     "ι UMa": "Talitha", "λ UMa": "Tania Borealis", "μ UMa": "Tania Australis", "ν UMa": "Alula Borealis",
     "ξ UMa": "Alula Australis", "δ UMa": "Megrez", "γ UMa": "Phecda",
+    "α Gem": "Castor", "α TrA": "Atria", "σ Sgr": "Nunki", "ζ Sgr": "Ascella", "η Oph": "Sabik", "α Cep": "Alderamin", "α Dra": "Thuban",
+    "ο Cet": "Mira", "θ Cen": "Menkent", "λ Vel": "Suhail", "α Ser": "Unukalhai", "β Ari": "Sheratan", "γ Crv": "Gienah", "β Oph": "Cebalrai",
+    "δ Sgr": "Kaus Media", "λ Sgr": "Kaus Borealis", "γ Cep": "Errai", "ε Vir": "Vindemiatrix", "ι Car": "Aspidiske", "β Lyr": "Sheliak",
+    "γ Lyr": "Sulafat", "ζ Aql": "Okab", "δ Cyg": "Fawaris", "ε Cyg": "Aljanah", "η Dra": "Athebyne",
 }
 FAINTEST = {}
 
