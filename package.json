@@ -1,0 +1,71 @@
+{
+  "name": "@johnmorrisdotca/hoshi-stars",
+  "version": "0.1.0",
+  "description": "Hoshi 星: the 5,080 stars you can see without a telescope, with names, positions, proper motion, distance and colour. Typed, no dependencies, about 100 kB gzipped.",
+  "keywords": [
+    "stars",
+    "star-catalog",
+    "bright-star-catalogue",
+    "yale",
+    "astronomy",
+    "constellations",
+    "proper-motion",
+    "javascript",
+    "typescript",
+    "zero-dependencies",
+    "itsutsu"
+  ],
+  "homepage": "https://johnmorrisdotca.github.io/hoshi-stars/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnmorrisdotca/hoshi-stars.git"
+  },
+  "bugs": {
+    "url": "https://github.com/johnmorrisdotca/hoshi-stars/issues"
+  },
+  "author": "John Morris",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "NOTICE.md",
+    "CHANGELOG.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.tools.json",
+    "test": "node --test test/*.test.ts",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && node scripts/check-package.ts",
+    "test:package": "pnpm build && node scripts/check-package.ts",
+    "prepublishOnly": "pnpm check"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.0.0",
+    "typescript": "^5.9.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

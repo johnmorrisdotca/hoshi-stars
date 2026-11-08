@@ -1,0 +1,24 @@
+# Contributing
+
+Thank you for helping. Bug reports and ideas go in the [issues](https://github.com/johnmorrisdotca/hoshi-stars/issues).
+
+## The rules
+
+- **No runtime dependencies.** The package is plain TypeScript.
+- **The core is pure.** Every function returns a new value; nothing reads the clock, uses randomness or does I/O. A moment is an explicit argument.
+- **Data licences.** Only data a MIT package can pass on goes in. `NOTICE.md` names every source with the sentence relied on and the date read. ESA's catalogues (CC BY-NC) and CC BY-SA or GPL sets are not used.
+- **Every export has TSDoc with an `@example`**, and a test that names it.
+- **Needs Node 22 or later** to use the package and **22.18 or later** to work on it: the tests and scripts run TypeScript directly.
+- **Ports.** 8500 to 8599; check with `lsof -iTCP:<port> -sTCP:LISTEN` first and stop a server by its process id, never by name.
+
+## Commands
+
+```sh
+pnpm check   # lint, types, tests, the build and the packed package
+```
+
+Add a line to `CHANGELOG.md` under **Unreleased** for every change.
+
+## Releasing
+
+Make a release commit (bump `package.json`, move the changelog's Unreleased block under the version) and push it. The Release workflow (Actions, Release, Run workflow, from `main`) checks the tag, runs `pnpm check` and publishes by npm trusted publishing, which names `release.yml`. Nobody publishes from a laptop.

@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "rootDir": ".", "lib": ["es2023", "dom", "dom.iterable"], "types": ["node"] },
+  "include": ["scripts", "e2e", "playwright.config.ts"],
+  "exclude": []
+}
