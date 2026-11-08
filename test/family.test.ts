@@ -27,7 +27,7 @@ const sha = (path: string) => createHash("sha256").update(readFileSync(path)).di
 const pkg = JSON.parse(read("package.json")) as { name: string };
 const id = pkg.name.replace(/^@[^/]+\//, "");
 
-const TEMPLATE = { version: "2026-11-03", sha256: "637a40a712b217805c5286d506cd7b5be52798b7e07b98667d3bf3fa1df1f237" };
+const TEMPLATE = { version: "2026-11-03", sha256: "8b3bee21ab6cc13b54230507150d04b7c78b28217064995dc5dbfaae9290b8f1" };
 const WRITER_SHA = "00e7e3f59bc71ae9d2c3c68379731e1976382ddcb44132a1158d2c9a4fb245d7";
 const CSS_SHA = "31df0a58f422070ca4023d5498566b26bc55a5f9a0751f1520d36c61bbb562c9";
 
@@ -58,10 +58,10 @@ test("it lists every package of the family, in order, each with its Japanese nam
   assert.ok(template.FAMILY.some((one) => one.id === id));
 });
 
-test("this package is not on npm yet: the header has no npm pill and the footer says so; take it out of FAMILY_NOT_ON_NPM the day it is published", () => {
-  assert.ok(template.FAMILY_NOT_ON_NPM.includes(id));
-  assert.ok(!template.familyHeader({ id }).includes("npmjs.com"));
-  assert.ok(template.familyFooter({ id }).includes("Not on npm yet"));
+test("this package is on npm: the header has the npm pill and the footer the install line", () => {
+  assert.ok(!template.FAMILY_NOT_ON_NPM.includes(id));
+  assert.ok(template.familyHeader({ id }).includes("npmjs.com"));
+  assert.ok(template.familyFooter({ id }).includes(`npm install @johnmorrisdotca/${id}`));
 });
 
 test("the demo page is made with the family's header and footer, with the kazoku-ui language picker and theme switch in the header", () => {

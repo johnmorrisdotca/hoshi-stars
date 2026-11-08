@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-08
+
 - New `Star.nameJa`: the katakana name (`シリウス`, `ベテルギウス`) of each of the 136 named stars, which `starByName` also finds. The spellings are the IAU names written in Japanese letters by hand, with the usual Japanese forms; see `NOTICE.md`.
 - The demo: a star's name or a constellation's is left out where it would sit on another label, bright stars first, and comes back when you zoom in; it opens about 90 degrees wide on a desk and 60 on a phone, centred on Orion; the Japanese page names the stars in katakana and the search finds a star by its katakana name.
 - Every one of the 5,080 stars now has its `constellation` (`Star.constellation` is a `string`, no longer `string | undefined`): the catalogue's for the 2,736 with a Bayer letter or Flamsteed number, and the boundaries' for the other 2,344. `starsIn` therefore lists every star in a constellation, not only the lettered ones (Orion: 128 stars, not 73). `designation` is unchanged and is still `undefined` for a star with no letter or number.

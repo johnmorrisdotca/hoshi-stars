@@ -105,7 +105,7 @@ export const FAMILY_GROUPS = [
  * The packages of FAMILY that are not on npm yet. Such a package's header has no npm pill, its footer says so in
  * place of the install line, and the README's line on it ends "Not on npm yet." Take the id out the day it is published.
  */
-export const FAMILY_NOT_ON_NPM = ["hoshi-stars"];
+export const FAMILY_NOT_ON_NPM = [];
 
 /**
  * One line on each package, for the README's "The family" block: lower case, no full stop, no number that can
