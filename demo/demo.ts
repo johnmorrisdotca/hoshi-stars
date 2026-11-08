@@ -489,6 +489,7 @@ panel.preview = ({ kind, size }) => {
   return holder;
 };
 panel.credits = say("credit");
+panel.docsHref = "docs/index.html";
 const keptKind = address.get("embed") ?? "";
 panel.kind = panel.kinds.includes(keptKind) ? keptKind : "module";
 if (Number(address.get("size")) > 0) panel.size = Number(address.get("size"));
