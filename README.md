@@ -1,3 +1,5 @@
+<p align="center"><a href="https://johnmorrisdotca.github.io/hoshi-stars/"><picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/johnmorrisdotca/hoshi-stars/main/docs/images/thumbnail-dark.png"><img src="https://raw.githubusercontent.com/johnmorrisdotca/hoshi-stars/main/docs/images/thumbnail.png" alt="Hoshi Stars: a sky chart of Orion with its constellation lines, on the soft band of the Milky Way." width="1200"></picture></a></p>
+
 # Hoshi Stars 星
 
 <p>Part of <strong>SpaceProgramX (SPX)</strong>, the space packages: <a href="https://github.com/johnmorrisdotca/wakusei-planets">Wakusei Planets</a> · <a href="https://github.com/johnmorrisdotca/hoshi-stars">Hoshi Stars</a> · <a href="https://github.com/johnmorrisdotca/chikyu-earth">Chikyu Earth</a> · <a href="https://github.com/johnmorrisdotca/uchusen-rockets">Uchusen Rockets</a></p>
@@ -15,9 +17,9 @@ import { starByName, starColour, starDistanceLightYears, starPosition, stars } f
 
 const sirius = starByName("Sirius")!;
 console.log(sirius.designation, sirius.magnitude, starColour(sirius));          // α CMa -1.46 #c9daff
-console.log(starDistanceLightYears(sirius)?.toFixed(1), "light-years");          // 8.7
-console.log(starPosition(starByName("Arcturus")!, Date.UTC(2100, 0, 1)));        // carried by its proper motion
-console.log(stars({ magnitude: 2 }).length, "stars as bright as magnitude 2");    // 50
+console.log(starDistanceLightYears(sirius)?.toFixed(1), "light-years");          // 8.7 light-years
+console.log(starPosition(starByName("Arcturus")!, Date.UTC(2100, 0, 1)).rightAscension.toFixed(1));   // 213.9
+console.log(stars({ magnitude: 2 }).length, "stars as bright as magnitude 2");    // 50 stars as bright as magnitude 2
 ```
 
 | Function | Gives |
@@ -106,8 +108,8 @@ import { project, unproject } from "@johnmorrisdotca/hoshi-stars/projection";
 
 const options = { centre: { rightAscension: 83.8, declination: -5.4 }, scale: 300 };   // Orion in the middle
 const betelgeuse = project("stereographic", starPosition(starByName("Betelgeuse")!), options);
-console.log(betelgeuse);                                      // { x: -26.3, y: 67.4 }: left of the middle, above it
-console.log(unproject("stereographic", betelgeuse!, options)); // back to degrees
+console.log(betelgeuse!.x.toFixed(1), betelgeuse!.y.toFixed(1));            // -26.3 67.4
+console.log(unproject("stereographic", betelgeuse!, options).rightAscension.toFixed(1));   // 88.8
 ```
 
 - `x` runs right and `y` runs up. The default is the sky seen looking up: north is up and east is to the LEFT, so `x` grows toward decreasing right ascension. Pass `mirror: true` for the map convention, east right.
@@ -147,7 +149,7 @@ import { horizontalFrom } from "@johnmorrisdotca/hoshi-stars/sky";
 // Mars, IAU 2015 values at J2000: pole right ascension and declination, and W = w0 + rate * days since J2000
 const mars = { pole: { rightAscension: 317.269202, declination: 54.432516 }, primeMeridian: { w0: 176.049863, rate: 350.891982443297 } };
 const deneb = starPosition(starByName("Deneb")!);
-console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date()).altitude); // 79.8: Deneb is 10 degrees from Mars's pole
+console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date()).altitude.toFixed(1)); // 79.8
 ```
 
 - **The stars look the same from every planet.** The nearest star, Proxima Centauri, shifts about 40 arc-seconds seen from Pluto (parallax 0.77 arc-second times 49 AU at the farthest), a typical star far less, so a J2000 position serves anywhere in the solar system. Only the pole and the turning change.
@@ -164,7 +166,7 @@ import { deepSky, deepSkyObject, messier } from "@johnmorrisdotca/hoshi-stars/de
 
 const m31 = deepSkyObject("M31")!;              // or "NGC 224", "Messier 31", "Andromeda Galaxy", in any case
 console.log(m31.id, m31.ngc, m31.name, m31.type, m31.magnitude);                  // M31 NGC 224 Andromeda Galaxy galaxy 3.4
-console.log(m31.rightAscension.toFixed(3), m31.declination.toFixed(3));           // 10.685 41.269 (degrees, J2000)
+console.log(m31.rightAscension.toFixed(3), m31.declination.toFixed(3));           // 10.685 41.269
 console.log(messier().length, deepSky({ type: "globular cluster" }).length);      // 110 29
 console.log(deepSky({ magnitude: 4 }).map((o) => o.id));                          // [ 'M7', 'M31', 'M42', 'M44', 'M45' ]
 ```
@@ -173,6 +175,7 @@ console.log(deepSky({ magnitude: 4 }).map((o) => o.id));                        
 |---|---|
 | `messier()` | the 110, M1 to M110 (in `/deep-sky` only) |
 | `deepSky({ catalogue?, magnitude?, type? })` | the objects that meet the options, in catalogue order: Messier, then NGC, then IC. `catalogue` is `"messier"`, `"ngc"` or `"ic"` (objects with a number in it); `magnitude` the faintest to include |
+| `DEEP_SKY_CATALOGUES`, `DEEP_SKY_TYPES` | the catalogue names `catalogue` takes (`"messier"`, `"ngc"`, `"ic"`) and the kinds of object `type` takes |
 | `deepSkyObject(text)` | one object by `M31`, `NGC 224`, `IC 434`, any other NGC or IC number it carries, or an English name; `undefined` if none |
 
 An object has `id`, `messier`, `ngc`, `ic` (each a string such as `"NGC 224"`), `otherIds`, `name`, `type` (`galaxy`, `globular cluster`, `open cluster`, `nebula`, `planetary nebula`, `supernova remnant` or `other`), `constellation` (the IAU abbreviation), `rightAscension` and `declination` (degrees, J2000), `magnitude` (visual, or `undefined`) and `sizeArcmin` (the major axis, or `undefined`).
@@ -188,8 +191,8 @@ An object has `id`, `messier`, `ngc`, `ic` (each a string such as `"NGC 224"`), 
 ```ts
 import { milkyWayBands, milkyWayBrightness } from "@johnmorrisdotca/hoshi-stars/milky-way";
 
-console.log(milkyWayBrightness({ rightAscension: 266.4, declination: -28.9 }) > 0.7);  // true: the core, in Sagittarius
-console.log(milkyWayBands([0.2, 0.5]).map((band) => band.strips.length));              // ribbons of sky points to fill as soft bands
+console.log(milkyWayBrightness({ rightAscension: 266.4, declination: -28.9 }) > 0.7);  // true
+console.log(milkyWayBands([0.2, 0.5]).map((band) => band.strips.length));              // [ 188, 10 ]
 ```
 
 `milkyWayBrightness(point)` is 0 (dark sky) to 1 (the core); `milkyWayBands(levels, { step })` gives ribbons of sky points for `project`; `toGalactic` and `fromGalactic` change the frame. The demo draws it as soft bands under the stars, in every projection, and its **Milky Way** button turns it off.

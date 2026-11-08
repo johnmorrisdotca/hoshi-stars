@@ -16,6 +16,8 @@ Thank you for helping. Bug reports and ideas go in the [issues](https://github.c
 ```sh
 pnpm check      # lint, types, tests, the build and the packed package
 pnpm dev        # build the demo and serve it at http://127.0.0.1:8250/hoshi-stars/
+pnpm test:readme # run every example of the README and the guides against the built package
+pnpm images     # retake the thumbnail, dark thumbnail and icon (docs/images)
 pnpm test:demo  # play the demo in Chromium and WebKit at a phone's width and a desk's
 ```
 

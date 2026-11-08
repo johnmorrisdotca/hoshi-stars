@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- The family's thumbnail, dark thumbnail and icon (`docs/images`, made by `pnpm images`): a sky chart of Orion with its lines on the Milky Way. The README opens with it and the demo carries it as its link card (og:image) and apple-touch-icon.
+- `pnpm test:readme` runs every `js` and `ts` example of the README and the guides against the built package, and checks that they name every export and every picture exists. Run by CI and by the release.
+- The demo keeps less empty room under its title on a phone. Fixed: the demo's chart failed to draw (an error in the console) once zoomed in past 5, with the Milky Way on. The getting-started guide said Orion has 12 lines to draw; it has 8.
+
 ## [0.3.0] - 2026-11-08
 
 - 199 more common star names, 335 in all: every name on the IAU Catalog of Star Names whose star is in the 5,080, among them Acrux, Alcor, the Pleiades (Alcyone, Merope, Electra, Atlas, Maia, Taygeta, Pleione, Celaeno, Asterope), Rasalas, Mesarthim, Zosma and Tiaki. Each has its katakana (`アクルックス`, `アルコル`, `アルキオネ`), and the demo's search finds them in both. Adhara's katakana is now `アダーラ`, as the National Astronomical Observatory of Japan writes it. The source and its date are in `NOTICE.md`.
