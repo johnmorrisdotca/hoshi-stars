@@ -126,7 +126,7 @@ console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date
 ```
 
 - **The stars look the same from every planet.** The nearest star, Proxima Centauri, shifts about 40 arc-seconds seen from Pluto (parallax 0.77 arc-second times 49 AU at the farthest), a typical star far less, so a J2000 position serves anywhere in the solar system. Only the pole and the turning change.
-- `rate` is degrees a day and may be negative (Venus and Uranus turn the other way). The pole's slow drift and the periodic terms of the IAU tables are not applied: pass the pole for the date if you want them. The moment is read as TDB, so UTC is about 69 seconds early, which turns Mars by 0.28 degree. Latitude is the angle from the planet's equator on a sphere.
+- `rate` is degrees a day and may be negative (Venus and Uranus turn the other way). The pole's slow drift and the periodic terms of the IAU tables are not applied: pass the pole for the date if you want them. The moment is UTC, like every moment here; it is turned into Terrestrial Time inside (leap seconds from 1972, delta T before), which turns Mars by 0.28 degree. A leap second announced after 2017 is not known until the table in `src/time-scale.ts` gets its row. Latitude is the angle from the planet's equator on a sphere.
 - A spin equal to the Earth's gives the Earth's sky (pole at declination 90 and right ascension 270, `w0` 280.46061837, `rate` 360.98564736629), apart from the precession since J2000.
 - A hundred thousand `horizontal` conversions take about 26 ms on a laptop. The formulas are from J. Meeus, *Astronomical Algorithms* (2nd ed.), chapters 12, 13, 16 and 21.
 
