@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-08
+
 - New entry point `@johnmorrisdotca/hoshi-stars/milky-way`: a brightness map of the Milky Way (about 11 kB of numbers) with the bright core toward Sagittarius and the Great Rift, the Coalsack and the Cygnus Rift as dimmer places. `milkyWayBrightness(point)` gives 0 to 1 toward a point of the sky, `milkyWayBands(levels, { step })` cuts it into ribbons of sky points to fill as soft bands, and `toGalactic` and `fromGalactic` change between right ascension and declination and galactic longitude and latitude. Made by `scripts/make-milky-way-data.py` from SAO star counts (NASA HEASARC; no licence stated, used with credit and removed on request), the IRAS 100 micron and COBE DIRBE dust maps (NASA, public domain) and a bulge of our own figures; see `NOTICE.md`.
 - The demo: a **Milky Way** (天の川) button draws the band under the stars and the lines, in every projection, on by default; `layers=milky` is in the address and in the embed page's.
 
