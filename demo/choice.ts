@@ -2,7 +2,7 @@
 import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "./chart.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 
-export const DEFAULT_LAYERS: readonly Layer[] = ["lines", "names", "grid"];
+export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "grid"];
 export const DEFAULT_MAGNITUDE = 5;
 
 /** A chart: the view, the faintest star, the layers and, for a page that draws one constellation brighter, its abbreviation. */
