@@ -155,7 +155,7 @@ export function figureLines(art: Figure, options: { step?: number } = {}): SkyPo
  *
  * @param art - The figure.
  * @param kind - The projection.
- * @param options - The projection options (`centre`, `scale`, `rotation`, `mirror`), and `step` (the longest piece in degrees, default 1) and `digits` (decimals in the numbers, default 2).
+ * @param options - The projection options (`centre`, `scale`, `rotation`, `mirror`; `scale` is the radius of the sky in drawing units, so about 57 times the pixels a degree takes), and `step` (the longest piece in degrees, default 1) and `digits` (decimals in the numbers, default 2).
  * @returns Path data of `M` and `L` commands; empty when nothing of the figure is visible.
  * @throws RangeError if `kind` or a projection option is not valid, or `step` is out of range.
  *
@@ -163,7 +163,7 @@ export function figureLines(art: Figure, options: { step?: number } = {}): SkyPo
  * ```ts
  * import { figure, figurePath } from "@johnmorrisdotca/hoshi-stars/figures";
  *
- * const d = figurePath(figure("Ori")!, "stereographic", { centre: { rightAscension: 83.8, declination: 0 }, scale: 12 });
+ * const d = figurePath(figure("Ori")!, "stereographic", { centre: { rightAscension: 83.8, declination: 0 }, scale: 400 });
  * console.log(`<path d="${d}" fill="none" stroke="currentColor"/>`);
  * ```
  */

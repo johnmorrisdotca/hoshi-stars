@@ -155,5 +155,5 @@ test("each figure's drawing is a few kB, and the data gzips small", () => {
   const data = readFileSync(new URL("../src/data/figures.ts", import.meta.url));
   assert.ok(gzipSync(data).length <= 6500, `gzipped data is ${gzipSync(data).length} bytes`);
   const code = readFileSync(new URL("../src/figures.ts", import.meta.url));
-  assert.ok(gzipSync(code).length <= 3000, `gzipped code is ${gzipSync(code).length} bytes`);
+  assert.ok(gzipSync(code).length <= 3500, `gzipped code is ${gzipSync(code).length} bytes`);
 });
