@@ -45,6 +45,11 @@
       "ja": "星図の図法",
       "platform": "neutral"
     },
+    "./milky-way": {
+      "en": "The Milky Way: a brightness map and soft bands to draw",
+      "ja": "天の川 (明るさの地図と、描くための帯)",
+      "platform": "neutral"
+    },
     "./sky": {
       "en": "Your sky: altitude and azimuth for a place and a moment",
       "ja": "自分の空 (場所と時刻から高度と方位)",

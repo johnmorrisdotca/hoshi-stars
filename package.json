@@ -4,6 +4,7 @@
   "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed, no dependencies.",
   "keywords": [
     "stars",
+    "milky-way",
     "star-catalog",
     "bright-star-catalogue",
     "yale",
@@ -102,6 +103,11 @@
       "types": "./dist/projection.d.ts",
       "import": "./dist/projection.js",
       "default": "./dist/projection.js"
+    },
+    "./milky-way": {
+      "types": "./dist/milky-way.d.ts",
+      "import": "./dist/milky-way.js",
+      "default": "./dist/milky-way.js"
     },
     "./sky": {
       "types": "./dist/sky.d.ts",
