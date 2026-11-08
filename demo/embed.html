@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <title>Hoshi Stars embed</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b1020; }
+      #frame { width: 100vw; height: 100vh; }
+      #frame svg { display: block; width: 100%; height: 100%; }
+    </style>
+  </head>
+  <body>
+    <div id="frame" data-testid="frame"></div>
+    <script type="module" src="js/embed.js"></script>
+  </body>
+</html>

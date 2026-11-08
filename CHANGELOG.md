@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- A demo on GitHub Pages (https://johnmorrisdotca.github.io/hoshi-stars/): a sky chart you turn with a drag, zoom with the wheel or a pinch and search by name in English or Japanese; seven map projections, constellation lines and boundaries, the Messier objects, a faintest-star slider, a tap for a star's brightness, distance and colour, and "Put it in your page" code for HTML, ES modules, React, Vue, Angular, Svelte and an iframe of the embed page (`embed.html`, which draws what its address says). In English and Japanese, light and dark, at a phone's width and a desk's.
 - New entry point `@johnmorrisdotca/hoshi-stars/lines`: the stick figures of the 88 constellations (`figures`, `figureOf`), each a list of star pairs to join and the stars used, from about 2 kB of data. Our own figures, decided from the star data; every star of a line lies inside its constellation.
 - New entry points `@johnmorrisdotca/hoshi-stars/deep-sky` (the 110 Messier objects: `messier`, `deepSky`, `deepSkyObject`) and `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` (the same functions over 11,898 Messier, NGC and IC objects). Positions, types and names from Wikidata (CC0), checked against NASA/IPAC NED; each object has its cross-identifications, type, constellation, magnitude and size where known.
 - 25 more common star names (136 in all), among them Castor, Mira, Nunki, Sabik, Thuban, Alderamin, Sheliak and Sulafat, spelled as the IAU Working Group on Star Names spells them.

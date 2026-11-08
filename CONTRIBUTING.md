@@ -14,7 +14,9 @@ Thank you for helping. Bug reports and ideas go in the [issues](https://github.c
 ## Commands
 
 ```sh
-pnpm check   # lint, types, tests, the build and the packed package
+pnpm check      # lint, types, tests, the build and the packed package
+pnpm dev        # build the demo and serve it at http://127.0.0.1:8250/hoshi-stars/
+pnpm test:demo  # play the demo in Chromium and WebKit at a phone's width and a desk's
 ```
 
 Add a line to `CHANGELOG.md` under **Unreleased** for every change.
