@@ -19,7 +19,7 @@ try {
   const pack = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", scratch], root)) as Array<{ filename: string; files: Array<{ path: string }> }>;
   const files = pack[0]!.files.map((f) => f.path);
   if (files.some((f) => /^(demo|docs|scripts|test|e2e|site|src)\//.test(f))) throw new Error("Source, tests or the demo entered the npm package");
-  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
+  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", join(scratch, pack[0]!.filename)], scratch);
   writeFileSync(
     join(scratch, "check.mjs"),
@@ -34,6 +34,8 @@ assert.ok(sub.starsIn("Ori").some((s) => s.name === "Rigel"));
 const sirius = esm.starByName("Sirius");
 assert.equal(sirius.hr, 2491);
 assert.ok(Math.abs(sirius.declination + 16.7161) < 0.001);
+const projection = await import(${JSON.stringify(pkg.name + "/projection")});
+assert.deepEqual(projection.project("orthographic", { rightAscension: 0, declination: 0 }, { centre: { rightAscension: 0, declination: 0 } }), { x: 0, y: 0 });
 let required = false;
 try { createRequire(import.meta.url)(${JSON.stringify(pkg.name)}); required = true; } catch (error) { assert.equal(error.code, "ERR_REQUIRE_ESM"); }
 console.log("package ok: " + esm.stars().length + " stars" + (required ? ", also by require" : ""));

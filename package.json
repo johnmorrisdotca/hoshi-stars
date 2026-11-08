@@ -41,6 +41,11 @@
       "import": "./dist/constellations.js",
       "default": "./dist/constellations.js"
     },
+    "./projection": {
+      "types": "./dist/projection.d.ts",
+      "import": "./dist/projection.js",
+      "default": "./dist/projection.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
