@@ -19,6 +19,11 @@ Hoshi Stars is original work by John Morris, under the MIT licence in `LICENSE`.
 
 - **Projections (`@johnmorrisdotca/hoshi-stars/projection`)**: stereographic, orthographic, gnomonic, azimuthal equidistant, equirectangular, Mollweide and Hammer, written from the formulas in J. P. Snyder, "Map Projections: A Working Manual", U.S. Geological Survey Professional Paper 1395 (1987), a U.S. Government work in the public domain. The formulas are mathematics; no library's code is copied.
 
+## Your sky
+
+- **Horizon view (`@johnmorrisdotca/hoshi-stars/sky`)**: written from the formulas in J. Meeus, "Astronomical Algorithms", 2nd ed. (Willmann-Bell, 1998): Greenwich mean sidereal time (the IAU 1982 expression, chapter 12), equatorial to horizontal coordinates (chapter 13), atmospheric refraction (Saemundsson's formula, chapter 16) and precession from J2000 (the IAU 1976 constants, chapter 21). The formulas are mathematics and the worked examples (12.a, 12.b, 13.b, 21.b) are used only as test values; no book text or library code is copied.
+- **Another planet**: the convention is that of the IAU Working Group on Cartographic Coordinates and Rotational Elements (pole right ascension and declination, and W = W0 + rate d), as in Archinal et al., Celestial Mechanics and Dynamical Astronomy 130, 22 (2018). The tests type in the 2015 Mars values from that report; the package itself holds no planet data.
+
 ## Deliberately not used
 
 - ESA's Hipparcos, Tycho and Gaia catalogues: CC BY-NC 3.0 IGO (non-commercial), which an MIT package cannot pass on.

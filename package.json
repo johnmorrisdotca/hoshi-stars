@@ -46,6 +46,11 @@
       "import": "./dist/projection.js",
       "default": "./dist/projection.js"
     },
+    "./sky": {
+      "types": "./dist/sky.d.ts",
+      "import": "./dist/sky.js",
+      "default": "./dist/sky.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -73,6 +78,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
+    "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@types/node": "^24.0.0",
     "eslint": "^9.0.0",
     "typescript": "^5.9.0",

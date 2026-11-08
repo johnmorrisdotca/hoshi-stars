@@ -11,6 +11,9 @@ importers:
       '@eslint/js':
         specifier: ^9.0.0
         version: 9.39.5
+      '@johnmorrisdotca/wakusei-planets':
+        specifier: ^0.20.0
+        version: 0.20.0
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.2
@@ -83,6 +86,27 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@johnmorrisdotca/kazoku-ui@0.19.0':
+    resolution: {integrity: sha512-TVrdG67TImrpdy+tY7LgFpvArmseBg61coM7FeONnq154V77FbXmNMMeFKAwY1v6KStQGkB46Qlj1eGI16pYCg==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      three: '>=0.160.0'
+    peerDependenciesMeta:
+      three:
+        optional: true
+
+  '@johnmorrisdotca/wakusei-planets@0.20.0':
+    resolution: {integrity: sha512-5kF1o8jhjrJrGT62bU+AgCRmeeheI+H3UVhO+9Qq9bQ+UENNAdX4Fsud4OwhYUZJETSl67MndQP8+3H8p8m03A==}
+    engines: {node: '>=24'}
+    peerDependencies:
+      '@johnmorrisdotca/chikyu-earth': '>=0.10.0'
+      three: '>=0.160.0'
+    peerDependenciesMeta:
+      '@johnmorrisdotca/chikyu-earth':
+        optional: true
+      three:
+        optional: true
 
   '@types/estree@1.0.10':
     resolution: {integrity: sha512-lTyOMnOcmRBzdCv6/4zUZCrEhV0xrqQiUZBZtVcbmLHBXKLnN8q89v/wKRF/Q0HbwVsqbIG3o5HDoFl9sduM+g==}
@@ -552,6 +576,12 @@ snapshots:
   '@humanwhocodes/module-importer@1.0.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@johnmorrisdotca/kazoku-ui@0.19.0': {}
+
+  '@johnmorrisdotca/wakusei-planets@0.20.0':
+    dependencies:
+      '@johnmorrisdotca/kazoku-ui': 0.19.0
 
   '@types/estree@1.0.10': {}
 
