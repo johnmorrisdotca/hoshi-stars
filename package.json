@@ -10,6 +10,9 @@
     "astronomy",
     "constellations",
     "constellation-boundaries",
+    "deep-sky",
+    "messier",
+    "ngc",
     "proper-motion",
     "javascript",
     "typescript",
@@ -46,6 +49,16 @@
       "types": "./dist/boundaries.d.ts",
       "import": "./dist/boundaries.js",
       "default": "./dist/boundaries.js"
+    },
+    "./deep-sky": {
+      "types": "./dist/deep-sky.d.ts",
+      "import": "./dist/deep-sky.js",
+      "default": "./dist/deep-sky.js"
+    },
+    "./deep-sky/ngc-ic": {
+      "types": "./dist/deep-sky-ngc-ic.d.ts",
+      "import": "./dist/deep-sky-ngc-ic.js",
+      "default": "./dist/deep-sky-ngc-ic.js"
     },
     "./projection": {
       "types": "./dist/projection.d.ts",

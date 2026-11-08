@@ -19,7 +19,7 @@ try {
   const pack = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", scratch], root)) as Array<{ filename: string; files: Array<{ path: string }> }>;
   const files = pack[0]!.files.map((f) => f.path);
   if (files.some((f) => /^(demo|docs|scripts|test|e2e|site|src)\//.test(f))) throw new Error("Source, tests or the demo entered the npm package");
-  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
+  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", join(scratch, pack[0]!.filename)], scratch);
   writeFileSync(
     join(scratch, "check.mjs"),
@@ -37,6 +37,14 @@ assert.ok(Math.abs(sirius.declination + 16.7161) < 0.001);
 const boundaries = await import(${JSON.stringify(pkg.name + "/boundaries")});
 assert.equal(boundaries.constellationAt(esm.starByName("Betelgeuse")).abbreviation, "Ori");
 assert.equal(boundaries.boundaries().length, 88);
+const deep = await import(${JSON.stringify(pkg.name + "/deep-sky")});
+assert.equal(deep.messier().length, 110);
+assert.equal(deep.deepSkyObject("M31").ngc, "NGC 224");
+assert.equal(deep.deepSkyObject("Crab Nebula").type, "supernova remnant");
+const deepAll = await import(${JSON.stringify(pkg.name + "/deep-sky/ngc-ic")});
+assert.ok(deepAll.deepSky().length > 11000);
+assert.equal(deepAll.deepSkyObject("M42").id, "M42");
+assert.ok(deepAll.deepSkyObject("NGC 7000"));
 const projection = await import(${JSON.stringify(pkg.name + "/projection")});
 assert.deepEqual(projection.project("orthographic", { rightAscension: 0, declination: 0 }, { centre: { rightAscension: 0, declination: 0 } }), { x: 0, y: 0 });
 const sky = await import(${JSON.stringify(pkg.name + "/sky")});
