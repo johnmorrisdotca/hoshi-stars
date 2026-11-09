@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-11-09
+
 - **Black holes** (MODULES-731). New entry point `@johnmorrisdotca/hoshi-stars/black-holes`: `blackHoles({ kind, status, foundBy, constellation })` and `blackHole(name)` give 301 black holes with a place on the sky (J2000), a mass in Suns and a distance in parsecs with their ranges or limits, the companion star, how it was found (X-rays, a companion's orbit, microlensing, stars, gas, masers, light echoes or an image), the year, a `confirmed` or `candidate` status and the paper behind each fact: 78 stellar-mass (BlackCAT's 73 and Cygnus X-1, LMC X-1, LMC X-3, M33 X-7, 1E 1740.7-2942), 5 quiet (Gaia BH1, BH2, BH3, VFTS 243, OGLE-2011-BLG-0462) and 218 supermassive (Sagittarius A*, M87* and 216 galaxy centres from van den Bosch's table, placed by NED). About 22 kB gzipped. The demo gets a Black holes button in the Show row (kept in the address as `layers=holes`), a symbol for each kind, names when zoomed in, a pick card with the facts, what is measured and the papers, and search by name (Cygnus X-1, Sgr A*, M87). A new guide, English and Japanese. The sources and their terms are in NOTICE.md: BlackCAT states no licence and asks only for credit, so only its facts are taken; the gravitational-wave events are left for later.
 
 ## [0.15.0] - 2026-11-09
