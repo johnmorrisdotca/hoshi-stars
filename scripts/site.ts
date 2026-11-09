@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
-import { familyBoot, renderIndex } from "./page.ts";
+import { familyBoot, renderIndex, renderKids } from "./page.ts";
 
 /** What the family's card shows (scripts/images.ts makes it): the words of og:image:alt and of the README's top picture. */
 const ALT = "Hoshi Stars: a sky chart of Orion with its constellation lines, on the soft band of the Milky Way.";
@@ -17,10 +17,11 @@ rmSync(site, { recursive: true, force: true });
 mkdirSync(site, { recursive: true });
 writeFileSync(join(site, "index.html"), renderIndex().replace("</head>", `${thumbnailHead(pkg, { alt: ALT })}</head>`));
 publishThumbnails(root, site);
+writeFileSync(join(site, "kids.html"), renderKids());
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 for (const file of ["embed.html", "demo.css", "family.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), kids: join(root, "demo", "kids.ts") },
   outdir: join(site, "js"),
   bundle: true,
   format: "esm",

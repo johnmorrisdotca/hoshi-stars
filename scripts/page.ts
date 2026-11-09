@@ -5,7 +5,7 @@ import { FAMILY_SCRIPT, familyFooter, familyHead, familyHeader, familyUnreviewed
 import { WORDS } from "./page-words.ts";
 
 const id = "hoshi-stars";
-const LINKS = [{ href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
+const LINKS = [{ href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
 export function renderIndex(): string {
@@ -16,6 +16,17 @@ export function renderIndex(): string {
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
     .replace("<!--family:footer-->", familyFooter({ id }))
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/demo.js"></script>`);
+}
+
+/** The printable sheets' page. */
+export function renderKids(): string {
+  const html = readFileSync(new URL("../demo/kids.html", import.meta.url), "utf8");
+  return html
+    .replace("<!--family:head-->", familyHead({ id, title: WORDS.en.kd_title, description: WORDS.en.kd_description }))
+    .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
+    .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
+    .replace("<!--family:footer-->", familyFooter({ id }))
+    .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/kids.js"></script>`);
 }
 
 /** The classic script that defines familyLanguage and fills the header. An external file, so the page's script policy stays 'self'. It tells the page's own script when the language changes. */
