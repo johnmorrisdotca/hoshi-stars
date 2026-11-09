@@ -1,6 +1,6 @@
 // The sky chart the demo and the embed page draw: stars, constellation lines, boundaries, names, Messier objects and a grid, as one SVG string, in any of the seven projections.
 // It only calls the package: the numbers (positions, colours, outlines, figures) are the package's; the pixels are decided here.
-import { starColour, stars, type Star } from "../src/index.ts";
+import { starByHr, starColour, stars, type Star } from "../src/index.ts";
 import { boundaries, constellationAt } from "../src/boundaries.ts";
 import { constellations, type Constellation } from "../src/constellations.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
@@ -31,6 +31,8 @@ export interface ChartOptions extends View {
   highlight?: string | undefined;
   /** The star (HR number) or Messier object (`M31`) that is picked. */
   picked?: string | undefined;
+  /** What is near the picked thing, drawn ringed: keys `S:<HR number>`, `D:<Messier id>` and `C:<abbreviation>`. */
+  near?: readonly string[] | undefined;
   /** Rectangles in chart pixels that no name may cover, such as the page's own buttons laid over the chart. */
   keepClear?: readonly Box[] | undefined;
 }
@@ -184,11 +186,11 @@ export function reachOfConstellation(abbreviation: string): number {
 /** The Milky Way's bands, faint to bright: the colour, and how much of the night sky each one lightens. The glow is cool, the core warm. */
 const MILKY = { levels: [0.04, 0.08, 0.13, 0.2, 0.3, 0.42, 0.58, 0.76], fills: ["#6a80c8", "#7a90d2", "#8da1dc", "#a6b6e6", "#c3cdee", "#e0e4f2", "#f7eedd", "#fff3d8"], opacities: [0.16, 0.14, 0.14, 0.14, 0.15, 0.16, 0.18, 0.2] } as const;
 
-const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59" };
+const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4" };
 
-function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean): string {
-  const stroke = pick ? COLOURS.pick : COLOURS.deep;
-  const common = `fill="none" stroke="${stroke}" stroke-width="${pick ? 2 : 1.2}"`;
+function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean, near = false): string {
+  const stroke = pick ? COLOURS.pick : near ? COLOURS.near : COLOURS.deep;
+  const common = `fill="none" stroke="${stroke}" stroke-width="${pick ? 2 : near ? 1.8 : 1.2}"`;
   switch (object.type) {
     case "galaxy": return `<ellipse cx="${round(x)}" cy="${round(y)}" rx="6" ry="3.2" transform="rotate(-30 ${round(x)} ${round(y)})" ${common}/>`;
     case "globular cluster": return `<circle cx="${round(x)}" cy="${round(y)}" r="4.5" ${common}/><path d="M${round(x - 4.5)} ${round(y)}h9M${round(x)} ${round(y - 4.5)}v9" ${common}/>`;
@@ -350,17 +352,22 @@ export function chart(o: ChartOptions): Chart {
     body += `<path d="${d}" fill="none" stroke="${COLOURS.grid}" stroke-width="1"/><path d="${pathOf(view, place, equator)}" fill="none" stroke="${COLOURS.equator}" stroke-width="1"/>`;
   }
 
-  if (layers.has("boundaries") || o.highlight !== undefined) {
+  const near = new Set(o.near ?? []);
+  const nearConstellations = new Set([...near].filter((key) => key.startsWith("C:")).map((key) => key.slice(2)));
+  if (layers.has("boundaries") || o.highlight !== undefined || nearConstellations.size > 0) {
     let quiet = "";
     let loud = "";
+    let neighbours = "";
     for (const boundary of boundaries({ step: 2 })) {
       const on = boundary.constellation.abbreviation === o.highlight;
-      if (!on && !layers.has("boundaries")) continue;
+      const next = nearConstellations.has(boundary.constellation.abbreviation);
+      if (!on && !next && !layers.has("boundaries")) continue;
       const d = boundary.outlines.map((ring) => pathOf(view, place, ring)).join("");
       if (on) loud += d;
+      else if (next) neighbours += d;
       else quiet += d;
     }
-    body += `<path d="${quiet}" fill="none" stroke="${COLOURS.boundary}" stroke-width="1" stroke-dasharray="5 4"/><path d="${loud}" fill="none" stroke="${COLOURS.boundaryOn}" stroke-width="1.6" stroke-dasharray="5 4"/>`;
+    body += `<path d="${quiet}" fill="none" stroke="${COLOURS.boundary}" stroke-width="1" stroke-dasharray="5 4"/><path d="${neighbours}" fill="none" stroke="${COLOURS.near}" stroke-width="1.6" stroke-dasharray="5 4"/><path d="${loud}" fill="none" stroke="${COLOURS.boundaryOn}" stroke-width="1.6" stroke-dasharray="5 4"/>`;
   }
 
   if (layers.has("lines") || o.highlight !== undefined) {
@@ -385,14 +392,16 @@ export function chart(o: ChartOptions): Chart {
   const obstacles: Box[] = [{ x0: -1e4, y0: -1e4, x1: 0, y1: 1e4 }, { x0: width, y0: -1e4, x1: 1e4, y1: 1e4 }, { x0: -1e4, y0: -1e4, x1: 1e4, y1: 0 }, { x0: -1e4, y0: height, x1: 1e4, y1: 1e4 }, ...(o.keepClear ?? [])];
   const around = (x: number, y: number, r: number): Box => ({ x0: x - r, y0: y - r, x1: x + r, y1: y + r });
   const deepLabels: Label[] = [];
-  if (layers.has("deep")) {
+  if (layers.has("deep") || [...near].some((key) => key.startsWith("D:"))) {
     for (const object of messier()) {
+      const key = object.id;
+      const isNear = near.has(`D:${key}`);
+      if (!layers.has("deep") && !isNear) continue;
       const at = place(object);
       if (at === undefined || !inside(at)) continue;
-      const key = object.id;
-      body += shapeOf(object, at[0], at[1], key === o.picked);
+      body += shapeOf(object, at[0], at[1], key === o.picked, isNear);
       obstacles.push(around(at[0], at[1], 7));
-      if (o.zoom >= 2.5 || (object.magnitude ?? 9) <= 5 || key === o.picked) deepLabels.push({ rank: key === o.picked ? -1 : 2000 + (object.magnitude ?? 9), ...besideMarker(key, 11, at[0], at[1], 8, key === o.picked ? COLOURS.pick : COLOURS.deep, 1) });
+      if (o.zoom >= 2.5 || (object.magnitude ?? 9) <= 5 || key === o.picked || isNear) deepLabels.push({ rank: key === o.picked ? -1 : isNear ? 900 : 2000 + (object.magnitude ?? 9), ...besideMarker(key, 11, at[0], at[1], 8, key === o.picked ? COLOURS.pick : isNear ? COLOURS.near : COLOURS.deep, 1) });
       hits.push({ x: at[0], y: at[1], kind: "deep", key });
     }
   }
@@ -402,16 +411,24 @@ export function chart(o: ChartOptions): Chart {
   let dots = "";
   let ring = "";
   const starLabels: Label[] = [];
-  for (const star of stars({ magnitude: o.magnitude })) {
+  const drawn = stars({ magnitude: o.magnitude });
+  for (const key of near) {
+    const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;
+    if (extra !== undefined && extra.magnitude > o.magnitude) drawn.push(extra);
+  }
+  for (const star of drawn) {
+    const isNear = near.has(`S:${star.hr}`);
     const at = place(star);
     if (at === undefined || !inside(at)) continue;
     const r = Math.max(0.7, (o.magnitude - star.magnitude) * 0.55 + 1.1) * grow;
     dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${starColour(star)}"/>`;
     hits.push({ x: at[0], y: at[1], kind: "star", key: String(star.hr) });
     if (r >= 2.6) obstacles.push(around(at[0], at[1], r + 1));
-    if (String(star.hr) === o.picked) ring = `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
+    if (String(star.hr) === o.picked) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
+    else if (isNear) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 5)}" fill="none" stroke="${COLOURS.near}" stroke-width="1.8"/>`;
     const text = lang === "ja" ? star.nameJa ?? star.name : star.name;
-    if (layers.has("names") && text !== undefined && star.magnitude <= namedLimit) starLabels.push({ rank: String(star.hr) === o.picked ? -1 : 1000 + star.magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
+    if (isNear && String(star.hr) !== o.picked) starLabels.push({ rank: 900, ...besideMarker(text ?? star.designation ?? `HR ${star.hr}`, 11, at[0], at[1], r + 6, COLOURS.near, 1) });
+    else if (layers.has("names") && text !== undefined && star.magnitude <= namedLimit) starLabels.push({ rank: String(star.hr) === o.picked ? -1 : 1000 + star.magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
   }
 
   const nameLabels: Label[] = [];
@@ -422,6 +439,7 @@ export function chart(o: ChartOptions): Chart {
       const at = middle === undefined ? undefined : place(middle);
       if (at === undefined || !inside(at, -8)) continue;
       const on = abbreviation === o.highlight;
+      const isNear = nearConstellations.has(abbreviation);
       const size = on ? 15 : 13;
       const text = lang === "ja" ? c.japanese : c.name;
       const { w, h } = textSize(text, size);
@@ -430,7 +448,7 @@ export function chart(o: ChartOptions): Chart {
         const y = at[1] + dy!;
         return { x, y, anchor: "middle" as const, box: { x0: x - w / 2 - 1, y0: y - size * 0.85, x1: x + w / 2 + 1, y1: y + size * 0.3 } };
       });
-      nameLabels.push({ rank: on ? -1 : 1001.8 + 1.2 * (1 - Math.min(1, reachOfConstellation(abbreviation) / 50)), places, text, size, weight: on ? 700 : 400, fill: on ? COLOURS.nameOn : COLOURS.name, opacity: on ? 1 : 0.75 });
+      nameLabels.push({ rank: on ? -1 : isNear ? 899 : 1001.8 + 1.2 * (1 - Math.min(1, reachOfConstellation(abbreviation) / 50)), places, text, size, weight: on || isNear ? 700 : 400, fill: on ? COLOURS.nameOn : isNear ? COLOURS.near : COLOURS.name, opacity: on || isNear ? 1 : 0.75 });
     }
   }
   body += `<g>${dots}</g>${ring}`;

@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - New entry point `@johnmorrisdotca/hoshi-stars/nearest`: `nearest(target, { count, within, kind, by, date, minMagnitude, among })` and `within(target, radius, options)` give the stars or Messier objects nearest a star, an object, a name or a point, nearest first, by angle on the sky (`{ thing, angle }`) or by distance in space from the parallaxes (`{ thing, distance, parsecs, error }`, with a `skipped` count; a point `{ x, y, z }` in parsecs is a target too), and `neighbouringConstellations(text)` gives the constellations that share a piece of boundary. One query over all 5,080 stars takes about 1 ms. The space answers cover only the bright-star catalogue until a nearby-star catalogue lands.
+- The demo has a Nearby panel: pick a star, a Messier object or a constellation and it lists the ten nearest stars (in the sky, or in space for a star with a parallax) or the constellations that touch it, and rings them on the chart; `by=space` is kept in the address. The embed page does the same from `near=S:2491` (or `D:M31`, `C:Ori`) and `by=space`, and the code to copy carries them.
 
 ## [0.4.0] - 2026-11-08
 

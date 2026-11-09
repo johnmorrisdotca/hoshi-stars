@@ -24,6 +24,11 @@
 .results .fam-button[data-primary="true"] .kind { color: inherit; }
 .picked { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); padding: 14px; min-height: 120px; }
 .picked p { margin: 0; }
+.nearby { margin-top: 12px; min-height: 0; }
+.nearby h3 { margin: 0 0 8px; }
+.nearby ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.nearby ol .fam-button { width: 100%; justify-content: space-between; text-align: left; }
+.nearby .value { color: var(--muted); font-size: .8rem; font-weight: 500; }
 .facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 8px 0 0; font-size: .9rem; align-items: center; }
 .facts dt { color: var(--muted); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
 .facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }

@@ -3,9 +3,11 @@
 //   ?proj=stereographic  one of the seven projections         &ra=84&dec=0&zoom=3     where it looks (degrees) and how far in (0.1 to 500; left out: Orion, 90 degrees wide, 60 under 600 px)
 //   &mag=5               the faintest star                   &layers=milky,lines,names,grid  or none (also boundaries, deep)
 //   &lang=ja             constellation names in Japanese     &c=Ori                  one constellation brighter, with its boundary
+//   &near=S:2491         ring what is near a star (S:<HR number>), a Messier object (D:M31) or a constellation (C:Ori)   &by=space  measure the stars' nearness in space
 import { chart, defaultZoom, type View } from "./chart.ts";
 import { choiceOf } from "./choice.ts";
 import { attachHands } from "./hands.ts";
+import { nearbyOf } from "./nearby.ts";
 
 const frame = document.getElementById("frame")!;
 const sky = document.getElementById("sky")!;
@@ -14,6 +16,10 @@ const sizeOf = (): { width: number; height: number } => ({ width: Math.max(1, Ma
 let { width, height } = sizeOf();
 const choice = choiceOf(new URLSearchParams(location.search), width, height);
 const ja = choice.lang === "ja";
+const near = nearbyOf(choice.nearTo, choice.nearBy ?? "sky");
+const nearKeys = near === undefined ? [] : near.rows.map((row) => row.key);
+const target = choice.nearTo !== undefined && !choice.nearTo.startsWith("C:") ? choice.nearTo.slice(2) : undefined;
+const highlight = choice.highlight ?? (choice.nearTo?.startsWith("C:") ? choice.nearTo.slice(2) : undefined);
 let view: View = { projection: choice.projection, ra: choice.ra, dec: choice.dec, zoom: choice.zoom };
 const opening = (): number => defaultZoom(view.projection, width, height);
 const start = { ...view };
@@ -31,7 +37,7 @@ function draw(): void {
   const frameBox = frame.getBoundingClientRect();
   const at = tools.getBoundingClientRect();
   const keepClear = [{ x0: at.left - frameBox.left - 4, y0: at.top - frameBox.top - 4, x1: at.right - frameBox.left + 4, y1: at.bottom - frameBox.top + 4 }];
-  sky.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ja ? "星空の図" : "A chart of the sky"}">${chart({ ...choice, ...view, width, height, keepClear }).svg}</svg>`;
+  sky.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ja ? "星空の図" : "A chart of the sky"}">${chart({ ...choice, ...view, width, height, keepClear, highlight, near: nearKeys, picked: target }).svg}</svg>`;
   document.documentElement.dataset.ready = "true";
 }
 

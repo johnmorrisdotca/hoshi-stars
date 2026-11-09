@@ -10,6 +10,7 @@ import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, fitScale, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
 import { attachHands } from "./hands.ts";
+import { nearbyOf, type By } from "./nearby.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
@@ -27,6 +28,8 @@ let view: View = { ...DEFAULT_VIEW };
 let magnitude = DEFAULT_MAGNITUDE;
 let layers: Set<Layer> = layersOf(null);
 let picked: string | null = null;
+let by: By = "sky";
+let nearKeys: string[] = [];
 let hover: string | undefined;
 
 function read(): void {
@@ -43,6 +46,7 @@ function read(): void {
   const named = address.get("layers");
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
+  by = address.get("by") === "space" ? "space" : "sky";
   hands.sync();
 }
 
@@ -76,7 +80,7 @@ function clear(): Box[] {
 
 function draw(): void {
   queued = false;
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined });
+  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined });
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
   hits = out.hits;
@@ -398,6 +402,7 @@ function linkTo(text: string, key: string): HTMLButtonElement {
 const nameOf = (c: Constellation): string => (lang() === "ja" ? c.japanese : c.name);
 
 function details(): void {
+  nearbyPanel();
   const host = $("picked");
   host.replaceChildren();
   if (picked === null) {
@@ -454,9 +459,77 @@ function details(): void {
   }
 }
 
+// ----- what is near what is picked -----
+function nearbyPanel(): void {
+  const host = $("nearby");
+  host.replaceChildren();
+  const found = nearbyOf(picked, by);
+  nearKeys = found === undefined ? [] : found.rows.map((row) => row.key);
+  const title = Object.assign(document.createElement("h3"), { textContent: say("nearbyHeading") });
+  host.append(title);
+  if (found === undefined) {
+    host.append(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("nearbyNothing") }));
+    return;
+  }
+  if (found.kind !== "constellation") {
+    const row = document.createElement("div");
+    row.className = "fam-row";
+    const group = document.createElement("span");
+    group.className = "fam-seg";
+    group.dataset.testid = "nearby-by";
+    group.setAttribute("role", "group");
+    group.setAttribute("aria-label", say("nearbyBy"));
+    for (const [value, label] of [["sky", "bySky"], ["space", "bySpace"]] as const) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.value = value;
+      button.textContent = say(label);
+      button.disabled = value === "space" && !found.canSpace;
+      button.setAttribute("aria-pressed", String(value === (by === "space" && found.canSpace ? "space" : "sky")));
+      button.addEventListener("click", () => {
+        by = value;
+        address.set("by", value === "sky" ? null : value);
+        nearbyPanel();
+        schedule();
+        settled();
+      });
+      group.append(button);
+    }
+    row.append(group);
+    host.append(row);
+  }
+  const heading = Object.assign(document.createElement("h4"), { textContent: say(found.kind === "constellation" ? "nearbyConstellations" : "nearbyStars") });
+  const list = document.createElement("ol");
+  list.dataset.testid = "nearby-list";
+  const inSpace = by === "space" && found.canSpace && found.kind === "star";
+  for (const row of found.rows) {
+    const item = document.createElement("li");
+    const id = row.key.slice(2);
+    const star = row.key.startsWith("S:") ? starByHr(Number(id)) : undefined;
+    const c = row.key.startsWith("C:") ? constellation(id) : undefined;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "fam-button";
+    button.dataset.key = row.key;
+    button.append(star !== undefined ? starName(star) : c !== undefined ? nameOf(c) : id);
+    if (row.value !== undefined) button.append(Object.assign(document.createElement("span"), { className: "value", textContent: inSpace ? `${row.value.toFixed(1)} ${say("lightYears")}` : `${row.value.toFixed(row.value < 10 ? 2 : 1)} ${say("degreesUnit")}` }));
+    button.addEventListener("click", () => goTo(row.key));
+    item.append(button);
+    list.append(item);
+  }
+  host.append(heading, list);
+  if (found.kind === "star") {
+    const note = document.createElement("p");
+    note.className = "fam-fine";
+    note.dataset.testid = "nearby-note";
+    note.textContent = inSpace ? `${found.skipped.toLocaleString(lang())} ${say("nearbySkipped")}` : found.canSpace ? say("nearbySkyNote") : say("nearbyNoSpace");
+    host.append(note);
+  }
+}
+
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 panel.generate = ({ kind, size, preview }) => (kind === "iframe" ? frameCode(choice(size), say("chartLabel"), size, preview) : (embedCode(kind, choice(size), size) ?? ""));
 panel.preview = ({ kind, size }) => {
