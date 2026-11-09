@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-11-09
+
 - **Wide is theatre mode, and the map's choices are easier to read** (MODULES-740). Wide gives the map the page's own column, centred, out to where the side panel was; the page no longer stretches to the window's edges. The Wide button is dark like the other buttons on the map. The side panel shows all it holds again (it was cut to the map's height). Each map projection is a small picture of its own grid with its name under it, and the three sky cultures stand at the left of the constellation strip, as tall as a card.
 
 ## [0.12.0] - 2026-11-09
