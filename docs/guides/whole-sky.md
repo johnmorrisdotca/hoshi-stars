@@ -56,6 +56,7 @@ console.log(runs.length >= 1, d.startsWith("M"), allSkyOutline(options).length, 
 - **Tap or click** a constellation and the sky map opens on it (`./?go=Ori`, with `culture=` when it is not Western). Hover, or Tab to it, and it lights up with its name; Enter opens it.
 - **Zoom and pan** with the family's view controls (the bar, a pinch, Ctrl or Command and the wheel, the keys). More names appear as the map grows; a name that does not fit its constellation gives way to its three letters, and one that would touch another is left out, so no two names overlap.
 - **Choose** from the strip of pictures or the search, and the map zooms to it with a card that opens it on the sky map.
+- **Faint stars** come in as the map is zoomed in, from UCAC4's tiles, with a line under the map that says how deep they go there ([Faint stars](faint-stars.md#on-the-whole-sky-page)). A button in the layers row turns them off.
 - **Print** the map on one page (A4, Letter, A3 or Tabloid, turned to suit it) or as a 60 by 30 cm poster in tiles, in kazoku-ui's print layout, with the "Space Program X" header and a QR code of the page's address.
 
-Every choice is kept in the address: `frame=equatorial`, `map=hammer`, `culture=japanese`, `layers=milky,names`, `c=Ori`, `paper=a4`, `form=poster`.
+Every choice is kept in the address: `frame=equatorial`, `map=hammer`, `culture=japanese`, `layers=milky,names` (`faint` is one of the layers, on unless left out), `c=Ori`, `paper=a4`, `form=poster`.

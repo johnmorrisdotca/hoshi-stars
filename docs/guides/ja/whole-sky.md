@@ -56,6 +56,7 @@ console.log(runs.length >= 1, d.startsWith("M"), allSkyOutline(options).length, 
 - **タップ (クリック)** すると、その星座で星図が開きます (`./?go=Ori`。西洋以外の文化なら `culture=` もつきます)。マウスを重ねるか、Tab で移動すると名前とともに光り、Enter で開きます。
 - **拡大・移動** はファミリー共通の表示コントローラー (バー、ピンチ、Ctrl か Command とホイール、キー) で行います。拡大するほど名前が増えます。名前が星座の中に収まらないときは3文字の略称になり、ほかの名前とぶつかるときは出さないので、名前が重なることはありません。
 - **選ぶ** には絵の並びか検索を使います。地図がその星座へ拡大され、星図で開くカードが出ます。
+- **暗い星** は、拡大するにつれてUCAC4のタイルから加わります。地図の下の1行に、その場所でどの等級まで見えるかが出ます ([暗い星](faint-stars.md#全天の地図で))。層の行のボタンで消せます。
 - **印刷** は、地図を1枚 (A4・レター・A3・タブロイド、地図に合う向き)、または60 × 30 cm のポスター (分けて印刷) で、kazoku-ui の印刷レイアウトで出力します。「Space Program X」の見出しと、ページのアドレスの QR コードがつきます。
 
-選んだ設定はすべてアドレスに残ります: `frame=equatorial`、`map=hammer`、`culture=japanese`、`layers=milky,names`、`c=Ori`、`paper=a4`、`form=poster`。
+選んだ設定はすべてアドレスに残ります: `frame=equatorial`、`map=hammer`、`culture=japanese`、`layers=milky,names` (`faint`も層のひとつで、書かなければ入ります)、`c=Ori`、`paper=a4`、`form=poster`。
