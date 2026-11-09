@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-11-09
+
 - **Notes from a review.** NOTICE.md marks five sources whose terms John has asked their owners to confirm (the Bright Star Catalogue and the SAO counts at NASA's HEASARC, the parallax catalogue and the boundary table at the CDS, and the Messier values from Sky Catalog 2000.0), with the fallback each would have. The README says how much of the install the constellation pictures are and that nothing imports them, and that the package renders pictures and pages only.
 
 ## [0.17.0] - 2026-11-09
