@@ -144,6 +144,7 @@
   },
   "packageManager": "pnpm@10.11.0",
   "scripts": {
+    "export:data": "node scripts/export-data.ts",
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.tools.json && tsc -p tsconfig.demo.json",
