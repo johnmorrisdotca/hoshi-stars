@@ -10,7 +10,8 @@ const phone = { viewport: { width: 390, height: 844 }, hasTouch: true, isMobile:
 const desk = { viewport: { width: 1280, height: 900 } };
 /** The pages and tests that draw WebGL. */
 const WEBGL = ["**/space*.demo.ts", "**/freeze.demo.ts"];
-const software = { launchOptions: { args: [...SOFTWARE_GL_ARGS] } };
+// The software drawing: WebGL on SwiftShader, and the page's own compositing and raster on the CPU too. With only the WebGL flags the map's SVG took three or four times as long to draw on a CI machine and its gesture checks failed.
+const software = { launchOptions: { args: [...SOFTWARE_GL_ARGS, "--disable-gpu-compositing", "--disable-gpu-rasterization"] } };
 
 export default defineConfig({
   testDir: "e2e",

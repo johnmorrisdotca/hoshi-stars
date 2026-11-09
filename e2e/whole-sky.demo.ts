@@ -189,8 +189,6 @@ test("nothing is drawn at rest", async ({ page }) => {
 
 test("the family's gestures move the map", async ({ page, isMobile, browserName }) => {
   test.skip(isMobile || browserName !== "chromium", "the check drives a mouse and two pointers in Chromium");
-  // every Chromium project draws in software now (SOFTWARE_GL_ARGS), which makes the map's pictures slower to take: 14 s of work took over a minute
-  test.setTimeout(180_000);
   await open(page);
   await checkGestures(page, "#ws-box", {
     controls: "kazoku-view-controls",
