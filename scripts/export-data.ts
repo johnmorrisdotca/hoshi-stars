@@ -6,6 +6,8 @@ import { LINE_ROWS } from "../src/data/lines.ts";
 import { stars } from "../src/stars.ts";
 import { nearbyStars } from "../src/nearby.ts";
 import { constellations } from "../src/constellations.ts";
+import { allConstellationFacts } from "../src/constellation-facts.ts";
+import { writeThumbnails } from "./thumbnail-files.ts";
 import { messier } from "../src/deep-sky.ts";
 import { deepSky } from "../src/deep-sky-ngc-ic.ts";
 
@@ -28,11 +30,15 @@ const asRows = (data: readonly object[]): Row[] => data.map((item) => Object.fro
 const nearby = nearbyStars().map(({ flags, aliases, ...rest }) => ({ ...rest, aliases: JSON.stringify(aliases), ...flags }));
 const lineRows = LINE_ROWS.split("\n").flatMap((line) => { const [abbr, chains] = line.split("|"); return chains!.split(";").flatMap((chain, chainIndex) => chain.split("-").map((hr, position) => ({ constellation: abbr!, chain: chainIndex + 1, position: position + 1, hr: Number(hr) }))); });
 const boundaryRows = BOUNDARY_ROWS.split("\n").map((line, index) => { const [lower, upper, declination, abbreviation] = line.trim().split(/\s+/); return { order: index + 1, lowerRaHours: Number(lower), upperRaHours: Number(upper), lowerDec: Number(declination), constellation: abbreviation! }; });
+const ours = "Our own table and counts from this package's data; see NOTICE.md";
+const factRows = allConstellationFacts().map((f) => ({ abbreviation: f.constellation.abbreviation, meaningEn: f.meaning.en, meaningJa: f.meaning.ja, hemisphere: f.hemisphere, bestMonth: f.bestMonth, origin: f.origin, designer: f.designer.en, year: f.year, difficulty: f.difficulty, asterisms: f.asterisms.map((a) => a.en).join("; "), meteorShowers: f.meteorShowers.map((m) => `${m.name.en} ${m.peak}`).join("; ") }));
+const factColumns = [column("abbreviation", "string", "IAU abbreviation", iau), column("meaningEn", "string", "What the name means, in English", iau), column("meaningJa", "string", "What the name means, in Japanese (our own words)", ours), column("hemisphere", "string", "north, south or both (crosses the celestial equator)", ours), column("bestMonth", "integer", "Month 1 to 12 when it is highest in the evening sky (about 21:00, the 15th)", ours), column("origin", "string", "ancient, voyages, early or modern", ours), column("designer", "string", "Who made the constellation", ours), column("year", "integer", "The year it was made (about 150 for Ptolemy's)", ours), column("difficulty", "string", "easy, medium or hard, from the brightness of its stars", ours), column("asterisms", "string", "Well-known asterisms that use it, separated by semicolons", ours), column("meteorShowers", "string", "Meteor showers whose radiant lies in it, with the usual peak as MM-DD", ours)];
 const allStars = stars();
 const tables: { name: string; columns: Column[]; rows: Row[] }[] = [
   { name: "stars", columns: starColumns, rows: asRows(allStars) },
   { name: "nearby-stars", columns: nearbyColumns, rows: asRows(nearby) },
   { name: "constellations", columns: [column("abbreviation", "string", "IAU abbreviation", iau), column("name", "string", "Latin name", iau), column("genitive", "string", "Latin genitive", iau), column("english", "string", "English name", iau), column("japanese", "string", "Japanese name", iau), column("reading", "string", "Japanese reading", iau)], rows: asRows(constellations()) },
+  { name: "constellation-facts", columns: factColumns, rows: factRows },
   { name: "constellation-lines", columns: [column("constellation", "string", "IAU abbreviation", "Original figures; see NOTICE.md"), column("chain", "integer", "One-based chain number", "Original figures; see NOTICE.md"), column("position", "integer", "One-based position within chain", "Original figures; see NOTICE.md"), column("hr", "integer", "Bright-star HR number", bsc)], rows: lineRows },
   { name: "boundaries", columns: [column("order", "integer", "Roman table row order", "Roman 1987, VizieR VI/42; see NOTICE.md"), column("lowerRaHours", "number", "Lower right ascension, B1875", "Roman 1987, VizieR VI/42; see NOTICE.md", "hour"), column("upperRaHours", "number", "Upper right ascension, B1875", "Roman 1987, VizieR VI/42; see NOTICE.md", "hour"), column("lowerDec", "number", "Lower declination, B1875", "Roman 1987, VizieR VI/42; see NOTICE.md", "degree"), column("constellation", "string", "IAU abbreviation", "Roman 1987, VizieR VI/42; see NOTICE.md")], rows: boundaryRows },
   { name: "messier", columns: deepColumns, rows: asRows(messier()) },
@@ -48,6 +54,8 @@ for (const { name, columns, rows } of tables) {
   const schema = { table: name, rows: rows.length, encoding: "UTF-8", null: "\\N", columns };
   for (const [file, content] of [[`${name}.csv`, csv], [`${name}.schema.json`, JSON.stringify(schema, null, 2) + "\n"]] as const) { await writeFile(join(output, file), content); files.push(file); }
 }
+writeThumbnails(join(output, "thumbnails"), []);
+for (const look of ["light", "dark"]) for (const c of constellations()) files.push(`thumbnails/svg/${look}/${c.abbreviation}.svg`);
 const notice = await readFile(new URL("../NOTICE.md", import.meta.url), "utf8");
 await writeFile(join(output, "LICENCE-DATA.md"), `# Data licence and credits\n\nThe package code is MIT. Each data source keeps its own terms, including the sources with no stated licence. The following is the package's complete source notice.\n\n${notice}`);
 files.push("LICENCE-DATA.md");

@@ -8,12 +8,13 @@ import { test } from "node:test";
 import { stars } from "../src/stars.ts";
 import { nearbyStars } from "../src/nearby.ts";
 
-const names = ["stars", "nearby-stars", "constellations", "constellation-lines", "boundaries", "messier", "ngc-ic", "star-names"];
+const names = ["stars", "nearby-stars", "constellations", "constellation-facts", "constellation-lines", "boundaries", "messier", "ngc-ic", "star-names"];
 test("the data export has matching schemas, counts and checksums", () => {
   const dir = mkdtempSync(join(tmpdir(), "hoshi-export-"));
   try {
     execFileSync(process.execPath, ["scripts/export-data.ts", dir], { cwd: process.cwd() });
     const files = readdirSync(dir);
+    assert.equal(readdirSync(join(dir, "thumbnails", "svg", "dark")).length, 88);
     for (const name of names) {
       assert.ok(files.includes(`${name}.csv`));
       assert.ok(files.includes(`${name}.schema.json`));
@@ -33,7 +34,7 @@ test("the data export has matching schemas, counts and checksums", () => {
     assert.ok(Math.abs(Number(sirius[7]) + 1.46) < 0.001);
     assert.ok(files.includes("LICENCE-DATA.md"));
     const sums = readFileSync(join(dir, "SHA256SUMS"), "utf8").trim().split("\n");
-    assert.equal(sums.length, names.length * 2 + 1);
+    assert.equal(sums.length, names.length * 2 + 1 + 176);
     for (const line of sums) { const [hash, file] = line.split("  "); assert.equal(createHash("sha256").update(readFileSync(join(dir, file!))).digest("hex"), hash); }
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

@@ -15,10 +15,13 @@ Download `hoshi-stars-data-v<version>.zip` or the individual files from a GitHub
 | `stars` | HR number, English and Japanese names, designation, constellation, J2000 coordinates, magnitude, colour index, spectral class, whole spectral type and luminosity class, proper motion, and parallax with its error and source. |
 | `nearby-stars` | GCTP and other identifiers, names, J2000 coordinates and source, position error, parallax and error, distance and error, proper motion, magnitude, spectral type, luminosity class and quality flags. |
 | `constellations` | IAU abbreviation, Latin name and genitive, English name, Japanese name and reading. |
+| `constellation-facts` | Abbreviation, what the name means (English and Japanese), hemisphere, best month, origin, designer and year, how easy it is to find, asterisms and meteor showers. |
 | `constellation-lines` | Constellation abbreviation, chain and position (both one-based), and HR number. Join successive positions in each chain. |
 | `boundaries` | Roman table order, lower and upper right ascension in hours, lower declination in degrees and constellation abbreviation; frame B1875. |
 | `messier`, `ngc-ic` | Catalogue identifiers and aliases, name, type, constellation, J2000 coordinates, visual magnitude and angular size. |
 | `star-names` | HR number and English and Japanese names. |
+
+The zip also holds the 88 constellation pictures as SVG, in `thumbnails/svg/light/` and `thumbnails/svg/dark/`, named by abbreviation ([pictures](constellation-pictures.md)).
 
 The schema lists every column's type, unit, meaning and source. Positions are degrees unless a schema says otherwise; proper motion is milliarcseconds per year. CSV uses `\N` for missing values. The `aliases` and `otherIds` fields are JSON arrays encoded as strings. A missing value is not zero. Nearby-star uncertainties and flags should be retained when using distances.
 

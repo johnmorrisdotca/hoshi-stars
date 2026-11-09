@@ -30,8 +30,8 @@ def main() -> None:
         if table.column_names != arrow_schema.names or table.num_rows != schema["rows"]:
             raise ValueError(f"{schema_file}: columns or row count differ")
         parquet.write_table(table, root / (schema["table"] + ".parquet"))
-    files = sorted(p for p in root.iterdir() if p.is_file() and p.name != "SHA256SUMS" and p.suffix in {".csv", ".json", ".parquet", ".md"})
-    (root / "SHA256SUMS").write_text("".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n" for path in files), encoding="utf-8")
+    files = sorted(p for p in root.rglob("*") if p.is_file() and p.name != "SHA256SUMS" and p.suffix in {".csv", ".json", ".parquet", ".md", ".svg"})
+    (root / "SHA256SUMS").write_text("".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(root).as_posix()}\n" for path in files), encoding="utf-8")
 
 
 if __name__ == "__main__":
