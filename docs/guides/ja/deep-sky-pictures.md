@@ -1,0 +1,142 @@
+---
+title: 深宇宙天体の大きさと写真
+section: how-to
+order: 7
+description: 銀河・星団・星雲の空での大きさと向き、その輪郭、明るい天体の写真を実際の位置と大きさで重ねる方法、そして測定した部分と描いただけの部分の見分け方。
+---
+
+[English](../deep-sky-pictures.md)
+
+このパッケージが持つ深宇宙天体は、すべて空での実際の大きさで描けます。明るいものには写真もあります。このページでは、数値が何か、どう描くか、どの部分が測定でどの部分が描いただけかを説明します。
+
+## 形とは
+
+`deepSkyShape(object)` は、カタログが測った3つの値を返します。値は数か `undefined` のどちらかです。
+
+| 部分 | 意味 |
+|---|---|
+| `majorArcmin` | いちばん長い方の直径 (分角) |
+| `minorArcmin` | いちばん短い方の直径 (測定があるとき) |
+| `positionAngle` | 長軸の位置角。北から東まわりに0度以上180度未満 (測定があるとき) |
+| `source` | 測定元のカタログ: `RC3`、`Messier table`、`NGC 2000.0`、`Wikidata` |
+
+推測はしません。銀河の数値は RC3 (明るい銀河の第3参照カタログ) のものです。25等級の等光度線での直径、軸の比、角度が、銀河10,282個のうち約7,000個にあります。銀河でないメシエ天体は「スカイカタログ2000.0」の直径 (楕円なら2つ目の直径も) を使い、ほかの NGC・IC 天体の多くは NGC 2000.0 の直径ひとつだけです。RC3 にない天体に角度はありません。11,898個のうち8,329個に大きさがあり、残りは大きさ固定の点線の記号で描きます。`measuredParts(shape)` は、どの部分があるかを返します。短軸か角度がない天体は、長い方の直径の円で描き、だれも測っていない楕円は描きません。
+
+import は2つに分けてあり、使うものだけを読み込めます。`@johnmorrisdotca/hoshi-stars/deep-sky/shape` はメシエ天体の形 (gzip で約3 kB)、`.../deep-sky/ngc-ic-shape` は全天体の形 (約45 kB) です。
+
+## 輪郭
+
+`deepSkyOutline(centre, shape, points)` は、天体のまわりを囲む空の点の輪です。長軸・短軸・角度どおりの楕円を、天体の位置で天球に接する平面 (接平面。天体写真を撮る面) で見たものです。点は空の座標なので、7つの図法のどれでも描け、どの図法でも楕円は正しい大きさと向きのままです。`offsetOnSky(centre, east, north)` は、その手順だけを取り出したものです。
+
+## 写真
+
+`deepSkyPicture("M31")` は、天体のいちばん広い写真がどこにあるかを返します。パッケージの `pictures/` フォルダーのファイル、幅と高さ、中心の空の点、1ピクセルあたりの秒角、回転、クレジット、出典です。`deepSkyPicturesOf("M51")` は、その天体の写真を広いものから順にすべて返します。天体の一部をより細かく写した写真もあり、広い写真の上に重ねます。`deepSkyPictures()` はすべての写真を返します。`pictureCorners(picture)` は空での4つの角を返します。地図はそのうち3つの角で写真を留めます (下の「ページで」の例)。写真は透明部分のある WebP なので、暗い空に重ねると光だけが加わり、四角い枠は出ません。
+
+広い写真は、NASA の SkyView が画像を作った日に、各天体を中心として切り出したサーベイ画像です。位置は正確です。画像の依頼そのものが位置の指定になっていて、目で合わせたものはありません。サーベイは3つあり、どれもクレジットを付け、ファイル・アドレス・ライセンス・取得した日をリポジトリの `NOTICE.md` に記録しています。
+
+- **SDSS g, r, i**: スローン・デジタル・スカイ・サーベイが観測した範囲の可視光 (クリエイティブ・コモンズ表示ライセンス)。
+- **2MASS J, H, K**: 全天の近赤外線 (米国政府の著作物)。
+- **WISE 3.4, 4.6, 12 ミクロン**: 星雲に向いた中間赤外線 (パブリックドメイン)。
+
+赤外線の画像は疑似カラーです。観測データを目で見えるようにしたもので、だれかが撮った写真ではありません。デモのカードにもそう書いてあります。
+
+細かい写真は ESA/Hubble の画像です (クリエイティブ・コモンズ表示4.0。https://esahubble.org/copyright/ に書かれています)。M1、M16、M31、M33、M42、M51、M57、M81、M82、M83、M104、球状星団 47 Tucanae (NGC 104) など、よく知られた天体の18枚です。どの画像も、画像に付いた Astronomy Visualization Metadata の位置と回転で空に置き、サーベイ画像の上に重ねます。大きさを変え、縁の黒い部分は透明にし、発表資料のクレジットはカードと `NOTICE.md` に残します。デジタイズド・スカイ・サーベイ、Stellarium のテクスチャー、ライセンスが書かれていない画像は使いません。
+
+110個のメシエ天体のうち82個に写真があります。サーベイに写る銀河・球状星団・星雲のすべてと、プレアデスです。残りは、天の川の星雲の中にある散開星団 (サーベイでは薄暗い星が一面に写るだけなので、代わりにデモの地図で明るい星を丸く囲みます)、星の雲 M24、星の並びの M40 と M73、そして M31 の写真の中にある M32 です。全部で113個の天体の写真が130枚あり、その内訳は、82個のメシエ天体、明るい NGC・IC 天体31個、細かい写真18枚です。パッケージが写真を自動で読み込むことはありません。写真が必要なページが `pictureUrl(picture, base)` でそのアドレスを求めます。ファイルはパッケージに入っているので、CDN から読むなら `https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/pictures/M31.webp` です。
+
+ファイルは1枚90 kB 以下です。デモは、写真の視野が画面上で幅90ピクセル以上になったときだけ写真を読み込み、130ピクセルから表示し (360ピクセルで完全に表示)、同時に読み込むのは6枚までです。そのため、1つの画面で読み込む写真は多くても約500 kB、ふつうは1〜2枚 (50〜150 kB) です。NGC・IC 天体 (スクリプト約190 kB) は、深宇宙の層をオンにして地図を拡大したときだけ読み込みます。
+
+## 星団の輪郭の中の星
+
+`starsInside(object, shape)` (`@johnmorrisdotca/hoshi-stars/deep-sky/members`) は、天体の長い方の直径でできる円の中にある、明るい星カタログの星 (6等まで) を、明るい順に返します。わかるのは星の位置だけで、どの天体に属するかではありません。カタログには星団までの距離がないので、星団の手前の星や、ずっと奥の星も入ります。「輪郭の中の星」として描いてください。星団の仲間と確かめた星ではありません。
+
+```ts
+import { deepSkyObject } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+import { deepSkyShape } from "@johnmorrisdotca/hoshi-stars/deep-sky/shape";
+import { starsInside } from "@johnmorrisdotca/hoshi-stars/deep-sky/members";
+
+const pleiades = deepSkyObject("M45")!;
+console.log(starsInside(pleiades, deepSkyShape(pleiades)).slice(0, 3).map((star) => star.name));   // [ 'Alcyone', 'Atlas', 'Electra' ]
+```
+
+## サーバーで
+
+上のものはすべて純粋な関数なので、Node 22 以上のスクリプトで、輪郭と写真の枠をファイルに描けます。
+
+```js
+import { writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { deepSkyObject } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+import { deepSkyOutline, deepSkyShape } from "@johnmorrisdotca/hoshi-stars/deep-sky/shape";
+import { deepSkyPicture, pictureCorners } from "@johnmorrisdotca/hoshi-stars/deep-sky/pictures";
+import { project } from "@johnmorrisdotca/hoshi-stars/projection";
+
+// Andromeda at its measured size and angle, and the frame of its picture, on a map 4 degrees across (north up, east on the left).
+const m31 = deepSkyObject("M31");
+const shape = deepSkyShape(m31);
+const picture = deepSkyPicture("M31");
+const view = { centre: m31, scale: (800 / 4) * (180 / Math.PI) };
+const path = (ring) =>
+  ring
+    .map((point, i) => {
+      const at = project("gnomonic", point, view);
+      return `${i === 0 ? "M" : "L"}${(400 + at.x).toFixed(1)} ${(400 - at.y).toFixed(1)}`;
+    })
+    .join("") + "Z";
+
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Andromeda"><rect width="800" height="800" fill="#0b1020"/><path d="${path(pictureCorners(picture))}" fill="none" stroke="#6f93e0"/><path d="${path(deepSkyOutline(m31, shape))}" fill="none" stroke="#e0a458"/></svg>`;
+writeFileSync(join(tmpdir(), "hoshi-m31.svg"), svg);
+console.log("M31", shape.majorArcmin, shape.minorArcmin, shape.positionAngle, picture.file);
+```
+
+## ページで
+
+写真は4つの角のうち3つで空に留め、その上に輪郭を重ねます。
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Andromeda and its picture</title>
+  </head>
+  <body>
+    <div id="sky"></div>
+    <script type="module">
+      import { deepSkyObject } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/deep-sky.js";
+      import { deepSkyOutline, deepSkyShape } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/deep-sky-shape.js";
+      import { deepSkyPicture, pictureCorners, pictureUrl } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/deep-sky-pictures.js";
+      import { project } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/projection.js";
+
+      const m31 = deepSkyObject("M31");
+      const picture = deepSkyPicture("M31");
+      const view = { centre: m31, scale: (400 / 4) * (180 / Math.PI) };
+      const place = (point) => {
+        const at = project("gnomonic", point, view);
+        return { x: 200 + at.x, y: 200 - at.y };
+      };
+
+      // The picture is pinned to the sky by three of its corners: its pixels (0, 0), (width, 0) and (0, height).
+      const [topLeft, topRight, , bottomLeft] = pictureCorners(picture).map(place);
+      const matrix = [(topRight.x - topLeft.x) / picture.width, (topRight.y - topLeft.y) / picture.width, (bottomLeft.x - topLeft.x) / picture.height, (bottomLeft.y - topLeft.y) / picture.height, topLeft.x, topLeft.y];
+      const ring = deepSkyOutline(m31, deepSkyShape(m31)).map((point, i) => `${i === 0 ? "M" : "L"}${place(point).x.toFixed(1)} ${place(point).y.toFixed(1)}`).join("");
+
+      document.querySelector("#sky").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Andromeda"><rect width="400" height="400" fill="#0b1020"/><image href="${pictureUrl(picture, "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars")}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.join(" ")})"/><path d="${ring}Z" fill="none" stroke="#e0a458"/></svg>`;
+    </script>
+  </body>
+</html>
+```
+
+## デモで
+
+**深宇宙**の層は、すべての天体を実際の大きさで描き、**写真**の層は写真を重ねます。どちらの設定もアドレスに残ります (`layers=…,deep,pictures`)。天体をタップするとカードが開き、測定したもの (大きさ・角度・測定元)、描いたもの、写真のクレジットとライセンス、散開星団ならその輪郭の中にあるカタログの明るい星 (地図で丸く囲みます) がわかります。その星はカタログの位置にあるだけで、星団の仲間かどうかは確かめていません。カタログに星団までの距離がないためです。
+
+記号の読み方:
+
+- 銀河は、測定した大きさ・軸の比・角度の楕円です。軸の比か角度がないときは、長い方の直径の点線の円です。
+- 球状星団は十字つきの円、散開星団は破線の円、惑星状星雲は2本の短い線つきの輪、超新星残骸は内側にもう1つ輪のある破線の輪、そのほかの星雲は破線の輪郭です。
+- 明るい天体ほど濃く描きます (等級に応じて変えます)。
+- 薄い色の点線で描いた大きさ固定の記号は、大きさが測定されていない天体です。
+- 実際の大きさで見えるほど拡大するまでは、最小の大きさの記号で描きます。

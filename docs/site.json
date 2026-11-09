@@ -90,6 +90,26 @@
       "ja": "ブラックホール (位置・質量と距離(範囲つき)・見つけた方法・出典の論文つきの301個)",
       "platform": "neutral"
     },
+    "./deep-sky/shape": {
+      "en": "How big a Messier object is on the sky and which way it lies, and its outline",
+      "ja": "メシエ天体の空での大きさと向き、その輪郭",
+      "platform": "neutral"
+    },
+    "./deep-sky/ngc-ic-shape": {
+      "en": "The same for the NGC and IC objects",
+      "ja": "NGC・IC天体の大きさと向き",
+      "platform": "neutral"
+    },
+    "./deep-sky/pictures": {
+      "en": "Pictures of deep-sky objects and where each lies on the sky",
+      "ja": "深宇宙天体の写真と、それぞれの空での位置",
+      "platform": "neutral"
+    },
+    "./deep-sky/members": {
+      "en": "The bright catalogue stars inside a cluster's outline",
+      "ja": "星団の輪郭の中にあるカタログの明るい星",
+      "platform": "neutral"
+    },
     "./projection": {
       "en": "Map projections for sky charts",
       "ja": "星図の図法",

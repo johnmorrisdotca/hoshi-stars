@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Andromeda and its picture</title>
+  </head>
+  <body>
+    <div id="sky"></div>
+    <script type="module">
+      import { deepSkyObject } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/deep-sky.js";
+      import { deepSkyOutline, deepSkyShape } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/deep-sky-shape.js";
+      import { deepSkyPicture, pictureCorners, pictureUrl } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/deep-sky-pictures.js";
+      import { project } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/projection.js";
+
+      const m31 = deepSkyObject("M31");
+      const picture = deepSkyPicture("M31");
+      const view = { centre: m31, scale: (400 / 4) * (180 / Math.PI) };
+      const place = (point) => {
+        const at = project("gnomonic", point, view);
+        return { x: 200 + at.x, y: 200 - at.y };
+      };
+
+      // The picture is pinned to the sky by three of its corners: its pixels (0, 0), (width, 0) and (0, height).
+      const [topLeft, topRight, , bottomLeft] = pictureCorners(picture).map(place);
+      const matrix = [(topRight.x - topLeft.x) / picture.width, (topRight.y - topLeft.y) / picture.width, (bottomLeft.x - topLeft.x) / picture.height, (bottomLeft.y - topLeft.y) / picture.height, topLeft.x, topLeft.y];
+      const ring = deepSkyOutline(m31, deepSkyShape(m31)).map((point, i) => `${i === 0 ? "M" : "L"}${place(point).x.toFixed(1)} ${place(point).y.toFixed(1)}`).join("");
+
+      document.querySelector("#sky").innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Andromeda"><rect width="400" height="400" fill="#0b1020"/><image href="${pictureUrl(picture, "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars")}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.join(" ")})"/><path d="${ring}Z" fill="none" stroke="#e0a458"/></svg>`;
+    </script>
+  </body>
+</html>

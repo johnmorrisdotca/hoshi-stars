@@ -223,6 +223,21 @@ import { blackHole, blackHoles } from "@johnmorrisdotca/hoshi-stars/black-holes"
 const sgr = blackHole("Sgr A*")!;     // or "Sagittarius A*", in any case
 console.log(sgr.kind, sgr.constellation, sgr.massSuns?.value, sgr.sources.mass[0]?.citation);  // supermassive Sgr 4297000 GRAVITY Collaboration 2022, A&A 657, L12
 console.log(blackHoles({ kind: "quiet" }).map((b) => b.name).join(", "));  // VFTS 243, Gaia BH2, Gaia BH1, OGLE-2011-BLG-0462, Gaia BH3
+
+## Deep-sky sizes and pictures
+
+A galaxy, cluster or nebula is not a point: Andromeda is three degrees long. `@johnmorrisdotca/hoshi-stars/deep-sky/shape` gives the size, axis ratio and angle that catalogues measured (RC3 for galaxies, the Sky Catalog and NGC 2000.0 for the rest; `.../deep-sky/ngc-ic-shape` for all 11,898 objects), the outline on the sky, and `.../deep-sky/pictures` says where each of 130 pictures (of 82 Messier objects and 31 brighter NGC and IC objects, 18 of them finer ESA/Hubble pictures laid over the survey ones) lies; the files are in the package's `pictures/`, at most 90 kB each. Each part is a measurement or `undefined`: nothing is guessed, and a missing minor axis or angle is drawn as a circle, never as an ellipse nobody measured. The pictures are survey images (SDSS, 2MASS, WISE through NASA's SkyView) and ESA/Hubble's images (CC BY 4.0), laid at their true place and size, credited in [NOTICE.md](NOTICE.md). See the [guide](docs/guides/deep-sky-pictures.md).
+
+```ts
+import { deepSkyObject } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+import { deepSkyOutline, deepSkyShape, measuredParts } from "@johnmorrisdotca/hoshi-stars/deep-sky/shape";
+import { deepSkyPicture, pictureCorners } from "@johnmorrisdotca/hoshi-stars/deep-sky/pictures";
+
+const m31 = deepSkyObject("M31")!;
+const shape = deepSkyShape(m31);
+console.log(shape.majorArcmin, shape.minorArcmin, shape.positionAngle, shape.source);   // 190.5 61.7 35 RC3
+console.log(measuredParts(deepSkyShape(deepSkyObject("M42")!)).oval);                    // false
+console.log(deepSkyOutline(m31, shape, 8)!.length, pictureCorners(deepSkyPicture("M31")!).length);   // 9 4
 ```
 
 ## The Milky Way
