@@ -17,10 +17,10 @@ const options = (extra: Partial<ChartOptions>): ChartOptions => ({ ...DEFAULT_VI
 const symbols = (svg: string): string[] => [...svg.matchAll(/data-hole="([^"]+)" data-kind="([^"]+)"/g)].map((m) => `${m[1]}:${m[2]}`);
 const say = (key: string): string => (WORDS.en as Record<string, string>)[key] ?? key;
 
-test("holes is a layer, after Messier and before the grid, and is kept in an address only when it is on", () => {
-  assert.deepEqual([...LAYERS], ["milky", "lines", "boundaries", "names", "deep", "holes", "grid"]);
-  assert.equal(layersText(layersOf("milky,lines,names,grid")), null);
-  assert.equal(layersText(layersOf("milky,lines,names,holes,grid")), "milky,lines,names,holes,grid");
+test("holes is a layer, after Messier and before the faint stars and the grid, and is kept in an address only when it is on", () => {
+  assert.deepEqual([...LAYERS], ["milky", "lines", "boundaries", "names", "deep", "holes", "faint", "grid"]);
+  assert.equal(layersText(layersOf("milky,lines,names,faint,grid")), null);
+  assert.equal(layersText(layersOf("milky,lines,names,holes,faint,grid")), "milky,lines,names,holes,faint,grid");
   assert.equal(layersText(layersOf("holes")), "holes");
 });
 
