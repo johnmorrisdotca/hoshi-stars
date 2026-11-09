@@ -222,6 +222,18 @@ console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));      
 
 The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,533 stars of the 5,080 that have a parallax, and the parallaxes are whole milliarcseconds, so `error` is `undefined` and `skipped` counts the stars left out. Pass `among: [...stars(), ...nearbyStars()]` to count the nearby stars too (below). [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
+## Printable sheets
+
+`@johnmorrisdotca/hoshi-stars/sheets` draws four printable things as SVG strings measured in millimetres: connect-the-dots constellations (`dotsSvg`: dots sized by brightness and numbered in drawing order, at three levels, with an answer page), the constellations that suit a latitude (`skyForLatitude`, `regionGuideSvg`), a cut-out star wheel for a latitude (`starWheelDisc`, `starWheelPlate`, `starWheelPoster`) and a sky map for a month (`skyMapSvg`). English and Japanese, a `kid` type (large, thick lines) and a `normal` one, and no dependency: the [demo](https://johnmorrisdotca.github.io/hoshi-stars/kids.html) puts them in kazoku-ui's print layout (header with the brand and a Name box, footer with credits, version and a QR code) on A4 or US Letter, with a country and region picker, and [ready-made PDFs](https://johnmorrisdotca.github.io/hoshi-stars/pdf/) are built with the site. [The guide](docs/guides/printable-sheets.md) has the details.
+
+```ts
+import { dotsSvg, skyForLatitude } from "@johnmorrisdotca/hoshi-stars/sheets";
+
+const page = dotsSvg("Cru", { level: "easy", widthMm: 184.6, heightMm: 190, lang: "en" });
+const sydney = skyForLatitude(-33.9);
+console.log(page.includes("Join the dots from 1 to"), sydney.find((one) => one.constellation.abbreviation === "UMi")?.standing); // true never
+```
+
 ## Put a chart in a page
 
 The package gives numbers; a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
