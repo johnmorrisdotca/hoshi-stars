@@ -110,6 +110,11 @@
       "ja": "ほかの星から見た空 (そこから見た位置・距離・明るさ。太陽も星のひとつ)",
       "platform": "neutral"
     },
+    "./constellation-3d": {
+      "en": "A constellation in 3D: its stars placed in space from their parallaxes, with the range each error allows and the Earth's lines of sight",
+      "ja": "立体の星座 (視差から星を空間に置き、誤差の範囲と地球からの視線を示す)",
+      "platform": "neutral"
+    },
     "./sky-from/nearby": {
       "en": "The sky seen from another star, with the nearby stars moved too",
       "ja": "ほかの星から見た空 (近くの星も動かす)",
