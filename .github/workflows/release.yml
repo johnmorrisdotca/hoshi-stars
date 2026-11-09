@@ -16,6 +16,7 @@ jobs:
     with:
       github-release: true
       check-command: pnpm check && pnpm test:readme
+      freeze-command: pnpm test:freeze
   data-files:
     needs: release
     runs-on: ubuntu-latest

@@ -116,3 +116,18 @@ jobs:
           if git log --format='%an %ae%n%cn %ce%n%B' "$range" | grep -i -E 'co-authored-by:.*(claude|anthropic|openai|chatgpt|gpt)|noreply@anthropic|noreply@openai'; then
             echo "A commit names an AI as author (see AGENTS.md: no AI attribution)"; exit 1
           fi
+  freeze:
+    # The constellation in 3D is WebGL: this plays it in Chromium, drawn in software, and fails on more than one frame asked for at a time, a draw when nothing moves, GPU objects that grow, or a canvas past its budget.
+    name: freeze (WebGL)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:freeze

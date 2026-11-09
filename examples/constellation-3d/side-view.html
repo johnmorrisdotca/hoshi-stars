@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Great Bear from the side</title>
+  </head>
+  <body>
+    <div id="space"></div>
+    <script type="module">
+      import { starColour } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/index.js";
+      import { constellationIn3D } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/constellation-3d.js";
+
+      // The Earth on the left, distance to the right (light-years), the sky sideways. A bar is the range the parallax error allows.
+      const figure = constellationIn3D("UMa");
+      const { centre, up } = figure.frame;
+      const side = [centre[1] * up[2] - centre[2] * up[1], centre[2] * up[0] - centre[0] * up[2], centre[0] * up[1] - centre[1] * up[0]];
+      const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      const placed = figure.stars.filter((star) => star.position);
+      const reach = Math.max(...placed.map((star) => dot(star.farPosition ?? star.position, centre)));
+      const k = 360 / reach;
+      const x = (p) => 20 + dot(p, centre) * k;
+      const y = (p) => 100 - dot(p, side) * k;
+
+      let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 200" role="img" aria-label="The Great Bear from the side"><rect width="400" height="200" fill="#0b1020"/>`;
+      for (const [a, b] of figure.segments) {
+        const from = figure.stars[a].position;
+        const to = figure.stars[b].position;
+        if (from && to) svg += `<line x1="${x(from)}" y1="${y(from)}" x2="${x(to)}" y2="${y(to)}" stroke="#6f93e0"/>`;
+      }
+      for (const star of placed) {
+        if (star.nearPosition && star.farPosition) svg += `<line x1="${x(star.nearPosition)}" y1="${y(star.nearPosition)}" x2="${x(star.farPosition)}" y2="${y(star.farPosition)}" stroke="${starColour(star.star)}" stroke-opacity=".6"/>`;
+        svg += `<circle cx="${x(star.position)}" cy="${y(star.position)}" r="${Math.max(1.5, 4.5 - star.star.magnitude)}" fill="${starColour(star.star)}"/>`;
+      }
+      document.querySelector("#space").innerHTML = svg + "</svg>";
+    </script>
+  </body>
+</html>
