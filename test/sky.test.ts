@@ -330,9 +330,9 @@ test("bad input throws, naming the argument and the value", () => {
 });
 
 test("speed: 100,000 horizontal conversions stay inside a stated budget", () => {
-  // Measured on the author's Mac (Node 24): about 26 ms for 100,000 conversions (precession, sidereal time and the horizon formulas each time). The budget is 100 ms, nearly four times that.
+  // Measured on the author's Mac (Node 24): about 26 ms for 100,000 conversions (precession, sidereal time and the horizon formulas each time). The budget is 250 ms, nearly ten times that: a shared CI machine is about four times slower than the Mac and varies.
   // The best of five passes after a warm-up is timed: the test files run side by side, so one pass can share the machine with another file's work.
-  const BUDGET_MS = 100;
+  const BUDGET_MS = 250;
   let seed = 4242;
   const random = (): number => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
