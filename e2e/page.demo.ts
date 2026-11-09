@@ -168,7 +168,7 @@ test("every projection draws, and the layers switch on and off", async ({ page }
   await expect(page.locator("#chart path[stroke='#6f93e0']")).toHaveCount(0);
   await page.locator('#seg-layers button[data-value="deep"]').click();
   await expect(page.locator("#chart text", { hasText: "M42" }).first()).toBeVisible();
-  await expect.poll(() => param(page, "layers")).toBe("milky,boundaries,names,deep,grid");
+  await expect.poll(() => param(page, "layers")).toBe("milky,boundaries,names,deep,faint,grid");
 });
 
 test("the Milky Way layer is on to begin with, turns off and on, and the address remembers it", async ({ page }) => {
@@ -181,11 +181,11 @@ test("the Milky Way layer is on to begin with, turns off and on, and the address
   await expect(button).toHaveAttribute("aria-pressed", "true");
   await button.click();
   await expect(band).toHaveCount(0);
-  await expect.poll(() => param(page, "layers")).toBe("lines,names,grid");
+  await expect.poll(() => param(page, "layers")).toBe("lines,names,faint,grid");
   await button.click();
   await expect(band).toHaveCount(1);
   await expect.poll(() => param(page, "layers")).toBeNull();
-  await open(page, "?layers=lines,names,grid&proj=hammer&zoom=1");
+  await open(page, "?layers=lines,names,faint,grid&proj=hammer&zoom=1");
   await expect(band).toHaveCount(0);
   await open(page, "?layers=milky&proj=hammer&ra=266&dec=-29&zoom=1&lang=ja");
   await expect(band).toHaveCount(1);
