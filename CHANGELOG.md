@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-11-09
+
 - **Deep-sky places and constellations fixed** (MODULES-760). NGC 2974, a galaxy in Sextans, was drawn 15 degrees away in Hydra, and the nebula NGC 6884 10 degrees away in Lyra: each was a Wikidata item with two catalogue names, and the NED check had asked only for the first, an old catalogue place. The check now asks for every name and takes the entry NED gives a type; five objects are back where they belong (NGC 2529, 2652/2974, 4912, 6766/6884, 7520). Every deep-sky object's constellation now comes from the IAU boundaries: 21 wrong ones fixed (IC 2888 is in Leo, not Orion) and 422 that had none filled in. Tests hold both.
 
 ## [0.14.0] - 2026-11-09
