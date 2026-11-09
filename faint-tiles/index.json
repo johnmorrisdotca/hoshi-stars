@@ -1,0 +1,125 @@
+{
+ "source": "UCAC4 (Zacharias et al. 2013, AJ 145, 44), VizieR I/322A, through NASA/IPAC IRSA's TAP service, table ucac4_sources",
+ "built": "2026-11-09",
+ "limit": 12.0,
+ "levels": [
+  {
+   "level": 0,
+   "faintest": 10.0,
+   "bandDegrees": 10,
+   "bands": 18,
+   "tiles": 442,
+   "stars": 326134,
+   "bytes": 1956804,
+   "mostStarsInATile": 2382
+  },
+  {
+   "level": 1,
+   "faintest": 11.0,
+   "bandDegrees": 6,
+   "bands": 30,
+   "tiles": 1192,
+   "stars": 624249,
+   "bytes": 3745494,
+   "mostStarsInATile": 2428
+  },
+  {
+   "level": 2,
+   "faintest": 12.0,
+   "bandDegrees": 5,
+   "bands": 36,
+   "tiles": 1704,
+   "stars": 1512156,
+   "bytes": 9072936,
+   "mostStarsInATile": 4787
+  }
+ ],
+ "magnitudeStep": 0.05,
+ "colour": {
+  "offset": 0.6,
+  "step": 80,
+  "none": 255
+ },
+ "stars": 2462539,
+ "report": {
+  "V is Tycho's Vt, not used (tf not 0 and APASS error 0); model magnitude used": 72164,
+  "dropped: already one of the 5,080 bright stars": 45,
+  "dropped: fainter than 12.0 by the chosen magnitude": 2247269,
+  "dropped: object type 4, external high-proper-motion data": 4932,
+  "dropped: object type 6, substituted from FK6, Hipparcos or Tycho-2": 34472,
+  "dropped: object type 7, supplement star from FK6, Hipparcos or Tycho-2": 4215,
+  "kept": 2462539,
+  "kept at level 0": 326134,
+  "kept at level 1": 624249,
+  "kept at level 2": 1512156,
+  "kept with a Tycho cross-reference only (position and magnitude UCAC's own)": 2027855,
+  "kept without a colour": 222142,
+  "magnitude: APASS V": 4308852,
+  "magnitude: UCAC model magnitude": 401001,
+  "rows read": 4753472,
+  "rows with a Hipparcos or Tycho cross-reference (tf not 0)": 2494533
+ },
+ "objectTypes": {
+  "0": 4350153,
+  "1": 157950,
+  "2": 266,
+  "3": 90945,
+  "4": 4932,
+  "5": 33952,
+  "6": 34472,
+  "7": 4215,
+  "8": 71002,
+  "9": 5585
+ },
+ "keptByHalfMagnitude": {
+  "4.0": 1,
+  "4.5": 1,
+  "5.0": 3,
+  "5.5": 3,
+  "6.0": 36,
+  "6.5": 63,
+  "7.0": 238,
+  "7.5": 2837,
+  "8.0": 9559,
+  "8.5": 36078,
+  "9.0": 94559,
+  "9.5": 161934,
+  "10.0": 239640,
+  "10.5": 358936,
+  "11.0": 562027,
+  "11.5": 882821,
+  "12.0": 113803
+ },
+ "droppedAsBrightExamples": [
+  [
+   "500013601",
+   83.7855019,
+   9.9351939,
+   5.3
+  ],
+  [
+   "461049344",
+   169.3226144,
+   2.0120972,
+   6.65
+  ],
+  [
+   "474045978",
+   160.8365683,
+   4.747665,
+   6.85
+  ],
+  [
+   "521007922",
+   64.9907711,
+   14.0362511,
+   6.75
+  ],
+  [
+   "511008087",
+   70.0143111,
+   12.1984958,
+   6.65
+  ]
+ ]
+}
