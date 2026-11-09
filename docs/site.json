@@ -115,6 +115,11 @@
       "ja": "自分の空 (場所と時刻から高度と方位)",
       "platform": "neutral"
     },
+    "./faint": {
+      "en": "The faint stars: about 3 million of UCAC4's, to magnitude 12, in sky tiles loaded for the part of the sky you show",
+      "ja": "暗い星 (UCAC4の約300万個、12等まで。見ている空の部分のタイルだけを読み込みます)",
+      "platform": "neutral"
+    },
     "./sky-from": {
       "en": "The sky seen from another star: positions, distances and brightness from there, with the Sun among the stars",
       "ja": "ほかの星から見た空 (そこから見た位置・距離・明るさ。太陽も星のひとつ)",
