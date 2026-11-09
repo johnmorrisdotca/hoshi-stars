@@ -23,13 +23,15 @@ async function open(page: Page, query = ""): Promise<void> {
 const framesDrawn = (page: Page) => page.locator("#sp-view").evaluate((el) => (Reflect.get(el, "stats") as { draws: number }).draws);
 
 const bounded = async (page: Page, ms: number, during?: () => Promise<void>) => {
+  // The clock runs over the same window as the counts: it starts before the first read and stops after the last, so a frame drawn while the counts are read (a turn coasting on) is never counted without its time.
+  const began = Date.now();
   const start = await readCounts(page);
   const framesStart = await framesDrawn(page);
-  const began = Date.now();
   await Promise.all([page.waitForTimeout(ms), during?.()]);
   const end = await readCounts(page);
+  const framesEnd = await framesDrawn(page);
   const seconds = (Date.now() - began) / 1000;
-  return { seconds, frames: (await framesDrawn(page)) - framesStart, draws: end.draws - start.draws, requests: end.rafRequests - start.rafRequests, callbacks: end.rafCallbacks - start.rafCallbacks, outstanding: end.rafRequests - end.rafCallbacks };
+  return { seconds, frames: framesEnd - framesStart, draws: end.draws - start.draws, requests: end.rafRequests - start.rafRequests, callbacks: end.rafCallbacks - start.rafCallbacks, outstanding: end.rafRequests - end.rafCallbacks };
 };
 
 test("at rest nothing is drawn and no frame is asked for", async ({ page }) => {
