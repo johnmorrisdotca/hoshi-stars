@@ -1,5 +1,6 @@
-// Pictures of deep-sky objects and where each lies on the sky. The deep-sky pictures tier (`@johnmorrisdotca/hoshi-stars/deep-sky/pictures`): the table only (about 8 kB gzipped); the picture files
-// are in the package's `pictures/` folder and are fetched only by a page that draws them. Pure: no DOM, no clock, no state beyond the parsed table.
+// Pictures of deep-sky objects and where each lies on the sky. The deep-sky pictures tier (`@johnmorrisdotca/hoshi-stars/deep-sky/pictures`): the index only (about 8 kB gzipped). The picture files
+// (about 9 MB in all) are NOT in the npm package: they are served from the demo site (https://johnmorrisdotca.github.io/hoshi-stars/pictures/) and fetched only by a page that draws them; a page that
+// wants them from its own server copies the repository's `pictures/` folder there and passes that address to `pictureUrl`. Pure: no DOM, no clock, no state beyond the parsed table.
 import { PICTURE_ROWS, PICTURE_SOURCES } from "./data/deep-sky-pictures.ts";
 import { offsetOnSky } from "./deep-sky-shape-core.ts";
 import type { SkyPoint } from "./projection.ts";
@@ -45,7 +46,7 @@ export interface DeepSkyPicture {
   id: string;
   /** The id of the deep-sky object the picture shows (`M31`), the same as `DeepSkyObject.id`. */
   object: string;
-  /** The file's path in the package, `pictures/M31.webp`; it is a WebP image with transparency, so laid over a dark sky it adds light and no rectangle. */
+  /** The file's path under the folder the pictures are served from, `pictures/M31.webp` (the files are in the repository's `pictures/` and on the demo site, not in the npm package); it is a WebP image with transparency, so laid over a dark sky it adds light and no rectangle. */
   file: string;
   /** Width in pixels. */
   width: number;
@@ -182,19 +183,32 @@ export function pictureCorners(picture: DeepSkyPicture): [SkyPoint, SkyPoint, Sk
 }
 
 /**
- * The address of a picture's file under a base address: the folder the package's `pictures/` is served from, with or without a closing slash.
+ * Where the pictures are served from by default: the demo site of this package. The files are not in the npm package.
+ *
+ * @example
+ * ```ts
+ * import { PICTURES_BASE } from "@johnmorrisdotca/hoshi-stars/deep-sky/pictures";
+ *
+ * console.log(PICTURES_BASE);
+ * ```
+ */
+export const PICTURES_BASE = "https://johnmorrisdotca.github.io/hoshi-stars/";
+
+/**
+ * The address of a picture's file: under the demo site by default, or under a folder of your own that holds a copy of the repository's `pictures/` (with or without a closing slash).
  *
  * @param picture - A picture.
- * @param base - Where the package's files are served from (`https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/`, or `./`).
+ * @param base - The address the `pictures/` folder's parent is served from (`./`, `https://example.org/sky/`); left out, `PICTURES_BASE`.
  * @returns The file's address.
  *
  * @example
  * ```ts
  * import { deepSkyPicture, pictureUrl } from "@johnmorrisdotca/hoshi-stars/deep-sky/pictures";
  *
- * console.log(pictureUrl(deepSkyPicture("M31")!, "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars"));
+ * console.log(pictureUrl(deepSkyPicture("M31")!));
+ * console.log(pictureUrl(deepSkyPicture("M31")!, "https://example.org/sky"));
  * ```
  */
-export function pictureUrl(picture: DeepSkyPicture, base: string): string {
+export function pictureUrl(picture: DeepSkyPicture, base: string = PICTURES_BASE): string {
   return `${base.replace(/\/*$/, "/")}${picture.file}`;
 }

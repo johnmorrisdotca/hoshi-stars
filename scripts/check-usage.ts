@@ -307,18 +307,15 @@ await step("deep-sky-node", () => {
 });
 
 await step("deep-sky-picture", async () => {
+  if (!existsSync(at("site", "pictures", "M31.webp"))) throw new Error("site/ is not built: `pnpm test:usage` builds it");
   await opened(browser, async (page) => {
-    await page.route("https://cdn.jsdelivr.net/**", (route) => {
-      const { pathname } = new URL(route.request().url());
-      const base = "/npm/@johnmorrisdotca/hoshi-stars/";
-      const file = pathname.startsWith(base) ? join(installed, pathname.slice(base.length)) : "";
-      if (file === "" || !existsSync(file)) return route.fulfill({ status: 404, body: "" });
-      return route.fulfill({ body: readFileSync(file), contentType: file.endsWith(".webp") ? "image/webp" : "text/javascript" });
-    });
-    const arrived = page.waitForResponse((response) => response.url().endsWith("/pictures/M31.webp"), { timeout: 20_000 });
+    await cdn(page, "https://cdn.jsdelivr.net", "/npm/@johnmorrisdotca/hoshi-stars/");
+    // the pictures are not in the npm package: the page asks the demo site for them, which here is the built site
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    const arrived = page.waitForResponse((response) => response.url() === "https://johnmorrisdotca.github.io/hoshi-stars/pictures/M31.webp", { timeout: 20_000 });
     await showPage(page, "deep-sky/picture.html");
     const picture = await arrived;
-    if (!picture.ok() || (await picture.body()).length < 5000) throw new Error("the picture of M31 did not arrive from the package");
+    if (!picture.ok() || (await picture.body()).length < 5000) throw new Error("the picture of M31 did not arrive from the demo site");
     await seesImage(page);
   });
 });

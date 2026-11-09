@@ -159,7 +159,6 @@
       "import": "./dist/deep-sky-pictures.js",
       "default": "./dist/deep-sky-pictures.js"
     },
-    "./pictures/*": "./pictures/*",
     "./deep-sky/members": {
       "types": "./dist/deep-sky-members.d.ts",
       "import": "./dist/deep-sky-members.js",
@@ -241,7 +240,6 @@
   "files": [
     "dist",
     "thumbnails",
-    "pictures",
     "LICENSE",
     "NOTICE.md",
     "CHANGELOG.md",
