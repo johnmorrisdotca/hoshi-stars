@@ -131,7 +131,7 @@ await step("cdn-unpkg", async () => {
   await opened(browser, async (page) => {
     await cdn(page, "https://unpkg.com", "/@johnmorrisdotca/hoshi-stars/");
     await showPage(page, "cdn-unpkg.html");
-    await page.waitForFunction(() => /Sirius: magnitude -1\.46, 8\.7 light-years, colour #[0-9a-f]{6}/.test(document.querySelector("#facts")?.textContent ?? ""), undefined, { timeout: 20_000 });
+    await page.waitForFunction(() => /Sirius: magnitude -1\.46, 8\.5 light-years, colour #[0-9a-f]{6}/.test(document.querySelector("#facts")?.textContent ?? ""), undefined, { timeout: 20_000 });
   });
 });
 

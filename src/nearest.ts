@@ -72,7 +72,7 @@ export interface NearestInSpace<T extends Star | NearbyStar = Star> {
   distance: number;
   /** The same distance in parsecs. */
   parsecs: number;
-  /** The uncertainty of `distance` in light-years, or `undefined`: the bright Yale stars give each parallax to a whole milliarcsecond and no error, so none can be worked out for them. It is worked out when the star and the target are nearby stars (or the target is a point), from their parallax errors. */
+  /** The uncertainty of `distance` in light-years, or `undefined`: `nearest` does not yet use the parallax errors of the bright stars (`parallaxErrorMas`), so none is worked out for them. It is worked out when the star and the target are nearby stars (or the target is a point), from their parallax errors. */
   error: number | undefined;
 }
 
@@ -239,8 +239,8 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
  * which keeps its accuracy at 0 and at 180 degrees and across right ascension 0 and 360. By space (`by: "space"`) it places each star from its parallax and finds the straight-line distance, in
  * light-years and in parsecs; it needs a target with a distance and leaves out every candidate without one, counting them in `skipped`. The target itself is never in its own answer.
  *
- * By default the three-dimensional answers cover only the bright stars: the 2,533 of the 5,080 Yale stars that have a positive parallax, so the neighbours are bright stars, not the nearest ones. Their parallaxes are
- * whole milliarcseconds, so a distance is good to a few per cent for a star within 100 light-years and not at all for a faint, far one; `error` is `undefined` for them. To include the stars of `/nearby` (Proxima
+ * By default the three-dimensional answers cover only the bright stars: the 2,563 of the 5,080 Yale stars that have a positive parallax, so the neighbours are bright stars, not the nearest ones. Their parallaxes are
+ * good to a tenth of a milliarcsecond at best, so a distance is good to a few per cent for a star within 100 light-years and not at all for a faint, far one; `error` is `undefined` for them. To include the stars of `/nearby` (Proxima
  * Centauri, Barnard's Star, the red dwarfs, with a parallax error each) pass `among: [...stars(), ...nearbyStars()]`; `error` is then worked out for a nearby star from a target that is a point or a nearby star.
  *
  * Every candidate is looked at (no index); one query over all the stars takes about a millisecond.

@@ -2,6 +2,7 @@
 // The nearby tier (`@johnmorrisdotca/hoshi-stars/nearby`): about 5,600 more stars from the Yale General Catalogue of Trigonometric Stellar Parallaxes, with a modern position from 2MASS where one could be found. Nothing else imports it,
 // so a page that never loads it pays nothing. Pure: no DOM, no clock, no state beyond the parsed table.
 import { NEARBY_ROWS } from "./data/nearby.ts";
+import { luminosityClass, type LuminosityClass } from "./spectral.ts";
 
 /**
  * Where a star's position comes from: a 2MASS source found for it (good to a fraction of an arc-second), or the Yale catalogue's own position (taken to J2000 from 1900, good to arc-seconds at best, an arc-minute at worst).
@@ -115,6 +116,8 @@ export interface NearbyStar {
   magnitudeSource: "GCTP" | undefined;
   /** The spectral type as the catalogue gives it (`M5.5eV`), or an empty string. */
   spectralType: string;
+  /** The luminosity class in `spectralType` (`V` for Proxima Centauri), or `undefined` where the type states none or the catalogue gives no type. The type is the catalogue's ten characters, so a long one may be cut short. */
+  luminosityClass: LuminosityClass | undefined;
   /** What to be careful about. */
   flags: NearbyFlags;
 }
@@ -164,6 +167,7 @@ function load(): void {
       magnitudeKind: kind,
       magnitudeSource: kind === undefined ? undefined : "GCTP",
       spectralType: p[15]!,
+      luminosityClass: luminosityClass(p[15]!),
       flags: Object.freeze({ coarsePosition: flags.includes("c"), excludedFromSpace: flags.includes("x"), ambiguousMatch: flags.includes("a") }),
     });
     stored.push(star);

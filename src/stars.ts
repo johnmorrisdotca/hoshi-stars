@@ -4,6 +4,7 @@ import { J2000_MS } from "./when.ts";
 import { STAR_NAMES, STAR_ROWS } from "./data/stars.ts";
 import { STAR_NAMES_JA } from "./data/star-names-ja.ts";
 import { moment, type When } from "./when.ts";
+import { luminosityClass, type LuminosityClass } from "./spectral.ts";
 
 /**
  * One star, as the Yale Bright Star Catalogue gives it. Positions are J2000 (equator and equinox of 2000, the FK5 frame, which is the ICRS to a fraction of an arc-second).
@@ -35,16 +36,45 @@ export interface Star {
   magnitude: number;
   /** The colour index B-V in magnitudes, or `undefined` where the catalogue has none. Hot blue stars are about -0.3, the Sun 0.65, cool red stars above 1.5. */
   colourIndex: number | undefined;
-  /** The spectral class and subclass (`A1`, `K1`), or an empty string where the catalogue gives none we read. */
+  /** The spectral class and subclass (`A1`, `K1`), or an empty string where the catalogue gives none we read. The first two characters of `spectralType`. */
   spectralClass: string;
+  /** The spectral type as the catalogue gives it, whole (`M1-2Ia-Iab` for Betelgeuse, `A0Va` for Vega, `K1.5IIIFe-0.5`); never empty for these 5,080. */
+  spectralType: string;
+  /** The luminosity class in `spectralType` (`Ia` for Betelgeuse, `V` for Sirius and Vega): a supergiant, giant or dwarf. The first class where a range is given; `undefined` where the type states none (`Am`, `K0`). */
+  luminosityClass: LuminosityClass | undefined;
   /** Proper motion in right ascension, in milliarcseconds a year, already multiplied by cos(declination) (a true angle on the sky). */
   properMotionRaMas: number;
   /** Proper motion in declination, in milliarcseconds a year. */
   properMotionDecMas: number;
-  /** The annual parallax in milliarcseconds; 0 where the catalogue has none (the distance is then unknown). */
+  /** The annual parallax in milliarcseconds, to a tenth where `parallaxSource` is `"GCTP"` and to a whole milliarcsecond otherwise; 0 where there is none (the distance is then unknown). */
   parallaxMas: number;
+  /** The standard error of `parallaxMas` in milliarcseconds, or `undefined` where there is none: the Bright Star Catalogue states no error, so it is only given for a parallax from the Yale parallax catalogue. */
+  parallaxErrorMas: number | undefined;
+  /** Where the parallax is from: `"GCTP"` the Yale General Catalogue of Trigonometric Stellar Parallaxes (a measurement with an error), `"BSC"` the Bright Star Catalogue's trigonometric one, `"dynamical"` the Bright Star Catalogue's dynamical one (from the orbit of a binary); `undefined` where there is none. */
+  parallaxSource: "GCTP" | "BSC" | "dynamical" | undefined;
 }
 
+/**
+ * A star's distance with its uncertainty: what `starDistance` returns.
+ *
+ * @example
+ * ```ts
+ * import { starByName, starDistance, type StarDistance } from "@johnmorrisdotca/hoshi-stars";
+ *
+ * const distance: StarDistance | undefined = starDistance(starByName("Betelgeuse")!);
+ * console.log(distance?.lightYearsRange);
+ * ```
+ */
+export interface StarDistance {
+  /** The distance in light-years: 3,261.56 divided by the parallax in milliarcseconds. */
+  lightYears: number;
+  /** The error of `lightYears`: the distance times the parallax's relative error (a first-order figure, good while that is small), or `undefined` where the parallax has no error. */
+  lightYearsError: number | undefined;
+  /** The nearest and the farthest the distance can be within one standard error of the parallax, or `undefined` where the parallax has no error. The farthest is `Infinity` where the error is as large as the parallax (the distance has no upper limit). */
+  lightYearsRange: readonly [number, number] | undefined;
+}
+
+const SOURCES: Readonly<Record<string, Star["parallaxSource"]>> = { g: "GCTP", b: "BSC", d: "dynamical" };
 const stored: Star[] = [];
 const byHr = new Map<number, Star>();
 const byText = new Map<string, Star>();
@@ -58,6 +88,8 @@ function load(): void {
     const flamsteed = p[2]!;
     const constellation = p[3]!;
     const designation = constellation === "" ? undefined : `${letter !== "" ? letter : flamsteed} ${constellation}`;
+    const spectralType = p[10]!;
+    const error = p[12] === "" ? undefined : Number(p[12]) / 10;
     const star: Star = Object.freeze({
       hr,
       name: STAR_NAMES[hr],
@@ -68,10 +100,14 @@ function load(): void {
       declination: Number(p[5]) / 3600,
       magnitude: Number(p[8]) / 100,
       colourIndex: p[9] === "" ? undefined : Number(p[9]) / 100,
-      spectralClass: p[10]!,
+      spectralClass: /^\s*([OBAFGKMCRNS])\s*([0-9])?/.exec(spectralType)?.slice(1).join("") ?? "",
+      spectralType,
+      luminosityClass: luminosityClass(spectralType),
       properMotionRaMas: Number(p[6]),
       properMotionDecMas: Number(p[7]),
-      parallaxMas: Number(p[11]),
+      parallaxMas: Number(p[11]) / 10,
+      parallaxErrorMas: error,
+      parallaxSource: SOURCES[p[13]!],
     });
     stored.push(star);
     byHr.set(hr, star);
@@ -164,7 +200,7 @@ export function starPosition(star: Pick<Star, "rightAscension" | "declination" |
 }
 
 /**
- * A star's distance from its parallax, in light-years.
+ * A star's distance from its parallax, in light-years. `starDistance` gives the uncertainty with it.
  *
  * @param star - A star.
  * @returns Light-years, or `undefined` where the catalogue has no parallax (or a non-positive one).
@@ -178,6 +214,28 @@ export function starPosition(star: Pick<Star, "rightAscension" | "declination" |
  */
 export function starDistanceLightYears(star: Star): number | undefined {
   return star.parallaxMas > 0 ? 3261.563777 / star.parallaxMas : undefined;
+}
+
+/**
+ * A star's distance with its uncertainty, from the parallax and its error. Sirius is 8.5 light-years, to within 0.05; Betelgeuse's parallax is 9.8 milliarcseconds with an error of 4.7, so its distance is anywhere from 225 to 640 light-years.
+ *
+ * @param star - A star, or anything with a parallax in milliarcseconds and its error (a nearby star from `/nearby`).
+ * @returns The distance, its error and its range in light-years, or `undefined` where there is no parallax (or a non-positive one).
+ *
+ * @example
+ * ```ts
+ * import { starByName, starDistance } from "@johnmorrisdotca/hoshi-stars";
+ *
+ * const sirius = starDistance(starByName("Sirius")!)!;
+ * console.log(sirius.lightYears.toFixed(2), sirius.lightYearsError?.toFixed(2), sirius.lightYearsRange?.map((ly) => ly.toFixed(2)));
+ * ```
+ */
+export function starDistance(star: Pick<Star, "parallaxMas" | "parallaxErrorMas">): StarDistance | undefined {
+  const { parallaxMas: parallax, parallaxErrorMas: error } = star;
+  if (!(parallax > 0)) return undefined;
+  const lightYears = 3261.563777 / parallax;
+  if (error === undefined) return { lightYears, lightYearsError: undefined, lightYearsRange: undefined };
+  return { lightYears, lightYearsError: (lightYears * error) / parallax, lightYearsRange: [3261.563777 / (parallax + error), error < parallax ? 3261.563777 / (parallax - error) : Number.POSITIVE_INFINITY] };
 }
 
 /**

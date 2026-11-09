@@ -4,19 +4,23 @@
 Source: Hoffleit, D. and Warren, W. H. Jr., 1991, "The Bright Star Catalogue, 5th Revised Edition (Preliminary Version)", Astronomical Data Center
 (NASA Goddard), catalogue V/50, as NASA's HEASARC serves it (table bsc5p, https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/bsc5p.html), a US
 government source. The catalogue's own documentation calls it public domain, and the Astronomical Data Center asks only that it and the authors are
-acknowledged; NOTICE.md does. Positions are J2000 (FK5) in the catalogue's own sexagesimal resolution; proper motions and parallaxes are the catalogue's.
-NOT the Hipparcos or Tycho catalogues: ESA licenses those CC BY-NC 3.0 IGO (non-commercial), which an MIT package cannot pass on.
+acknowledged; NOTICE.md does. Positions are J2000 (FK5) in the catalogue's own sexagesimal resolution; proper motions are the catalogue's, and so is the full spectral type string.
+Parallaxes: where the Yale General Catalogue of Trigonometric Stellar Parallaxes (van Altena, Lee and Hoffleit 1995, VizieR I/238A, the file make-nearby-data.py reads) holds the star (matched by
+HD number, and the V magnitudes must agree to 1.0) and gives a positive parallax, that parallax and its standard error, to a tenth of a milliarcsecond; else the Bright Star Catalogue's, to a whole
+milliarcsecond and with no error (a dynamical parallax, code D in the catalogue, is kept in preference to a trigonometric one and marked).
+NOT the Hipparcos or Tycho catalogues (including the new reduction, van Leeuwen 2007): ESA distributes those under CC BY-NC 3.0 IGO (non-commercial), which an MIT package cannot pass on.
 
 The common names are our own list, keyed by the catalogue's Bayer designation; each is checked here against the catalogue (the star must exist and
 be as bright as the name implies). Names follow the IAU Working Group on Star Names (its Catalog of Star Names, IAU-CSN, last updated 2022-04-04).
 
-    python3 -I scripts/make-star-data.py                 # fetches HEASARC's heasarc_bsc5p.tdat.gz (needs the network)
-    python3 -I scripts/make-star-data.py --from FILE     # reads that file saved earlier (gzipped or not)
+    python3 -I scripts/make-star-data.py                 # fetches HEASARC's heasarc_bsc5p.tdat.gz and the Yale parallax catalogue (needs the network)
+    python3 -I scripts/make-star-data.py --from FILE --gctp FILE  # reads those files saved earlier (the first gzipped or not; picat.dat as is)
     node scripts/set-star-constellations.ts              # then fills the constellation of the stars the catalogue names none for, from the boundaries
 
 Neither runs in the test.
 """
 import gzip
+import hashlib
 import re
 import sys
 import urllib.request
@@ -24,6 +28,8 @@ from pathlib import Path
 
 LIMIT = 6.0
 SOURCE = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_bsc5p.tdat.gz"
+GCTP_SOURCE = "https://vizier.cfa.harvard.edu/ftp/cats/I/238A/picat.dat"
+GCTP_SHA256 = "3b483e9ddf76e2fa9860adf2d25aae79ee257de428284c3351e5e81e402727a6"
 OUT = Path(__file__).resolve().parent.parent / "src" / "data" / "stars.ts"
 
 GREEK = {
@@ -113,10 +119,36 @@ def sexagesimal(text: str, hours: bool) -> float:
     return sign * value * (15.0 if hours else 1.0)
 
 
-def spectral_class(text: str) -> str:
-    """The class and subclass only (K1 of K1.5IIIFe-0.5): enough to colour and label a star; the catalogue's full string is long."""
-    match = re.match(r"\s*([OBAFGKMCRNS])\s*([0-9])?", text)
-    return (match.group(1) + (match.group(2) or "")) if match else ""
+def gctp_parallaxes(raw: bytes) -> dict:
+    """HD number to (parallax in tenths of a milliarcsecond, its standard error in the same unit, the V magnitudes of the star's records) over picat.dat, by the byte columns of its ReadMe. A catalogue
+    number is one star or one system: its parallax is on one record (the primary's) and belongs to every component with an HD number, so Alpha Centauri B has Alpha Centauri A's."""
+    if hashlib.sha256(raw).hexdigest() != GCTP_SHA256:
+        raise SystemExit("picat.dat is not the file this script was written for (SHA-256 differs): read the new ReadMe and errata, then update GCTP_SHA256")
+    lines = [line.ljust(132) for line in raw.decode("latin-1").splitlines()]
+    own = {}
+    for line in lines:
+        if line[117:124].strip() and line[1:8].strip() not in own:
+            own[line[1:8].strip()] = (round(float(line[117:124]) * 10000), int(line[125:128]) if line[125:128].strip() else None)
+    found = {}
+    for line in lines:
+        hd = re.match(r"\s*(\d+)", line[78:85])
+        if not hd or line[1:8].strip() not in own:
+            continue
+        entry = found.setdefault(int(hd.group(1)), {"plx": own[line[1:8].strip()][0], "error": own[line[1:8].strip()][1], "v": []})
+        if line[31:36].strip():
+            entry["v"].append(float(line[31:36]))
+    return found
+
+
+def parallax(r: dict, gctp: dict) -> tuple:
+    """(parallax in tenths of a milliarcsecond, its error in the same unit or None, source) for a star: g Yale GCTP, b the Bright Star Catalogue, d the catalogue's dynamical parallax; (0, None, "") for none."""
+    own = round(float(r["parallax"]) * 10000) if r["parallax"].strip() else 0
+    if own > 0 and r["par_code"].strip() == "D":
+        return own, None, "d"
+    entry = gctp.get(int(r["hd"])) if r["hd"].strip() else None
+    if entry and entry["plx"] > 0 and not (entry["v"] and min(abs(v - float(r["vmag"])) for v in entry["v"]) > 1.0):
+        return entry["plx"], entry["error"], "g"
+    return (own, None, "b") if own > 0 else (0, None, "")
 
 
 def unpack(raw: bytes) -> str:
@@ -154,6 +186,11 @@ def designation(name: str):
 
 def main() -> None:
     text = unpack(Path(sys.argv[sys.argv.index("--from") + 1]).read_bytes()) if "--from" in sys.argv else fetch()
+    if "--gctp" in sys.argv:
+        gctp = gctp_parallaxes(Path(sys.argv[sys.argv.index("--gctp") + 1]).read_bytes())
+    else:
+        with urllib.request.urlopen(GCTP_SOURCE, timeout=120) as response:
+            gctp = gctp_parallaxes(response.read())
     stars = []
     for r in records(text):
         if not r["hr"].strip() or not r["cra"].strip() or not r["cdec"].strip() or not r["vmag"].strip():
@@ -166,7 +203,7 @@ def main() -> None:
             "hr": int(r["hr"]), "letter": letter, "flamsteed": flamsteed, "constellation": constellation,
             "ra": sexagesimal(r["cra"], True), "dec": sexagesimal(r["cdec"], False),
             "pmRa": round(float(r["pmra"]) * 1000) if r["pmra"].strip() else 0, "pmDec": round(float(r["pmdec"]) * 1000) if r["pmdec"].strip() else 0,
-            "v": magnitude, "bv": r["bv_color"].strip(), "spectral": spectral_class(r["spect_type"]), "plx": round(float(r["parallax"]) * 1000) if r["parallax"].strip() else 0,
+            "v": magnitude, "bv": r["bv_color"].strip(), "spectral": r["spect_type"].strip(), "plx": parallax(r, gctp),
         })
     stars.sort(key=lambda s: (s["v"], s["hr"]))
     by_designation = {}
@@ -202,14 +239,16 @@ def main() -> None:
     for s in stars:
         rows.append("|".join([
             str(s["hr"]), s["letter"], str(s["flamsteed"] or ""), s["constellation"], str(round(s["ra"] * 2400)), str(round(s["dec"] * 3600)), str(s["pmRa"]), str(s["pmDec"]),
-            str(round(s["v"] * 100)), str(round(float(s["bv"]) * 100)) if s["bv"] else "", s["spectral"], str(s["plx"]),
+            str(round(s["v"] * 100)), str(round(float(s["bv"]) * 100)) if s["bv"] else "", s["spectral"],
+            str(s["plx"][0]), "" if s["plx"][1] is None else str(s["plx"][1]), s["plx"][2],
         ]))
     name_lines = ",".join(f"{hr}:{name!r}".replace("'", '"') for hr, name in sorted(names.items()))
     out = f"""// GENERATED by scripts/make-star-data.py. Do not edit by hand.
 // The stars of visual magnitude {LIMIT} and brighter from the Yale Bright Star Catalogue (Hoffleit and Warren 1991, 5th revised edition, preliminary; ADC V/50, from NASA HEASARC):
 // {len(stars)} stars, brightest first. One row a star: HR number | Bayer letter | Flamsteed number | constellation (the catalogue's for a star with a Bayer letter or a Flamsteed number, else the boundaries': scripts/set-star-constellations.ts fills it in) | RA J2000 in tenths of a second of time |
 // Dec J2000 in arc-seconds (both the catalogue's own resolution) | proper motion in RA (times cos Dec) and in Dec, milliarcseconds a year | V magnitude times 100 |
-// B-V times 100 | spectral class and subclass | parallax in milliarcseconds.
+// B-V times 100 | spectral type as the catalogue gives it (K1.5IIIFe-0.5) | parallax in tenths of a milliarcsecond (0 where there is none) | its standard error in the same unit (blank where there is none) |
+// where the parallax is from (g: Yale General Catalogue of Trigonometric Stellar Parallaxes, I/238A; b: the Bright Star Catalogue's, to a whole milliarcsecond; d: the Bright Star Catalogue's dynamical parallax; blank: none).
 
 /** The star rows, one per line. */
 export const STAR_ROWS = `{chr(10).join(rows)}`;
