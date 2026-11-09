@@ -1,0 +1,52 @@
+/* The constellation in 3D page. After demo.css and gallery.css; the family's variables. */
+.sp-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 960px) { .sp-grid { grid-template-columns: minmax(0, 1fr) minmax(300px, 380px); } }
+.sp-main { display: grid; gap: 10px; min-width: 0; }
+.sp-side h2 { font-size: 1rem; margin: 0 0 6px; }
+.sp-side h2:not(:first-child) { margin-top: 16px; }
+.space .sp-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.space .sp-note { min-height: 2.6em; }
+
+/* the stage: the canvas, the labels over it, the picture that stands in when there is no WebGL */
+.sp-stage { --sp-bg: #0b1020; --sp-ink: #e8ecff; --sp-muted: #aab4d8; --sp-rule: rgba(160, 175, 225, .45); position: relative; height: clamp(340px, 52vh, 600px); border: 1px solid var(--rule); border-radius: var(--radius); background: var(--sp-bg); overflow: hidden; }
+.sp-stage[data-look="light"] { --sp-bg: #f1efe8; --sp-ink: #1d2230; --sp-muted: #4a5568; --sp-rule: rgba(60, 75, 120, .4); }
+.sp-view { position: absolute; inset: 0; outline: none; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+.sp-view:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+.sp-view canvas { display: block; }
+.sp-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; font-size: .78rem; line-height: 1.2; color: var(--sp-ink); }
+.sp-leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sp-leaders line { stroke: var(--sp-rule); stroke-width: 1; }
+.sp-label { position: absolute; left: 0; top: 0; display: grid; white-space: nowrap; padding: 1px 4px; border-radius: 4px; background: color-mix(in srgb, var(--sp-bg) 62%, transparent); text-shadow: 0 0 3px var(--sp-bg), 0 0 3px var(--sp-bg); will-change: transform; }
+.sp-label[hidden] { display: none; }
+.sp-label .sp-n { font-weight: 650; }
+.sp-label .sp-d, .sp-label .sp-r { color: var(--sp-muted); font-size: .72rem; }
+.sp-label.compact .sp-d, .sp-label.compact .sp-r { display: none; }
+.sp-label.q-rough .sp-d, .sp-label.q-none .sp-d { font-style: italic; }
+.sp-label.s-ray .sp-n { color: #a98be8; }
+.sp-stage[data-look="light"] .sp-label.s-ray .sp-n { color: #6b2fb8; }
+.sp-tick { padding: 0 3px; font-size: .68rem; color: var(--sp-muted); background: none; text-shadow: none; }
+.sp-place { font-weight: 650; color: #6fd0ff; }
+.sp-stage[data-look="light"] .sp-place { color: #0b6ea8; }
+.sp-loading, .sp-fallback { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; margin: 0; padding: 16px; text-align: center; color: var(--sp-muted); }
+.sp-stage:not([data-state="loading"]) .sp-loading { display: none; }
+.sp-fallback img { width: min(320px, 70%); height: auto; border-radius: 8px; }
+.sp-stage[data-state="fallback"] .sp-view, .sp-stage[data-state="fallback"] .sp-labels { visibility: hidden; }
+
+/* the side: how well the distances are known, and every star */
+.sp-key { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.sp-key li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; min-height: 32px; border: 1px solid var(--rule); border-radius: 999px; background: var(--surface); font-size: .8rem; }
+.sp-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.q-good .sp-dot, .sp-dot.q-good { background: #2f7a4f; }
+.q-fair .sp-dot, .sp-dot.q-fair { background: #c9a227; }
+.q-rough .sp-dot, .sp-dot.q-rough { background: #c2562f; }
+.q-none .sp-dot, .sp-dot.q-none { background: transparent; border: 2px dotted var(--muted); }
+.sp-poor { margin: 8px 0; padding: 8px 12px; border-left: 4px solid #c2562f; background: var(--surface); border-radius: 4px; font-size: .85rem; }
+.sp-table-box { max-height: 340px; overflow: auto; border: 1px solid var(--rule); border-radius: var(--radius); }
+.sp-table-box:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.sp-table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+.sp-table th, .sp-table td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--rule); vertical-align: middle; white-space: nowrap; }
+.sp-table th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; }
+.sp-table td:first-child { font-weight: 600; }
+.sp-table a { text-decoration: none; }
+.sp-table .sp-q { display: inline-flex; align-items: center; gap: 5px; }
+@media (max-width: 640px) { .sp-stage { height: clamp(340px, 54vh, 520px); } }

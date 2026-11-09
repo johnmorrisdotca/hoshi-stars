@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
+    <link rel="stylesheet" href="space.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="space" aria-labelledby="sp-heading">
+        <h1 id="sp-heading" class="gl-title" data-testid="sp-heading"></h1>
+        <p class="lead" data-say="sp_lede"></p>
+        <div class="picker" id="picker" data-testid="picker">
+          <div class="fam-row">
+            <label class="fam-label" for="picker-search" data-say="pk_label"></label>
+            <input id="picker-search" type="search" class="fam-field" data-testid="picker-search" data-say-placeholder="pk_placeholder" autocomplete="off" enterkeyhint="search" />
+            <a class="fam-button" href="constellations.html" data-say="pk_all"></a>
+          </div>
+          <div class="picker-strip" id="picker-strip" data-testid="picker-strip" role="group" data-say-label="pk_label"></div>
+          <p class="fam-fine" data-pick-none data-say="pk_none" hidden></p>
+        </div>
+        <div class="sp-grid">
+          <div class="sp-main">
+            <div class="fam-row sp-row">
+              <button type="button" class="fam-button" data-primary="true" id="sp-turn" data-testid="sp-turn" data-say="sp_turn"></button>
+              <button type="button" class="fam-button" id="sp-front" data-testid="sp-front" data-say="sp_front"></button>
+              <label class="fam-label" for="sp-from" data-say="sp_from"></label>
+              <select id="sp-from" class="fam-field" data-testid="sp-from"></select>
+            </div>
+            <div class="sp-stage" id="sp-stage" data-testid="sp-stage" data-state="loading" data-look="night">
+              <div class="sp-view" id="sp-view" data-testid="sp-view" role="group" tabindex="0"></div>
+              <div class="sp-labels" id="sp-labels" data-testid="sp-labels" aria-hidden="true"></div>
+              <div class="sp-fallback" id="sp-fallback" data-testid="sp-fallback" hidden>
+                <img id="sp-picture" width="320" height="320" alt="" />
+                <p data-say="sp_noGl"></p>
+              </div>
+              <p class="sp-loading" data-say="sp_loading"></p>
+            </div>
+            <kazoku-view-controls id="sp-controls" data-testid="sp-controls" for="sp-view" tilt-max="85" zoom-min="0.5" zoom-max="10" address></kazoku-view-controls>
+            <p class="fam-fine sp-note" id="sp-note" data-testid="sp-note" role="status"></p>
+            <p class="fam-fine" id="sp-from-note" data-testid="sp-from-note" hidden></p>
+            <p class="fam-fine" data-say="sp_legend"></p>
+          </div>
+          <aside class="sp-side" aria-labelledby="sp-key-heading">
+            <h2 id="sp-key-heading" data-say="sp_keyHeading"></h2>
+            <ul class="sp-key" id="sp-key" data-testid="sp-key"></ul>
+            <p class="fam-fine" id="sp-summary" data-testid="sp-summary"></p>
+            <p class="sp-poor" id="sp-poor" data-testid="sp-poor" role="note" data-say="sp_poor" hidden></p>
+            <h2 data-say="sp_tableHeading"></h2>
+            <div class="sp-table-box"><table class="sp-table" id="sp-table" data-testid="sp-table"></table></div>
+            <p class="fam-fine" data-say="sp_method"></p>
+          </aside>
+        </div>
+      </section>
+      <section class="more" aria-labelledby="code-heading">
+        <h2 id="code-heading" data-say="codeHeading"></h2>
+        <kazoku-embed-panel id="embed-panel" data-testid="embed-panel" sizes="320 480 640" size="480"></kazoku-embed-panel>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

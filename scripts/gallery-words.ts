@@ -1,5 +1,6 @@
 // The words of the constellation picker, gallery, constellation pages and list, in English and Japanese, added to the demo's own table (page-words.ts) by page.ts. The Japanese awaits a native reader.
 import { WORDS } from "./page-words.ts";
+import { SPACE_WORDS } from "./space-words.ts";
 
 const GALLERY = {
   en: {
@@ -217,4 +218,4 @@ const GALLERY = {
 } as const;
 
 /** The demo's words with the gallery's added, one table for the language chooser and the scripts. */
-export const ALL_WORDS = { en: { ...WORDS.en, ...GALLERY.en }, ja: { ...WORDS.ja, ...GALLERY.ja } };
+export const ALL_WORDS = { en: { ...WORDS.en, ...GALLERY.en, ...SPACE_WORDS.en }, ja: { ...WORDS.ja, ...GALLERY.ja, ...SPACE_WORDS.ja } };

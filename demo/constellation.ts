@@ -49,6 +49,7 @@ function render(c: Constellation): void {
   );
   const open = $<HTMLAnchorElement>("cp-map");
   open.href = `./?go=${c.abbreviation}`;
+  $<HTMLAnchorElement>("cp-space").href = `constellation-3d.html?c=${c.abbreviation}`;
 
   const list = $("cp-facts");
   const row = (key: string, value: string | Node): void => {

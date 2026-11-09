@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <title>Hoshi Stars in 3D embed</title>
+    <meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="space.css" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b1020; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+      #frame { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+      #frame .sp-stage { position: absolute; inset: 0; height: auto; border: 0; border-radius: 0; }
+      #tools { position: absolute; right: 8px; bottom: 8px; display: flex; gap: 6px; }
+      #tools button { min-width: 44px; height: 44px; padding: 0 12px; border: 1px solid #46578c; border-radius: 8px; background: rgba(11, 16, 32, .85); color: #e8ecff; font: 600 1rem system-ui, sans-serif; cursor: pointer; }
+      #tools button:hover { border-color: #e8ecff; }
+      #tools button:focus-visible { outline: 3px solid #ffd86b; outline-offset: 2px; }
+      [data-theme="light"] #tools button { background: rgba(241, 239, 232, .9); color: #1d2230; border-color: #8a93ad; }
+    </style>
+  </head>
+  <body>
+    <div id="frame" data-testid="frame">
+      <div class="sp-stage" id="sp-stage" data-testid="sp-stage" data-state="loading" data-look="night">
+        <div class="sp-view" id="sp-view" data-testid="sp-view" role="group" tabindex="0"></div>
+        <div class="sp-labels" id="sp-labels" data-testid="sp-labels" aria-hidden="true"></div>
+        <div class="sp-fallback" id="sp-fallback" data-testid="sp-fallback" hidden><p id="sp-nogl"></p></div>
+      </div>
+      <div id="tools" role="group">
+        <button type="button" id="turn" data-testid="turn"></button>
+        <button type="button" id="front" data-testid="front"></button>
+        <button type="button" id="zoom-in" data-testid="zoom-in">+</button>
+        <button type="button" id="zoom-out" data-testid="zoom-out">&minus;</button>
+      </div>
+    </div>
+    <script type="module" src="js/embed-3d.js"></script>
+  </body>
+</html>
