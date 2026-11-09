@@ -35,6 +35,8 @@ console.log(orion.counts);
 
 `{ from }` を渡すと、見る場所がほかの星（名前、星、または `skyFrom` と同じ、パーセク単位の点 `{ x, y, z }`）に移ります。`constellationIn3D("Ori", { from: "Rigil Kentaurus" })` はケンタウルス座α星から見たオリオン座で、地球は `viewpoint.earth` にあります。視差のない星は、その場所から見た位置には置けませんが、地球からの視線は空間の線として残ります。
 
+`distanceQuality(star)` は任意の星のたしかさを返し、`DISTANCE_QUALITIES` は四つのたしかさを順に並べたもの、`QUALITY_LIMITS` はそれを分ける二つの誤差 (`{ good: 0.05, rough: 0.2 }`) です。`positionIn3D(rightAscension, declination, lightYears)` は星を置く計算で、方向と距離を J2000の赤道座標軸の点にします。
+
 ## 横から見たSVG
 
 WebGLのないページでも、同じ数値で図を横から描けます。左が地球、右が遠いほうで、空の広がりは縦に取り、各範囲は棒で示します。

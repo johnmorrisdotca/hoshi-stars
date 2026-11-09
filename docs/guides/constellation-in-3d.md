@@ -35,6 +35,8 @@ console.log(orion.counts);
 
 With `{ from }` the viewpoint moves to another star (a name, a star, or a point `{ x, y, z }` in parsecs, as for `skyFrom`): `constellationIn3D("Ori", { from: "Rigil Kentaurus" })` is Orion seen from Alpha Centauri, and the Earth is at `viewpoint.earth`. A star with no parallax cannot be placed from there, but its Earth line of sight is still a line in space.
 
+`distanceQuality(star)` gives the quality of any star, `DISTANCE_QUALITIES` lists the four in order and `QUALITY_LIMITS` holds the two errors that divide them (`{ good: 0.05, rough: 0.2 }`). `positionIn3D(rightAscension, declination, lightYears)` is the maths that places a star: a direction and a distance on the J2000 equatorial axes.
+
 ## From the side, as SVG
 
 A page with no WebGL can draw the figure from the side with the same numbers: the Earth on the left, distance to the right, the sky sideways, a bar for each range.

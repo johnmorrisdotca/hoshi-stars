@@ -380,7 +380,8 @@ The demo has a **View from** choice (the Earth's sky, Alpha Centauri, Sirius and
 import { constellationIn3D } from "@johnmorrisdotca/hoshi-stars/constellation-3d";
 
 const orion = constellationIn3D("Ori");
-console.log(orion.counts); // { good: 0, fair: 0, rough: 7, none: 1 }: Alnilam has no parallax, so no distance
+// Alnilam has no parallax, so it has no distance: it is the one with none
+console.log(orion.counts); // { good: 0, fair: 0, rough: 7, none: 1 }
 ```
 
 The demo has a page for it (`constellation-3d.html`, also from "See it in 3D" on each constellation's page): pick a constellation, see it as from the Earth, then drag or press **Turn 90°** to see each star at its distance in light-years with its error bar, or **View from** another star. It is drawn with kazoku-ui's shared renderer (one WebGL context, drawn only when something moves, at most 30 frames a second) and has an embed page, `embed-3d.html`, and code for every way a page is made. A page with no WebGL can draw the figure from the side as SVG from the same numbers. [A constellation in 3D](docs/guides/constellation-in-3d.md) has the details.
