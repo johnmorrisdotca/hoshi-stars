@@ -142,8 +142,16 @@ export const FAINT_FROM = 7;
 /** The most faint stars one view draws, brightest first: a view is never millions of marks. */
 export const FAINT_DOT_CAP = 6000;
 
-/** The faintest magnitude the faint layer is asked for: the same telescope rule as `depthOf`, up to the faintest star of the tiles. */
-export const faintDepthOf = (magnitude: number, zoom: number): number => Math.round(Math.min(FAINT_LIMIT, magnitude + 2.5 * Math.log10(Math.max(1, zoom))) * 100) / 100;
+/** UCAC4 holds few stars from 6.5 to 8 (its rows copied from Tycho are left out), so once the view is zoomed in this far (the chart's own zoom, about 3x on the readout, which counts from the whole-sky fit) the layer starts at `FAINT_PAST_GAP` instead of climbing slowly through that nearly empty band, where zooming in would show almost nothing new. */
+export const FAINT_JUMP_ZOOM = 8;
+export const FAINT_PAST_GAP = 8.5;
+
+/** The faintest magnitude the faint layer is asked for: the same telescope rule as `depthOf` (2.5 magnitudes for each tenfold zoom), but from `FAINT_JUMP_ZOOM` on never less than `FAINT_PAST_GAP` and deepening from there at the same rate, up to the faintest star of the tiles. */
+export const faintDepthOf = (magnitude: number, zoom: number): number => {
+  const telescope = magnitude + 2.5 * Math.log10(Math.max(1, zoom));
+  const pastGap = zoom >= FAINT_JUMP_ZOOM ? FAINT_PAST_GAP + 2.5 * Math.log10(zoom / FAINT_JUMP_ZOOM) : -Infinity;
+  return Math.round(Math.min(FAINT_LIMIT, Math.max(telescope, pastGap)) * 100) / 100;
+};
 
 export const growOf = (zoom: number): number => Math.round(Math.min(1.8, 0.8 + zoom * 0.12) * 100) / 100;
 
