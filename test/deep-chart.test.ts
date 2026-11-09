@@ -119,3 +119,10 @@ test("every picture has an object the demo can draw and pick", () => {
   for (const picture of deepSkyPictures()) assert.ok(deepSkyObject(picture.object) !== undefined);
   assert.equal(deepSkyPicture("M13")?.object, "M13");
 });
+
+test("an object that is picked is drawn, with its cluster stars ringed, even when the Deep sky layer is off", () => {
+  const drawn = chart(options({ ...at("M45"), zoom: 20, magnitude: 6, picked: "M45", layers: new Set(["pictures"] as const) }));
+  assert.ok(drawn.svg.includes('data-deep="M45"'));
+  assert.ok(!chart(options({ ...at("M45"), zoom: 20, magnitude: 6, layers: new Set(["pictures"] as const) })).svg.includes("data-deep"));
+  assert.ok(drawn.svg.includes("data-inside"));
+});

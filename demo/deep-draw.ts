@@ -208,13 +208,13 @@ function markOf(c: DeepContext, object: DeepSkyObject, shape: DeepSkyShape, at: 
 export function drawDeep(c: DeepContext): DeepDrawn {
   const pics = c.pictures ? picturesOf(c) : { under: "", wanted: [], shown: new Map<string, number>() };
   const out: DeepDrawn = { under: pics.under, over: "", labels: [], hits: [], obstacles: [], wanted: pics.wanted, inside: [] };
-  if (!c.marks && c.near.size === 0) return out;
+  if (!c.marks && c.near.size === 0 && c.picked === undefined) return out;
   const limit = deepLimit(c.zoom);
   const drawn: Array<{ object: DeepSkyObject; at: Spot; majorPx: number; shape: DeepSkyShape }> = [];
   for (const object of c.catalogue) {
     const isNear = c.near.has(`D:${object.id}`);
-    if (!c.marks && !isNear) continue;
     const key = object.id;
+    if (!c.marks && !isNear && key !== c.picked) continue;
     const messier = object.messier !== undefined;
     const special = key === c.picked || isNear;
     const at = c.place(object);
