@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { gzipSync } from "node:zlib";
+import { constellationAt } from "../src/boundaries.ts";
 import { constellation, starsIn } from "../src/constellations.ts";
 import { deepSky, deepSkyObject, messier } from "../src/deep-sky.ts";
 import { deepSky as deepSkyAll, deepSkyObject as deepSkyObjectAll } from "../src/deep-sky-ngc-ic.ts";
@@ -366,11 +367,13 @@ test("a random hundred NGC and IC objects are within one arc-minute of NED's pos
 // Before the corrections: of the 110 Messier objects all 110 were found, 102 within 1 arc-minute (median 0.024, 95th percentile 1.05, largest 6.56 arc-minutes) and 8 over;
 // of the 11,788 NGC and IC objects, 11,599 were found in NED (189 were not, nearly all lettered parts such as NGC 602A), 11,057 within 1 arc-minute (median 0.007, 95th percentile 0.90) and 542 over,
 // the worst 5,857 arc-minutes (IC 2888). Each of those 550 got NED's position, listed in scripts/deep-sky-ned-positions.tsv; after, none is over 1 arc-minute (largest 0.99).
-test("the comparison with NED: 550 positions are NED's, and the file that lists them is the one the data was made with", () => {
+// 2026-11-09: five of them (NGC 2529, 2652, 4912, 6766, 7520) were items with two names whose first name NED keeps as a separate, untyped catalogue place; NED's
+// typed entry for the other name is where Wikidata had them, so those five lines are gone and 545 remain.
+test("the comparison with NED: 545 positions are NED's, and the file that lists them is the one the data was made with", () => {
   const lines = readFileSync(new URL("../scripts/deep-sky-ned-positions.tsv", import.meta.url), "utf8").trim().split("\n");
-  assert.equal(lines.length, 550);
+  assert.equal(lines.length, 545);
   assert.equal(lines.filter((line) => line.startsWith("M")).length, 8);
-  assert.equal(lines.filter((line) => line.startsWith("NGC ") || line.startsWith("IC ")).length, 542);
+  assert.equal(lines.filter((line) => line.startsWith("NGC ") || line.startsWith("IC ")).length, 537);
   const worst = lines.map((line) => Number(line.split("\t")[5])).sort((a, b) => b - a);
   assert.equal(worst[0], 5856.97);
   for (const line of lines) {
@@ -385,4 +388,21 @@ test("the comparison with NED: 550 positions are NED's, and the file that lists 
 test("the large table stays under 160,000 bytes gzipped", () => {
   const bytes = gzipSync(readFileSync(new URL("../src/data/ngc-ic.ts", import.meta.url))).byteLength;
   assert.ok(bytes < 160_000, `the NGC and IC table is ${bytes} bytes gzipped`);
+});
+
+test("an object named twice is placed by the entry NED gives a type: NGC 2974 (also NGC 2652) and NGC 6884 (also NGC 6766)", () => {
+  // NED 2026-11-09: NGC 2974, galaxy, 145.6387 -3.6991; NGC 2652 is an old catalogue place with no type at 130.8067 -3.6124. NGC 6884, nebula, 302.5988 46.4608.
+  for (const [name, ra, dec] of [["NGC 2974", 145.6387, -3.6991], ["NGC 2652", 145.6387, -3.6991], ["NGC 6884", 302.5988, 46.4608], ["NGC 6766", 302.5988, 46.4608]] as const) {
+    const o = deepSkyObjectAll(name);
+    assert.ok(o, name);
+    assert.ok(Math.abs(o.rightAscension - ra) < 0.01 && Math.abs(o.declination - dec) < 0.01, `${name} at ${o.rightAscension} ${o.declination}`);
+  }
+  assert.equal(deepSkyObjectAll("NGC 2974")!.constellation, "Sex");
+  assert.equal(deepSkyObjectAll("NGC 6884")!.constellation, "Cyg");
+});
+
+test("every object's constellation is the one its position is in, by the IAU boundaries", () => {
+  const wrong = deepSkyAll().filter((o) => o.constellation !== constellationAt(o).abbreviation);
+  assert.deepEqual(wrong.map((o) => `${o.id} ${o.constellation}`), []);
+  assert.equal(deepSkyObjectAll("IC 2888")!.constellation, "Leo");
 });

@@ -271,8 +271,10 @@ test("bad input throws a RangeError that names the value", () => {
 });
 
 test("speed: 1,000,000 random points through each kind stay inside a stated budget", () => {
-  // Measured on the author's Mac (Node 24): 50 to 110 ms per million projections for every kind but Mollweide (about 230 ms, its Newton iteration). The budget is 1000 ms, over four times the slowest.
-  const BUDGET_MS = 1000;
+  // Measured on the author's Mac (Node 24): 50 to 110 ms per million projections for every kind but Mollweide (about 230 ms, its Newton iteration). A shared CI
+  // machine runs it about four times slower and varies from run to run (Mollweide once took 1,039 ms there), so each kind is timed three times and the fastest
+  // counts, and the budget is 2000 ms, about nine times the slowest on the Mac: enough to catch a real slowdown, not a busy machine.
+  const BUDGET_MS = 2000;
   let seed = 12345;
   const random = (): number => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
@@ -283,13 +285,17 @@ test("speed: 1,000,000 random points through each kind stay inside a stated budg
   const options = { centre: { rightAscension: 120, declination: 25 }, scale: 300 };
   const times: string[] = [];
   for (const kind of PROJECTIONS) {
-    const start = performance.now();
     let landed = 0;
-    for (const point of points) if (project(kind, point, options) !== undefined) landed += 1;
-    const took = performance.now() - start;
+    let took = Number.POSITIVE_INFINITY;
+    for (let run = 0; run < 3; run += 1) {
+      const start = performance.now();
+      landed = 0;
+      for (const point of points) if (project(kind, point, options) !== undefined) landed += 1;
+      took = Math.min(took, performance.now() - start);
+    }
     times.push(`${kind} ${took.toFixed(0)} ms`);
     assert.ok(landed > 400_000, `${kind} landed ${landed}`);
-    assert.ok(took < BUDGET_MS, `${kind} took ${took.toFixed(0)} ms for 1,000,000 points; the budget is ${BUDGET_MS} ms`);
+    assert.ok(took < BUDGET_MS, `${kind} took ${took.toFixed(0)} ms (fastest of 3) for 1,000,000 points; the budget is ${BUDGET_MS} ms`);
   }
   console.log(`1,000,000 projections each: ${times.join(", ")}`);
 });
