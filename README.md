@@ -53,6 +53,18 @@ console.log(starsIn("Ori").slice(0, 2).map((s) => s.name));                   //
 | `constellation(text)` | one, by abbreviation, Latin name, genitive, English name, Japanese name or reading; `undefined` if none |
 | `starsIn(text)` | the bright stars that lie in it, brightest first (`RangeError` for a text that is no constellation) |
 
+## Pictures of the constellations
+
+Each of the 88 has a picture drawn from this package's own stars, lines and boundaries, in a light and a dark look, with its neighbours faint round it and no text in the drawing. The package ships them as files, `thumbnails/svg/dark/Ori.svg` and `thumbnails/png/160/light/Ori.png` (the demo site also has 480 and 1200 pixel PNGs), and `@johnmorrisdotca/hoshi-stars/thumbnails` draws any of them, or any other set of figures, as an SVG string. `@johnmorrisdotca/hoshi-stars/constellation-facts` adds what a gallery or a list needs: the meaning, hemisphere, best month, origin, how easy it is to find, asterisms and meteor showers. See [Constellation pictures and facts](docs/guides/constellation-pictures.md).
+
+```ts
+import { allConstellationFacts } from "@johnmorrisdotca/hoshi-stars/constellation-facts";
+import { constellationThumbnail } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+
+const svg = constellationThumbnail("Ori", { theme: "light", size: 160 });
+console.log(svg.startsWith("<svg"), allConstellationFacts().filter((f) => f.meteorShowers.length > 0).length); // true 11
+```
+
 ## Which constellation, and the boundaries
 
 `@johnmorrisdotca/hoshi-stars/boundaries` is its own import. `constellationAt` says which of the 88 constellations a position is in; `boundaryOf` and `boundaries` give the boundary lines to draw. The boundaries are the IAU's (Delporte 1930) as N. G. Roman (1987) tabulated them on the equinox of B1875.0 (VizieR VI/42); a position is precessed to B1875.0 first, with the IAU 1976 angles from Meeus.

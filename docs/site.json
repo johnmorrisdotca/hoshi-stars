@@ -50,6 +50,16 @@
       "ja": "中国の伝統の空 (三垣二十八宿、約240の星官。繁体字・簡体字・ピンインつき)",
       "platform": "neutral"
     },
+    "./thumbnails": {
+      "en": "A picture of each of the 88 constellations, in light and dark",
+      "ja": "88星座それぞれの絵 (明るい版と暗い版)",
+      "platform": "neutral"
+    },
+    "./constellation-facts": {
+      "en": "Facts for a gallery or a list: meaning, hemisphere, best month, origin, difficulty, asterisms, meteor showers",
+      "ja": "ギャラリーや一覧のための豆知識 (意味・半球・見ごろの月・由来・見つけやすさ・アステリズム・流星群)",
+      "platform": "neutral"
+    },
     "./boundaries": {
       "en": "Constellation boundaries and which constellation a point is in",
       "ja": "星座の境界と、ある点がどの星座にあるか",
