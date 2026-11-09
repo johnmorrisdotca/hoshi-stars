@@ -470,7 +470,7 @@ function details(): void {
     fact(list, "starKind", `HR ${star.hr}`);
     if (star.designation !== undefined) fact(list, "fieldDesignation", star.designation);
     fact(list, "fieldMagnitude", seen === undefined && sky !== undefined ? nothing : `${(seen?.magnitude ?? star.magnitude).toFixed(2)} ${say("magnitudeUnit")}`);
-    fact(list, "fieldDistance", light === undefined ? nothing : `${(light < 10 ? light.toFixed(2) : Math.round(light).toLocaleString(lang()))} ${say("lightYears")}`);
+    fact(list, "fieldDistance", light === undefined ? nothing : `${sky !== undefined && light < 100 ? light.toFixed(1) : Math.round(light).toLocaleString(lang())} ${say("lightYears")}`);
     const colour = document.createElement("span");
     colour.append(swatch, ` ${starColour(star)}`);
     fact(list, "fieldColour", colour);

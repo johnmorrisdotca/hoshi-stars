@@ -38,6 +38,7 @@
 .controls .fam-label { min-width: 5.5rem; }
 .fam-fine { color: var(--muted); font-size: .8rem; margin: 0; }
 .fam-button, .fam-chip, .fam-field { min-height: 48px; }
+select.fam-field { height: 48px; max-width: 100%; }
 .fam-seg button { min-height: 48px; min-width: 48px; }
 .fam-range { -webkit-appearance: none; appearance: none; height: 48px; flex: 1 1 200px; min-width: 160px; max-width: 360px; margin: 0; background: transparent; cursor: pointer; }
 .fam-range::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--rule); }
