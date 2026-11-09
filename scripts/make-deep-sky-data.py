@@ -22,6 +22,13 @@ What it keeps
     python3 -I scripts/make-deep-sky-data.py --save DIR           # ... and keeps each answer in DIR
     python3 -I scripts/make-deep-sky-data.py --from DIR           # reads answers saved earlier
     python3 -I scripts/make-deep-sky-data.py --no-ned             # leaves out scripts/deep-sky-ned-positions.tsv, to compare Wikidata's own positions with NED's
+    python3 -I scripts/make-deep-sky-data.py --no-sky-catalogue   # the fallback (MODULES-781), below; writes data-no-sky-catalogue/messier.ts and touches nothing in src/
+
+The fallback, for the day Sky Catalog 2000.0 (by way of HEASARC's Messier table) has to come out. It does not read HEASARC at all. The Messier magnitudes are Wikidata's V band as above,
+except where scripts/data/messier-fixes.tsv gives a value from a cited source (or, with the value left empty, says there is no clean one and the object has no magnitude), and the sizes are
+the ones in scripts/data/messier-sizes.tsv (made by scripts/make-messier-fallback-sources.py); Wikidata's own Messier sizes have no reference and are not used. Positions, names, types and
+constellations are the same as the default build's. The default build is unchanged, and its src/data/messier.ts stays byte for byte what it was. TO SWAP THE FALLBACK IN, copy
+data-no-sky-catalogue/messier.ts over src/data/messier.ts (the one change; docs/research/messier-no-sky-catalogue.md lists what else it moves).
 
 None of this runs in the test.
 """
@@ -44,6 +51,9 @@ USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/ho
 ROOT = Path(__file__).resolve().parent.parent
 OUT_MESSIER = ROOT / "src" / "data" / "messier.ts"
 OUT_NGC_IC = ROOT / "src" / "data" / "ngc-ic.ts"
+OUT_FALLBACK = ROOT / "data-no-sky-catalogue" / "messier.ts"
+FIXES = ROOT / "scripts" / "data" / "messier-fixes.tsv"
+SIZES = ROOT / "scripts" / "data" / "messier-sizes.tsv"
 
 # The items to read: those with a catalog code in one of the three catalogues and a plain number. Every query below starts with this.
 SELECTION = """VALUES ?cat { wd:Q14530 wd:Q14534 wd:Q741672 }
@@ -158,6 +168,13 @@ def heasarc_messier(saved: Path | None, keep: Path | None):
     return table
 
 
+def tsv(path: Path):
+    """The rows of one of the fallback's tables as dicts, by the names in its header line."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    names = lines[0].split("\t")
+    return [dict(zip(names, line.split("\t"))) for line in lines[1:] if line.strip()]
+
+
 def last(x: dict, key: str) -> str:
     return x.get(key, {}).get("value", "").split("/")[-1].split("#")[-1]
 
@@ -207,6 +224,7 @@ def candidates(values):
 def main() -> None:
     saved = Path(sys.argv[sys.argv.index("--from") + 1]) if "--from" in sys.argv else None
     keep = Path(sys.argv[sys.argv.index("--save") + 1]) if "--save" in sys.argv else None
+    fallback = "--no-sky-catalogue" in sys.argv
     data = {name: fetch(name, saved, keep) for name in QUERIES}
     abbreviations = constellation_table()
 
@@ -337,7 +355,9 @@ def main() -> None:
             "constellation": pick(constellations), "name": names.get(q), "aliases": set().union(*(aliases[g] for g in group)),
         })
 
-    heasarc = heasarc_messier(saved, keep)
+    heasarc = {} if fallback else heasarc_messier(saved, keep)
+    fixes = {int(r["object"][1:]): (float(r["v_magnitude"]) if r["v_magnitude"] else None) for r in tsv(FIXES)} if fallback else {}
+    fallback_sizes = {int(r["object"][1:]): float(r["size_arcmin"]) for r in tsv(SIZES)} if fallback else {}
     ned = {}
     if "--no-ned" not in sys.argv and NED_POSITIONS.exists():
         for line in NED_POSITIONS.read_text(encoding="utf-8").splitlines():
@@ -356,7 +376,11 @@ def main() -> None:
             corrections += 1
         if o["messier"] is None and o["type"] == "planetary nebula":
             o["mag"] = None  # Wikidata's V band for a planetary nebula is mostly its central star's (the Helix is 13.5)
-        if o["messier"] is not None:
+        if o["messier"] is not None and fallback:
+            if o["messier"] in fixes:
+                o["mag"] = fixes[o["messier"]]
+            o["size"] = fallback_sizes.get(o["messier"])
+        elif o["messier"] is not None:
             published_mag, published_size, published_constellation = heasarc.get(o["messier"], (None, None, None))
             if published_mag is not None:
                 if o["mag"] is not None and abs(o["mag"] - published_mag) > 1.0:
@@ -387,7 +411,7 @@ def main() -> None:
     if [o["messier"] for o in messier] != list(range(1, 111)):
         problems.append(f"the Messier objects are not M1 to M110: {sorted(set(range(1, 111)) - {o['messier'] for o in messier})}")
     for o in messier:
-        if o["mag"] is None:
+        if o["mag"] is None and not (fallback and o["messier"] in fixes):
             problems.append(f"M{o['messier']} has no magnitude")
         if o["constellation"] is None:
             problems.append(f"M{o['messier']} has no constellation")
@@ -411,6 +435,20 @@ def main() -> None:
 """
     in_messier = [o for o in result if o["messier"] is not None]
     rest = [o for o in result if o["messier"] is None]
+    if fallback:
+        fallback_header = f"""// GENERATED by scripts/make-deep-sky-data.py --no-sky-catalogue (MODULES-781). Do not edit by hand. NOT SHIPPED: the fallback for the Messier magnitudes and sizes, the day NASA HEASARC's
+// Messier table (Sky Catalog 2000.0) has to come out. Copy it over src/data/messier.ts to swap it in. Same rows and columns as that file; magnitudes are Wikidata's V band (CC0) with the
+// values in scripts/data/messier-fixes.tsv, sizes are scripts/data/messier-sizes.tsv; where either is empty the column is empty.
+// Messier number | NGC numbers | IC numbers (comma-separated, a letter after a number is part of it) | type (index into the list in `../deep-sky.ts`) |
+// RA J2000 and Dec J2000 in ten-thousandths of a degree | V magnitude times 100 | angular size in tenths of an arc-minute | IAU constellation abbreviation |
+// English name | other English names (semicolon-separated).
+"""
+        OUT_FALLBACK.parent.mkdir(exist_ok=True)
+        OUT_FALLBACK.write_text(fallback_header + f"\n/** The 110 Messier objects, one per line. */\nexport const MESSIER_ROWS = `{chr(10).join(row(o) for o in in_messier)}`;\n", encoding="utf-8")
+        print(f"wrote {OUT_FALLBACK} ({len(in_messier)} objects); src/data is untouched")
+        print(f"no magnitude: {', '.join('M' + str(o['messier']) for o in in_messier if o['mag'] is None)}; no size: {', '.join('M' + str(o['messier']) for o in in_messier if not o['size'])}")
+        subprocess.run(["node", str(ROOT / "scripts" / "deep-sky-constellations.ts"), "--fallback"], check=True, cwd=ROOT)
+        return
     OUT_MESSIER.write_text(header + f"\n/** The 110 Messier objects, one per line. */\nexport const MESSIER_ROWS = `{chr(10).join(row(o) for o in in_messier)}`;\n", encoding="utf-8")
     OUT_NGC_IC.write_text(header + f"\n/** The NGC and IC objects that are not Messier objects, one per line. */\nexport const NGC_IC_ROWS = `{chr(10).join(row(o) for o in rest)}`;\n", encoding="utf-8")
     counts = defaultdict(int)

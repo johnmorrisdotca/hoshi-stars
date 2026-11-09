@@ -3,12 +3,14 @@
 // column of src/data/messier.ts and src/data/ngc-ic.ts in place and says how many changed.
 //
 //     node scripts/deep-sky-constellations.ts
+//     node scripts/deep-sky-constellations.ts --fallback    # the Messier fallback's data-no-sky-catalogue/messier.ts only (make-deep-sky-data.py --no-sky-catalogue)
 import { readFileSync, writeFileSync } from "node:fs";
 import { constellationAt } from "../src/boundaries.ts";
 
 const RA = 4, DEC = 5, CONSTELLATION = 8;
 let changed = 0;
-for (const [file, constant] of [["src/data/messier.ts", "MESSIER_ROWS"], ["src/data/ngc-ic.ts", "NGC_IC_ROWS"]] as const) {
+const files = process.argv.includes("--fallback") ? ([["data-no-sky-catalogue/messier.ts", "MESSIER_ROWS"]] as const) : ([["src/data/messier.ts", "MESSIER_ROWS"], ["src/data/ngc-ic.ts", "NGC_IC_ROWS"]] as const);
+for (const [file, constant] of files) {
   const path = new URL(`../${file}`, import.meta.url);
   const text = readFileSync(path, "utf8");
   const match = new RegExp(`${constant} = \`([\\s\\S]*?)\``).exec(text);
