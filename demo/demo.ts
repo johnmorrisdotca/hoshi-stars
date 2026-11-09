@@ -12,6 +12,7 @@ import type { SeenSky, SeenStar } from "../src/sky-from.ts";
 import { constellation, starsIn, type Constellation } from "../src/constellations.ts";
 import type { Culture } from "../src/culture.ts";
 import type { CultureFigure } from "../src/lines.ts";
+import { blackHole, blackHoles } from "../src/black-holes.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, project, type Projection } from "../src/projection.ts";
 import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
@@ -23,6 +24,7 @@ import { nearbyOf, type By } from "./nearby.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
+import { distanceText, foundKey, kindKey, massText, papersOf, placeText } from "./holes.ts";
 import { mountPicker } from "./picker.ts";
 import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileView } from "./profile-panel.ts";
 import { starProfile } from "../src/profile.ts";
@@ -76,6 +78,7 @@ function read(): void {
   sky = skyOf(from);
   culture = cultureOf(address.get("culture")) ?? western;
   if (picked?.startsWith("C:") && figureById(picked.slice(2), culture) === undefined) picked = null;
+  if (picked?.startsWith("B:") && blackHole(picked.slice(2)) === undefined) picked = null;
   hands.sync();
 }
 
@@ -115,7 +118,7 @@ function clear(): Box[] {
 function draw(): void {
   queued = false;
   $("zoom-readout").textContent = zoomText(view.zoom / opening());
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined, sky });
+  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky });
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
   hits = out.hits;
@@ -362,7 +365,7 @@ function tap(x: number, y: number): void {
       best = hit;
     }
   }
-  if (best !== undefined) pick(best.kind === "star" ? `S:${best.key}` : `D:${best.key}`);
+  if (best !== undefined) pick(best.kind === "star" ? `S:${best.key}` : best.kind === "hole" ? `B:${best.key}` : `D:${best.key}`);
   else {
     const found = figureAt(x, y);
     pick(found === undefined ? null : `C:${found.asterism.id}`);
@@ -477,6 +480,11 @@ function search(text: string): Found[] {
     const name = object.name === undefined ? "" : fold(object.name);
     if (fold(object.id) === q || fold(object.id).startsWith(q) && q.length > 1 || (name !== "" && name.includes(q))) starts.push({ label: object.name === undefined ? object.id : `${object.id} ${object.name}`, kind: say("deepKind"), key: `D:${object.id}` });
   }
+  for (const hole of blackHoles()) {
+    const names = [hole.name, ...hole.otherNames].map((name) => fold(name).replace(/[^a-z0-9]+/g, ""));
+    const asked = q.replace(/[^a-z0-9]+/g, "");
+    if (asked !== "" && names.some((name) => name.startsWith(asked) || (asked.length > 2 && name.includes(asked)))) (names.some((name) => name.startsWith(asked)) ? starts : contains).push({ label: hole.name, kind: say(kindKey(hole)), key: `B:${hole.id}` });
+  }
   return [...out, ...starts, ...contains].slice(0, 8);
 }
 
@@ -489,6 +497,10 @@ function placeOf(key: string): Place | undefined {
   if (key.startsWith("D:")) {
     const object = deepSkyObject(id);
     return object && { ra: object.rightAscension, dec: object.declination, zoom: Math.max(view.zoom, 6) };
+  }
+  if (key.startsWith("B:")) {
+    const hole = blackHole(id);
+    return hole && { ra: hole.rightAscension, dec: hole.declination, zoom: Math.max(view.zoom, 6) };
   }
   const middle = centreOfConstellation(id, culture);
   return middle && { ra: middle.rightAscension, dec: middle.declination, zoom: zoomFor(id) };
@@ -620,6 +632,36 @@ function details(): void {
       fact(list, "fieldPartOf", holder);
     }
     profileOf(host, title, list, star, starName(star));
+  } else if (picked.startsWith("B:")) {
+    const hole = blackHole(id);
+    if (hole === undefined) return;
+    title.textContent = hole.name;
+    fact(list, "fieldType", say(kindKey(hole)));
+    fact(list, "fieldStatus", say(hole.status === "confirmed" ? "holeConfirmed" : "holeCandidate"));
+    fact(list, "fieldPosition", placeText(hole));
+    const mass = massText(hole, lang(), say);
+    if (mass !== undefined) fact(list, "fieldMass", mass);
+    const far = distanceText(hole, lang(), say);
+    if (far !== undefined) fact(list, "fieldDistance", far);
+    if (hole.companion !== undefined || hole.companionType !== undefined) fact(list, "fieldCompanion", [hole.companion, hole.companionType].filter((part) => part !== undefined).join(", "));
+    fact(list, "fieldFound", say(foundKey(hole)));
+    if (hole.year !== undefined) fact(list, "fieldYear", String(hole.year));
+    const c = constellation(hole.constellation);
+    if (c !== undefined) fact(list, "fieldIn", linkTo(nameOf(c), `C:${c.abbreviation}`));
+    if (hole.otherNames.length > 0) fact(list, "fieldNgc", hole.otherNames.slice(0, 4).join(", "));
+    host.append(Object.assign(document.createElement("h4"), { textContent: say("fieldMeasured") }), Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say(`how-${hole.foundBy}`) }));
+    if (hole.note !== undefined) host.append(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: lang() === "en" ? hole.note : hole.status === "candidate" && hole.note.startsWith("Not dynamically") ? say("holeNoteProbable") : say(`holeNote_${hole.id}`) }));
+    const papers = document.createElement("ul");
+    papers.className = "papers";
+    papers.dataset.testid = "papers";
+    for (const { source, facts } of papersOf(hole)) {
+      const item = document.createElement("li");
+      if (source.link === undefined) item.append(source.citation);
+      else item.append(Object.assign(document.createElement("a"), { href: source.link, textContent: source.citation, target: "_blank", rel: "noopener noreferrer" }));
+      item.append(Object.assign(document.createElement("span"), { className: "fam-fine", textContent: ` (${facts.map((fact) => say(`src${fact[0]!.toUpperCase()}${fact.slice(1)}`)).join(", ")})` }));
+      papers.append(item);
+    }
+    host.append(Object.assign(document.createElement("h4"), { textContent: say("fieldSources") }), papers);
   } else if (picked.startsWith("D:")) {
     const object = deepSkyObject(id) as DeepSkyObject | undefined;
     if (object === undefined) return;
@@ -740,7 +782,7 @@ function nearbyPanel(): void {
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null || picked.startsWith("B:") ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 /** The picked star as a choice for the star's code, or `undefined` where no star with a catalogue number is picked (the Sun, a constellation, nothing). */
 function starChoiceNow(): StarChoice | undefined {

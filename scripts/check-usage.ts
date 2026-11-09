@@ -114,6 +114,12 @@ await step("node", () => {
   if (out !== "hoshi-sky.svg 9 lines in the Great Bear") throw new Error(`unexpected output: ${out}`);
 });
 
+await step("black-holes", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "black-holes.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = ["301 black holes: 78 stellar, 5 quiet, 218 supermassive", "Cygnus X-1: 21.2 Suns, 7241 light-years, companion HDE 226868", "mass from Miller-Jones 2021, Science 371, 1046"].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await step("typescript", () => {
   writeFileSync(join(examples("typescript"), "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022", module: "esnext", moduleResolution: "bundler", strict: true, noEmit: true, lib: ["es2023", "dom", "dom.iterable"], types: [], skipLibCheck: true }, include: ["index.ts"] }));
   sh(process.execPath, [require.resolve("typescript/bin/tsc"), "-p", join(examples("typescript"), "tsconfig.json")], usage);
@@ -303,6 +309,7 @@ const FILES: Record<string, string[]> = {
   "angular/orion.component.ts": ["docs/guides/frameworks.md", "docs/guides/ja/frameworks.md"],
   "typescript/index.ts": ["docs/guides/typescript-and-node.md", "docs/guides/ja/typescript-and-node.md"],
   "node/server.mjs": ["docs/guides/typescript-and-node.md", "docs/guides/ja/typescript-and-node.md"],
+  "node/black-holes.mjs": ["docs/guides/black-holes.md", "docs/guides/ja/black-holes.md"],
   "serve/server.mjs": ["docs/guides/serve-it-yourself.md", "docs/guides/ja/serve-it-yourself.md"],
   "constellation-3d/node.mjs": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
   "constellation-3d/side-view.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
