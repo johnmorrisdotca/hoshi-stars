@@ -4,8 +4,8 @@ import type { DeepSkyObject } from "./deep-sky-core.ts";
 import { unproject, type SkyPoint } from "./projection.ts";
 
 /**
- * The catalogue a size came from, as `deepSkyShape` names it: `RC3` (the Third Reference Catalogue of Bright Galaxies, for a galaxy's major axis, axis ratio and angle), `Messier table`
- * (Sky Catalog 2000.0, for a Messier object's diameters), `NGC 2000.0` (one diameter for an NGC or IC object) or `Wikidata` (a size the other three lack).
+ * The place a size came from, as `deepSkyShape` names it: `RC3` (the Third Reference Catalogue of Bright Galaxies, for a galaxy's major axis, axis ratio and angle), `NED` (NASA/IPAC NED's
+ * diameters table, for a galaxy RC3 does not give), or `Catalogue row` (the one diameter that the object's own row in the deep-sky table carries: Wikidata's, and for a Messier object what the table held already).
  *
  * @example
  * ```ts
@@ -15,7 +15,7 @@ import { unproject, type SkyPoint } from "./projection.ts";
  * console.log(source);
  * ```
  */
-export type DeepSkyShapeSource = "RC3" | "Messier table" | "NGC 2000.0" | "Wikidata";
+export type DeepSkyShapeSource = "RC3" | "NED" | "Catalogue row";
 
 /**
  * How big a deep-sky object is on the sky and which way it lies. Each part is a measurement or it is `undefined`: nothing is guessed. Where the minor axis or the angle is missing, the object is
@@ -41,7 +41,7 @@ export interface DeepSkyShape {
   source: DeepSkyShapeSource | undefined;
 }
 
-const SOURCES: Record<string, DeepSkyShapeSource> = { r: "RC3", m: "Messier table", n: "NGC 2000.0", w: "Wikidata" };
+const SOURCES: Record<string, DeepSkyShapeSource> = { r: "RC3", d: "NED" };
 
 /**
  * What a table of shapes offers: the shape of an object.
@@ -80,7 +80,7 @@ function shortId(object: DeepSkyObject): string {
 }
 
 /**
- * Make a table from rows of the data, as `scripts/make-deep-sky-shapes.py` writes them: `id | major | minor | angle | source`, the diameters in tenths of an arc-minute.
+ * Make a table from rows of the data, as `scripts/make-deep-sky-shapes.py` writes them: `id | major | minor | angle | source` (`r` RC3, `d` NED), the diameters in tenths of an arc-minute.
  *
  * @param rowSets - One or more strings of rows, one object a line.
  * @returns The table.
@@ -102,7 +102,7 @@ export function shapeTable(rowSets: string[]): ShapeTable {
         const found = parsed(rows).get(id);
         if (found !== undefined) return found;
       }
-      return object.sizeArcmin === undefined ? none : Object.freeze({ majorArcmin: object.sizeArcmin, minorArcmin: undefined, positionAngle: undefined, source: "Wikidata" });
+      return object.sizeArcmin === undefined ? none : Object.freeze({ majorArcmin: object.sizeArcmin, minorArcmin: undefined, positionAngle: undefined, source: "Catalogue row" });
     },
   };
 }

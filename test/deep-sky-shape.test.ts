@@ -24,12 +24,13 @@ test("deepSkyShape gives Andromeda RC3's major axis, axis ratio and angle", () =
   assert.deepEqual(measuredParts(shape), { size: true, ratio: true, angle: true, oval: true });
 });
 
-test("a Messier nebula has the Sky Catalog's two diameters and no angle: nothing is invented", () => {
+test("a Messier nebula or cluster has only the one diameter its own row carries, no ratio and no angle: nothing is invented, and no Sky Catalog second diameter is added", () => {
   const m42 = deepSkyShape(deepSkyObject("M42")!);
-  assert.deepEqual([m42.majorArcmin, m42.minorArcmin, m42.positionAngle, m42.source], [66, 60, undefined, "Messier table"]);
-  assert.deepEqual(measuredParts(m42), { size: true, ratio: true, angle: false, oval: false });
+  assert.deepEqual({ ...m42 }, { majorArcmin: 66, minorArcmin: undefined, positionAngle: undefined, source: "Catalogue row" });
+  assert.deepEqual(measuredParts(m42), { size: true, ratio: false, angle: false, oval: false });
   const m13 = deepSkyShape(deepSkyObject("M13")!);
   assert.deepEqual([m13.majorArcmin, m13.minorArcmin, m13.positionAngle], [17, undefined, undefined]);
+  assert.equal(deepSkyShape(deepSkyObject("M8")!).minorArcmin, undefined, "the Sky Catalog's 90 by 40 is not carried");
 });
 
 test("M51, M101 and M104 are RC3 galaxies, M101 round enough to have no angle", () => {
@@ -39,29 +40,39 @@ test("M51, M101 and M104 are RC3 galaxies, M101 round enough to have no angle", 
   assert.equal(deepSkyShape(deepSkyObject("M104")!).positionAngle, 90);
 });
 
-test("M45 has Wikidata's 110 arc-minutes where the Messier table has none, and M40 has no size at all", () => {
+test("M45 has the 110 arc-minutes its row carries, and M40 has no size at all", () => {
   assert.equal(deepSkyShape(deepSkyObject("M45")!).majorArcmin, 110);
   const m40 = deepSkyShape(deepSkyObject("M40")!);
   assert.deepEqual([m40.majorArcmin, m40.source], [undefined, undefined]);
   assert.deepEqual(measuredParts(m40), { size: false, ratio: false, angle: false, oval: false });
 });
 
-test("the large table covers 8,329 of the 11,898 objects, and an NGC galaxy is RC3's", () => {
+test("the large table gives 9,795 of the 11,898 objects a size and 7,293 an angle: RC3's for 7,013 galaxies, NED's for 2,706 more, and no angle for anything that is not a galaxy", () => {
   const all = deepSky();
-  const sized = all.filter((o) => deepSkyShapeAll(o).majorArcmin !== undefined).length;
-  assert.equal(sized, 8329);
+  const shapes = all.map((o) => deepSkyShapeAll(o));
+  assert.equal(shapes.filter((x) => x.majorArcmin !== undefined).length, 9795);
+  assert.equal(shapes.filter((x) => x.positionAngle !== undefined).length, 7293);
+  assert.equal(shapes.filter((x) => x.source === "RC3").length, 7013);
+  assert.equal(shapes.filter((x) => x.source === "NED").length, 2706);
+  assert.deepEqual([...new Set(shapes.map((x) => x.source))].sort(), ["Catalogue row", "NED", "RC3", undefined].sort());
   const ngc253 = deepSkyShapeAll(deepSkyObject("NGC 253")!);
   assert.equal(ngc253.source, "RC3");
   assert.ok(ngc253.majorArcmin! > 25 && ngc253.majorArcmin! < 35, "NGC 253 is about 30 arc-minutes long at D25");
   assert.ok(ngc253.positionAngle !== undefined && ngc253.minorArcmin! < ngc253.majorArcmin! / 3);
   assert.equal(all.filter((o) => deepSkyShapeAll(o).positionAngle !== undefined && o.type !== "galaxy").length, 0, "only galaxies have an angle");
+  assert.equal(all.filter((o) => o.type !== "galaxy" && deepSkyShapeAll(o).source !== "Catalogue row" && deepSkyShapeAll(o).source !== undefined).length, 0, "an object that is not a galaxy has only the size its row carries");
   assert.ok(all.every((o) => Object.isFrozen(deepSkyShapeAll(o))));
 });
 
-test("the Messier table alone holds the Messier objects' shapes, and a later object gets only its Wikidata size", () => {
-  const small = deepSkyShape(deepSkyObject("NGC 253")!);
-  assert.equal(small.majorArcmin, undefined);
-  assert.equal(messier().filter((o) => deepSkyShape(o).majorArcmin !== undefined).length, 109);
+test("a galaxy RC3 does not cover has NED's shape: the Mice, NGC 4676", () => {
+  const mice = deepSkyShapeAll(deepSkyObject("NGC 4676")!);
+  assert.deepEqual({ ...mice }, { majorArcmin: 3.5, minorArcmin: 1.9, positionAngle: 3, source: "NED" });
+});
+
+test("the Messier table alone holds the Messier galaxies' shapes, and another object gets only the size its own row carries", () => {
+  assert.equal(deepSkyShape(deepSkyObject("NGC 253")!).majorArcmin, undefined);
+  assert.equal(messier().filter((o) => deepSkyShape(o).majorArcmin !== undefined).length, 108);
+  assert.equal(messier().filter((o) => deepSkyShape(o).positionAngle !== undefined).length, 32);
 });
 
 test("shapeTable reads a row of the data", () => {
@@ -104,6 +115,6 @@ test("without a measured ratio and angle the outline is a circle of the major di
 });
 
 test("the shape tables are small", () => {
-  assert.ok(gzipSync(readFileSync(new URL("../src/data/deep-sky-shapes-messier.ts", import.meta.url))).length < 2000);
-  assert.ok(gzipSync(readFileSync(new URL("../src/data/deep-sky-shapes-ngc-ic.ts", import.meta.url))).length < 50_000);
+  assert.ok(gzipSync(readFileSync(new URL("../src/data/deep-sky-shapes-messier.ts", import.meta.url))).length < 1500);
+  assert.ok(gzipSync(readFileSync(new URL("../src/data/deep-sky-shapes-ngc-ic.ts", import.meta.url))).length < 60_000);
 });

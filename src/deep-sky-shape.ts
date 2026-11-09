@@ -9,11 +9,11 @@ export { deepSkyOutline, measuredParts, offsetOnSky, type DeepSkyShape, type Dee
 const table = shapeTable([MESSIER_SHAPES]);
 
 /**
- * The size, axis ratio and angle of a Messier object on the sky, from RC3 for the galaxies (the major axis at the 25th magnitude isophote, the axis ratio and the angle) and from the Sky Catalog
- * 2000.0's table for the others (a diameter, and a second diameter for a nebula or a cluster that is oval). Every part is a measurement or `undefined`; the sources are in `NOTICE.md`. An object the
- * table has nothing for gets Wikidata's size if the object has one.
+ * The size, axis ratio and angle of a Messier object on the sky. For a galaxy they are RC3's (the major axis at the 25th magnitude isophote, the axis ratio and the angle) or, where RC3 has none,
+ * NASA/IPAC NED's; for any other Messier object, and for a galaxy with neither, the one diameter that the object's own row carries (`sizeArcmin`), with no ratio and no angle. Every part is a
+ * measurement or `undefined`; the sources are in `NOTICE.md`.
  *
- * @param object - A deep-sky object (any, but this table holds only the Messier objects' shapes: another gets its Wikidata size or nothing; use `ngc-ic-shape` for those).
+ * @param object - A deep-sky object (any, but this table holds only the Messier objects' shapes: another gets the size its own row carries or nothing; use `ngc-ic-shape` for those).
  * @returns The shape, frozen.
  *
  * @example
