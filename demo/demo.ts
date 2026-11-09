@@ -22,6 +22,7 @@ import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
 import { attachHands } from "./hands.ts";
 import { nearbyOf, type By } from "./nearby.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
+import { NO_GCTP } from "./build.ts";
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 import { distanceText, foundKey, kindKey, massText, papersOf, placeText } from "./holes.ts";
@@ -579,7 +580,7 @@ function profileOf(host: HTMLElement, title: HTMLElement, list: HTMLElement, inp
   const figures = document.createElement("dl");
   for (const row of profileRows(profile, context)) fact(figures, row.key, row.value, row.note);
   list.prepend(...Array.from(figures.children));
-  for (const note of profileNotes(profile, context)) host.append(Object.assign(document.createElement("p"), { className: "fam-fine profile-note", textContent: note }));
+  for (const note of profileNotes(profile, context, input)) host.append(Object.assign(document.createElement("p"), { className: "fam-fine profile-note", textContent: note }));
 }
 function linkTo(text: string, key: string): HTMLButtonElement {
   const button = document.createElement("button");
@@ -629,8 +630,10 @@ function details(): void {
     if (star.designation !== undefined) fact(list, "fieldDesignation", star.designation);
     fact(list, "fieldMagnitude", seen === undefined && sky !== undefined ? nothing : `${(seen?.magnitude ?? star.magnitude).toFixed(2)} ${say("magnitudeUnit")}`);
     const away = sky === undefined ? starDistance(star) : undefined;
+    // A distance with no error range says so on the fallback build, where that is nearly every star; the Yale build is silent about the few it has none for.
     const distanceError = away?.lightYearsError === undefined ? "" : ` ± ${figure(away.lightYearsError, lang())}`;
-    fact(list, "fieldDistance", light === undefined ? nothing : `${sky !== undefined && light < 100 ? light.toFixed(1) : Math.round(light).toLocaleString(lang())}${distanceError} ${say("lightYears")}`);
+    const noError = NO_GCTP && away !== undefined && away.lightYearsError === undefined ? ` (${say("noErrorGiven")})` : "";
+    fact(list, "fieldDistance", light === undefined ? nothing : `${sky !== undefined && light < 100 ? light.toFixed(1) : Math.round(light).toLocaleString(lang())}${distanceError} ${say("lightYears")}${noError}`);
     const colour = document.createElement("span");
     colour.append(swatch, ` ${starColour(star)}`);
     fact(list, "fieldColour", colour);
@@ -792,6 +795,12 @@ function nearbyPanel(): void {
     note.dataset.testid = "nearby-note";
     note.textContent = inSpace ? `${found.skipped.toLocaleString(lang())} ${say("nearbySkipped")}` : found.canSpace ? say("nearbySkyNote") : say("nearbyNoSpace");
     host.append(note);
+    // The fallback build says what it lacks: no nearby-star layer, and distances with no error.
+    if (NO_GCTP) {
+      const lacks = Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("nearbyNoLayer") });
+      lacks.dataset.testid = "nearby-lacks";
+      host.append(lacks);
+    }
   }
 }
 

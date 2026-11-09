@@ -2,6 +2,7 @@
 // `/profile` and `/portrait`; this file only lays them out, in the page's language. A figure that could not be worked out says why, in words.
 import { starPortrait, starComparison } from "../src/portrait.ts";
 import type { Estimate, ProfileInput, StarProfile } from "../src/profile.ts";
+import { NO_GCTP } from "./build.ts";
 
 /** What the panel needs from the page. */
 export interface ProfileContext {
@@ -100,10 +101,12 @@ export function profileRows(profile: StarProfile, context: ProfileContext): Prof
   return rows;
 }
 
-/** The sentences that go under the figures: what the ranges mean, and a warning for a pair of stars. */
-export function profileNotes(profile: StarProfile, context: ProfileContext): string[] {
+/** The sentences that go under the figures: what the ranges mean, a warning for a pair of stars and, on the fallback build, that a star with a parallax has no error given for it. `input` is what the profile was made from. */
+export function profileNotes(profile: StarProfile, context: ProfileContext, input?: ProfileInput): string[] {
   const notes = [context.say("profileFoot")];
   if (profile.composite) notes.push(context.say("compositeNote"));
+  // The fallback build has no parallax errors, so the ranges allow only for the rounding of the catalogue's parallax: it says so.
+  if (NO_GCTP && input?.parallaxErrorMas === undefined && profile.radius?.basis === "parallax") notes.push(context.say("noGctpProfileNote"));
   return notes;
 }
 
