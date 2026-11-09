@@ -222,7 +222,7 @@ console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));      
 | `within(target, radius, options?)` | all of them within a radius (degrees, or light-years by space) |
 | `neighbouringConstellations(text)` | the constellations that share a piece of boundary |
 
-The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,563 stars of the 5,080 that have a parallax, and `error` is `undefined` for them (`nearest` does not use their parallax errors yet), and `skipped` counts the stars left out. Pass `among: [...stars(), ...nearbyStars()]` to count the nearby stars too (below). [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,563 stars of the 5,080 that have a parallax, `error` (light-years) is worked out from the two parallax errors where both stars have one (2,329 of them do) and is `undefined` otherwise, and `skipped` counts the stars left out. Pass `among: [...stars(), ...nearbyStars()]` to count the nearby stars too (below). [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 ## Printable sheets
 
@@ -310,6 +310,26 @@ console.log(`${(close[0]!.thing as { name?: string }).name} ${close[0]!.distance
 ```
 
 A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,352 positions are from 2MASS; the other 1,213 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+
+## The sky from another star
+
+`@johnmorrisdotca/hoshi-stars/sky-from` moves every star with a distance to where it would be seen from another star, or from any point in space, with its new right ascension, declination, distance and apparent magnitude (`m' = M + 5 log10(d' / 10 pc)`). The Sun is one of the stars: seen from Alpha Centauri it is a star of magnitude 0.45 in Cassiopeia. Near stars move a lot and far ones barely, and the directions are on the Earth's own axes, so the charts and projections work as they do at home. The 2,517 bright stars with no parallax cannot be moved and are left out (`skipped` counts them), as is the viewpoint star. `/sky-from/nearby` adds the nearby stars as its own import.
+
+```ts
+import { skyFrom } from "@johnmorrisdotca/hoshi-stars/sky-from";
+
+const sky = skyFrom("Rigil Kentaurus");
+const sun = sky.find((star) => star.id === "sun")!;
+console.log(`${(sun.rightAscension / 15).toFixed(2)} h ${sun.declination.toFixed(1)} ${sun.magnitude.toFixed(2)}`); // 2.66 h 60.8 0.45
+console.log(sky.length, sky.skipped);                                                                        // 2562 2518
+```
+
+| Function | Gives |
+|---|---|
+| `skyFrom(viewpoint, { magnitude?, among? })` | a `SeenSky`: the `SeenStar`s brightest first, each with `rightAscension`, `declination`, `lightYears`, `parsecs`, `magnitude`, `absoluteMagnitude`, `colourIndex` and its `star`, and `skipped`; the viewpoint is a star, a name or a point `{ x, y, z }` in parsecs |
+| `skyFromWithNearby(viewpoint, { magnitude? })` (`/sky-from/nearby`) | the same over the bright and the nearby stars |
+
+The demo has a **View from** choice (the Earth's sky, Alpha Centauri, Sirius and more, or the star you picked) that redraws the chart, the constellation lines and the Nearby panel from there, kept in the address as `from=HR5459`. `scripts/check-sky-from.py` checks the result against astropy by hand. [The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
 
