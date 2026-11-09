@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Notes from a review.** NOTICE.md marks five sources whose terms John has asked their owners to confirm (the Bright Star Catalogue and the SAO counts at NASA's HEASARC, the parallax catalogue and the boundary table at the CDS, and the Messier values from Sky Catalog 2000.0), with the fallback each would have. The README says how much of the install the constellation pictures are and that nothing imports them, and that the package renders pictures and pages only.
+
 ## [0.17.0] - 2026-11-09
 
 - **Faint stars to magnitude 12 from UCAC4** (MODULES-655, 660). New entry point `@johnmorrisdotca/hoshi-stars/faint`: 2,462,539 stars in 3,338 sky tiles (three levels by magnitude, 6 bytes a star, 14.8 MB, 12.6 MB gzipped) that a page loads for the patch of sky it shows: `faintSky` (loader, takes the `fetch` to use), `faintTilesFor`, `decodeFaintTile`, `faintStarsIn` (with a cap and the depth the list is complete to), `faintGrid`, `faintTileBounds`, `faintTilePath`, `FAINT_LEVELS`, `FAINT_LIMIT` and `FAINT_TILES_URL`. The tiles are `faint-tiles/` in the repository and on the Pages site, not in the npm package. `scripts/make-faint-data.py` downloads UCAC4 through NASA/IPAC IRSA's TAP service (outside the repository) and builds them. Only the rows UCAC4 measured itself: object types 4, 6 and 7 (copies from FK6, Hipparcos and Tycho-2) and Tycho's Vt and Bt are dropped, as are 45 duplicates of bright stars; the magnitude is APASS V where UCAC4 has one of its own, else its model magnitude. Brighter than about magnitude 9 it is thin (3,138 stars between 6.5 and 8). `NOTICE.md` has the licence sentences; the Faint stars guide (English and Japanese) the counts.

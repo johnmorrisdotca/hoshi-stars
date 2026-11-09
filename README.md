@@ -57,6 +57,8 @@ console.log(starsIn("Ori").slice(0, 2).map((s) => s.name));                   //
 
 Each of the 88 has a picture drawn from this package's own stars, lines and boundaries, in a light and a dark look, with its neighbours faint round it and no text in the drawing. The package ships them as files, `thumbnails/svg/dark/Ori.svg` and `thumbnails/png/160/light/Ori.png` (the demo site also has 480 and 1200 pixel PNGs), and `@johnmorrisdotca/hoshi-stars/thumbnails` draws any of them, or any other set of figures, as an SVG string. `@johnmorrisdotca/hoshi-stars/constellation-facts` adds what a gallery or a list needs: the meaning, hemisphere, best month, origin, how easy it is to find, asterisms and meteor showers. See [Constellation pictures and facts](docs/guides/constellation-pictures.md).
 
+The picture files are about 5 MB of the installed package (2.9 MB of SVG, 2.3 MB of 160-pixel PNG), on disk only: no entry point imports them, so a bundle or a page never carries them unless it links to one, and `@johnmorrisdotca/hoshi-stars/thumbnails` is the drawing code alone.
+
 ```ts
 import { allConstellationFacts } from "@johnmorrisdotca/hoshi-stars/constellation-facts";
 import { constellationThumbnail } from "@johnmorrisdotca/hoshi-stars/thumbnails";
@@ -280,6 +282,8 @@ The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAs
 ## Printable sheets
 
 `@johnmorrisdotca/hoshi-stars/sheets` draws four printable things as SVG strings measured in millimetres: connect-the-dots constellations (`dotsSvg`: dots sized by brightness and numbered in drawing order, at three levels, with an answer page), the constellations that suit a latitude (`skyForLatitude`, `regionGuideSvg`), a cut-out star wheel for a latitude (`starWheelDisc`, `starWheelPlate`, `starWheelPoster`) and a sky map for a month (`skyMapSvg`), with `DOT_LEVELS`, `WHEEL_LATITUDES` (20 to 70), `dotsSubtitle` (a constellation's name meaning for a title) and `whyFamous` (a note on a few famous ones). English and Japanese, a `kid` type (large, thick lines) and a `normal` one, and no dependency: the [demo](https://johnmorrisdotca.github.io/hoshi-stars/kids.html) puts them in kazoku-ui's print layout (header with the brand and a Name box, footer with credits, version and a QR code) on A4 or US Letter, with a country and region picker, and [ready-made PDFs](https://johnmorrisdotca.github.io/hoshi-stars/pdf/) are built with the site. [The guide](docs/guides/printable-sheets.md) has the details.
+
+Hoshi Stars renders the sky as pictures and pages only. It has no ordering, checkout, print-lab or engraving code.
 
 ```ts
 import { dotsSvg, skyForLatitude } from "@johnmorrisdotca/hoshi-stars/sheets";
