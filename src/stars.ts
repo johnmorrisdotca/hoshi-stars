@@ -142,7 +142,7 @@ const JULIAN_YEAR_MS = 365.25 * 86_400_000;
  * the result with J2000 coordinates, or convert it to the date with `/coordinates`. A straight line is good to a fraction of an arc-second for centuries for nearly every star here; it is
  * not good for the few with large motion over millennia.
  *
- * @param star - A star.
+ * @param star - A star, or anything with a J2000 position and a proper motion in milliarcseconds a year (a nearby star from `/nearby`).
  * @param when - The moment as a `Date` or milliseconds since 1970 (UTC); J2000 when left out.
  * @returns Right ascension and declination in degrees, J2000 frame, at that moment.
  *
@@ -154,7 +154,7 @@ const JULIAN_YEAR_MS = 365.25 * 86_400_000;
  * console.log(now.declination.toFixed(3));
  * ```
  */
-export function starPosition(star: Star, when?: When): { rightAscension: number; declination: number } {
+export function starPosition(star: Pick<Star, "rightAscension" | "declination" | "properMotionRaMas" | "properMotionDecMas">, when?: When): { rightAscension: number; declination: number } {
   const years = (moment(when ?? J2000_MS) - J2000_MS) / JULIAN_YEAR_MS;
   const declination = star.declination + (star.properMotionDecMas * years) / 3_600_000;
   const cosine = Math.cos((star.declination * Math.PI) / 180);

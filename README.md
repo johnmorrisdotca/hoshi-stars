@@ -220,7 +220,7 @@ console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));      
 | `within(target, radius, options?)` | all of them within a radius (degrees, or light-years by space) |
 | `neighbouringConstellations(text)` | the constellations that share a piece of boundary |
 
-The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,533 stars of the 5,080 that have a parallax, and the parallaxes are whole milliarcseconds, so `error` is `undefined` and `skipped` counts the stars left out. They will change when a nearby-star catalogue lands. [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,533 stars of the 5,080 that have a parallax, and the parallaxes are whole milliarcseconds, so `error` is `undefined` and `skipped` counts the stars left out. Pass `among: [...stars(), ...nearbyStars()]` to count the nearby stars too (below). [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 ## Put a chart in a page
 
@@ -280,11 +280,28 @@ For a page that cannot run script, use the embed page in an iframe; the demo's "
 </html>
 ```
 
+## Nearby stars
+
+`@johnmorrisdotca/hoshi-stars/nearby` adds the 5,565 stars of the Yale parallax catalogue that the bright stars leave out, among them Proxima Centauri, Barnard's Star and Wolf 359, each with its distance and the error of it. It is its own import (about 240 kB gzipped), so the bright-star import does not grow.
+
+```ts
+import { stars } from "@johnmorrisdotca/hoshi-stars";
+import { nearbyStarByName, nearbyStars } from "@johnmorrisdotca/hoshi-stars/nearby";
+import { nearest } from "@johnmorrisdotca/hoshi-stars/nearest";
+
+const barnard = nearbyStarByName("Barnard's Star")!;
+console.log(`${barnard.lightYears!.toFixed(2)} ${barnard.lightYearsError!.toFixed(2)}`);        // 5.98 0.01
+const close = nearest({ x: 0, y: 0, z: 0 }, { by: "space", among: [...stars(), ...nearbyStars()], count: 1 });
+console.log(`${(close[0]!.thing as { name?: string }).name} ${close[0]!.distance.toFixed(2)}`); // Proxima Centauri 4.24
+```
+
+A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,352 positions are from 2MASS; the other 1,213 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+
 Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
 
 ## Where the data comes from
 
-The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package. The deep-sky objects are Wikidata's (CC0), with NASA HEASARC's Messier table and NED as checks. The Milky Way's brightness comes from SAO star counts (NASA HEASARC; no licence stated, used with credit and removed on request) and NASA's IRAS and COBE dust maps.
+The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The nearby stars are the Yale General Catalogue of Trigonometric Stellar Parallaxes (van Altena, Lee and Hoffleit 1995; no licence stated, used with credit and removed on request) with 2MASS positions (IPAC acknowledgement in NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package. The deep-sky objects are Wikidata's (CC0), with NASA HEASARC's Messier table and NED as checks. The Milky Way's brightness comes from SAO star counts (NASA HEASARC; no licence stated, used with credit and removed on request) and NASA's IRAS and COBE dust maps.
 
 ## Coming
 

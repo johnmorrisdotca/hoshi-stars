@@ -122,6 +122,11 @@
       "import": "./dist/nearest.js",
       "default": "./dist/nearest.js"
     },
+    "./nearby": {
+      "types": "./dist/nearby.d.ts",
+      "import": "./dist/nearby.js",
+      "default": "./dist/nearby.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

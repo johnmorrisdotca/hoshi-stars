@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- New entry point `@johnmorrisdotca/hoshi-stars/nearby`: `nearbyStars(options)` and `nearbyStarByName(text)` give 5,565 more stars from the Yale General Catalogue of Trigonometric Stellar Parallaxes (Proxima Centauri, Barnard's Star, Wolf 359 and the red dwarfs), none of them among the 5,080 bright stars, each with names and identifiers, a J2000 position with its source and error (4,352 from 2MASS, 1,213 the Yale catalogue's own and flagged coarse), parallax and distance with their errors, proper motion, V magnitude, spectral type and flags. About 240 kB gzipped, its own import; the bright-star import is unchanged. `nearest(..., { by: "space", among: [...stars(), ...nearbyStars()] })` counts them, and works out `error` for a nearby star. `scripts/make-nearby-data.py` builds the table (the Yale file is checked against a SHA-256, 2MASS is read from IRSA in batches). NOTICE.md carries the credits: the Yale catalogue states no licence and is removed on request; 2MASS's acknowledgement.
+
 ## [0.5.0] - 2026-11-08
 
 - New entry point `@johnmorrisdotca/hoshi-stars/nearest`: `nearest(target, { count, within, kind, by, date, magnitude, among })` and `within(target, radius, options)` give the stars or Messier objects nearest a star, an object, a name or a point, nearest first, by angle on the sky (`{ thing, angle }`) or by distance in space from the parallaxes (`{ thing, distance, parsecs, error }`, with a `skipped` count; a point `{ x, y, z }` in parsecs is a target too), and `neighbouringConstellations(text)` gives the constellations that share a piece of boundary. One query over all 5,080 stars takes about 1 ms. The space answers cover only the bright-star catalogue until a nearby-star catalogue lands.

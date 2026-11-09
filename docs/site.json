@@ -55,6 +55,11 @@
       "ja": "星・天体・位置の近くにあるもの (空と宇宙で)、隣り合う星座",
       "platform": "neutral"
     },
+    "./nearby": {
+      "en": "Nearby stars: Proxima Centauri, Barnard's Star and about 5,600 more, with distance and error",
+      "ja": "近くの星 (プロキシマ・ケンタウリ、バーナード星など約5,600個、距離と誤差つき)",
+      "platform": "neutral"
+    },
     "./sky": {
       "en": "Your sky: altitude and azimuth for a place and a moment",
       "ja": "自分の空 (場所と時刻から高度と方位)",

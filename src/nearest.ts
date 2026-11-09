@@ -3,6 +3,7 @@
 import { BOUNDARY_RINGS } from "./data/boundaries.ts";
 import { constellation, constellations, type Constellation } from "./constellations.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "./deep-sky.ts";
+import type { NearbyStar } from "./nearby.ts";
 import { starByName, starDistanceLightYears, starPosition, stars, type Star } from "./stars.ts";
 import { moment, type When } from "./when.ts";
 
@@ -20,10 +21,10 @@ const LIGHT_YEARS_PER_PARSEC = 3.261563777;
  * console.log(nearest(target, { count: 1 })[0]?.thing.name);
  * ```
  */
-export type NearestTarget = Star | DeepSkyObject | string | { rightAscension: number; declination: number; lightYears?: number } | { x: number; y: number; z: number };
+export type NearestTarget = Star | NearbyStar | DeepSkyObject | string | { rightAscension: number; declination: number; lightYears?: number } | { x: number; y: number; z: number };
 
 /**
- * Something a query can find: a star or a deep-sky object.
+ * Something a query can find: a bright star, a nearby star (from `/nearby`, passed in `among`) or a deep-sky object.
  *
  * @example
  * ```ts
@@ -33,7 +34,7 @@ export type NearestTarget = Star | DeepSkyObject | string | { rightAscension: nu
  * console.log(thing.rightAscension.toFixed(1));
  * ```
  */
-export type NearestThing = Star | DeepSkyObject;
+export type NearestThing = Star | NearbyStar | DeepSkyObject;
 
 /**
  * One answer of a query by angle: the thing and its angle from the target, in degrees.
@@ -64,14 +65,14 @@ export interface NearestInSky<T extends NearestThing = Star> {
  * console.log(first.thing.name, first.distance.toFixed(1), "light-years");
  * ```
  */
-export interface NearestInSpace {
+export interface NearestInSpace<T extends Star | NearbyStar = Star> {
   /** The star. */
-  thing: Star;
+  thing: T;
   /** The distance from the target in light-years, from the two parallaxes and the angle between them. */
   distance: number;
   /** The same distance in parsecs. */
   parsecs: number;
-  /** The uncertainty of `distance` in light-years, or `undefined`: the Yale catalogue gives each parallax to a whole milliarcsecond and no error, so none can be worked out from it. */
+  /** The uncertainty of `distance` in light-years, or `undefined`: the bright Yale stars give each parallax to a whole milliarcsecond and no error, so none can be worked out for them. It is worked out when the star and the target are nearby stars (or the target is a point), from their parallax errors. */
   error: number | undefined;
 }
 
@@ -112,7 +113,7 @@ export interface NearestOptions {
   date?: When;
   /** The faintest to include, as in `stars({ magnitude })`: a thing of exactly that magnitude is in. A thing with no magnitude is left out. */
   magnitude?: number;
-  /** Look through this list instead of the table that `kind` names, for example `deepSky()` from `/deep-sky/ngc-ic`. */
+  /** Look through this list instead of the table that `kind` names, for example `deepSky()` from `/deep-sky/ngc-ic`, or `[...stars(), ...nearbyStars()]` to count the nearby stars with the bright ones. */
   among?: readonly NearestThing[];
 }
 
@@ -120,6 +121,8 @@ type SkyOptions = Omit<NearestOptions, "by" | "kind" | "among"> & { by?: "sky" }
 type Vector = [number, number, number];
 
 const isStar = (thing: NearestThing): thing is Star => "hr" in thing;
+const isNearby = (thing: NearestThing): thing is NearbyStar => "gctp" in thing;
+const lightYearsOf = (thing: NearestThing): number | undefined => (isStar(thing) ? starDistanceLightYears(thing) : isNearby(thing) ? thing.lightYears : undefined);
 
 function unit(rightAscension: number, declination: number): Vector {
   const ra = rightAscension * RADIANS;
@@ -129,7 +132,7 @@ function unit(rightAscension: number, declination: number): Vector {
 }
 
 function placeOf(thing: NearestThing, date: number | undefined): { rightAscension: number; declination: number } {
-  return isStar(thing) && date !== undefined ? starPosition(thing, date) : thing;
+  return (isStar(thing) || isNearby(thing)) && date !== undefined ? starPosition(thing, date) : thing;
 }
 
 function same(a: NearestThing, b: NearestThing): boolean {
@@ -163,7 +166,7 @@ function number(name: string, value: unknown, least: number): number {
   return value;
 }
 
-function run(target: NearestTarget, options: NearestOptions, defaultCount: number): NearestList<NearestInSky<NearestThing> | NearestInSpace> {
+function run(target: NearestTarget, options: NearestOptions, defaultCount: number): NearestList<NearestInSky<NearestThing> | NearestInSpace<Star | NearbyStar>> {
   const { by = "sky", kind = "star", date, magnitude, among } = options ?? {};
   if (by !== "sky" && by !== "space") throw new RangeError(`by must be "sky" or "space", got ${String(by)}`);
   if (kind !== "star" && kind !== "deep-sky") throw new RangeError(`kind must be "star" or "deep-sky", got ${String(kind)}`);
@@ -184,15 +187,18 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
     here = unit(origin.rightAscension, origin.declination);
   }
   let hereLightYears = 0;
+  let hereError: number | undefined = 0;
   if (by === "space" && cartesian !== undefined) hereLightYears = 1;
   else if (by === "space") {
     const known = typeof (from as { lightYears?: unknown }).lightYears === "number" ? (from as { lightYears: number }).lightYears : isStar(from as NearestThing) ? starDistanceLightYears(from as Star) : undefined;
+    if (isStar(from as NearestThing)) hereError = undefined;
+    else if (isNearby(from as NearestThing)) hereError = (from as NearbyStar).lightYearsError;
     if (known === undefined || !(known > 0)) throw new RangeError("the target has no distance: a star with a parallax, a point with lightYears or a point { x, y, z } is needed for by: \"space\"");
     hereLightYears = known;
   }
   const named = "hr" in from || "id" in from;
   const candidates = among ?? (kind === "star" ? stars() : messier());
-  const found: Array<{ thing: NearestThing; key: number; lightYears: number }> = [];
+  const found: Array<{ thing: NearestThing; key: number; error: number | undefined }> = [];
   let skipped = 0;
   for (const thing of candidates) {
     if (named && same(from as NearestThing, thing)) continue;
@@ -204,19 +210,27 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
       const cy = here[2] * there[0] - here[0] * there[2];
       const cz = here[0] * there[1] - here[1] * there[0];
       const angle = Math.atan2(Math.hypot(cx, cy, cz), here[0] * there[0] + here[1] * there[1] + here[2] * there[2]) / RADIANS;
-      if (angle <= limit) found.push({ thing, key: angle, lightYears: 0 });
+      if (angle <= limit) found.push({ thing, key: angle, error: undefined });
     } else {
-      const lightYears = isStar(thing) ? starDistanceLightYears(thing) : undefined;
+      const lightYears = lightYearsOf(thing);
       if (lightYears === undefined) {
         skipped++;
         continue;
       }
       const distance = Math.hypot(there[0] * lightYears - here[0] * hereLightYears, there[1] * lightYears - here[1] * hereLightYears, there[2] * lightYears - here[2] * hereLightYears);
-      if (distance <= limit) found.push({ thing, key: distance, lightYears });
+      if (distance > limit) continue;
+      // Each distance's error moves the answer only along the line between the two stars: the part of it that points along the line of sight.
+      const thereError = isNearby(thing) ? thing.lightYearsError : undefined;
+      let error: number | undefined;
+      if (hereError !== undefined && thereError !== undefined) {
+        const along = (a: Vector) => (distance === 0 ? 1 : Math.abs(((there[0] * lightYears - here[0] * hereLightYears) * a[0] + (there[1] * lightYears - here[1] * hereLightYears) * a[1] + (there[2] * lightYears - here[2] * hereLightYears) * a[2]) / distance));
+        error = Math.hypot(thereError * along(there), hereError * along(here));
+      }
+      found.push({ thing, key: distance, error });
     }
   }
   found.sort((a, b) => a.key - b.key);
-  const list = found.slice(0, count).map(({ thing, key }) => (by === "sky" ? { thing, angle: key } : { thing: thing as Star, distance: key, parsecs: key / LIGHT_YEARS_PER_PARSEC, error: undefined }));
+  const list = found.slice(0, count).map(({ thing, key, error }) => (by === "sky" ? { thing, angle: key } : { thing: thing as Star | NearbyStar, distance: key, parsecs: key / LIGHT_YEARS_PER_PARSEC, error }));
   return Object.assign(list, { skipped });
 }
 
@@ -225,8 +239,9 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
  * which keeps its accuracy at 0 and at 180 degrees and across right ascension 0 and 360. By space (`by: "space"`) it places each star from its parallax and finds the straight-line distance, in
  * light-years and in parsecs; it needs a target with a distance and leaves out every candidate without one, counting them in `skipped`. The target itself is never in its own answer.
  *
- * The three-dimensional answers cover only this catalogue: the 2,533 of the 5,080 Yale stars that have a positive parallax, so the neighbours are bright stars, not the nearest ones. The parallaxes are whole
- * milliarcseconds, so a distance is good to a few per cent for a star within 100 light-years and not at all for a faint, far one; `error` is `undefined` for that reason. A nearby-star catalogue will change this.
+ * By default the three-dimensional answers cover only the bright stars: the 2,533 of the 5,080 Yale stars that have a positive parallax, so the neighbours are bright stars, not the nearest ones. Their parallaxes are
+ * whole milliarcseconds, so a distance is good to a few per cent for a star within 100 light-years and not at all for a faint, far one; `error` is `undefined` for them. To include the stars of `/nearby` (Proxima
+ * Centauri, Barnard's Star, the red dwarfs, with a parallax error each) pass `among: [...stars(), ...nearbyStars()]`; `error` is then worked out for a nearby star from a target that is a point or a nearby star.
  *
  * Every candidate is looked at (no index); one query over all the stars takes about a millisecond.
  *
@@ -248,9 +263,10 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
 export function nearest(target: NearestTarget, options: SkyOptions & { kind: "deep-sky"; among?: undefined }): NearestList<NearestInSky<DeepSkyObject>>;
 export function nearest<T extends NearestThing>(target: NearestTarget, options: SkyOptions & { kind?: "star" | "deep-sky"; among: readonly T[] }): NearestList<NearestInSky<T>>;
 export function nearest(target: NearestTarget, options?: SkyOptions & { kind?: "star"; among?: undefined }): NearestList<NearestInSky>;
+export function nearest<T extends NearestThing>(target: NearestTarget, options: NearestOptions & { by: "space"; among: readonly T[] }): NearestList<NearestInSpace<Extract<T, Star | NearbyStar>>>;
 export function nearest(target: NearestTarget, options: NearestOptions & { by: "space" }): NearestList<NearestInSpace>;
-export function nearest(target: NearestTarget, options: NearestOptions): NearestList<NearestInSky<NearestThing> | NearestInSpace>;
-export function nearest(target: NearestTarget, options: NearestOptions = {}): NearestList<NearestInSky<NearestThing> | NearestInSpace> {
+export function nearest(target: NearestTarget, options: NearestOptions): NearestList<NearestInSky<NearestThing> | NearestInSpace<Star | NearbyStar>>;
+export function nearest(target: NearestTarget, options: NearestOptions = {}): NearestList<NearestInSky<NearestThing> | NearestInSpace<Star | NearbyStar>> {
   return run(target, options, 10);
 }
 
@@ -273,9 +289,10 @@ export function nearest(target: NearestTarget, options: NearestOptions = {}): Ne
 export function within(target: NearestTarget, radius: number, options: SkyOptions & { kind: "deep-sky"; among?: undefined }): NearestList<NearestInSky<DeepSkyObject>>;
 export function within<T extends NearestThing>(target: NearestTarget, radius: number, options: SkyOptions & { kind?: "star" | "deep-sky"; among: readonly T[] }): NearestList<NearestInSky<T>>;
 export function within(target: NearestTarget, radius: number, options?: SkyOptions & { kind?: "star"; among?: undefined }): NearestList<NearestInSky>;
+export function within<T extends NearestThing>(target: NearestTarget, radius: number, options: NearestOptions & { by: "space"; among: readonly T[] }): NearestList<NearestInSpace<Extract<T, Star | NearbyStar>>>;
 export function within(target: NearestTarget, radius: number, options: NearestOptions & { by: "space" }): NearestList<NearestInSpace>;
-export function within(target: NearestTarget, radius: number, options: NearestOptions): NearestList<NearestInSky<NearestThing> | NearestInSpace>;
-export function within(target: NearestTarget, radius: number, options: NearestOptions = {}): NearestList<NearestInSky<NearestThing> | NearestInSpace> {
+export function within(target: NearestTarget, radius: number, options: NearestOptions): NearestList<NearestInSky<NearestThing> | NearestInSpace<Star | NearbyStar>>;
+export function within(target: NearestTarget, radius: number, options: NearestOptions = {}): NearestList<NearestInSky<NearestThing> | NearestInSpace<Star | NearbyStar>> {
   return run(target, { ...options, within: radius }, Number.POSITIVE_INFINITY);
 }
 

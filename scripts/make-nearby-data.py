@@ -1,0 +1,547 @@
+#!/usr/bin/env python3
+"""Write src/data/nearby.ts: the stars with a measured parallax in the Yale General Catalogue of Trigonometric Stellar Parallaxes that the 5,080 bright stars do not hold.
+
+Sources
+- Yale GCTP: van Altena, W. F., Lee, J. T. and Hoffleit, E. D., 1995, "The General Catalogue of Trigonometric Stellar Parallaxes, Fourth Edition", Yale University Observatory; VizieR catalogue I/238A,
+  file picat.dat, from the Harvard mirror of VizieR (https://vizier.cfa.harvard.edu/ftp/cats/I/238A/). The ReadMe states no licence: NOTICE.md credits it and says it is removed on request.
+  The file is checked against a SHA-256 below. Its positions are B1900.0 in the FK4 system and are carried to J2000.0 ICRS with astropy (E-terms, precession, the FK4 to FK5 rotation), after the
+  catalogue's own proper motion has moved them over the 100 years.
+- The Bright Star Catalogue (HEASARC bsc5p, the file make-star-data.py reads): only for each bright star's HD number, to find the GCTP stars already in src/data/stars.ts.
+- 2MASS Point Source Catalog (Cutri et al. 2003) through IRSA's TAP service (https://irsa.ipac.caltech.edu/TAP, table fp_psc): a modern position for each new star, with its designation and error.
+  NOT Gaia, Hipparcos or Tycho: their values are not read anywhere.
+
+Cross-match with the bright stars: by HD number first; a GCTP star with no HD, or an HD the Bright Star Catalogue does not hold, by position (within 15 arc-seconds after proper motion) and visual
+magnitude (within 1.0). Whatever is left is new. Each new star gets a 2MASS position when exactly one 2MASS source lies in a window that allows for the catalogue's position resolution and its
+proper motion, and whose J magnitude agrees with what the star's V and B-V imply; otherwise it keeps the GCTP position and is flagged coarse.
+
+    python3 -I scripts/make-nearby-data.py            # fetches into .cache/nearby (git-ignored), queries IRSA in batches (needs the network and astropy)
+    python3 -I scripts/make-nearby-data.py --offline  # only what the cache already holds
+
+The cache holds the downloads and every IRSA answer, so a second run is offline. Never runs in the test.
+"""
+import csv
+import gzip
+import hashlib
+import io
+import math
+import re
+import statistics
+import sys
+import time
+import urllib.parse
+import urllib.request
+from pathlib import Path
+
+import numpy as np
+from astropy import units as u
+from astropy.coordinates import FK4, FK5, SkyCoord
+from astropy.time import Time
+
+ROOT = Path(__file__).resolve().parent.parent
+CACHE = ROOT / ".cache" / "nearby"
+OUT = ROOT / "src" / "data" / "nearby.ts"
+
+GCTP_URL = "https://vizier.cfa.harvard.edu/ftp/cats/I/238A/picat.dat"
+GCTP_SHA256 = "3b483e9ddf76e2fa9860adf2d25aae79ee257de428284c3351e5e81e402727a6"
+BSC_URL = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_bsc5p.tdat.gz"
+BSC_SHA256 = "e2b2f8e9d615426f9478f88061235976143d49d8b25c6c15df3f3661c7095b53"  # of the unpacked table
+TAP_URL = "https://irsa.ipac.caltech.edu/TAP/sync"
+
+JULIAN_YEAR_DAYS = 365.25
+EPOCH_GCTP = 1900.0
+DEGREE = math.pi / 180
+ARCSEC = DEGREE / 3600
+
+# Cross-match with the bright stars, and the 2MASS window.
+POSITION_MATCH_ARCSEC = 15.0
+MAGNITUDE_MATCH = 1.0
+NEAR_BRIGHT_ARCSEC = 30.0  # a bright star this close that was not matched makes the new star "ambiguous"
+ANGLE_ERROR = 0.0087  # the position angle of the motion is given to a whole degree: half a degree is 0.0087 of the distance moved
+PROPER_MOTION_ERROR = 0.03  # of the catalogue's motion, over 100 years: its quality is not stated
+MAGNITUDE_TOLERANCE = 1.5  # J against what V and B-V imply
+SEPARATION_MARGIN = 1.0  # when several 2MASS sources fit, the best must beat the second by this many magnitudes of J
+MAX_WINDOW_ARCSEC = 400.0
+EPOCH_SPAN = 140.0  # years the catalogue's position may be older than a 2MASS source
+EPOCH_AFTER = 2.0  # years it may be newer
+BATCH = 250
+
+GREEK = {
+    "ALP": "α", "BET": "β", "GAM": "γ", "DEL": "δ", "EPS": "ε", "ZET": "ζ", "ETA": "η", "THE": "θ", "IOT": "ι", "KAP": "κ", "LAM": "λ", "MU": "μ",
+    "NU": "ν", "XI": "ξ", "OMI": "ο", "PI": "π", "RHO": "ρ", "SIG": "σ", "TAU": "τ", "UPS": "υ", "PHI": "φ", "CHI": "χ", "PSI": "ψ", "OME": "ω",
+}
+
+# Common names, keyed by GCTP number, each with the text the catalogue's own name column must hold (a check against a wrong key), and the Gliese-Jahreiss number where it is a well-known one.
+# The names are facts (which star people call what); the Gliese numbers are identifiers, the number alone and no catalogue data.
+NAMES = {
+    "3278.00": ("Proxima Centauri", "Proxima Cen", "551"),
+    "4098.00": ("Barnard's Star", "Barnard sta", "699"),
+    "2553.00": ("Wolf 359", "W 359", "406"),
+    "2576.00": ("Lalande 21185", "Lal 21185", "411"),
+    "4338.00": ("Ross 154", "R 154", "729"),
+    "5736.00": ("Ross 248", "R 248", "905"),
+    "2730.00": ("Ross 128", "R 128", "447"),
+    "5475.00": ("EZ Aquarii", "L 789-6", "866"),
+    "4330.00": ("Struve 2398", "G 227-046", "725"),
+    "49.00": ("Groombridge 34", "Groom 34", "15"),
+    "5584.00": ("Lacaille 9352", "Lac 9352", "887"),
+    "2016.01": ("DX Cancri", "G 051-015", "1111"),
+    "248.01": ("YZ Ceti", "L 725-32", "54.1"),
+    "1755.00": ("Luyten's Star", "G 089-019", "273"),
+    "5117.00": ("Lacaille 8760", "Lac 8760", "825"),
+    "1181.00": ("Kapteyn's Star", "Kapteyn sta", "191"),
+    "5438.00": ("Kruger 60", "Kruger 60", "860"),
+    "1509.00": ("Ross 614", "R 614", "234"),
+    "160.00": ("van Maanen's Star", "van Maanen", "35"),
+    "2390.00": ("Groombridge 1618", "Groom 1618", "380"),
+    "2420.00": ("AD Leonis", "G 054-023", "388"),
+    "5520.00": ("EV Lacertae", "CI 20-1382", "873"),
+    "1827.00": ("YZ Canis Minoris", "G 050-004", "285"),
+    "343.10": ("UV Ceti", "L 726-8A", "65"),
+}
+
+# V - J for a dwarf of a given B-V: a rough line through well-known stars, used only to say which 2MASS source can be the star (with MAGNITUDE_TOLERANCE), never to give a value.
+COLOUR_LINE = [(-0.4, -0.4), (0.0, 0.0), (0.3, 0.4), (0.65, 1.1), (1.0, 1.9), (1.4, 3.1), (1.7, 4.2), (1.9, 5.3), (2.1, 6.4), (2.5, 8.0)]
+
+
+def sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def download(url: str, name: str, offline: bool) -> bytes:
+    path = CACHE / name
+    if path.exists():
+        return path.read_bytes()
+    if offline:
+        raise SystemExit(f"--offline: {path} is not in the cache")
+    CACHE.mkdir(parents=True, exist_ok=True)
+    request = urllib.request.Request(url, headers={"User-Agent": "hoshi-stars make-nearby-data (data build, one run)"})
+    with urllib.request.urlopen(request, timeout=180) as response:
+        data = response.read()
+    path.write_bytes(data)
+    return data
+
+
+def number(text: str):
+    text = text.strip()
+    return float(text) if text else None
+
+
+def gctp_rows(raw: bytes):
+    """The picat.dat records, by the byte columns of its ReadMe."""
+    rows = []
+    for line in raw.decode("latin-1").splitlines():
+        line = line.ljust(132)
+        seconds = line[15:19]
+        rows.append(dict(
+            note=line[0].strip(), num=line[1:8].strip(),
+            rah=number(line[9:11]), ram=number(line[12:14]), ras=number(seconds), rasDecimals=len(seconds.strip().split(".")[1]) if "." in seconds else 0,
+            sign=line[20], ded=number(line[21:23]), dem=number(line[24:26]), des=number(line[27:29]), lowprec=line[29].strip(),
+            vmag=number(line[31:36]), vdec=len(line[31:36].strip().split(".")[1]) if "." in line[31:36] else 0, vflag=line[36].strip(), bv=number(line[38:43]), mk=" ".join(line[52:62].split()), comp=line[63].strip(),
+            var=line[64:73].strip(), hd=line[78:85].strip(), dm=line[85:95].strip(), name=" ".join(line[95:106].split()),
+            pm=number(line[106:112]), pa=number(line[113:116]), pi=number(line[117:124]), epi=number(line[125:128]),
+        ))
+    return rows
+
+
+def hd_of(text: str):
+    match = re.match(r"\s*(\d+)", text or "")
+    return int(match.group(1)) if match else None
+
+
+def unit(ra, dec):
+    ra = np.radians(ra)
+    dec = np.radians(dec)
+    return np.stack([np.cos(dec) * np.cos(ra), np.cos(dec) * np.sin(ra), np.sin(dec)], axis=-1)
+
+
+def radec(vector):
+    vector = vector / np.linalg.norm(vector, axis=-1, keepdims=True)
+    return np.degrees(np.arctan2(vector[..., 1], vector[..., 0])) % 360, np.degrees(np.arcsin(np.clip(vector[..., 2], -1, 1)))
+
+
+def separation(a, b):
+    """The angle between two unit vectors, in arc-seconds."""
+    cross = np.linalg.norm(np.cross(a, b), axis=-1)
+    return np.degrees(np.arctan2(cross, np.sum(a * b, axis=-1))) * 3600
+
+
+def tangents(ra, dec):
+    """East and north unit vectors at a position."""
+    ra = np.radians(ra)
+    dec = np.radians(dec)
+    east = np.stack([-np.sin(ra), np.cos(ra), np.zeros_like(ra)], axis=-1)
+    north = np.stack([-np.sin(dec) * np.cos(ra), -np.sin(dec) * np.sin(ra), np.cos(dec)], axis=-1)
+    return east, north
+
+
+def move(vector, east, north, mu_east, mu_north, years):
+    """Straight-line motion over some years: milliarcseconds a year, a true angle on the sky."""
+    step = np.asarray(years)[..., None] * ARCSEC / 1000
+    return vector + (np.asarray(mu_east)[..., None] * east + np.asarray(mu_north)[..., None] * north) * step
+
+
+def to_j2000(rows):
+    """Each GCTP star as FK5 J2000 at epoch 1900 with its motion (mas a year, J2000 axes): astropy takes the E-terms out of the FK4 catalogue position, precesses and rotates it."""
+    ra = np.array([(r["rah"] + (r["ram"] or 0) / 60 + (r["ras"] or 0) / 3600) * 15 if r["rah"] is not None else np.nan for r in rows])
+    dec = np.array([(1 if r["sign"] != "-" else -1) * (r["ded"] + (r["dem"] or 0) / 60 + (r["des"] or 0) / 3600) if r["ded"] is not None else np.nan for r in rows])
+    pm = np.array([r["pm"] if r["pm"] is not None and r["pa"] is not None else 0.0 for r in rows]) * 1000
+    pa = np.radians([r["pa"] if r["pa"] is not None else 0.0 for r in rows])
+    frame = FK4(equinox=Time("B1900"), obstime=Time("B1900"))
+    old = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, pm_ra_cosdec=pm * np.sin(pa) * u.mas / u.yr, pm_dec=pm * np.cos(pa) * u.mas / u.yr, frame=frame)
+    new = old.transform_to(FK5(equinox=Time("J2000")))
+    return new.ra.deg, new.dec.deg, new.pm_ra_cosdec.to_value(u.mas / u.yr), new.pm_dec.to_value(u.mas / u.yr)
+
+
+def position_error(row, dec):
+    """The catalogue position's likely error in arc-seconds (resolution of the digits and a 3% error of the motion over a century), and the part that is the digits alone."""
+    ra_step = 15 * 10 ** -row["rasDecimals"] * math.cos(math.radians(dec))
+    dec_step = 60.0 if row["lowprec"] and not row["des"] else (10.0 if row["lowprec"] else 1.0)
+    digits = math.hypot(ra_step, dec_step) / 2
+    motion = PROPER_MOTION_ERROR * (row["pm"] or 0) * (2000 - EPOCH_GCTP)
+    return math.hypot(digits, motion), digits, motion
+
+
+def expected_j(row):
+    """The J magnitude the star's V and B-V imply: (centre, tolerance), or None without a V."""
+    if row["vmag"] is None:
+        return None
+    if row["bv"] is None:
+        return row["vmag"] - 3.0, 4.5
+    xs, ys = zip(*COLOUR_LINE)
+    return row["vmag"] - float(np.interp(row["bv"], xs, ys)), MAGNITUDE_TOLERANCE
+
+
+def sexagesimal_name(text: str):
+    """The Bayer letter or Flamsteed number in the catalogue's name column: `ALP And` is `α And`, `33 Psc` stays."""
+    match = re.fullmatch(r"([A-Z]{2,3})(\d?) ([A-Za-z]{3})", text)
+    if match and match.group(1) in GREEK:
+        return f"{GREEK[match.group(1)]}{match.group(2)} {match.group(3)}"
+    match = re.fullmatch(r"(\d{1,3}) ([A-Za-z]{3})", text)
+    return text if match else None
+
+
+def aliases_of(row, designation):
+    found = []
+    if row["name"] and sexagesimal_name(row["name"]) is None:
+        found.append(row["name"])
+    if row["var"] and row["var"].lower() not in ("var", "var?"):
+        found.append(row["var"])
+    if row["dm"]:
+        prefix = {"B": "BD", "C": "CD", "P": "CPD"}.get(row["dm"][0])
+        if prefix:
+            found.append(prefix + row["dm"][1:])
+    unique = []
+    for text in found:
+        text = " ".join(text.split())
+        if text and text != designation and text not in unique and ";" not in text and "|" not in text:
+            unique.append(text)
+    return unique
+
+
+def votable(stars, indexes):
+    """The upload for IRSA: one row a star with its window, as a VOTable."""
+    rows = []
+    for i in indexes:
+        s = stars[i]
+        radius = s["radius"] / 3600
+        low, high = (s["vmag"] - 8.0, s["vmag"] + 1.5) if s["vmag"] is not None else (-5.0, 25.0)
+        rows.append(f"<TR><TD>{i}</TD><TD>{s['centreRa']:.6f}</TD><TD>{s['centreDec']:.6f}</TD><TD>{radius:.6f}</TD><TD>{low:.1f}</TD><TD>{high:.1f}</TD></TR>")
+    fields = "".join(f'<FIELD name="{n}" datatype="{t}"/>' for n, t in [("id", "int"), ("ra", "double"), ("dec", "double"), ("rad", "double"), ("jlo", "double"), ("jhi", "double")])
+    return f'<?xml version="1.0"?><VOTABLE version="1.3" xmlns="http://www.ivoa.net/xml/VOTable/v1.3"><RESOURCE><TABLE name="t">{fields}<DATA><TABLEDATA>{"".join(rows)}</TABLEDATA></DATA></TABLE></RESOURCE></VOTABLE>'.encode()
+
+
+def tap(query: str, upload: bytes, offline: bool):
+    """One synchronous TAP query with an uploaded table, answered from the cache when it has been asked before."""
+    key = sha256(query.encode() + upload)[:24]
+    path = CACHE / "tap" / f"{key}.csv"
+    if path.exists():
+        return list(csv.DictReader(io.StringIO(path.read_text(encoding="utf-8"))))
+    if offline:
+        raise SystemExit(f"--offline: an IRSA answer is not in the cache ({key})")
+    (CACHE / "tap").mkdir(parents=True, exist_ok=True)
+    boundary = "hoshi" + key
+    parts = [("QUERY", query), ("LANG", "ADQL"), ("FORMAT", "csv"), ("UPLOAD", "t,param:f")]
+    body = b"".join(f'--{boundary}\r\nContent-Disposition: form-data; name="{n}"\r\n\r\n{v}\r\n'.encode() for n, v in parts)
+    body += f'--{boundary}\r\nContent-Disposition: form-data; name="f"; filename="t.xml"\r\nContent-Type: application/x-votable+xml\r\n\r\n'.encode() + upload + f"\r\n--{boundary}--\r\n".encode()
+    last = None
+    for attempt in range(5):
+        try:
+            request = urllib.request.Request(TAP_URL, data=body, headers={"User-Agent": "hoshi-stars make-nearby-data (data build, one run)", "Content-Type": f"multipart/form-data; boundary={boundary}"})
+            with urllib.request.urlopen(request, timeout=600) as response:
+                text = response.read().decode("utf-8")
+            if not text.startswith("id,"):
+                raise RuntimeError(text[:600])
+            path.write_text(text, encoding="utf-8")
+            time.sleep(1)
+            return list(csv.DictReader(io.StringIO(text)))
+        except Exception as error:  # a network or service error: wait and ask again
+            last = error
+            time.sleep(10 * (attempt + 1))
+    raise SystemExit(f"IRSA did not answer: {last}")
+
+
+def twomass_candidates(stars, offline):
+    """Every 2MASS source in each star's window (position and J range), asked for in batches with the windows uploaded. Returns the sources per star index."""
+    out = {i: [] for i in range(len(stars))}
+    order = sorted(range(len(stars)), key=lambda i: (round(stars[i]["sortDec"] / 10), stars[i]["sortRa"]))
+    query = ("SELECT u.id, m.designation, m.ra, m.dec, m.err_maj, m.err_min, m.j_m, m.jdate FROM TAP_UPLOAD.t AS u, fp_psc AS m "
+             "WHERE 1=CONTAINS(POINT('ICRS', m.ra, m.dec), CIRCLE('ICRS', u.ra, u.dec, u.rad)) AND m.j_m BETWEEN u.jlo AND u.jhi")
+    for start in range(0, len(order), BATCH):
+        group = order[start : start + BATCH]
+        for r in tap(query, votable(stars, group), offline):
+            try:
+                out[int(r["id"])].append(dict(designation=r["designation"], ra=float(r["ra"]), dec=float(r["dec"]), err=max(float(r["err_maj"] or 0), float(r["err_min"] or 0)), j=float(r["j_m"]), jdate=float(r["jdate"])))
+            except ValueError:
+                continue  # no date or no error: it cannot be placed
+        print(f"  2MASS {min(start + BATCH, len(order))}/{len(order)}", file=sys.stderr, flush=True)
+    for i, found in out.items():
+        s = stars[i]
+        out[i] = [c for c in found if float(separation(unit(np.array(c["ra"]), np.array(c["dec"])), s["centre"])) <= s["radius"]]
+    return out
+
+
+def track(star, c):
+    """Where a 2MASS source lies against the line the catalogue's star moves along. The catalogue's positions are said to be for 1900 but those of the fainter, high-motion stars are for the epoch
+    of their discovery (some 1930 to 1970), so the epoch is not taken as known: the star may be anywhere between the position carried back EPOCH_BEFORE years and carried forward to the epoch of the source.
+    Returns (arc-seconds off that stretch of the line, the epoch of the catalogue's position that fits, the epoch of the source)."""
+    epoch = 2000.0 + (c["jdate"] - 2451545.0) / JULIAN_YEAR_DAYS
+    here = unit(np.array(c["ra"]), np.array(c["dec"]))
+    centre = star["vector1900"]
+    # the source in arc-seconds east and north of the 1900 position on the tangent plane there
+    gnomonic = here / np.dot(here, centre) - centre
+    east, north = np.dot(gnomonic, star["east"]) * 206264.806, np.dot(gnomonic, star["north"]) * 206264.806
+    speed = math.hypot(star["muEast"], star["muNorth"]) / 1000  # arc-seconds a year
+    if speed < 1e-6:
+        return math.hypot(east, north), None, epoch
+    along = (east * star["muEast"] + north * star["muNorth"]) / 1000 / speed
+    across = abs(east * star["muNorth"] - north * star["muEast"]) / 1000 / speed
+    years = along / speed  # years the star moved between the catalogue's epoch and the source's
+    held = min(max(years, -EPOCH_AFTER), EPOCH_SPAN)
+    return math.hypot(across, (years - held) * speed), epoch - years, epoch
+
+
+def match_twomass(star, candidates):
+    """The one 2MASS source for a star as (fit, "one"), or (None, "none" or "several")."""
+    fits = []
+    for c in candidates:
+        off, catalogue_epoch, epoch = track(star, c)
+        if off > star["window"]:
+            continue
+        gap = min(abs(c["j"] - centre) / tolerance for centre, tolerance in star["expected"]) if star["expected"] else 0.0
+        if gap > 1.0:
+            continue
+        fits.append((gap, off, c, epoch, catalogue_epoch))
+    if not fits:
+        return None, "none"
+    fits.sort(key=lambda f: f[0])
+    if len(fits) > 1 and (fits[1][0] - fits[0][0]) * MAGNITUDE_TOLERANCE < SEPARATION_MARGIN:
+        return None, "several"
+    return fits[0], "one"
+
+
+def bright_stars():
+    """The 5,080 stars of src/data/stars.ts: HR number, J2000 position (degrees) and V."""
+    text = (ROOT / "src" / "data" / "stars.ts").read_text(encoding="utf-8")
+    table = re.search(r"STAR_ROWS = `(.*?)`", text, re.S).group(1)
+    found = []
+    for line in table.split("\n"):
+        p = line.split("|")
+        found.append(dict(hr=int(p[0]), ra=int(p[4]) / 2400, dec=int(p[5]) / 3600, v=int(p[8]) / 100))
+    return found
+
+
+def bright_hd_numbers(offline):
+    """HD number to HR number over the whole Bright Star Catalogue (HEASARC's table), to find the GCTP stars that are among the bright stars (or fainter ones of the same catalogue)."""
+    raw = download(BSC_URL, "heasarc_bsc5p.tdat.gz", offline)
+    text = (gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw)
+    if sha256(text) != BSC_SHA256:
+        raise SystemExit(f"heasarc_bsc5p.tdat is not the file this script was written for (SHA-256 {sha256(text)})")
+    lines = text.decode("latin-1").splitlines()
+    columns = next(line for line in lines if line.startswith("line[1]")).split("=", 1)[1].split()
+    found = {}
+    for line in lines[lines.index("<DATA>") + 1 : lines.index("<END>")]:
+        r = dict(zip(columns, line.split("|")))
+        if r["hd"].strip() and r["hr"].strip():
+            found[int(r["hd"])] = int(r["hr"])
+    return found
+
+
+def main() -> None:
+    offline = "--offline" in sys.argv
+    limit = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv else None
+    target = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else OUT
+    if limit is not None and target == OUT:
+        raise SystemExit("--limit is a trial run: give --out FILE")
+
+    raw = download(GCTP_URL, "picat.dat", offline)
+    if sha256(raw) != GCTP_SHA256:
+        raise SystemExit(f"picat.dat is not the file this script was written for (SHA-256 {sha256(raw)}); read the new ReadMe and errata, then update GCTP_SHA256")
+    rows = gctp_rows(raw)
+    bright = bright_stars()
+    bright_hr = {b["hr"] for b in bright}
+    hd_to_hr = bright_hd_numbers(offline)
+    bright_hd = {hd for hd, hr in hd_to_hr.items() if hr in bright_hr}
+    problems = [b["hr"] for b in bright if b["hr"] not in hd_to_hr.values()]
+    if problems:
+        print(f"note: {len(problems)} bright stars have no HD number in the Bright Star Catalogue table", file=sys.stderr)
+
+    # One star is one catalogue number; the records that share it are its components and its unresolved sum.
+    groups = {}
+    for index, r in enumerate(rows):
+        if r["pi"] is not None and r["rah"] is not None:
+            groups.setdefault(r["num"], []).append(index)
+    positions = to_j2000(rows)
+    ra1900, dec1900, mu_ra, mu_dec = positions
+    east, north = tangents(ra1900, dec1900)
+    vector1900 = unit(ra1900, dec1900)
+    at2000 = move(vector1900, east, north, mu_ra, mu_dec, 2000 - EPOCH_GCTP)
+    at2000 /= np.linalg.norm(at2000, axis=-1, keepdims=True)
+    ra2000, dec2000 = radec(at2000)
+
+    bright_vectors = unit(np.array([b["ra"] for b in bright]), np.array([b["dec"] for b in bright]))
+    bright_v = np.array([b["v"] for b in bright])
+    counts = dict(records=len(rows), withParallax=sum(1 for r in rows if r["pi"] is not None), stars=len(groups), matchedHd=0, matchedPosition=0, matchedAmbiguous=0)
+    new = []
+    for num, members in groups.items():
+        hds = {hd_of(rows[i]["hd"]) for i in members} - {None}
+        lead = members[0]
+        ambiguous = False
+        if hds & bright_hd:
+            counts["matchedHd"] += 1
+            hr = next(hd_to_hr[hd] for hd in hds if hd in bright_hd)
+            where = separation(at2000[lead], bright_vectors[[b["hr"] for b in bright].index(hr)])
+            counts["matchedAmbiguous"] += int(where > NEAR_BRIGHT_ARCSEC)
+            continue
+        if not (hds & hd_to_hr.keys()):
+            apart = separation(bright_vectors, at2000[lead])
+            vs = [rows[i]["vmag"] for i in members if rows[i]["vmag"] is not None]
+            close = [k for k in np.nonzero(apart <= POSITION_MATCH_ARCSEC)[0] if not vs or min(abs(bright_v[k] - v) for v in vs) < MAGNITUDE_MATCH]
+            if close:
+                counts["matchedPosition"] += 1
+                counts["matchedAmbiguous"] += 1
+                continue
+        new.append((num, members))
+    counts["new"] = len(new)
+    if limit is not None:
+        new = new[:limit]
+
+    stars = []
+    for num, members in new:
+        lead = members[0]
+        primary = next((i for i in members if rows[i]["comp"] in ("", "A")), lead)
+        row = rows[primary]
+        digits = [position_error(rows[i], dec2000[lead]) for i in members]
+        error, resolution, motion = min(digits, key=lambda d: d[0])
+        # An unflagged position is for 1900. A flagged one is the discoverer's, of an epoch between 1880 and 1980 (the 2MASS matches show a median of 1950): carried from 1950, and the motion over the 50 years either way is its error.
+        flagged = any(rows[i]["lowprec"] for i in members)
+        pm_all = max([rows[i]["pm"] or 0 for i in members])
+        if flagged:
+            motion = pm_all * 50
+            error = math.hypot(resolution, motion)
+        ra_now, dec_now = radec(move(vector1900[lead], east[lead], north[lead], mu_ra[lead], mu_dec[lead], 2000 - (1950 if flagged else EPOCH_GCTP)))
+        apart = separation(bright_vectors, at2000[lead])
+        vs = [rows[i]["vmag"] for i in members if rows[i]["vmag"] is not None]
+        expectations = [e for e in (expected_j(rows[i]) for i in members) if e is not None]
+        pm = max([rows[i]["pm"] or 0 for i in members])
+        middle = move(vector1900[lead], east[lead], north[lead], mu_ra[lead], mu_dec[lead], (EPOCH_SPAN - EPOCH_AFTER) / 2)
+        middle /= np.linalg.norm(middle)
+        window = min(MAX_WINDOW_ARCSEC, 3 * math.hypot(resolution, ANGLE_ERROR * (2000 - EPOCH_GCTP) * pm) + 5)
+        speed = math.hypot(mu_ra[lead], mu_dec[lead]) / 1000
+        centre_ra, centre_dec = radec(middle)
+        near_bright = bool(apart.min() <= NEAR_BRIGHT_ARCSEC)
+        stars.append(dict(
+            num=num, members=members, lead=lead, row=row, ra=float(ra_now), dec=float(dec_now), sortRa=float(ra2000[lead]), sortDec=float(dec2000[lead]), vector=at2000[lead], vector1900=vector1900[lead], east=east[lead], north=north[lead],
+            muEast=float(mu_ra[lead]), muNorth=float(mu_dec[lead]), window=window, radius=(EPOCH_SPAN + EPOCH_AFTER) / 2 * speed + window, centre=middle, centreRa=float(centre_ra), centreDec=float(centre_dec), error=error, pm=pm, vmag=min(vs) if vs else None,
+            expected=expectations, ambiguous=near_bright or (min(vs) <= 6.1 if vs else False), bright_close=near_bright,
+        ))
+    print(f"{counts['stars']} stars with a parallax: {counts['matchedHd']} matched by HD, {counts['matchedPosition']} by position, {counts['new']} new", file=sys.stderr)
+
+    found = twomass_candidates(stars, offline)
+    tally = dict(one=0, none=0, several=0)
+    gaps, shifts = [], []
+    for i, s in enumerate(stars):
+        fit, how = match_twomass(s, found[i])
+        tally[how] += 1
+        s["how"] = how
+        if fit is None:
+            s["source"], s["coarse"] = "GCTP", True
+            s["finalRa"], s["finalDec"], s["finalError"], s["twomass"], s["offset"] = s["ra"], s["dec"], round(s["error"], 1), "", ""
+            s["ambiguous"] = s["ambiguous"] or how == "several"
+            continue
+        gap, offset, c, epoch, catalogue_epoch = fit
+        s["catalogueEpoch"] = catalogue_epoch
+        gaps.append(gap)
+        shifts.append(offset)
+        here = unit(np.array(c["ra"]), np.array(c["dec"]))
+        e, n = tangents(np.array(c["ra"]), np.array(c["dec"]))
+        moved = move(here, e, n, s["muEast"], s["muNorth"], 2000.0 - epoch)
+        ra, dec = radec(moved)
+        s["source"], s["coarse"] = "2MASS", False
+        s["finalRa"], s["finalDec"] = float(ra), float(dec)
+        s["finalError"] = round(max(0.1, math.hypot(c["err"], PROPER_MOTION_ERROR * s["pm"] * abs(2000.0 - epoch))), 1)
+        s["twomass"], s["offset"] = c["designation"], round(offset)
+    print(f"2MASS: {tally}; median offset {statistics.median(shifts):.1f} arcsec, 90% within {sorted(shifts)[int(len(shifts) * 0.9)]:.1f}", file=sys.stderr)
+
+    named = {}
+    for num, (name, expected, gliese) in NAMES.items():
+        s = next((x for x in stars if x["num"] == num), None)
+        if s is None:
+            if limit is None:
+                raise SystemExit(f"no such star: {num} {name}")
+            continue
+        if s["row"]["name"] != expected:
+            raise SystemExit(f"{num} {name}: the catalogue's name column says {s['row']['name']!r}, not {expected!r}")
+        named[num] = (name, gliese)
+
+    lines = []
+    excluded = 0
+    for s in sorted(stars, key=lambda s: (-(s["row"]["pi"]), s["num"])):
+        r = s["row"]
+        plx = round(r["pi"] * 10000)  # parallax in tenths of a milliarcsecond
+        if plx <= 0:
+            excluded += 1
+        designation = ""
+        for i in s["members"]:
+            designation = designation or (sexagesimal_name(rows[i]["name"]) or "")
+        hd = next(iter(sorted({hd_of(rows[i]["hd"]) for i in s["members"]} - {None})), "")
+        aliases = []
+        for i in s["members"]:
+            for alias in aliases_of(rows[i], designation):
+                if alias not in aliases and alias != named.get(s["num"], ("",))[0]:
+                    aliases.append(alias)
+        name, gliese = named.get(s["num"], ("", ""))
+        code = "b" if r["vflag"] == "P" else ("v" if r["vdec"] == 2 else "l")
+        v = "" if r["vmag"] is None else str(round(r["vmag"] * 100))
+        pm = "" if r["pm"] is None or r["pa"] is None else f"{round(s['muEast'])},{round(s['muNorth'])}"
+        flags = ("c" if s["coarse"] else "") + ("x" if plx <= 0 else "") + ("a" if s["ambiguous"] else "")
+        spectral = next((rows[i]["mk"] for i in s["members"] if rows[i]["mk"]), "")
+        number_text = s["num"][:-3] if s["num"].endswith(".00") else s["num"]
+        lines.append("|".join(str(x) for x in [
+            number_text, hd, name, designation, ";".join(aliases), gliese, s["twomass"], round(s["finalRa"] * 360000), round(s["finalDec"] * 360000), round(s["finalError"] * 10),
+            plx, "" if r["epi"] is None else round(r["epi"]), pm, v, code if v else "", spectral, flags, s["offset"],
+        ]))
+    coarse = sum(1 for s in stars if s["coarse"])
+    ambiguous = sum(1 for s in stars if s["ambiguous"])
+    positioned = sum(1 for s in stars if not s["coarse"])
+    summary = (f"{len(stars)} new stars; {counts['matchedHd'] + counts['matchedPosition']} stars of the catalogue matched to the bright set ({counts['matchedHd']} by HD number, {counts['matchedPosition']} by position and magnitude, "
+               f"{counts['matchedAmbiguous']} of those two sets worth a second look); {ambiguous} new stars flagged ambiguous; {excluded} with a parallax of 0 or less, left out of 3D; "
+               f"{positioned} positioned from 2MASS, {coarse} on the GCTP position (coarse)")
+    print(summary, file=sys.stderr)
+    text = f"""// GENERATED by scripts/make-nearby-data.py. Do not edit by hand.
+// The stars with a measured parallax in the Yale General Catalogue of Trigonometric Stellar Parallaxes (van Altena, Lee and Hoffleit 1995, 4th edition; VizieR I/238A) that the 5,080 bright stars do not hold.
+// {summary}.
+// One row a star, nearest first: GCTP number | HD number | common name | Bayer letter or Flamsteed number and constellation | other names, ";" apart | Gliese-Jahreiss number | 2MASS designation (after "2MASS J") |
+// J2000 right ascension and declination in hundredths of an arc-second | position error in tenths of an arc-second | parallax in tenths of a milliarcsecond | its error in the same unit |
+// proper motion in right ascension (times cos Dec) and declination, milliarcseconds a year, J2000 axes, from the GCTP | V magnitude times 100 | its kind (v photoelectric V, l visual or other and rougher,
+// b photographic blue) | spectral type | flags (c: the position is the GCTP's, not 2MASS's; x: parallax 0 or less, no distance; a: the match to the bright stars or to 2MASS is not clear) |
+// arc-seconds between the 2MASS position and where the GCTP position and motion put the star.
+
+/** The star rows, one per line. */
+export const NEARBY_ROWS = `{chr(10).join(lines)}`;
+"""
+    target.write_text(text, encoding="utf-8")
+    print(f"wrote {target} ({len(lines)} stars)")
+
+
+if __name__ == "__main__":
+    main()
