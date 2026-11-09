@@ -10,7 +10,7 @@ description: Run your own small HTTP query service.
 
 The example is a small Node HTTP service that you run and host yourself. We do not host a query service. It listens on `127.0.0.1:8262` by default; set `PORT` to choose another local port.
 
-```js
+```js no-run
 import { createServer } from "node:http";
 import { starByName } from "@johnmorrisdotca/hoshi-stars";
 import { constellation } from "@johnmorrisdotca/hoshi-stars/constellations";

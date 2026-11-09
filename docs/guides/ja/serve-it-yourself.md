@@ -10,7 +10,7 @@ description: 小さな検索サーバーを自分で動かします。
 
 この例は、自分で動かして公開する小さな Node の HTTP サービスです。私たちは検索サービスを運営しません。初期設定では `127.0.0.1:8262` で待ち受けます。別のローカルポートを使うときは `PORT` を設定してください。
 
-```js
+```js no-run
 import { createServer } from "node:http";
 import { starByName } from "@johnmorrisdotca/hoshi-stars";
 import { constellation } from "@johnmorrisdotca/hoshi-stars/constellations";
