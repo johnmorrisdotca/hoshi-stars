@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- New entry point `@johnmorrisdotca/hoshi-stars/nearest`: `nearest(target, { count, within, kind, by, date, minMagnitude, among })` and `within(target, radius, options)` give the stars or Messier objects nearest a star, an object, a name or a point, nearest first, by angle on the sky (`{ thing, angle }`) or by distance in space from the parallaxes (`{ thing, distance, parsecs, error }`, with a `skipped` count; a point `{ x, y, z }` in parsecs is a target too), and `neighbouringConstellations(text)` gives the constellations that share a piece of boundary. One query over all 5,080 stars takes about 1 ms. The space answers cover only the bright-star catalogue until a nearby-star catalogue lands.
+
 ## [0.4.0] - 2026-11-08
 
 - The demo's chart and the embed page take the family's hands (kazoku-ui's view controller): a drag turns the sky, two fingers pinch, Ctrl or Command and the wheel zoom about the pointer, `+`, `-`, the arrow keys and `0` work with the chart focused, and the double tap zooms. At the opening view the plain wheel scrolls the page, and a finger's up-and-down drag does too; zoomed in, the wheel and a drag move the sky. The embed page (`embed.html`) is no longer a still picture: it has the same hands and zoom in, zoom out and back-to-start buttons, and writes `ra`, `dec` and `zoom` into its own address.

@@ -50,6 +50,11 @@
       "ja": "天の川 (明るさの地図と、描くための帯)",
       "platform": "neutral"
     },
+    "./nearest": {
+      "en": "What is near a star, an object or a point, in the sky and in space; neighbouring constellations",
+      "ja": "星・天体・位置の近くにあるもの (空と宇宙で)、隣り合う星座",
+      "platform": "neutral"
+    },
     "./sky": {
       "en": "Your sky: altitude and azimuth for a place and a moment",
       "ja": "自分の空 (場所と時刻から高度と方位)",

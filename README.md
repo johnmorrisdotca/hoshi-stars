@@ -197,6 +197,31 @@ console.log(milkyWayBands([0.2, 0.5]).map((band) => band.strips.length));       
 
 `milkyWayBrightness(point)` is 0 (dark sky) to 1 (the core); `milkyWayBands(levels, { step })` gives ribbons of sky points for `project`; `toGalactic` and `fromGalactic` change the frame. The demo draws it as soft bands under the stars, in every projection, and its **Milky Way** button turns it off.
 
+## What is near
+
+`@johnmorrisdotca/hoshi-stars/nearest` finds the stars (or Messier objects) nearest a star, an object, a name or a point, by angle on the sky or by distance in space, and the constellations that touch a constellation. One query over all 5,080 stars takes about 1 ms (0.5 to 1.1 ms on a laptop, measured by `test/nearest.test.ts`); there is no index, every star is looked at.
+
+```ts
+import { nearest, neighbouringConstellations, within } from "@johnmorrisdotca/hoshi-stars/nearest";
+
+const alcor = nearest("Mizar", { count: 3 }).find((n) => n.thing.name === "Alcor")!;
+console.log(alcor.angle.toFixed(2));                                                          // 0.20
+console.log(within("Alcyone", 1, { minMagnitude: 5 }).length);                                // 5
+const close = nearest("Sirius", { by: "space", count: 2 });
+console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(1)}`));                    // [ 'Procyon 5.1', 'Ran 8.0' ]
+console.log(close.skipped);                                                                   // 2547
+console.log(nearest("M31", { kind: "deep-sky", count: 2 }).map((n) => n.thing.id));          // [ 'M32', 'M110' ]
+console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));                    // [ 'Eri', 'Gem', 'Lep', 'Mon', 'Tau' ]
+```
+
+| Function | Gives |
+|---|---|
+| `nearest(target, { count?, within?, by?, kind?, date?, minMagnitude?, among? })` | the nearest first, each `{ thing, angle }` (degrees) or, with `by: "space"`, `{ thing, distance, parsecs, error }` (light-years) |
+| `within(target, radius, options?)` | all of them within a radius (degrees, or light-years by space) |
+| `neighbouringConstellations(text)` | the constellations that share a piece of boundary |
+
+The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,533 stars of the 5,080 that have a parallax, and the parallaxes are whole milliarcseconds, so `error` is `undefined` and `skipped` counts the stars left out. They will change when a nearby-star catalogue lands. [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+
 ## Put a chart in a page
 
 The package gives numbers; a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
