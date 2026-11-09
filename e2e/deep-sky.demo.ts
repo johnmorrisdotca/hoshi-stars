@@ -25,9 +25,18 @@ test("a galaxy is drawn at its true size and grows with the zoom", async ({ page
   const measured = async (zoom: number): Promise<number> => {
     await page.goto(`/hoshi-stars/?layers=milky,deep,names&ra=10.68&dec=41.27&zoom=${zoom}`);
     await expect(page.locator('#chart [data-deep="M31"]')).toHaveCount(1);
-    // the chart is laid out a frame after it is drawn: wait for the outline to have a width
-    await expect.poll(() => widthOf(page, "M31")).toBeGreaterThan(20);
-    return widthOf(page, "M31");
+    // the chart is laid out a frame after it is drawn, and may draw again as it settles: take the width once two reads 150 ms apart agree, and return that
+    // very read (reading again after the wait could catch the outline mid-redraw, at 0)
+    let width = 0;
+    await expect
+      .poll(async () => {
+        const first = await widthOf(page, "M31");
+        await page.waitForTimeout(150);
+        width = await widthOf(page, "M31");
+        return first === width && width > 20;
+      }, { timeout: 15_000, intervals: [0] })
+      .toBe(true);
+    return width;
   };
   const near = await measured(20);
   const closer = await measured(40);
