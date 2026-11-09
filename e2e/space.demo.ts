@@ -102,7 +102,8 @@ test("a drag turns it, and the turn is kept in the address", async ({ page, isMo
   const box = (await page.locator("#sp-view").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
-  await page.mouse.move(box.x + box.width / 2 - 200, box.y + box.height / 2, { steps: 8 });
+  // a third of the view's width, so the pointer stays inside it on a phone's width too
+  await page.mouse.move(box.x + box.width / 2 - box.width / 3, box.y + box.height / 2, { steps: 8 });
   await page.mouse.up();
   await expect.poll(() => across(page)).toBeGreaterThan(0.5);
   await expect.poll(() => param(page, "yaw")).not.toBeNull();
