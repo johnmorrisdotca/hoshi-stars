@@ -95,14 +95,12 @@ export function cameraFor(fit: Fit, pose: Pose): CameraSpec {
   const distance = mix(middle, sideDistance(fit), across);
   const tanHalf = mix(frontTan(fit.radius, fit.aspect), SIDE_TAN, across) / Math.max(0.05, pose.zoom);
   let up = upRaw;
-  let right = ry;
   // a tall view (a phone held upright) shows the distances up the screen: the camera rolls a quarter turn as it looks across the lines of sight
   const alongSight = Math.max(-1, Math.min(1, dot(ry, f) * 1.5));
   const tall = fit.aspect < 1 ? across * alongSight * 90 : 0;
   if (pose.roll !== 0 || tall !== 0) {
     const roll = (pose.roll + tall) * RADIANS;
     up = add(scale(upRaw, Math.cos(roll)), scale(ry, Math.sin(roll)));
-    right = add(scale(ry, Math.cos(roll)), scale(upRaw, -Math.sin(roll)));
   }
   // A pan is not made here: the page slides the picture by the pixels it is told (a view offset), so what is drawn moves by exactly the pan whatever the depth of the stars.
   const target = scale(f, pivotAt);
