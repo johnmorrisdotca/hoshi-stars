@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-11-09
+
 - **The 6.5 to 8 gap, measured** (MODULES-660). Two ways to fill the faint layer's thin band were built and compared, and kept on file: the SAO Star Catalog (22,012 new stars in 6.5 to 8, the whole sky) and APASS DR10 with 2MASS positions (15,536, but almost none north of declination +20). Neither ships yet: SAO waits for NASA HEASARC to confirm its terms, and then goes in with one switch (`make-faint-data.py build --gap sao`). The faint tiles are unchanged. The comparison is in `docs/research/gap-6.5-8.md`. Found on the way: UCAC4's magnitudes for stars brighter than about 9.5 read 0.4 to 1.2 too faint against both SAO and APASS; the Faint stars guide says so, and MODULES-786 will correct them.
 
 ## [0.18.0] - 2026-11-09
