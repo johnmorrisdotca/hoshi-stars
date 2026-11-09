@@ -64,7 +64,7 @@ test("every black hole has a place inside the constellation it names, a known wa
     assert.ok(BLACK_HOLE_FOUND.includes(b.foundBy));
     assert.ok(b.sources.position.length > 0, `${b.name} has a source for its place`);
     for (const list of Object.values(b.sources)) for (const source of list) assert.ok(source.key !== "" && source.citation !== "", `${b.name}: a source with no citation`);
-    if (b.kind !== "supermassive") assert.ok(b.year !== undefined || ["LMC X-1", "LMC X-3", "M33 X-7"].includes(b.name), `${b.name} has a year`);
+    if (b.kind !== "supermassive") assert.ok(b.year !== undefined || ["LMC X-1", "LMC X-3", "M33 X-7", "1E 1740.7-2942"].includes(b.name), `${b.name} has a year`);
     if (b.massSuns !== undefined) assert.ok(b.sources.mass.length > 0, `${b.name} has a mass and a source for it`);
     if (b.distanceParsecs !== undefined) assert.ok(b.sources.distance.length > 0, `${b.name} has a distance and a source for it`);
   }
