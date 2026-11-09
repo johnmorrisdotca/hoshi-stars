@@ -1,0 +1,126 @@
+// Deep-sky objects at their true size, and their pictures: an outline that grows with the zoom, a picture that is fetched and shown only when zoomed in, a card that says what is measured and
+// credits the picture, a layer toggle kept in the address, the bright stars inside a cluster, and the NGC and IC objects once zoomed in. The embed page draws them too.
+import { expect, test, type Page } from "@playwright/test";
+
+const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
+const webp = (page: Page): string[] => {
+  const found: string[] = [];
+  page.on("request", (request) => request.url().endsWith(".webp") && found.push(request.url()));
+  return found;
+};
+/** The width in pixels of an object's mark. */
+const widthOf = async (page: Page, id: string): Promise<number> => {
+  const box = await page.locator(`#chart [data-deep="${id}"]`).first().boundingBox();
+  return box?.width ?? 0;
+};
+async function fly(page: Page, text: string): Promise<void> {
+  await page.fill("#search", text);
+  await page.locator("#results button").first().click();
+}
+
+test("a galaxy is drawn at its true size and grows with the zoom", async ({ page }) => {
+  await page.goto("/hoshi-stars/?layers=milky,deep,names&ra=10.68&dec=41.27&zoom=20");
+  await expect(page.locator('#chart [data-deep="M31"]')).toHaveCount(1);
+  const near = await widthOf(page, "M31");
+  await page.goto("/hoshi-stars/?layers=milky,deep,names&ra=10.68&dec=41.27&zoom=40");
+  await expect(page.locator('#chart [data-deep="M31"]')).toHaveCount(1);
+  const closer = await widthOf(page, "M31");
+  expect(near).toBeGreaterThan(20);
+  expect(closer / near).toBeGreaterThan(1.6);
+  expect(closer / near).toBeLessThan(2.4);
+});
+
+test("a picture is not fetched at the opening view; zoomed in on a galaxy it is fetched once, shown, and kept in step with the sky", async ({ page }) => {
+  const asked = webp(page);
+  await page.goto("/hoshi-stars/");
+  await expect(page.locator("#chart circle").first()).toBeVisible();
+  await page.waitForTimeout(500);
+  expect(asked).toEqual([]);
+  expect(await page.locator("#chart image").count()).toBe(0);
+  await fly(page, "M51");
+  await expect(page.locator("#chart image[data-pic='M51']")).toHaveCount(1, { timeout: 20_000 });
+  await expect(page.locator("#chart image[data-pic='M51']")).toHaveAttribute("opacity", /^(1|0\.9\d*)/);
+  expect(asked.filter((url) => url.includes("M51"))).toHaveLength(1);
+  expect(asked.length).toBeLessThanOrEqual(6);
+  const picture = page.locator("#chart image[data-pic='M51']");
+  const image = (await picture.boundingBox())!;
+  const outline = (await page.locator('#chart [data-deep="M51"]').first().boundingBox());
+  // the picture is centred on the object it shows: its middle is within a tenth of its width of the outline's
+  const picture2 = { x: image.x + image.width / 2, y: image.y + image.height / 2 };
+  expect(outline).not.toBeNull();
+  expect(Math.hypot(picture2.x - (outline!.x + outline!.width / 2), picture2.y - (outline!.y + outline!.height / 2))).toBeLessThan(image.width * 0.1);
+});
+
+test("the Pictures layer is a toggle kept in the address", async ({ page }) => {
+  await page.goto("/hoshi-stars/");
+  await fly(page, "M13");
+  await expect(page.locator("#chart image[data-pic='M13']")).toHaveCount(1, { timeout: 20_000 });
+  await page.locator('#seg-layers button[data-value="pictures"]').click();
+  await expect(page.locator("#chart image")).toHaveCount(0);
+  await expect.poll(() => param(page, "layers")).not.toContain("pictures");
+  await page.reload();
+  await expect(page.locator("#chart circle").first()).toBeVisible();
+  await page.waitForTimeout(800);
+  await expect(page.locator("#chart image")).toHaveCount(0);
+  await page.locator('#seg-layers button[data-value="pictures"]').click();
+  await expect(page.locator("#chart image[data-pic='M13']")).toHaveCount(1, { timeout: 20_000 });
+});
+
+test("the card says what is measured and what is drawn, and credits the picture", async ({ page }) => {
+  await page.goto("/hoshi-stars/");
+  await fly(page, "M31");
+  const card = page.locator("#picked");
+  await expect(card.locator("h3")).toContainText("M31");
+  await expect(card).toContainText("190.5 × 61.7 arc-minutes");
+  await expect(card).toContainText("35° east of north");
+  await expect(card).toContainText("RC3");
+  await expect(card).toContainText("An ellipse at the measured size, axis ratio and angle.");
+  await expect(card.getByTestId("picture-credit")).toContainText(/survey|SDSS|2MASS|WISE/);
+  await expect(card.getByTestId("picture-credit")).toContainText("Licence:");
+  await fly(page, "M42");
+  await expect(card).toContainText("66 × 60 arc-minutes");
+  await expect(card).toContainText("not measured");
+  await expect(card).toContainText("A circle across the major diameter");
+});
+
+test("the card is in Japanese when the page is", async ({ page }) => {
+  await page.goto("/hoshi-stars/");
+  await page.evaluate(() => document.documentElement.setAttribute("lang", "ja"));
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent("hoshi-language")));
+  await fly(page, "M31");
+  await expect(page.locator("#picked")).toContainText("北から東へ 35°");
+  await expect(page.locator("#picked")).toContainText("クレジット:");
+});
+
+test("the bright stars inside an open cluster are ringed and listed, and said not to be checked", async ({ page }) => {
+  await page.goto("/hoshi-stars/");
+  await fly(page, "M45");
+  await expect(page.locator("#chart [data-inside]").first()).toBeVisible({ timeout: 20_000 });
+  expect(await page.locator("#chart [data-inside]").count()).toBeGreaterThanOrEqual(5);
+  await expect(page.locator("#picked")).toContainText("Alcyone");
+  await expect(page.getByTestId("inside-note")).toContainText("not checked");
+});
+
+test("the NGC and IC objects arrive when the map is zoomed in, can be searched and picked, and have their card", async ({ page }) => {
+  await page.goto("/hoshi-stars/");
+  await page.fill("#search", "NGC 253");
+  await expect(page.locator("#results button").first()).toContainText("NGC 253", { timeout: 20_000 });
+  await page.locator("#results button").first().click();
+  await expect(page.locator("#picked h3")).toContainText("NGC 253");
+  await expect(page.locator("#picked")).toContainText("RC3");
+  await expect(page.locator('#chart [data-deep="NGC 253"]')).toHaveCount(1);
+});
+
+test("an object with no measured size is a dotted symbol, and says so", async ({ page }) => {
+  await page.goto("/hoshi-stars/?layers=deep&ra=300&dec=-5&zoom=3");
+  await fly(page, "M40");
+  await expect(page.locator("#picked")).toContainText("not measured");
+  await expect(page.locator("#picked")).toContainText("A dotted symbol of fixed size");
+  await expect(page.locator('#chart [data-deep="M40"] [stroke-dasharray]')).not.toHaveCount(0);
+});
+
+test("the embed page draws the picture of the object it is aimed at", async ({ page }) => {
+  await page.goto("/hoshi-stars/embed.html?ra=202.47&dec=47.2&zoom=300&layers=milky,deep,pictures");
+  await expect(page.locator("#frame image[data-pic='M51']")).toHaveCount(1, { timeout: 20_000 });
+  await expect(page.locator('#frame [data-deep="M51"]')).toHaveCount(1);
+});

@@ -5,6 +5,8 @@ import { boundaries, constellationAt } from "../src/boundaries.ts";
 import type { Constellation } from "../src/constellations.ts";
 import { blackHoles, type BlackHole } from "../src/black-holes.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
+import { deepSkyShape, type DeepSkyShape } from "../src/deep-sky-shape.ts";
+import { DEEP_COLOURS, drawDeep } from "./deep-draw.ts";
 import { figures, type CultureFigure } from "../src/lines.ts";
 import type { Culture } from "../src/culture.ts";
 import { western } from "../src/cultures/western.ts";
@@ -14,7 +16,7 @@ import { project, unproject, type Projection, type SkyPoint } from "../src/proje
 import type { SeenSky } from "../src/sky-from.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
 
-export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "holes", "faint", "grid"] as const;
+export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "pictures", "holes", "faint", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
 
@@ -48,6 +50,13 @@ export interface ChartOptions extends View {
   keepClear?: readonly Box[] | undefined;
   /** The faint stars of UCAC4 in the field (`faintFor`), drawn when the `faint` layer is on and the zoom reaches them. */
   faint?: FaintDraw | undefined;
+  /** The deep-sky objects drawn: the Messier objects when left out; a page that has fetched the NGC and IC objects passes them all, with `shapeOf` from `deep-sky/ngc-ic-shape`. */
+  catalogue?: readonly DeepSkyObject[] | undefined;
+  /** The size, axis ratio and angle of an object: the Messier objects' when left out. */
+  shapeOf?: ((object: DeepSkyObject) => DeepSkyShape) | undefined;
+  /** The ids of the pictures that have been fetched and may be drawn (the `pictures` layer), and where the package's `pictures/` folder is served from (`./` when left out). */
+  readyPictures?: ReadonlySet<string> | undefined;
+  pictureBase?: string | undefined;
 }
 
 /** The faint stars to draw (the brightest first), and the magnitude the list is complete to in the field (a cap cuts it short). */
@@ -62,6 +71,8 @@ export interface Hit {
   y: number;
   kind: "star" | "deep" | "hole";
   key: string;
+  /** For a deep-sky object drawn large: how far from its middle a tap still lands on it. */
+  reach?: number | undefined;
 }
 
 export const DEFAULT_VIEW: View = { projection: "stereographic", ra: 84, dec: 0, zoom: 1 };
@@ -286,17 +297,6 @@ export const BOUNDARY_DASH = [5, 4] as const;
 
 const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4", hole: "#d68cff", holeCore: "#04060d" };
 
-function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean, near = false): string {
-  const stroke = pick ? COLOURS.pick : near ? COLOURS.near : COLOURS.deep;
-  const common = `fill="none" stroke="${stroke}" stroke-width="${pick ? 2 : near ? 1.8 : 1.2}"`;
-  switch (object.type) {
-    case "galaxy": return `<ellipse cx="${round(x)}" cy="${round(y)}" rx="6" ry="3.2" transform="rotate(-30 ${round(x)} ${round(y)})" ${common}/>`;
-    case "globular cluster": return `<circle cx="${round(x)}" cy="${round(y)}" r="4.5" ${common}/><path d="M${round(x - 4.5)} ${round(y)}h9M${round(x)} ${round(y - 4.5)}v9" ${common}/>`;
-    case "open cluster": return `<circle cx="${round(x)}" cy="${round(y)}" r="4.5" stroke-dasharray="2 2" ${common}/>`;
-    case "planetary nebula": return `<circle cx="${round(x)}" cy="${round(y)}" r="3.2" ${common}/><path d="M${round(x - 6.5)} ${round(y)}h3M${round(x + 3.5)} ${round(y)}h3" ${common}/>`;
-    default: return `<rect x="${round(x - 4)}" y="${round(y - 4)}" width="8" height="8" ${common}/>`;
-  }
-}
 
 /** The black hole's own symbol, `k` times its full size (smaller when the chart is zoomed out, so a crowded patch stays readable): a dark disc ringed in violet with a jet each way for a stellar-mass one, a dashed ring round a dark centre for a quiet one, a dark disc inside a tilted ring for a supermassive one. A candidate is drawn fainter. */
 function holeShape(hole: BlackHole, x: number, y: number, pick: boolean, k: number): string {
@@ -388,6 +388,8 @@ export interface Chart {
   hits: Hit[];
   /** The faint stars drawn: how many, and the magnitude they are complete to here. `undefined` where none were asked for. */
   faint?: { drawn: number; depth: number };
+  /** The deep-sky pictures the view needs and has not been given: the page fetches them and draws again. */
+  wanted: string[];
 }
 
 /** A polygon of (longitude from the view's centre, declination) cut to the map's width, in pieces: Sutherland-Hodgman against the two edges, on the polygon and on its copies a turn to either side. */
@@ -516,6 +518,8 @@ export function chart(o: ChartOptions): Chart {
   const seen = o.sky === undefined ? undefined : new Map(o.sky.map((star) => [star.id, star]));
   const near = new Set(o.near ?? []);
   const nearConstellations = new Set([...near].filter((key) => key.startsWith("C:")).map((key) => key.slice(2)));
+  const deep = drawDeep({ width, height, zoom: o.zoom, place, marks: layers.has("deep"), pictures: layers.has("pictures"), catalogue: o.catalogue ?? messier(), shapeOf: o.shapeOf ?? deepSkyShape, picked: o.picked, near, ready: o.readyPictures ?? new Set(), base: o.pictureBase ?? "./" });
+  body += deep.under;
   if (seen === undefined && (layers.has("boundaries") || o.highlight !== undefined || nearConstellations.size > 0)) {
     let quiet = "";
     let loud = "";
@@ -560,19 +564,10 @@ export function chart(o: ChartOptions): Chart {
   const obstacles: Box[] = [{ x0: -1e4, y0: -1e4, x1: 0, y1: 1e4 }, { x0: width, y0: -1e4, x1: 1e4, y1: 1e4 }, { x0: -1e4, y0: -1e4, x1: 1e4, y1: 0 }, { x0: -1e4, y0: height, x1: 1e4, y1: 1e4 }, ...(o.keepClear ?? [])];
   const around = (x: number, y: number, r: number): Box => ({ x0: x - r, y0: y - r, x1: x + r, y1: y + r });
   const deepLabels: Label[] = [];
-  if (layers.has("deep") || [...near].some((key) => key.startsWith("D:"))) {
-    for (const object of messier()) {
-      const key = object.id;
-      const isNear = near.has(`D:${key}`);
-      if (!layers.has("deep") && !isNear) continue;
-      const at = place(object);
-      if (at === undefined || !inside(at)) continue;
-      body += shapeOf(object, at[0], at[1], key === o.picked, isNear);
-      obstacles.push(around(at[0], at[1], 7));
-      if (o.zoom >= 2.5 || (object.magnitude ?? 9) <= 5 || key === o.picked || isNear) deepLabels.push({ rank: key === o.picked ? -1 : isNear ? 900 : 2000 + (object.magnitude ?? 9), ...besideMarker(key, 11, at[0], at[1], 8, key === o.picked ? COLOURS.pick : isNear ? COLOURS.near : COLOURS.deep, 1) });
-      hits.push({ x: at[0], y: at[1], kind: "deep", key });
-    }
-  }
+  obstacles.push(...deep.obstacles);
+  body += deep.over;
+  for (const l of deep.labels) deepLabels.push({ rank: l.rank, ...besideMarker(l.key, 11, l.x, l.y, l.gap, l.fill, 1) });
+  for (const h of deep.hits) hits.push({ x: h.x, y: h.y, kind: "deep", key: h.key, reach: h.reach });
 
   const holeLabels: Label[] = [];
   if (o.sky === undefined && (layers.has("holes") || o.pickedHole !== undefined)) {
@@ -652,7 +647,12 @@ export function chart(o: ChartOptions): Chart {
       nameLabels.push({ rank: on ? -1 : isNear ? 899 : rank, places, text, size, weight: on || isNear ? 700 : 400, fill: on ? COLOURS.nameOn : isNear ? COLOURS.near : small ? COLOURS.asterismName : COLOURS.name, opacity: on || isNear ? 1 : 0.75 });
     }
   }
-  body += `<g>${dots}</g>${ring}`;
+  let members = "";
+  for (const star of deep.inside) {
+    const at = place(star);
+    if (at !== undefined && inside(at) && star.magnitude <= depth) members += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(Math.max(0.7, (o.magnitude - Math.max(star.magnitude, -2)) * 0.55 + 1.1) * grow + 4)}" fill="none" stroke="${DEEP_COLOURS.member}" stroke-width="1" stroke-dasharray="2 2" data-inside="${star.hr}"/>`;
+  }
+  body += `<g>${dots}</g>${ring}${members}`;
 
   const labels = [...starLabels, ...nameLabels, ...deepLabels, ...holeLabels].sort((a, b) => a.rank - b.rank);
   const chosen = placeLabels(labels.map((l) => l.places.map((p) => p.box)), obstacles);
@@ -665,7 +665,7 @@ export function chart(o: ChartOptions): Chart {
   });
   body += `<g font-family="system-ui, sans-serif"${culture.id === "chinese" ? ' lang="zh-Hant"' : ""} pointer-events="none" stroke="${COLOURS.ground}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${text}</g>`;
 
-  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
+  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, wanted: deep.wanted, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
 }
 
 /** The key a seen star has on the chart and in a pick: the HR number as text, or `sun`. */

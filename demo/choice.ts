@@ -4,7 +4,7 @@ import { cultureOf, DEFAULT_CULTURE } from "./cultures.ts";
 import { fromText, viewpointOf } from "./from.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 
-export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "faint", "grid"];
+export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "pictures", "faint", "grid"];
 export const DEFAULT_MAGNITUDE = 5;
 
 /** A chart: the view, the faintest star, the layers and, for a page that draws one constellation brighter, its abbreviation. */
