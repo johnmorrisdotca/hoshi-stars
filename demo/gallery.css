@@ -2,10 +2,18 @@
 .picker { display: grid; gap: 6px; margin: 0 0 12px; }
 .picker .fam-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .picker input[type="search"] { flex: 1 1 14rem; min-width: 0; max-width: 28rem; }
+/* the sky culture: three choices stacked at the left of the strip, as tall as a card (the cards are tall enough for three 48 px buttons) */
+.picker-row { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
+.picker-row > .picker-strip { flex: 1 1 auto; min-width: 0; }
+.culture-stack { flex: 0 0 auto; display: flex; flex-direction: column; gap: 4px; width: 96px; padding: 4px 0 8px; }
+.culture-stack button { flex: 1 1 0; min-height: 48px; min-width: 0; padding: 0 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; font-weight: 600; cursor: pointer; }
+.culture-stack button:hover { border-color: var(--accent); }
+.culture-stack button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.culture-stack button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
-.pick-tile { flex: 0 0 auto; width: 92px; display: grid; justify-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; cursor: pointer; scroll-snap-align: start; }
+.pick-tile { flex: 0 0 auto; width: 132px; display: grid; justify-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; cursor: pointer; scroll-snap-align: start; }
 .pick-tile[hidden] { display: none; }
-.pick-tile img { display: block; width: 80px; height: 80px; border-radius: 6px; background: var(--rule); }
+.pick-tile img { display: block; width: 120px; height: 120px; border-radius: 6px; background: var(--rule); }
 .pick-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pick-tile:hover { border-color: var(--accent); }
 .pick-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; }

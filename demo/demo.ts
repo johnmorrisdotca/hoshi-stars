@@ -13,7 +13,7 @@ import { constellation, starsIn, type Constellation } from "../src/constellation
 import type { Culture } from "../src/culture.ts";
 import type { CultureFigure } from "../src/lines.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
-import { PROJECTIONS, type Projection } from "../src/projection.ts";
+import { PROJECTIONS, project, type Projection } from "../src/projection.ts";
 import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
 import { CULTURE_IDS, cultureOf, cultureText } from "./cultures.ts";
 import { western } from "../src/cultures/western.ts";
@@ -126,17 +126,57 @@ new ResizeObserver(() => {
 }).observe(box);
 
 // ----- the panel's choices -----
-function seg(id: string, items: ReadonlyArray<readonly [string, string]>, click: (value: string) => void): void {
+function seg(id: string, items: ReadonlyArray<readonly [string, string]>, click: (value: string) => void, icon?: (value: string) => string): void {
   $(id).replaceChildren(
     ...items.map(([value, label]) => {
       const button = document.createElement("button");
       button.type = "button";
       button.dataset.value = value;
-      button.textContent = label;
+      if (icon === undefined) button.textContent = label;
+      else {
+        button.innerHTML = icon(value);
+        const name = document.createElement("span");
+        name.textContent = label;
+        button.append(name);
+      }
       button.addEventListener("click", () => click(value));
       return button;
     }),
   );
+}
+
+/** A projection's own picture: its grid of lines every 45 degrees, drawn by the projection itself and fitted to a small square. */
+const projectionIcons = new Map<string, string>();
+function projectionIcon(kind: string): string {
+  const known = projectionIcons.get(kind);
+  if (known !== undefined) return known;
+  const lines: Array<Array<[number, number]>> = [];
+  const trace = (points: Array<{ rightAscension: number; declination: number }>): void => {
+    let run: Array<[number, number]> = [];
+    for (const point of points) {
+      const at = project(kind as Projection, point, { centre: { rightAscension: 0, declination: 0 } });
+      // a point the projection cannot show (the far side), or one thrown far out (gnomonic near 90 degrees), ends the line
+      if (at === undefined || Math.hypot(at.x, at.y) > 3) {
+        if (run.length > 1) lines.push(run);
+        run = [];
+      } else run.push([at.x, at.y]);
+    }
+    if (run.length > 1) lines.push(run);
+  };
+  const steps = (from: number, to: number, by: number): number[] => Array.from({ length: Math.round((to - from) / by) + 1 }, (_, i) => from + i * by);
+  for (const ra of steps(-180, 180, 45)) trace(steps(-90, 90, 5).map((dec) => ({ rightAscension: ra, declination: dec })));
+  for (const dec of steps(-45, 45, 45)) trace(steps(-180, 180, 5).map((ra) => ({ rightAscension: ra, declination: dec })));
+  const xs = lines.flat().map(([x]) => x);
+  const ys = lines.flat().map(([, y]) => y);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const size = 30;
+  const k = size / Math.max(x1 - x0, y1 - y0);
+  const ox = (34 - (x1 - x0) * k) / 2;
+  const oy = (34 - (y1 - y0) * k) / 2;
+  const d = lines.map((run) => "M" + run.map(([x, y]) => `${(ox + (x - x0) * k).toFixed(1)} ${(oy + (y1 - y) * k).toFixed(1)}`).join("L")).join("");
+  const svg = `<svg viewBox="0 0 34 34" aria-hidden="true" focusable="false"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity=".85"/></svg>`;
+  projectionIcons.set(kind, svg);
+  return svg;
 }
 function pressed(): void {
   $("seg-projection").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === view.projection)));
@@ -155,7 +195,7 @@ function words(): void {
     setView({ ...view, projection: kind as Projection, ...(address.get("zoom") === null ? { zoom: defaultZoom(kind as Projection, width, height) } : {}) });
     address.set("proj", kind);
     everything();
-  });
+  }, projectionIcon);
   seg("seg-culture", CULTURE_IDS.map((id) => [id, say(`culture${id[0]!.toUpperCase()}${id.slice(1)}`)] as const), (id) => {
     culture = cultureOf(id) ?? western;
     address.set("culture", cultureText(culture));

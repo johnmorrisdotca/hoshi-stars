@@ -59,7 +59,7 @@ export function mountPicker(o: PickerOptions): { refresh: () => void } {
       button.setAttribute("aria-pressed", String(abbreviation === here));
       button.setAttribute("aria-label", nameIn(c, lang));
     }
-    const none = o.strip.parentElement?.querySelector<HTMLElement>("[data-pick-none]");
+    const none = (o.strip.closest(".picker") ?? o.strip.parentElement)?.querySelector<HTMLElement>("[data-pick-none]");
     if (none !== null && none !== undefined) none.hidden = shown.length > 0;
     const picked = here === undefined ? undefined : tiles.get(here);
     if (picked !== undefined && !picked.hidden) {

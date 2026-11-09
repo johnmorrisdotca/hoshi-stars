@@ -84,13 +84,15 @@ for (const where of PAGES) {
     test("Ctrl and the wheel zoom about the pointer, and the page keeps still", async ({ page, isMobile }) => {
       test.skip(isMobile || page.viewportSize()!.width < 600, "a phone has no wheel");
       const at = await open(page);
+      // open() scrolls the map into view when it starts low on the page; the wheel must not scroll it from there
+      const before = await page.evaluate(() => scrollY);
       await page.mouse.move(at.x, at.y);
       await page.keyboard.down("Control");
       await page.mouse.wheel(0, -400);
       await page.keyboard.up("Control");
       await expect.poll(() => number(page, "zoom")).toBeGreaterThan(3);
       expect(await wheels(page)).toContain(true);
-      expect(await page.evaluate(() => scrollY)).toBe(0);
+      expect(await page.evaluate(() => scrollY)).toBe(before);
     });
 
     test("zoomed in, the wheel moves the sky", async ({ page, isMobile }) => {
