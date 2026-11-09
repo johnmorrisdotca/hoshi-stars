@@ -223,6 +223,7 @@ import { blackHole, blackHoles } from "@johnmorrisdotca/hoshi-stars/black-holes"
 const sgr = blackHole("Sgr A*")!;     // or "Sagittarius A*", in any case
 console.log(sgr.kind, sgr.constellation, sgr.massSuns?.value, sgr.sources.mass[0]?.citation);  // supermassive Sgr 4297000 GRAVITY Collaboration 2022, A&A 657, L12
 console.log(blackHoles({ kind: "quiet" }).map((b) => b.name).join(", "));  // VFTS 243, Gaia BH2, Gaia BH1, OGLE-2011-BLG-0462, Gaia BH3
+```
 
 ## Deep-sky sizes and pictures
 
