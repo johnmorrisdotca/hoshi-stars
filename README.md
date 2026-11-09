@@ -331,6 +331,29 @@ console.log(sky.length, sky.skipped);                                           
 
 The demo has a **View from** choice (the Earth's sky, Alpha Centauri, Sirius and more, or the star you picked) that redraws the chart, the constellation lines and the Nearby panel from there, kept in the address as `from=HR5459`. `scripts/check-sky-from.py` checks the result against astropy by hand. [The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
+## Sky cultures
+
+The same stars under other figures and names. `constellations`, `constellation`, `starsIn`, `figures` and `figureOf` take a culture as an extra argument, and leave out they give the 88 constellations of the IAU, as before. Each culture is its own import: `/cultures/western` (the 88 with their names in Latin, English, Japanese and Chinese, Simplified and Traditional, with pinyin, and 17 asterisms such as the Big Dipper and the Summer Triangle), `/cultures/japanese` (the 88 under their Japanese names and 18 traditional names and figures: 昴 Subaru, 北斗七星, 鼓星, 織姫 and 彦星, with readings) and `/cultures/chinese` (三垣二十八宿, the Three Enclosures and the Twenty-Eight Mansions: 238 asterisms with Traditional and Simplified names and pinyin).
+
+```ts
+import { constellation, starsIn } from "@johnmorrisdotca/hoshi-stars/constellations";
+import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
+
+console.log(constellation("北斗", chinese)!.readings.zh, starsIn("beidou", chinese).length);   // běi dǒu 7
+console.log(figureOf("すばる", japanese).asterism.names.en, figureOf("羽林軍", chinese).asterism.missing); // Subaru 32
+```
+
+| Name | Gives |
+|---|---|
+| `western`, `japanese`, `chinese` | a `Culture`: `id`, `names`, `asterisms()` and `find(text)` |
+| `Asterism` | one figure: `id`, `name`, `names` (by `NameLanguage`: `la`, `en`, `ja`, `zh-Hans`, `zh-Hant`), `readings` (`ja` in hiragana, `zh` in pinyin), `aka`, `about`, `kind` (an `AsterismKind`: `constellation`, `asterism` or `mansion`), `group`, `missing` and `chains` of HR numbers |
+| `CultureFigure` (`/lines`) | an `Asterism` with its `stars` and `segments`: only the stars of the figure that the catalogue holds |
+| `defineCulture(id, names, make)` (`/culture`) | a culture of your own |
+
+A Chinese asterism with stars fainter than magnitude 6.0 draws only the stars we have, and `missing` says at least how many it lacks. The lines of the Chinese figures are our own joins, not the traditional drawing. The Chinese asterisms are read from Wikidata (CC0); Stellarium's sky-culture files (GPL, CC BY-SA) are not used (`NOTICE.md`). The demo has a **Sky culture** choice, kept in the address as `culture=chinese`, and picking a figure shows its card. [Sky cultures](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+
 Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
 
 ## The data in other languages

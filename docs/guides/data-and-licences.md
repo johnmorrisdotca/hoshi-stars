@@ -16,6 +16,7 @@ The code is MIT. The data is in tiers, and a tier is in the package only if its 
 | The 88 constellations, in English and Japanese | The IAU list; the National Astronomical Observatory of Japan | Names are facts, typed from published lists. No Wikipedia text. |
 | Constellation boundaries | N. G. Roman (1987) from E. Delporte (1930), VizieR VI/42 | No licence stated; kept with credit and removed on request. |
 | Constellation lines | Ours | Decided from the star data; no figure is copied from a book, atlas or program. |
+| Sky cultures | Wikidata (CC0) for the Chinese asterisms; the Taiwan National Academy for Educational Research's astronomy terms for the Chinese names of the 88; a few pages on traditional Japanese star names | Facts (which star carries which name), read with credit; the lines are ours. Stellarium's sky-culture files (GPL, CC BY-SA) are not used. |
 | Messier, NGC and IC objects | Wikidata (CC0), checked against NASA/IPAC NED | CC0; positions corrected from NED where they disagree. |
 | The Milky Way's brightness | SAO star counts (NASA HEASARC), the IRAS 100 micron dust map and COBE DIRBE (NASA), and a bulge of our own figures | The SAO catalogue states no licence: used with credit and removed on request. The two infrared maps are NASA mission data (public domain). No picture of the sky is read or traced. |
 | Projections, sidereal time, refraction | Snyder's *Map Projections* and Meeus's *Astronomical Algorithms* | Formulas; no book text or library code. |
