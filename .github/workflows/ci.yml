@@ -42,7 +42,8 @@ jobs:
     # One job a Playwright project: the four are the same tests at a desk's and a phone's width in Chromium and in WebKit.
     name: demo (${{ matrix.project }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # The job has room for a slow apt mirror (on 2026-11-09 installing WebKit's system libraries took 12 to 15 minutes); the tests keep their own 15 minutes.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -56,11 +57,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps ${{ startsWith(matrix.project, 'webkit') && 'webkit' || 'chromium' }}
+        timeout-minutes: 25
       - name: The demo, played in one browser at one width (pnpm test:demo plays all four)
         run: pnpm test:demo:one --project=${{ matrix.project }}
+        timeout-minutes: 15
   usage:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -70,6 +73,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+        timeout-minutes: 25
       - name: Every way of using the package, built and opened as npm packs it
         run: pnpm test:usage
   docs:
