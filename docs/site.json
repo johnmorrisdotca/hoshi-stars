@@ -50,6 +50,16 @@
       "ja": "中国の伝統の空 (三垣二十八宿、約240の星官。繁体字・簡体字・ピンインつき)",
       "platform": "neutral"
     },
+    "./profile": {
+      "en": "A star's profile: temperature, size, luminosity and disc size with their uncertainty, limb darkening, and the measured shapes of Altair, Regulus and Vega",
+      "ja": "星のプロファイル (温度・大きさ・光度・円盤の大きさを不確かさつきで、周縁減光、アルタイル・レグルス・ベガの測定された形)",
+      "platform": "neutral"
+    },
+    "./portrait": {
+      "en": "A star drawn from its numbers as SVG, and next to the Sun",
+      "ja": "数値から描いた星のSVGの絵と、太陽との大きさくらべ",
+      "platform": "neutral"
+    },
     "./thumbnails": {
       "en": "A picture of each of the 88 constellations, in light and dark",
       "ja": "88星座それぞれの絵 (明るい版と暗い版)",

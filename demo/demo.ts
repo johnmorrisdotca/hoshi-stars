@@ -24,6 +24,10 @@ import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.t
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 import { mountPicker } from "./picker.ts";
+import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileView } from "./profile-panel.ts";
+import { starProfile } from "../src/profile.ts";
+import { starComparison, starPortrait } from "../src/portrait.ts";
+import { starCode, starFrameCode, starHeightFor, starQuery, type StarChoice } from "./star-code.ts";
 
 const wideStyle = document.createElement("style");
 wideStyle.textContent = wideCss({ side: "340px" });
@@ -48,6 +52,8 @@ let culture: Culture = western;
 let sky: SeenSky | undefined;
 let nearKeys: string[] = [];
 let hover: string | undefined;
+let profileView: ProfileView = "portrait";
+let embedWhat: "chart" | "star" = "chart";
 
 function read(): void {
   const kind = address.get("proj") ?? "";
@@ -63,6 +69,8 @@ function read(): void {
   const named = address.get("layers");
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
+  profileView = address.get("pview") === "compare" ? "compare" : "portrait";
+  embedWhat = address.get("ew") === "star" ? "star" : "chart";
   by = address.get("by") === "space" ? "space" : "sky";
   from = viewpointOf(address.get("from"));
   sky = skyOf(from);
@@ -182,6 +190,13 @@ function pressed(): void {
   $("seg-projection").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === view.projection)));
   $("seg-layers").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(layers.has(b.dataset.value as Layer))));
   $("seg-culture").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === culture.id)));
+  const starNow = starChoiceNow();
+  if (starNow === undefined) embedWhat = "chart";
+  $("seg-embed-what").querySelectorAll("button").forEach((b) => {
+    b.setAttribute("aria-pressed", String(b.dataset.value === embedWhat));
+    if (b.dataset.value === "star") (b as HTMLButtonElement).disabled = starNow === undefined;
+  });
+  $("embed-what-hint").hidden = starNow !== undefined;
   $("culture-note").textContent = say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`);
   const slider = $<HTMLInputElement>("magnitude");
   slider.value = String(magnitude);
@@ -205,6 +220,11 @@ function words(): void {
     showResults(search(field.value), field.value);
     everything();
     settled();
+  });
+  seg("seg-embed-what", [["chart", say("embedChart")], ["star", say("embedStar")]], (what) => {
+    embedWhat = what === "star" ? "star" : "chart";
+    address.set("ew", embedWhat === "star" ? "star" : null);
+    everything();
   });
   seg("seg-layers", LAYERS.map((layer) => [layer, say(layer)] as const), (layer) => {
     if (layers.has(layer as Layer)) layers.delete(layer as Layer);
@@ -509,11 +529,30 @@ $("find").addEventListener("submit", (event) => {
 const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), go: (abbreviation) => goTo(`C:${abbreviation}`), current: pickedConstellation, say });
 
 // ----- what is picked -----
-function fact(list: HTMLElement, name: string, value: string | Node): void {
+function fact(list: HTMLElement, name: string, value: string | Node, note?: string): void {
   const dt = Object.assign(document.createElement("dt"), { textContent: say(name) });
   const dd = document.createElement("dd");
   dd.append(value);
+  if (note !== undefined) dd.append(Object.assign(document.createElement("small"), { className: "fact-note", textContent: note }));
   list.append(dt, dd);
+}
+/** The star's picture goes under its name, and the figures worked out for it go at the top of its facts. */
+function profileOf(host: HTMLElement, title: HTMLElement, list: HTMLElement, input: Parameters<typeof starProfile>[0], name: string): void {
+  const profile = starProfile(input);
+  const context = { say, lang };
+  title.after(
+    profileTop(profile, name, profileView, context, (next) => {
+      profileView = next;
+      address.set("pview", next === "compare" ? "compare" : null);
+      details();
+      codes();
+    }),
+  );
+  // The figures worked out for the star come first: they are what the picture is made from.
+  const figures = document.createElement("dl");
+  for (const row of profileRows(profile, context)) fact(figures, row.key, row.value, row.note);
+  list.prepend(...Array.from(figures.children));
+  for (const note of profileNotes(profile, context)) host.append(Object.assign(document.createElement("p"), { className: "fam-fine profile-note", textContent: note }));
 }
 function linkTo(text: string, key: string): HTMLButtonElement {
   const button = document.createElement("button");
@@ -549,6 +588,7 @@ function details(): void {
     fact(list, "fieldMagnitude", `${sun.magnitude.toFixed(2)} ${say("magnitudeUnit")}`);
     fact(list, "fieldDistance", `${sun.lightYears.toFixed(2)} ${say("lightYears")}`);
     fact(list, "fieldClass", "G2");
+    profileOf(host, title, list, SUN_INPUT, say("sun"));
   } else if (picked.startsWith("S:")) {
     const star = starByHr(Number(id)) as Star | undefined;
     if (star === undefined) return;
@@ -561,11 +601,13 @@ function details(): void {
     fact(list, "starKind", `HR ${star.hr}`);
     if (star.designation !== undefined) fact(list, "fieldDesignation", star.designation);
     fact(list, "fieldMagnitude", seen === undefined && sky !== undefined ? nothing : `${(seen?.magnitude ?? star.magnitude).toFixed(2)} ${say("magnitudeUnit")}`);
-    fact(list, "fieldDistance", light === undefined ? nothing : `${sky !== undefined && light < 100 ? light.toFixed(1) : Math.round(light).toLocaleString(lang())} ${say("lightYears")}`);
+    const away = sky === undefined ? starDistance(star) : undefined;
+    const distanceError = away?.lightYearsError === undefined ? "" : ` ± ${figure(away.lightYearsError, lang())}`;
+    fact(list, "fieldDistance", light === undefined ? nothing : `${sky !== undefined && light < 100 ? light.toFixed(1) : Math.round(light).toLocaleString(lang())}${distanceError} ${say("lightYears")}`);
     const colour = document.createElement("span");
     colour.append(swatch, ` ${starColour(star)}`);
     fact(list, "fieldColour", colour);
-    if (star.spectralClass !== "") fact(list, "fieldClass", star.spectralClass);
+    if (star.spectralType !== "") fact(list, "fieldClass", star.spectralType);
     if (star.constellation !== undefined) {
       const c = constellation(star.constellation);
       if (c !== undefined) fact(list, "fieldIn", figureById(c.abbreviation, culture) === undefined ? nameOf(c) : linkTo(nameOf(c), `C:${c.abbreviation}`));
@@ -577,6 +619,7 @@ function details(): void {
       for (const part of parts) holder.append(linkTo(labelOf(part, culture, lang()), `C:${part.asterism.id}`));
       fact(list, "fieldPartOf", holder);
     }
+    profileOf(host, title, list, star, starName(star));
   } else if (picked.startsWith("D:")) {
     const object = deepSkyObject(id) as DeepSkyObject | undefined;
     if (object === undefined) return;
@@ -699,11 +742,29 @@ function nearbyPanel(): void {
 const panel = $<EmbedPanelElement>("embed-panel");
 const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
-panel.generate = ({ kind, size, preview }) => (kind === "iframe" ? frameCode(choice(size), say("chartLabel"), size, preview) : (embedCode(kind, choice(size), size) ?? ""));
+/** The picked star as a choice for the star's code, or `undefined` where no star with a catalogue number is picked (the Sun, a constellation, nothing). */
+function starChoiceNow(): StarChoice | undefined {
+  if (picked === null || !picked.startsWith("S:") || picked === "S:sun") return undefined;
+  const star = starByHr(Number(picked.slice(2))) as Star | undefined;
+  return star === undefined ? undefined : { hr: star.hr, name: star.name ?? star.designation ?? `HR ${star.hr}`, view: profileView, lang: lang() };
+}
+const starMode = (): StarChoice | undefined => (embedWhat === "star" ? starChoiceNow() : undefined);
+panel.generate = ({ kind, size, preview }) => {
+  const one = starMode();
+  if (one !== undefined) return kind === "iframe" ? starFrameCode(one, one.name, size, preview) : (starCode(kind, one, size) ?? "");
+  return kind === "iframe" ? frameCode(choice(size), say("chartLabel"), size, preview) : (embedCode(kind, choice(size), size) ?? "");
+};
 panel.preview = ({ kind, size }) => {
   if (kind === "iframe") return undefined;
   const holder = document.createElement("div");
   holder.style.cssText = `width: ${size}px; max-width: 100%; line-height: 0`;
+  const one = starMode();
+  if (one !== undefined) {
+    const profile = starProfile(starByHr(one.hr) as Star);
+    holder.innerHTML = (one.view === "compare" ? starComparison(profile, { name: one.name, lang: one.lang, size }) : starPortrait(profile, { name: one.name, lang: one.lang, size })) ?? "";
+    holder.querySelector("svg")?.setAttribute("style", `display:block;width:100%;height:auto;max-height:${starHeightFor(one.view, size)}px`);
+    return holder;
+  }
   const c = choice(size);
   holder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${heightFor(size)}" style="display:block;width:100%;height:auto">${chart({ ...c, width: size, height: heightFor(size), layers: new Set(c.layers.has("lines") ? (["lines"] as const) : []), highlight: undefined, picked: undefined, sky }).svg}</svg>`;
   return holder;
@@ -720,7 +781,8 @@ panel.addEventListener("kazoku-embedchange", (event) => {
   address.set("size", size === 480 ? null : String(size));
 });
 function codes(): void {
-  panel.openHref = frameAddress("", choice());
+  const one = starMode();
+  panel.openHref = one === undefined ? frameAddress("", choice()) : `star.html?${starQuery(one)}`;
   panel.credits = say("credit");
   panel.update();
 }

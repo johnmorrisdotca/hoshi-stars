@@ -207,6 +207,52 @@ await step("react-ssr", async () => {
   if (!html.includes('aria-label="Orion"')) throw new Error(`the server render lost the label: ${html.slice(0, 300)}`);
 });
 
+// The star portrait: the same ways, for the one-star picture.
+const seesStar = async (page: Page, selector: string, label: RegExp): Promise<void> => {
+  const svg = page.locator(selector).first();
+  await svg.waitFor({ state: "attached", timeout: 20_000 });
+  if (!label.test((await svg.getAttribute("aria-label")) ?? "")) throw new Error(`the picture's label is ${await svg.getAttribute("aria-label")}`);
+  if ((await svg.locator("ellipse").count()) < 5) throw new Error("the portrait has no disc");
+  if (!/not a photo/.test((await svg.textContent()) ?? "")) throw new Error("the portrait does not say it is not a photo");
+};
+
+await step("portrait-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("portrait"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  if (!/^Betelgeuse \d+ Suns across, from \d+ to \d+$/.test(out)) throw new Error(`unexpected output: ${out}`);
+  const [, radius, low, high] = /(\d+) Suns across, from (\d+) to (\d+)/.exec(out)!.map(Number) as [number, number, number, number];
+  if (!(radius > 100 && low < radius && radius < high)) throw new Error(`Betelgeuse's radius reads ${out}`);
+});
+
+await step("portrait-cdn", async () => {
+  await opened(browser, async (page) => {
+    await cdn(page, "https://cdn.jsdelivr.net", "/npm/@johnmorrisdotca/hoshi-stars/");
+    await page.route("https://page.test/**", (route) => route.fulfill({ body: pageOf(join(examples("portrait"), "cdn.html")), contentType: "text/html" }));
+    await page.goto("https://page.test/");
+    await seesStar(page, "#star svg", /^Arcturus, drawn from its numbers$/);
+  });
+});
+
+await step("portrait-iframe", async () => {
+  if (!existsSync(at("site", "star.html"))) throw new Error("site/ is not built: `pnpm test:usage` builds it");
+  await opened(browser, async (page) => {
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    await page.route("https://page.test/**", (route) => route.fulfill({ body: pageOf(join(examples("portrait"), "iframe.html")), contentType: "text/html" }));
+    await page.goto("https://page.test/");
+    const frame = page.frameLocator("iframe");
+    await frame.locator("svg").first().waitFor({ state: "attached", timeout: 20_000 });
+    if ((await frame.locator("svg text", { hasText: "Earth's orbit" }).count()) === 0) throw new Error("the star embed page ignored its address: no comparison with Earth's orbit");
+  });
+});
+
+await step("portrait-react-ssr", async () => {
+  const script = join(usage, "ssr-star.tsx");
+  writeFileSync(script, `import { renderToString } from "react-dom/server";\nimport { Star } from "./examples/portrait/Star";\nconst html = renderToString(<Star />);\nif (!html.includes("<svg")) throw new Error("no drawing in " + html);\nconsole.log(html);\n`);
+  const out = join(usage, "ssr-star.mjs");
+  await esbuild({ entryPoints: [script], outfile: out, bundle: true, platform: "node", format: "esm", jsx: "automatic", absWorkingDir: root, logLevel: "silent", external: ["react", "react-dom"], splitting: false });
+  const html = execFileSync(process.execPath, [out], { cwd: root, encoding: "utf8" });
+  if (!html.includes('aria-label="Sirius, drawn from its numbers"') || !html.includes("not a photo")) throw new Error(`the server render lost the picture: ${html.slice(0, 300)}`);
+});
+
 await step("webpack", async () => {
   const { default: webpack } = await import("webpack");
   const dir = examples("webpack");
@@ -261,6 +307,10 @@ const FILES: Record<string, string[]> = {
   "constellation-3d/node.mjs": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
   "constellation-3d/side-view.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
   "constellation-3d/iframe.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
+  "portrait/node.mjs": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "portrait/cdn.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "portrait/iframe.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "portrait/Star.tsx": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
 };
 const normal = (text: string) => text.replace(/\r\n/g, "\n").trim();
 for (const [file, places] of everything ? Object.entries(FILES) : []) {

@@ -224,6 +224,22 @@ console.log(milkyWayBands([0.2, 0.5]).map((band) => band.strips.length));       
 
 `milkyWayBrightness(point)` is 0 (dark sky) to 1 (the core); `milkyWayBands(levels, { step })` gives ribbons of sky points for `project`; `toGalactic` and `fromGalactic` change the frame. The demo draws it as soft bands under the stars, in every projection, and its **Milky Way** button turns it off.
 
+## A star's size, temperature and portrait
+
+`@johnmorrisdotca/hoshi-stars/profile` works out how hot, how big and how bright a star is from what the catalogue holds, with the uncertainty of each figure, and `@johnmorrisdotca/hoshi-stars/portrait` draws it from those numbers as SVG, alone or next to the Sun. The picture says it is drawn from numbers and not a photograph, and that its surface texture is generic.
+
+```ts
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { starComparison } from "@johnmorrisdotca/hoshi-stars/portrait";
+import { starProfile } from "@johnmorrisdotca/hoshi-stars/profile";
+
+const arcturus = starProfile(starByName("Arcturus")!);
+console.log(Math.round(arcturus.temperature!.value), arcturus.radius!.value.toFixed(1), arcturus.radius!.basis); // 4487 22.4 parallax
+console.log(starComparison(arcturus, { name: "Arcturus" })!.startsWith("<svg"));                                 // true
+```
+
+The one-standard-error range holds the measured disc for 33 of 43 stars the CHARA Array resolved; [the guide](docs/guides/star-profile.md) says which are off and why, and shows the same in a page, on a server and in an iframe.
+
 ## What is near
 
 `@johnmorrisdotca/hoshi-stars/nearest` finds the stars (or Messier objects) nearest a star, an object, a name or a point, by angle on the sky or by distance in space, and the constellations that touch a constellation. One query over all 5,080 stars takes about 1 ms (0.5 to 1.1 ms on a laptop, measured by `test/nearest.test.ts`); there is no index, every star is looked at.
