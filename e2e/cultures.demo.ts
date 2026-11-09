@@ -89,6 +89,7 @@ test("a pick that is not in the new culture is dropped when the culture changes"
 
 test("tapping on a line of a Chinese figure picks the figure", async ({ page }) => {
   await open(page, "?culture=chinese&ra=190&dec=55&zoom=9&layers=lines");
+  await page.locator("#chart").scrollIntoViewIfNeeded();
   const spot = await page.evaluate(() => {
     const svg = document.getElementById("chart")!;
     const box = svg.getBoundingClientRect();

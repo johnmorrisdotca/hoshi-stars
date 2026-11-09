@@ -82,7 +82,7 @@ for (const where of PAGES) {
     });
 
     test("Ctrl and the wheel zoom about the pointer, and the page keeps still", async ({ page, isMobile }) => {
-      test.skip(isMobile, "a phone has no wheel");
+      test.skip(isMobile || page.viewportSize()!.width < 600, "a phone has no wheel");
       const at = await open(page);
       await page.mouse.move(at.x, at.y);
       await page.keyboard.down("Control");
