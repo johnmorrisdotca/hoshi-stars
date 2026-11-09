@@ -15,6 +15,10 @@ import type { CultureFigure } from "../src/lines.ts";
 import { blackHole, blackHoles } from "../src/black-holes.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, project, type Projection } from "../src/projection.ts";
+import { deepSkyShape, measuredParts, type DeepSkyShape } from "../src/deep-sky-shape.ts";
+import { deepSkyPicturesOf } from "../src/deep-sky-pictures.ts";
+import { starsInside } from "../src/deep-sky-members.ts";
+import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
 import { CULTURE_IDS, cultureOf, cultureText } from "./cultures.ts";
 import { western } from "../src/cultures/western.ts";
@@ -96,6 +100,10 @@ let height = Math.max(200, Math.round(box.clientHeight)) || 560;
 const opening = (): number => defaultZoom(view.projection, width, height);
 let hits: Hit[] = [];
 let queued = false;
+const fetcher = createDeepFetcher("./", () => schedule());
+/** An object of the Messier table, or of the whole table once the NGC and IC objects are in. */
+const deepObject = (id: string): DeepSkyObject | undefined => deepSkyObject(id) ?? fetcher.find(id);
+const shapeOfObject = (object: DeepSkyObject): DeepSkyShape => (fetcher.shapeOf() ?? deepSkyShape)(object);
 
 /** The figure to show brighter: the picked figure, or the figure of the culture the picked star is in (its constellation in the Western and Japanese skies). */
 const pickedConstellation = (): string | undefined => {
@@ -120,11 +128,26 @@ function draw(): void {
   queued = false;
   $("zoom-readout").textContent = zoomText(view.zoom / opening());
   const faint = sky === undefined ? faintFor(view, width, height, magnitude, layers, schedule) : undefined;
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint });
+  if ((layers.has("deep") && view.zoom >= TIER_ZOOM) || (picked?.startsWith("D:") === true && deepSkyObject(picked.slice(2)) === undefined)) void fetcher.loadTier();
+  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
   faintNote(out.faint, faint?.state);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  // a picture already on the page keeps its element across a redraw, so it is never blank for a frame while the browser decodes it again
+  const kept = new Map<string, Element>();
+  svg.querySelectorAll("image[data-pic]").forEach((node) => kept.set(node.getAttribute("data-pic")!, node));
   svg.innerHTML = out.svg;
+  svg.querySelectorAll("image[data-pic]").forEach((node) => {
+    const old = kept.get(node.getAttribute("data-pic")!);
+    if (old === undefined) return;
+    old.setAttribute("transform", node.getAttribute("transform")!);
+    old.setAttribute("opacity", node.getAttribute("opacity")!);
+    node.replaceWith(old);
+  });
   hits = out.hits;
+  if (out.wanted.length > 0) {
+    fetcher.want(out.wanted);
+    if (out.wanted.some((id) => !id.startsWith("M"))) void fetcher.loadTier();
+  }
 }
 /** The line under the chart about the faint stars: the depth reached here, or what is missing. */
 function faintNote(drawn: { drawn: number; depth: number } | undefined, state: "ready" | "loading" | "failed" | undefined): void {
@@ -374,7 +397,9 @@ function tap(x: number, y: number): void {
   let best: Hit | undefined;
   let near = 22 * 22;
   for (const hit of hits) {
-    const d = (hit.x - x) ** 2 + (hit.y - y) ** 2;
+    // a deep-sky object drawn large is tapped anywhere in its bright middle, not only at its exact centre
+    const away = Math.max(0, Math.hypot(hit.x - x, hit.y - y) - ((hit.reach ?? 22) - 22));
+    const d = away ** 2;
     if (d < near) {
       near = d;
       best = hit;
@@ -443,6 +468,17 @@ function fly(to: Place): void {
   requestAnimationFrame(step);
 }
 
+/** The zoom at which a deep-sky object fills about half of the chart (its picture is then fully shown), or a close one where its size is not known. */
+function zoomForObject(object: DeepSkyObject): number {
+  const shape = shapeOfObject(object);
+  if (shape.majorArcmin === undefined) return Math.max(view.zoom, 40);
+  const test = { ...view, ra: object.rightAscension, dec: object.declination, zoom: 1 };
+  const a = toScreen(test, width, height, object);
+  const b = toScreen(test, width, height, { rightAscension: object.rightAscension, declination: object.declination + 1 / 60 });
+  const perArcmin = a === undefined || b === undefined ? fitScale(view.projection, width, height) * (Math.PI / 10800) : Math.hypot(a[0] - b[0], a[1] - b[1]);
+  return Math.max(2, Math.min(ZOOM_MAX, (0.55 * Math.min(width, height)) / (shape.majorArcmin * perArcmin)));
+}
+
 /** The zoom at which a constellation's figure fits the chart. */
 function zoomFor(abbreviation: string): number {
   const middle = centreOfConstellation(abbreviation, culture);
@@ -500,6 +536,9 @@ function search(text: string): Found[] {
     const asked = q.replace(/[^a-z0-9]+/g, "");
     if (asked !== "" && names.some((name) => name.startsWith(asked) || (asked.length > 2 && name.includes(asked)))) (names.some((name) => name.startsWith(asked)) ? starts : contains).push({ label: hole.name, kind: say(kindKey(hole)), key: `B:${hole.id}` });
   }
+  // an NGC or IC number or a name from the whole table, once that is fetched (asking for it starts as soon as the text looks like one)
+  const wide = /^(ngc|ic)\s*\d/.test(q) || /[a-z]{4}/.test(q) ? fetcher.find(text) : undefined;
+  if (wide !== undefined && !starts.some((one) => one.key === `D:${wide.id}`)) starts.push({ label: wide.name === undefined ? wide.id : `${wide.id} ${wide.name}`, kind: say("deepKind"), key: `D:${wide.id}` });
   return [...out, ...starts, ...contains].slice(0, 8);
 }
 
@@ -510,8 +549,8 @@ function placeOf(key: string): Place | undefined {
     return star && { ra: star.rightAscension, dec: star.declination, zoom: Math.max(view.zoom, 6) };
   }
   if (key.startsWith("D:")) {
-    const object = deepSkyObject(id);
-    return object && { ra: object.rightAscension, dec: object.declination, zoom: Math.max(view.zoom, 6) };
+    const object = deepObject(id);
+    return object && { ra: object.rightAscension, dec: object.declination, zoom: zoomForObject(object) };
   }
   if (key.startsWith("B:")) {
     const hole = blackHole(id);
@@ -544,7 +583,10 @@ function showResults(list: Found[], asked: string): void {
   );
 }
 const field = $<HTMLInputElement>("search");
-field.addEventListener("input", () => showResults(search(field.value), field.value));
+field.addEventListener("input", () => {
+  showResults(search(field.value), field.value);
+  if (/^(ngc|ic)\s*\d/i.test(field.value.trim()) || /[a-z]{4}/i.test(field.value)) void fetcher.loadTier().then(() => showResults(search(field.value), field.value));
+});
 $("find").addEventListener("submit", (event) => {
   event.preventDefault();
   const first = search(field.value)[0];
@@ -556,6 +598,47 @@ $("find").addEventListener("submit", (event) => {
 const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), go: (abbreviation) => goTo(`C:${abbreviation}`), current: pickedConstellation, say });
 
 // ----- what is picked -----
+const SOURCE_WORDS: Record<string, string> = { RC3: "srcRC3", NED: "srcNed", "Catalogue row": "srcRow" };
+const SURVEY_WORDS: Record<string, string> = { "SDSS g, r, i": "pictureSdss", "2MASS J, H, K": "picture2mass", "WISE 3.4, 4.6, 12 micron": "pictureWise", "ESA/Hubble": "pictureHubble" };
+const fill = (text: string, values: Record<string, string>): string => Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
+const arcmin = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n * 10) / 10));
+
+/** What is measured about a deep-sky object and what is drawn: the card's rows, the picture's credit and the stars inside a cluster. */
+function deepCard(object: DeepSkyObject, title: HTMLElement, list: HTMLElement, host: HTMLElement): void {
+  title.textContent = object.name === undefined ? object.id : `${object.id} ${object.name}`;
+  const shape = shapeOfObject(object);
+  const parts = measuredParts(shape);
+  fact(list, "deepKind", object.id);
+  fact(list, "fieldType", say(object.type));
+  if (object.magnitude !== undefined) fact(list, "fieldMagnitude", `${object.magnitude.toFixed(1)} ${say("magnitudeUnit")}`);
+  fact(list, "fieldSize", !parts.size ? say("sizeNone") : parts.ratio ? fill(say("sizeTwo"), { major: arcmin(shape.majorArcmin!), minor: arcmin(shape.minorArcmin!) }) : fill(say("sizeOne"), { major: arcmin(shape.majorArcmin!) }));
+  fact(list, "fieldAngle", parts.angle ? fill(say("angleValue"), { degrees: String(shape.positionAngle) }) : say("angleNone"));
+  if (shape.source !== undefined) fact(list, "fieldMeasuredBy", say(SOURCE_WORDS[shape.source]!));
+  fact(list, "fieldDrawn", say(parts.oval ? "drawnOval" : parts.size ? "drawnRound" : "drawnFixed"));
+  if (object.ngc !== undefined) fact(list, "fieldNgc", object.ngc);
+  const c = object.constellation === undefined ? undefined : constellation(object.constellation);
+  if (c !== undefined) fact(list, "fieldIn", linkTo(nameOf(c), `C:${c.abbreviation}`));
+  const pictures = deepSkyPicturesOf(object.id);
+  host.append(Object.assign(document.createElement("h4"), { textContent: say("fieldPicture") }));
+  if (pictures.length === 0) host.append(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("pictureNone") }));
+  for (const picture of pictures) {
+    const credit = Object.assign(document.createElement("p"), { className: "fam-fine" });
+    credit.dataset.testid = "picture-credit";
+    credit.textContent = `${fill(say("pictureFrom"), { survey: picture.source.name, colour: say(SURVEY_WORDS[picture.source.name] ?? "pictureHubble"), credit: picture.credit, licence: picture.source.licence })} ${say(picture.source.name === "ESA/Hubble" ? "pictureNoteRelease" : "pictureNote")}`;
+    host.append(credit);
+  }
+  const inside = object.type === "open cluster" || object.type === "globular cluster" ? starsInside(object, shape) : undefined;
+  if (inside !== undefined && parts.size) {
+    host.append(Object.assign(document.createElement("h4"), { textContent: say("fieldInside") }));
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    for (const star of inside.slice(0, 12)) chips.append(linkTo(starName(star), `S:${star.hr}`));
+    const note = Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say(inside.length === 0 ? "insideNone" : "insideNote") });
+    note.dataset.testid = "inside-note";
+    host.append(...(inside.length === 0 ? [note] : [chips, note]));
+  }
+}
+
 function fact(list: HTMLElement, name: string, value: string | Node, note?: string): void {
   const dt = Object.assign(document.createElement("dt"), { textContent: say(name) });
   const dd = document.createElement("dd");
@@ -678,16 +761,9 @@ function details(): void {
     }
     host.append(Object.assign(document.createElement("h4"), { textContent: say("fieldSources") }), papers);
   } else if (picked.startsWith("D:")) {
-    const object = deepSkyObject(id) as DeepSkyObject | undefined;
+    const object = deepObject(id) as DeepSkyObject | undefined;
     if (object === undefined) return;
-    title.textContent = object.name === undefined ? object.id : `${object.id} ${object.name}`;
-    fact(list, "deepKind", object.id);
-    fact(list, "fieldType", say(object.type));
-    if (object.magnitude !== undefined) fact(list, "fieldMagnitude", `${object.magnitude.toFixed(1)} ${say("magnitudeUnit")}`);
-    if (object.sizeArcmin !== undefined) fact(list, "fieldSize", `${object.sizeArcmin} ${say("arcminutes")}`);
-    if (object.ngc !== undefined) fact(list, "fieldNgc", object.ngc);
-    const c = object.constellation === undefined ? undefined : constellation(object.constellation);
-    if (c !== undefined) fact(list, "fieldIn", linkTo(nameOf(c), `C:${c.abbreviation}`));
+    deepCard(object, title, list, host);
   } else {
     const figure = figureById(id, culture);
     if (figure === undefined) return;

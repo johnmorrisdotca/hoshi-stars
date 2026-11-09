@@ -27,12 +27,14 @@ writeFileSync(join(site, "constellation-3d.html"), renderSpace());
 writeThumbnails(join(site, "thumbnails"));
 // The faint stars (UCAC4, to magnitude 12) in their tiles: the demo reads them from here, and so does anyone who leaves `faintSky`'s default address (scripts/make-faint-data.py makes them).
 cpSync(join(root, "faint-tiles"), join(site, "faint-tiles"), { recursive: true });
+cpSync(join(root, "pictures"), join(site, "pictures"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 for (const file of ["embed.html", "embed-3d.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
   entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts") },
   outdir: join(site, "js"),
   bundle: true,
+  splitting: true,
   format: "esm",
   target: "es2022",
   minify: true,

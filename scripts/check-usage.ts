@@ -5,6 +5,7 @@
 import { execFileSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { tmpdir } from "node:os";
 import { extname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { SOFTWARE_GL_ARGS, acquireBrowserLock } from "@johnmorrisdotca/kazoku-ui/testing";
@@ -88,6 +89,15 @@ const seesSky = async (page: Page, selector = "svg"): Promise<void> => {
   const stars = await svg.locator("circle").count();
   const lines = await svg.locator("line").count();
   if (stars < 30 || lines < 8) throw new Error(`the chart has ${stars} stars and ${lines} lines`);
+};
+
+/** The drawing holds a picture pinned to the sky by a matrix, and an outline of 49 points. */
+const seesImage = async (page: Page): Promise<void> => {
+  const image = page.locator("#sky svg image");
+  await image.waitFor({ state: "attached", timeout: 20_000 });
+  if (!/^matrix\(/.test((await image.getAttribute("transform")) ?? "")) throw new Error("the picture is not pinned to the sky");
+  const outline = (await page.locator("#sky svg path").first().getAttribute("d")) ?? "";
+  if ((outline.match(/[ML]/g) ?? []).length !== 49) throw new Error(`the outline has ${(outline.match(/[ML]/g) ?? []).length} points, not 49`);
 };
 
 /** A CDN's answer: a file of the installed package, under the address the page asks for. */
@@ -289,6 +299,27 @@ await step("angular", async () => {
   });
 });
 
+await step("deep-sky-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("deep-sky"), "outline.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  if (out !== "M31 190.5 61.7 35 pictures/M31.webp") throw new Error(`unexpected output: ${out}`);
+  const svg = readFileSync(join(tmpdir(), "hoshi-m31.svg"), "utf8");
+  if ((svg.match(/<path /g) ?? []).length !== 2 || !svg.includes("M")) throw new Error("the drawing lost its outline or its frame");
+});
+
+await step("deep-sky-picture", async () => {
+  if (!existsSync(at("site", "pictures", "M31.webp"))) throw new Error("site/ is not built: `pnpm test:usage` builds it");
+  await opened(browser, async (page) => {
+    await cdn(page, "https://cdn.jsdelivr.net", "/npm/@johnmorrisdotca/hoshi-stars/");
+    // the pictures are not in the npm package: the page asks the demo site for them, which here is the built site
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    const arrived = page.waitForResponse((response) => response.url() === "https://johnmorrisdotca.github.io/hoshi-stars/pictures/M31.webp", { timeout: 20_000 });
+    await showPage(page, "deep-sky/picture.html");
+    const picture = await arrived;
+    if (!picture.ok() || (await picture.body()).length < 5000) throw new Error("the picture of M31 did not arrive from the demo site");
+    await seesImage(page);
+  });
+});
+
 await browser.close();
 lock.release();
 
@@ -318,6 +349,8 @@ const FILES: Record<string, string[]> = {
   "portrait/cdn.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/iframe.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/Star.tsx": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
+  "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
 };
 const normal = (text: string) => text.replace(/\r\n/g, "\n").trim();
 for (const [file, places] of everything ? Object.entries(FILES) : []) {

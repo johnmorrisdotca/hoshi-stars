@@ -144,6 +144,26 @@
       "import": "./dist/deep-sky-ngc-ic.js",
       "default": "./dist/deep-sky-ngc-ic.js"
     },
+    "./deep-sky/shape": {
+      "types": "./dist/deep-sky-shape.d.ts",
+      "import": "./dist/deep-sky-shape.js",
+      "default": "./dist/deep-sky-shape.js"
+    },
+    "./deep-sky/ngc-ic-shape": {
+      "types": "./dist/deep-sky-shape-ngc-ic.d.ts",
+      "import": "./dist/deep-sky-shape-ngc-ic.js",
+      "default": "./dist/deep-sky-shape-ngc-ic.js"
+    },
+    "./deep-sky/pictures": {
+      "types": "./dist/deep-sky-pictures.d.ts",
+      "import": "./dist/deep-sky-pictures.js",
+      "default": "./dist/deep-sky-pictures.js"
+    },
+    "./deep-sky/members": {
+      "types": "./dist/deep-sky-members.d.ts",
+      "import": "./dist/deep-sky-members.js",
+      "default": "./dist/deep-sky-members.js"
+    },
     "./projection": {
       "types": "./dist/projection.d.ts",
       "import": "./dist/projection.js",
