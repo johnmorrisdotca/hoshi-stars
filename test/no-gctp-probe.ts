@@ -1,6 +1,7 @@
 // What the package says on one build, as JSON on stdout: the child that test/no-gctp.test.ts runs twice, once on the Yale GCTP data and once on the fallback (HOSHI_NO_GCTP=0 and =1, with
 // `node --import ./scripts/data-source-hook.mjs`). It is not a test: it only reads and reports, and counts whatever throws or comes out as NaN.
 import { createHash } from "node:crypto";
+import { constellationIn3D, distanceQualityTable } from "../src/constellation-3d.ts";
 import { nearbyStarByName, nearbyStars } from "../src/nearby.ts";
 import { nearest } from "../src/nearest.ts";
 import { starComparison, starPortrait } from "../src/portrait.ts";
@@ -116,6 +117,15 @@ try {
   unknownNameError = `${(error as Error).name}: ${(error as Error).message}`;
 }
 const nearbyAll = nearbyStars();
+// The constellation in 3D: how well each star's distance is known, counted over all 88 figures, and two figures whole.
+const qualities = { good: 0, fair: 0, rough: 0, none: 0 };
+const table = attempt("distanceQualityTable()", () => distanceQualityTable()) ?? [];
+for (const row of table) for (const key of Object.keys(qualities) as (keyof typeof qualities)[]) qualities[key] += row.counts[key];
+const figure3d = (abbreviation: string): unknown =>
+  attempt(`constellationIn3D(${abbreviation})`, () => {
+    const found = constellationIn3D(abbreviation);
+    return { stars: found.stars.length, counts: found.counts, placed: found.stars.filter((one) => one.position !== undefined).length, errors: found.stars.filter((one) => one.range !== undefined).length };
+  });
 const output = {
   stars: all.length,
   bySource,
@@ -139,6 +149,8 @@ const output = {
   },
   space: { sirius: space("Sirius"), alioth: space("Alioth"), betelgeuse: space("Betelgeuse") },
   skies: { sirius: sky("Sirius", "bright"), siriusNearby: sky("Sirius", "nearby"), rigil: sky("Rigil Kentaurus", "nearby") },
+  qualities,
+  figures3d: { UMa: figure3d("UMa"), Ori: figure3d("Ori") },
   bright30ly: all.filter((star) => (starDistance(star)?.lightYears ?? Infinity) <= 30).length,
   bright50ly: all.filter((star) => (starDistance(star)?.lightYears ?? Infinity) <= 50).length,
   hr2491: starByHr(2491)?.name ?? null,

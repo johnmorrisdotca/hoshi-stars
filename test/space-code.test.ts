@@ -5,6 +5,7 @@ import { test } from "node:test";
 import { spaceCode, spaceFrameAddress, spaceHeightFor, spaceLines, spaceQuery, spaceSvg, type SpaceChoice } from "../demo/space-code.ts";
 import { constellationIn3D } from "../src/constellation-3d.ts";
 import { starByHr, starColour } from "../src/stars.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const orion: SpaceChoice = { c: "Ori", from: undefined, yaw: 0, tilt: 0, lang: "en" };
 
@@ -20,7 +21,7 @@ test("the copied lines make the picture the demo previews, for several constella
   }
 });
 
-test("Orion: Alnilam is a dotted line of sight, the other seven are streaks with no dot in the middle", () => {
+test("Orion: Alnilam is a dotted line of sight, the other seven are streaks with no dot in the middle", onlyWithGctp, () => {
   const svg = run(orion, 480);
   assert.equal((svg.match(/stroke-dasharray="2 4"/g) ?? []).length, 1, "one star with no distance");
   assert.equal((svg.match(/<circle /g) ?? []).length, 0, "every other star of Orion has an error bar wider than its distance");

@@ -17,7 +17,7 @@ How the swap reaches each tool: `scripts/build.mjs` (tsc, then the fallback tabl
 
 **What ships today does not change.** `src/data/stars.ts` and `src/data/nearby.ts` are byte for byte what they were (regenerated from the raw files to check). The default `dist/` differs from `origin/main`'s in one line of `dist/nearby.js`: an empty table is read as no rows instead of one empty row (`src/nearby.ts`, needed so the fallback's empty nearby table does not make a NaN star). Nothing else in `dist/` changes.
 
-**At the flip, also:** drop the Yale GCTP and 2MASS paragraphs from NOTICE.md and add the fallback's sentence; rewrite the pages that describe the nearby layer and Yale errors (`docs/guides/nearby.md`, `nearby-stars.md`, `star-profile.md`, `stars.md`, `colour-and-distance.md`, `data-files.md`, `sky-from-another-star.md`, each with its `ja/` twin, `docs/site.json`, `README.md`, the TSDoc of `src/stars.ts` and `src/nearby.ts`); update `scripts/check-package.ts` (it asserts Proxima Centauri); and decide what becomes of the `/nearby` and `/sky-from/nearby` exports (they still work and are empty; removing one is a major version, which needs John's yes). Eighteen tests that pin Yale numbers carry `onlyWithGctp` (`test/gctp.ts`) and are skipped on the fallback; `test/no-gctp.test.ts` is the fallback's own suite and passes on either default.
+**At the flip, also:** drop the Yale GCTP and 2MASS paragraphs from NOTICE.md and add the fallback's sentence; rewrite the pages that describe the nearby layer and Yale errors (`docs/guides/nearby.md`, `nearby-stars.md`, `star-profile.md`, `stars.md`, `colour-and-distance.md`, `data-files.md`, `sky-from-another-star.md`, each with its `ja/` twin, `docs/site.json`, `README.md`, the TSDoc of `src/stars.ts` and `src/nearby.ts`); update `scripts/check-package.ts` (it asserts Proxima Centauri); and decide what becomes of the `/nearby` and `/sky-from/nearby` exports (they still work and are empty; removing one is a major version, which needs John's yes). Twenty-four tests that pin Yale numbers carry `onlyWithGctp` (`test/gctp.ts`) and are skipped on the fallback; `test/no-gctp.test.ts` is the fallback's own suite and passes on either default.
 
 ## What is left, in numbers
 
@@ -49,6 +49,7 @@ The one that matters most is quiet. **Without an error, `starProfile` assumes ha
 | `portrait`, `comparison` | from those radii | from those radii: a different size for any star whose radius came from the parallax; the 4,140 (3,762) stars with a radius still get a picture |
 | nearest by space (`/nearest`) | distance with error | distance only (`error` is `undefined`); the order moves: Sirius's fifth nearest bright star is HR 1325 at 10.7 ly with the Yale data and at 10.2 with the BSC |
 | sky from another star (`/sky-from`) | a companion nearer than the viewpoint's error is left out and counted | the viewpoint's error is 0, so a companion that shares its parallax stays a few thousandths of a light-year away: **seen from Alpha Centauri A, Alpha Centauri B shines at magnitude -24**. The demo drops it (`demo/from.ts`); the API does not. A one-line fix for the flip is for `skyFrom` to give a viewpoint with no error the half-milliarcsecond `starProfile` assumes. It was not made here, because it would also change the 234 BSC and dynamical viewpoints of the Yale build. |
+| `/constellation-3d` (`distanceQuality`) | parallax errors give "good" (error under 5%) or "fair"; 25 "good" and 108 "fair" over the 88 figures' stars | no error, so nothing is "good": 0 good, 11 fair (dynamical), 489 "rough" (370 on the Yale data); every placed star has no error bar (Ursa Major: 9 of 9 placed, 9 "rough", 0 with an error range, against 5 "fair" and 4 "rough" with ranges) |
 | `/nearby`, `/sky-from/nearby` | 5,565 stars | none |
 | data export | `parallaxErrorMas` filled for 2,329 stars; `nearby-stars.csv` 5,565 rows | `parallaxErrorMas` is `\N` for every star; `nearby-stars.csv` has a header and no rows; `parallaxSource` is `BSC` or `dynamical` |
 
@@ -79,6 +80,7 @@ The demo never imports the nearby tier, so only the parallaxes move.
 - **Nearby panel**: by space it lists different, re-ordered stars with whole-number-based distances, says how many stars have no distance, and a new line says the build has no nearby-star layer. By sky it is unchanged.
 - **View from**: the same stars to view from (all ten have BSC parallaxes); distances differ (Vega 26.5 ly, not 25.1); Alpha Centauri B is left out of the sky from Alpha Centauri A.
 - **Embed page** (`embed.html`, `?from=`, `?pick=`) and **star page** (`star.html`): the same numbers change as on the main page; no new words.
+- **Constellation in 3D** (`constellation-3d.html`, `embed-3d.html`): the stars are placed from the new parallaxes, so their places move; no star has an error bar, and the quality table reads "rough" for most (`sp_noError` already says so); a figure with no parallax at all is as before.
 - **Constellation pages** (`constellation.html`, `constellation-list.html`, `constellations.html`) and **whole-sky.html**, **kids.html**: the distance of a star where one is shown moves; nothing else.
 - **Docs-site guides**: pages that quote Yale figures, the nearby layer or Proxima Centauri are wrong on the fallback until rewritten (list above); their tested examples that call `nearbyStarByName("Proxima Centauri")!` would throw.
 
@@ -86,7 +88,7 @@ The new words are `noErrorGiven`, `nearbyNoLayer` and `noGctpProfileNote` in `sc
 
 ## Checks
 
-`pnpm test` passes on both builds (319 tests on the Yale default; 301 pass and 18 skip with `HOSHI_NO_GCTP=1`). `test/no-gctp.test.ts` runs both builds in their own node and checks the counts, the named stars, that nothing throws or prints NaN (every star's distance, profile, portrait and comparison, and the data export), the empty nearby layer, nearest by space and the Alpha Centauri sky. `e2e/no-gctp.demo.ts` plays the demo on the fallback site (`HOSHI_NO_GCTP=1 pnpm site`, then `HOSHI_NO_GCTP=1 TEST_PORT=8266 npx playwright test e2e/no-gctp.demo.ts`); it is skipped on the Yale build.
+`pnpm test` passes on both builds (358 tests: all pass on the Yale default; 334 pass and 24 skip with `HOSHI_NO_GCTP=1`). `test/no-gctp.test.ts` runs both builds in their own node and checks the counts, the named stars, that nothing throws or prints NaN (every star's distance, profile, portrait and comparison, and the data export), the empty nearby layer, nearest by space and the Alpha Centauri sky. `e2e/no-gctp.demo.ts` plays the demo on the fallback site (`HOSHI_NO_GCTP=1 pnpm site`, then `HOSHI_NO_GCTP=1 TEST_PORT=8266 npx playwright test e2e/no-gctp.demo.ts`); it is skipped on the Yale build.
 
 ## One thing to check with CDS
 

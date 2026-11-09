@@ -44,6 +44,8 @@ interface Report {
   nearby: { count: number; withDistance: number; tight: number; proxima: number | null; barnard: number | null; unknownNameError: string | null };
   space: Record<string, { skipped: number; rows: { hr: number; distance: number; error: number | null }[] }>;
   skies: Record<string, { count: number; skipped: number; first: { id: string; magnitude: number; lightYears: number }[] }>;
+  qualities: Record<string, number>;
+  figures3d: Record<string, { stars: number; counts: Record<string, number>; placed: number; errors: number }>;
   bright30ly: number;
   bright50ly: number;
   nan: number;
@@ -78,6 +80,15 @@ test("what a profile gains and loses: ranges are narrower, so more stars get a l
   assert.equal(fallback.bright30ly, 47);
   assert.equal(yale.bright50ly, 129);
   assert.equal(fallback.bright50ly, 137);
+});
+
+test("the constellation in 3D: no distance is 'good' any more, no star has an error bar, and every figure still draws", () => {
+  // Counted over the stars of all 88 figures (a star in two figures counts twice).
+  assert.deepEqual(yale.qualities, { good: 25, fair: 108, rough: 370, none: 90 });
+  assert.deepEqual(fallback.qualities, { good: 0, fair: 11, rough: 489, none: 93 });
+  assert.deepEqual(yale.figures3d.UMa, { stars: 9, counts: { good: 0, fair: 5, rough: 4, none: 0 }, placed: 9, errors: 9 });
+  assert.deepEqual(fallback.figures3d.UMa, { stars: 9, counts: { good: 0, fair: 0, rough: 9, none: 0 }, placed: 9, errors: 0 });
+  assert.deepEqual(fallback.figures3d.Ori, { stars: 8, counts: { good: 0, fair: 0, rough: 7, none: 1 }, placed: 7, errors: 0 });
 });
 
 test("the named stars that change most, with their parallax before and after", () => {

@@ -6,6 +6,7 @@ import { constellationIn3D, DISTANCE_QUALITIES, distanceQuality, distanceQuality
 import { figureOf } from "../src/lines.ts";
 import { skyFrom } from "../src/sky-from.ts";
 import { starByName, stars } from "../src/stars.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const near = (a: number, b: number, tolerance = 1e-9): boolean => Math.abs(a - b) <= tolerance;
 const length = (v: readonly number[]): number => Math.hypot(v[0]!, v[1]!, v[2]!);
@@ -19,7 +20,7 @@ test("positionIn3D puts right ascension 0 on x, 6 hours on y and the north pole 
   assert.ok(near(length(positionIn3D(123, -45, 33)), 33));
 });
 
-test("distanceQuality: good under 5%, fair to 20%, rough above it or with no error, none without a parallax", () => {
+test("distanceQuality: good under 5%, fair to 20%, rough above it or with no error, none without a parallax", onlyWithGctp, () => {
   assert.deepEqual(DISTANCE_QUALITIES, ["good", "fair", "rough", "none"]);
   assert.deepEqual(QUALITY_LIMITS, { good: 0.05, rough: 0.2 });
   assert.equal(distanceQuality({ parallaxMas: 0, parallaxErrorMas: undefined, parallaxSource: undefined }), "none");
@@ -55,7 +56,7 @@ test("Orion: eight figure stars, seven with a distance, Alnilam with none and so
   assert.equal(orion.segments.length, figureOf("Ori").segments.length);
 });
 
-test("a range holds the best distance, a far end of Infinity has no far place, and a wide error bar is flagged", () => {
+test("a range holds the best distance, a far end of Infinity has no far place, and a wide error bar is flagged", onlyWithGctp, () => {
   let infinite = 0;
   for (const c of ["Ori", "UMa", "Cas", "Cru", "Sco"]) {
     for (const one of constellationIn3D(c).stars) {
@@ -111,7 +112,7 @@ test("the frame: the middle of the figure, up square to it and toward the north,
   }
 });
 
-test("seen from Alpha Centauri the Earth is 4.35 light-years away and Orion's stars hardly move; the direction agrees with skyFrom", () => {
+test("seen from Alpha Centauri the Earth is 4.35 light-years away and Orion's stars hardly move; the direction agrees with skyFrom", onlyWithGctp, () => {
   const alpha = starByName("Rigil Kentaurus")!;
   const orion = constellationIn3D("Ori", { from: alpha });
   assert.ok(near(length(orion.viewpoint.earth), 4.35, 0.05));
@@ -153,7 +154,7 @@ test("bad input is named", () => {
   assert.throws(() => constellationIn3D("Ori", { from: { x: Number.NaN, y: 0, z: 0 } }), RangeError);
 });
 
-test("distanceQualityTable: one row for each of the 88, and the counts add up to the figures' stars", () => {
+test("distanceQualityTable: one row for each of the 88, and the counts add up to the figures' stars", onlyWithGctp, () => {
   const table = distanceQualityTable();
   assert.equal(table.length, 88);
   for (const row of table) {

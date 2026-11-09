@@ -6,6 +6,7 @@ import { constellationIn3D } from "../src/constellation-3d.ts";
 import { project } from "../src/projection.ts";
 import { cameraFor, frontTan, RESTING_POSE, sideDistance, SIDE_TAN, type Fit } from "../demo/space-camera.ts";
 import { displayFar, layoutOf, niceStep, shapeOf, sizeOf } from "../demo/space-scene.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const near = (a: number, b: number, tolerance = 1e-9): boolean => Math.abs(a - b) <= tolerance;
 const dot = (a: readonly number[], b: readonly number[]): number => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!;
@@ -92,7 +93,7 @@ test("zoom narrows the view, and the front view is as wide as the figure and nev
   }
 });
 
-test("the layout: a star with no distance is a ray as long as the figure reaches, and the middle is a distance among the placed stars", () => {
+test("the layout: a star with no distance is a ray as long as the figure reaches, and the middle is a distance among the placed stars", onlyWithGctp, () => {
   const orion = constellationIn3D("Ori");
   const layout = layoutOf(orion);
   assert.ok(layout.middle > 100 && layout.middle < 500, String(layout.middle));

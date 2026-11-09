@@ -10,7 +10,7 @@ import { noGctp } from "../scripts/data-source.mjs";
 test.skip(!noGctp(), "the site was built with the Yale GCTP data: set HOSHI_NO_GCTP=1 for this build and this test");
 
 const HOME = "/hoshi-stars/";
-const PAGES = ["", "embed.html", "star.html?star=2491", "kids.html", "constellations.html", "constellation.html?c=Ori", "whole-sky.html", "constellation-list.html"];
+const PAGES = ["", "embed.html", "star.html?star=2491", "kids.html", "constellations.html", "constellation.html?c=Ori", "whole-sky.html", "constellation-list.html", "constellation-3d.html?c=UMa", "embed-3d.html?c=UMa"];
 async function open(page: Page, query: string): Promise<void> {
   await page.goto(`${HOME}${query}`);
   await expect(page.locator("#chart circle").first()).toBeVisible();
