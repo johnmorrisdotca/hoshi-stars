@@ -30,6 +30,26 @@
       "ja": "星座の線",
       "platform": "neutral"
     },
+    "./culture": {
+      "en": "Sky cultures: the figure and culture types, and your own culture",
+      "ja": "星座の文化 (図形と文化の型、自分で作る文化)",
+      "platform": "neutral"
+    },
+    "./cultures/western": {
+      "en": "The Western sky: the 88 constellations in Latin, English, Japanese and Chinese, and asterisms such as the Big Dipper and the Summer Triangle",
+      "ja": "西洋の空 (88星座をラテン語・英語・日本語・中国語で、北斗七星や夏の大三角などの星の並び)",
+      "platform": "neutral"
+    },
+    "./cultures/japanese": {
+      "en": "The traditional Japanese sky: 昴 Subaru, 北斗七星, 鼓星 and other old names and figures, with readings",
+      "ja": "日本の伝統の空 (昴・北斗七星・鼓星などの昔の呼び名と図形、読みつき)",
+      "platform": "neutral"
+    },
+    "./cultures/chinese": {
+      "en": "The traditional Chinese sky: the Three Enclosures and Twenty-Eight Mansions, about 240 asterisms with Traditional and Simplified names and pinyin",
+      "ja": "中国の伝統の空 (三垣二十八宿、約240の星官。繁体字・簡体字・ピンインつき)",
+      "platform": "neutral"
+    },
     "./boundaries": {
       "en": "Constellation boundaries and which constellation a point is in",
       "ja": "星座の境界と、ある点がどの星座にあるか",

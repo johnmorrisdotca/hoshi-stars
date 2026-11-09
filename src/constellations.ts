@@ -1,7 +1,8 @@
 // The 88 constellations the IAU recognises, with their names in Latin, English and Japanese.
 // The constellations tier (`@johnmorrisdotca/hoshi-stars/constellations`): a table of about 2 kB gzipped. Only `starsIn` reaches the bright-star table. Pure: no DOM, no state beyond the parsed table.
 import { CONSTELLATION_ROWS } from "./data/constellations.ts";
-import { stars, type Star } from "./stars.ts";
+import { starByHr, stars, type Star } from "./stars.ts";
+import type { Asterism, Culture } from "./culture.ts";
 
 /**
  * One of the 88 constellations.
@@ -74,9 +75,10 @@ function load(): void {
 }
 
 /**
- * All 88 constellations, alphabetical by Latin name (Andromeda first, Vulpecula last).
+ * All 88 constellations, alphabetical by Latin name (Andromeda first, Vulpecula last). Given a sky culture (`@johnmorrisdotca/hoshi-stars/cultures/chinese`, `.../japanese` or `.../western`), the culture's own figures instead.
  *
- * @returns A fresh array of the shared, frozen constellations.
+ * @param culture - A sky culture, or leave out for the 88 constellations of the IAU.
+ * @returns A fresh array of the shared, frozen constellations; with a culture, its shared, frozen figures.
  *
  * @example
  * ```ts
@@ -84,8 +86,19 @@ function load(): void {
  *
  * console.log(constellations().length, constellations().map((c) => c.japanese).slice(0, 3));
  * ```
+ *
+ * @example
+ * ```ts
+ * import { constellations } from "@johnmorrisdotca/hoshi-stars/constellations";
+ * import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+ *
+ * console.log(constellations(chinese).slice(0, 3).map((a) => `${a.name} ${a.readings.zh}`));
+ * ```
  */
-export function constellations(): Constellation[] {
+export function constellations(): Constellation[];
+export function constellations(culture: Culture): readonly Asterism[];
+export function constellations(culture?: Culture): Constellation[] | readonly Asterism[] {
+  if (culture !== undefined) return culture.asterisms();
   load();
   return [...stored];
 }
@@ -96,7 +109,8 @@ export function constellations(): Constellation[] {
  * neither.
  *
  * @param text - The name, in any of those forms.
- * @returns The constellation, or `undefined` if the text is none of them.
+ * @param culture - A sky culture (`@johnmorrisdotca/hoshi-stars/cultures/chinese`, `.../japanese` or `.../western`) whose figures to look in, by every name it gives them (`北斗`, `すばる`, `天龙座`, `Summer Triangle`); leave out for the 88 constellations of the IAU.
+ * @returns The constellation (with a culture, its figure), or `undefined` if the text is none of them.
  * @throws TypeError if `text` is not a string.
  *
  * @example
@@ -105,9 +119,20 @@ export function constellations(): Constellation[] {
  *
  * console.log(constellation("cma")?.english, constellation("オリオン座")?.abbreviation, constellation("おおぐま座")?.name);
  * ```
+ *
+ * @example
+ * ```ts
+ * import { constellation } from "@johnmorrisdotca/hoshi-stars/constellations";
+ * import { western } from "@johnmorrisdotca/hoshi-stars/cultures/western";
+ *
+ * console.log(constellation("天龍座", western)?.id, constellation("Dà Xióng Zuò", western)?.id, constellation("Summer Triangle", western)?.kind);
+ * ```
  */
-export function constellation(text: string): Constellation | undefined {
+export function constellation(text: string): Constellation | undefined;
+export function constellation(text: string, culture: Culture): Asterism | undefined;
+export function constellation(text: string, culture?: Culture): Constellation | Asterism | undefined {
   if (typeof text !== "string") throw new TypeError(`text must be a string, got ${typeof text}`);
+  if (culture !== undefined) return culture.find(text);
   load();
   return byText.get(key(text));
 }
@@ -117,8 +142,9 @@ export function constellation(text: string): Constellation | undefined {
  * letter or a Flamsteed number or without one.
  *
  * @param text - The constellation, as the IAU abbreviation (`Ori`) or any other name `constellation` accepts.
+ * @param culture - A sky culture: the stars of its figure of that name (the stars the figure joins, not every star inside it), brightest first.
  * @returns A fresh array of the shared, frozen stars.
- * @throws TypeError if `text` is not a string. RangeError if it is not one of the 88 constellations.
+ * @throws TypeError if `text` is not a string. RangeError if it is not one of the 88 constellations (or a figure of the culture).
  *
  * @example
  * ```ts
@@ -127,7 +153,15 @@ export function constellation(text: string): Constellation | undefined {
  * console.log(starsIn("Ori").slice(0, 3).map((s) => s.name ?? s.designation));
  * ```
  */
-export function starsIn(text: string): Star[] {
+export function starsIn(text: string): Star[];
+export function starsIn(text: string, culture: Culture): Star[];
+export function starsIn(text: string, culture?: Culture): Star[] {
+  if (culture !== undefined) {
+    const found = culture.find(text);
+    if (found === undefined) throw new RangeError(`"${text}" is not a figure of the ${culture.names.en} sky`);
+    const seen = new Set<number>();
+    return found.chains.flat().filter((hr) => !seen.has(hr) && seen.add(hr)).map((hr) => starByHr(hr)!).sort((a, b) => a.magnitude - b.magnitude);
+  }
   const found = constellation(text);
   if (found === undefined) throw new RangeError(`"${text}" is not one of the 88 constellations (use the IAU abbreviation such as "Ori")`);
   return stars().filter((star) => star.constellation === found.abbreviation);

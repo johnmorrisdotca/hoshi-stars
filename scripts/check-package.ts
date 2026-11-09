@@ -19,7 +19,7 @@ try {
   const pack = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", scratch], root)) as Array<{ filename: string; files: Array<{ path: string }> }>;
   const files = pack[0]!.files.map((f) => f.path);
   if (files.some((f) => /^(demo|docs|scripts|test|e2e|site|src)\//.test(f))) throw new Error("Source, tests or the demo entered the npm package");
-  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/milky-way.js", "dist/milky-way.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/lines.js", "dist/lines.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts", "dist/nearest.js", "dist/nearest.d.ts", "dist/nearby.js", "dist/nearby.d.ts", "dist/sky-from.js", "dist/sky-from.d.ts", "dist/sky-from-nearby.js", "dist/sky-from-nearby.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
+  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/milky-way.js", "dist/milky-way.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/lines.js", "dist/lines.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts", "dist/nearest.js", "dist/nearest.d.ts", "dist/nearby.js", "dist/nearby.d.ts", "dist/sky-from.js", "dist/sky-from.d.ts", "dist/sky-from-nearby.js", "dist/sky-from-nearby.d.ts", "dist/culture.js", "dist/culture.d.ts", "dist/cultures/western.js", "dist/cultures/western.d.ts", "dist/cultures/japanese.js", "dist/cultures/japanese.d.ts", "dist/cultures/chinese.js", "dist/cultures/chinese.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", join(scratch, pack[0]!.filename)], scratch);
   writeFileSync(
     join(scratch, "check.mjs"),
@@ -40,6 +40,12 @@ assert.equal(boundaries.boundaries().length, 88);
 const lines = await import(${JSON.stringify(pkg.name + "/lines")});
 assert.equal(lines.figures().length, 88);
 assert.ok(lines.figureOf("Ori").segments.length > 5);
+const chinese = await import(${JSON.stringify(pkg.name + "/cultures/chinese")});
+assert.equal(lines.figureOf("北斗", chinese.chinese).stars.length, 7);
+const japanese = await import(${JSON.stringify(pkg.name + "/cultures/japanese")});
+assert.equal(sub.constellation("すばる", japanese.japanese).readings.ja, "すばる");
+const western = await import(${JSON.stringify(pkg.name + "/cultures/western")});
+assert.equal(sub.constellation("天龍座", western.western).id, "Dra");
 const deep = await import(${JSON.stringify(pkg.name + "/deep-sky")});
 assert.equal(deep.messier().length, 110);
 assert.equal(deep.deepSkyObject("M31").ngc, "NGC 224");

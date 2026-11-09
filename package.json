@@ -55,7 +55,12 @@
     "sidereal-time",
     "precession",
     "japanese",
-    "katakana"
+    "katakana",
+    "sky-culture",
+    "chinese",
+    "chinese-astronomy",
+    "asterism",
+    "pinyin"
   ],
   "homepage": "https://johnmorrisdotca.github.io/hoshi-stars/",
   "repository": {
@@ -87,6 +92,26 @@
       "types": "./dist/lines.d.ts",
       "import": "./dist/lines.js",
       "default": "./dist/lines.js"
+    },
+    "./culture": {
+      "types": "./dist/culture.d.ts",
+      "import": "./dist/culture.js",
+      "default": "./dist/culture.js"
+    },
+    "./cultures/western": {
+      "types": "./dist/cultures/western.d.ts",
+      "import": "./dist/cultures/western.js",
+      "default": "./dist/cultures/western.js"
+    },
+    "./cultures/japanese": {
+      "types": "./dist/cultures/japanese.d.ts",
+      "import": "./dist/cultures/japanese.js",
+      "default": "./dist/cultures/japanese.js"
+    },
+    "./cultures/chinese": {
+      "types": "./dist/cultures/chinese.d.ts",
+      "import": "./dist/cultures/chinese.js",
+      "default": "./dist/cultures/chinese.js"
     },
     "./sheets": {
       "types": "./dist/sheets/index.d.ts",
