@@ -175,10 +175,19 @@ test("nothing is drawn at rest", async ({ page }) => {
     window.requestAnimationFrame = (cb) => raf((t) => { w.frames += 1; cb(t); });
   });
   await open(page);
-  await page.waitForTimeout(600);
-  const first = await page.evaluate(() => (window as unknown as { frames: number }).frames);
+  const frames = (): Promise<number> => page.evaluate(() => (window as unknown as { frames: number }).frames);
+  // the page comes to rest once its first draws are done (fonts, the first size): wait until no frame has run for 300 ms, at most 5 s
+  await expect
+    .poll(async () => {
+      const before = await frames();
+      await page.waitForTimeout(300);
+      return (await frames()) - before;
+    }, { timeout: 5000, message: "the map comes to rest after it opens" })
+    .toBe(0);
+  // at rest, nothing is drawn: no frame at all for 1.2 s
+  const first = await frames();
   await page.waitForTimeout(1200);
-  expect(await page.evaluate(() => (window as unknown as { frames: number }).frames)).toBe(first);
+  expect(await frames()).toBe(first);
 });
 
 test("the family's gestures move the map", async ({ page, isMobile, browserName }) => {
