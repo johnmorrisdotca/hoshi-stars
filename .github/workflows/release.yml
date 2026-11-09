@@ -38,7 +38,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm export:data
       - run: python3 -m venv "${RUNNER_TEMP}/venv" && "${RUNNER_TEMP}/venv/bin/pip" install pyarrow
-      - run: "${RUNNER_TEMP}/venv/bin/python" -I scripts/export-parquet.py dist-data
+      - run: |
+          "${RUNNER_TEMP}/venv/bin/python" -I scripts/export-parquet.py dist-data
       - name: Attach the data files
         env:
           GH_TOKEN: ${{ github.token }}
