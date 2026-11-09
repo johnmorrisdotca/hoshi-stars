@@ -7,7 +7,7 @@ import type { Culture } from "../src/culture.ts";
 import { stars } from "../src/index.ts";
 import { figures } from "../src/lines.ts";
 import type { SkyPoint } from "../src/projection.ts";
-import { labelOf } from "./chart.ts";
+import { BOUNDARY_DASH, labelOf } from "./chart.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
 
 export const UNIT_W = 1000;
@@ -169,7 +169,7 @@ export function mapSvg(o: MapSvgOptions): string {
     svg += `<g data-layer="boundaries" fill="none" stroke-linejoin="round">`;
     for (const r of g.regions) {
       const link = o.hrefOf !== undefined;
-      const body = `<path class="bd" d="${r.d}" stroke="${c.boundary}" stroke-width="${w(o.look === "paper" ? 0.6 : 0.9)}" stroke-opacity="${o.look === "paper" ? 0.9 : 0.75}"${ve}/>`;
+      const body = `<path class="bd" d="${r.d}" stroke="${c.boundary}" stroke-width="${w(o.look === "paper" ? 0.6 : 0.9)}" stroke-opacity="${o.look === "paper" ? 0.9 : 0.75}" stroke-dasharray="${w(BOUNDARY_DASH[0])} ${w(BOUNDARY_DASH[1])}"${ve}/>`;
       svg += link ? `<a class="c" data-abbr="${r.abbreviation}" href="${escapeXml(o.hrefOf!(r.abbreviation))}" tabindex="0" aria-label="${escapeXml(o.nameOf!(r.abbreviation))}">${body}</a>` : `<g>${body}</g>`;
     }
     svg += "</g>";

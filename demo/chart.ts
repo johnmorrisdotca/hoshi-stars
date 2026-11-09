@@ -253,6 +253,9 @@ export function reachOfConstellation(id: string, culture: Culture = western): nu
 /** The Milky Way's bands, faint to bright: the colour, and how much of the night sky each one lightens. The glow is cool, the core warm. */
 const MILKY = { levels: [0.04, 0.08, 0.13, 0.2, 0.3, 0.42, 0.58, 0.76], fills: ["#6a80c8", "#7a90d2", "#8da1dc", "#a6b6e6", "#c3cdee", "#e0e4f2", "#f7eedd", "#fff3d8"], opacities: [0.16, 0.14, 0.14, 0.14, 0.15, 0.16, 0.18, 0.2] } as const;
 
+/** Constellation boundaries are dashed on every map of the demo (this one and the whole-sky page): dash and gap in pixels. */
+export const BOUNDARY_DASH = [5, 4] as const;
+
 const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4" };
 
 function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean, near = false): string {
@@ -437,7 +440,7 @@ export function chart(o: ChartOptions): Chart {
       else if (next) neighbours += d;
       else quiet += d;
     }
-    body += `<path d="${quiet}" fill="none" stroke="${COLOURS.boundary}" stroke-width="1" stroke-dasharray="5 4"/><path d="${neighbours}" fill="none" stroke="${COLOURS.near}" stroke-width="1.6" stroke-dasharray="5 4"/><path d="${loud}" fill="none" stroke="${COLOURS.boundaryOn}" stroke-width="1.6" stroke-dasharray="5 4"/>`;
+    body += `<path d="${quiet}" fill="none" stroke="${COLOURS.boundary}" stroke-width="1" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/><path d="${neighbours}" fill="none" stroke="${COLOURS.near}" stroke-width="1.6" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/><path d="${loud}" fill="none" stroke="${COLOURS.boundaryOn}" stroke-width="1.6" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/>`;
   }
 
   if (layers.has("lines") || o.highlight !== undefined) {

@@ -202,3 +202,16 @@ test("the family's gestures move the map", async ({ page, isMobile, browserName 
     },
   });
 });
+
+test("the boundaries are dashed, the same as on the sky map", async ({ page }) => {
+  await page.goto("/hoshi-stars/?layers=boundaries");
+  const mapDash = await page.locator("#chart path[stroke-dasharray]").first().getAttribute("stroke-dasharray");
+  expect(mapDash).toBeTruthy();
+  await open(page);
+  const boundaries = page.locator('[data-layer="boundaries"] path.bd');
+  expect(await boundaries.count()).toBeGreaterThan(80);
+  const dashes = await boundaries.evaluateAll((all) => [...new Set(all.map((p) => p.getAttribute("stroke-dasharray")))]);
+  expect(dashes, "every boundary is dashed, with one pattern").toHaveLength(1);
+  const ratio = (d: string): number => { const [a, b] = d.trim().split(/\s+/).map(Number); return a! / b!; };
+  expect(ratio(dashes[0]!)).toBeCloseTo(ratio(mapDash!), 2);
+});
