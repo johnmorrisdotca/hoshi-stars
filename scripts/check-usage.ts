@@ -7,6 +7,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, write
 import { createRequire } from "node:module";
 import { extname, join, relative } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { SOFTWARE_GL_ARGS, acquireBrowserLock } from "@johnmorrisdotca/kazoku-ui/testing";
 import { chromium, type Browser, type Page } from "@playwright/test";
 import { build as esbuild } from "esbuild";
 
@@ -104,7 +105,9 @@ const showPage = async (page: Page, file: string): Promise<void> => {
   await page.goto("https://page.test/");
 };
 
-const browser = await chromium.launch();
+// One browser at a time on this machine, and WebGL (the 3D embed) drawn in software, never on the graphics card.
+const lock = await acquireBrowserLock();
+const browser = await chromium.launch({ args: [...SOFTWARE_GL_ARGS] });
 
 await step("node", () => {
   const out = execFileSync(process.execPath, [join(examples("node"), "server.mjs")], { cwd: usage, encoding: "utf8" }).trim();
@@ -149,6 +152,37 @@ await step("iframe", async () => {
     const frame = page.frameLocator("iframe");
     await frame.locator("svg circle").first().waitFor({ state: "attached", timeout: 20_000 });
     if ((await frame.locator("svg text", { hasText: "Orion" }).count()) === 0) throw new Error("the embed ignored its address: no Orion");
+  });
+});
+
+await step("constellation-3d-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("constellation-3d"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
+  if (out.length !== 9 || out[0] !== "Betelgeuse (rough): 333 ly, between 225 and 640" || out[4] !== "Alnilam (none): distance unknown" || out[5] !== "Saiph (rough): 247 ly, at least 116") throw new Error(`unexpected output: ${out.join("\n")}`);
+  if (out[8] !== "{ good: 0, fair: 0, rough: 7, none: 1 }") throw new Error(`unexpected counts: ${out[8]}`);
+});
+
+await step("constellation-3d-side-view", async () => {
+  await opened(browser, async (page) => {
+    await cdn(page, "https://cdn.jsdelivr.net", "/npm/@johnmorrisdotca/hoshi-stars/");
+    await showPage(page, "constellation-3d/side-view.html");
+    const svg = page.locator("#space svg");
+    await svg.waitFor({ state: "attached", timeout: 20_000 });
+    const [stars, lines] = [await svg.locator("circle").count(), await svg.locator("line").count()];
+    if ((await svg.getAttribute("aria-label")) !== "The Great Bear from the side" || stars !== 9 || lines < 8) throw new Error(`the side view has ${stars} stars and ${lines} lines`);
+  });
+});
+
+await step("constellation-3d-iframe", async () => {
+  if (!existsSync(at("site", "embed-3d.html"))) throw new Error("site/ is not built: `pnpm test:usage` builds it");
+  await opened(browser, async (page) => {
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    await showPage(page, "constellation-3d/iframe.html");
+    const frame = page.frameLocator("iframe");
+    await frame.locator("#sp-stage[data-state=live]").waitFor({ timeout: 60_000 });
+    await frame.locator(".sp-label:not([hidden])").first().waitFor({ timeout: 20_000 });
+    // turned to the side by its address
+    const across = Number(await frame.locator("#sp-stage").getAttribute("data-across"));
+    if (!(across > 0.9)) throw new Error(`the embed ignored its address: it is not turned (${across})`);
   });
 });
 
@@ -256,6 +290,7 @@ await step("angular", async () => {
 });
 
 await browser.close();
+lock.release();
 
 // 3. The guides hold what was tested, word for word.
 const everything = only.length === 0;
@@ -276,6 +311,9 @@ const FILES: Record<string, string[]> = {
   "node/server.mjs": ["docs/guides/typescript-and-node.md", "docs/guides/ja/typescript-and-node.md"],
   "node/black-holes.mjs": ["docs/guides/black-holes.md", "docs/guides/ja/black-holes.md"],
   "serve/server.mjs": ["docs/guides/serve-it-yourself.md", "docs/guides/ja/serve-it-yourself.md"],
+  "constellation-3d/node.mjs": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
+  "constellation-3d/side-view.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
+  "constellation-3d/iframe.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
   "portrait/node.mjs": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/cdn.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/iframe.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],

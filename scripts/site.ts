@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
-import { familyBoot, renderConstellationPage, renderIndex, renderKids } from "./page.ts";
+import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderSpace } from "./page.ts";
 import { writeThumbnails } from "./thumbnail-files.ts";
 
 /** What the family's card shows (scripts/images.ts makes it): the words of og:image:alt and of the README's top picture. */
@@ -23,13 +23,14 @@ writeFileSync(join(site, "constellations.html"), renderConstellationPage("galler
 writeFileSync(join(site, "constellation.html"), renderConstellationPage("constellation.html", "cp_title", "cp_description", "constellation"));
 writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.html", "ws_title", "ws_description", "whole-sky"));
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
+writeFileSync(join(site, "constellation-3d.html"), renderSpace());
 writeThumbnails(join(site, "thumbnails"));
 // The faint stars (UCAC4, to magnitude 12) in their tiles: the demo reads them from here, and so does anyone who leaves `faintSky`'s default address (scripts/make-faint-data.py makes them).
 cpSync(join(root, "faint-tiles"), join(site, "faint-tiles"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
-for (const file of ["embed.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css"]) cpSync(join(root, "demo", file), join(site, file));
+for (const file of ["embed.html", "embed-3d.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts") },
   outdir: join(site, "js"),
   bundle: true,
   format: "esm",
