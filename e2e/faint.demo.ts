@@ -58,7 +58,7 @@ test("the Faint stars button turns them off and on, and the address keeps it", a
   await expect(button).toHaveAttribute("aria-pressed", "false");
   await expect.poll(() => dots(page)).toBe(0);
   await expect(page.getByTestId("faint-note")).toHaveText("");
-  await expect.poll(() => new URL(page.url()).searchParams.get("layers")).toBe("milky,lines,names,grid");
+  await expect.poll(() => new URL(page.url()).searchParams.get("layers")).toBe("milky,lines,names,pictures,grid");
   await page.reload();
   await expect(page.locator("#chart circle").first()).toBeVisible();
   await expect.poll(() => dots(page)).toBe(0);
