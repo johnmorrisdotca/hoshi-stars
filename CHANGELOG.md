@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-11-09
+
 - **The demo's map controls sit right under the map** (MODULES-740, 717). The side panel scrolls beside the map instead of pushing the Map, Show, Sky culture, View from and Faintest star controls down; on a phone the order is map, controls, panel. A zoom readout sits between Zoom in and Zoom out, and the shared Wide toggle from kazoku-ui 0.23.0 gives the map the page's full width with the panel below it (`?wide=on`, the T key).
 
 ## [0.10.0] - 2026-11-09
