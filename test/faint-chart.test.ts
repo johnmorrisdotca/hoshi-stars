@@ -38,10 +38,14 @@ test("with the layer off, or no stars handed in, or the sky seen from another st
   assert.equal(chart({ ...options, layers: new Set(["faint"] as const), faint: { stars: [], depth: 9 } }).faint?.drawn, 0);
 });
 
-test("the depth follows the telescope rule up to magnitude 12, and the layer starts past 7", () => {
+test("the depth follows the telescope rule up to magnitude 12, jumps past UCAC4's thin 6.5 to 8 band once zoomed in (chart zoom 8, about 3x on the readout), and the layer starts past 7", () => {
   assert.equal(faintDepthOf(5, 1), 5);
-  assert.equal(faintDepthOf(5, 10), 7.5);
-  assert.equal(faintDepthOf(5, 100), 10);
+  assert.equal(faintDepthOf(5, 2), 5.75);
+  assert.equal(faintDepthOf(5, 7.9), 7.24);
+  assert.equal(faintDepthOf(5, 8), 8.5);
+  assert.equal(faintDepthOf(5, 28), 9.86);
+  assert.equal(faintDepthOf(5, 140), 11.61);
+  assert.equal(faintDepthOf(5, 280), 12);
   assert.equal(faintDepthOf(6, 1000), 12);
   assert.equal(faintDepthOf(6, 500), 12);
   assert.equal(FAINT_FROM, 7);
