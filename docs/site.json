@@ -69,6 +69,16 @@
       "en": "Your sky: altitude and azimuth for a place and a moment",
       "ja": "自分の空 (場所と時刻から高度と方位)",
       "platform": "neutral"
+    },
+    "./sky-from": {
+      "en": "The sky seen from another star: positions, distances and brightness from there, with the Sun among the stars",
+      "ja": "ほかの星から見た空 (そこから見た位置・距離・明るさ。太陽も星のひとつ)",
+      "platform": "neutral"
+    },
+    "./sky-from/nearby": {
+      "en": "The sky seen from another star, with the nearby stars moved too",
+      "ja": "ほかの星から見た空 (近くの星も動かす)",
+      "platform": "neutral"
     }
   }
 }

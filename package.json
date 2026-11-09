@@ -133,6 +133,16 @@
       "import": "./dist/nearby.js",
       "default": "./dist/nearby.js"
     },
+    "./sky-from": {
+      "types": "./dist/sky-from.d.ts",
+      "import": "./dist/sky-from.js",
+      "default": "./dist/sky-from.js"
+    },
+    "./sky-from/nearby": {
+      "types": "./dist/sky-from-nearby.d.ts",
+      "import": "./dist/sky-from-nearby.js",
+      "default": "./dist/sky-from-nearby.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
