@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-08
+
 - The demo's chart and the embed page take the family's hands (kazoku-ui's view controller): a drag turns the sky, two fingers pinch, Ctrl or Command and the wheel zoom about the pointer, `+`, `-`, the arrow keys and `0` work with the chart focused, and the double tap zooms. At the opening view the plain wheel scrolls the page, and a finger's up-and-down drag does too; zoomed in, the wheel and a drag move the sky. The embed page (`embed.html`) is no longer a still picture: it has the same hands and zoom in, zoom out and back-to-start buttons, and writes `ra`, `dec` and `zoom` into its own address.
 - The zoom now runs from 0.1 (the whole sky, small) to 500 (about 0.7 degree across a desk-wide chart, where Mizar and Alcor still draw as two stars), up from 0.6 to 60. Lines and the Milky Way keep drawing at the top of the range: a point is placed out to 100,000 pixels from the middle (it was six times the chart's size), so a segment that crosses the chart is not lost. Constellation names are left out below 0.25, where they cannot be told apart.
 - New npm keywords `react`, `galaxy` and `component`.
