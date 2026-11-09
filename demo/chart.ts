@@ -108,6 +108,16 @@ export function zoomedAbout(view: View, width: number, height: number, factor: n
 }
 
 /** How much bigger the stars are drawn as the chart zooms in. */
+/** The faintest star in the catalogue: zooming in never asks for more than there is. */
+const CATALOGUE_FAINTEST = Math.max(...stars().map((star) => star.magnitude));
+
+/**
+ * The faintest magnitude drawn: the slider's limit at 1x, and fainter as you zoom in, as a telescope shows more (2.5 magnitudes
+ * for each tenfold zoom), up to the faintest star there is.
+ */
+export const depthOf = (magnitude: number, zoom: number): number =>
+  Math.round(Math.min(CATALOGUE_FAINTEST, magnitude + 2.5 * Math.log10(Math.max(1, zoom))) * 100) / 100;
+
 export const growOf = (zoom: number): number => Math.round(Math.min(1.8, 0.8 + zoom * 0.12) * 100) / 100;
 
 /** Whether a segment between two sky points would run across the seam of a whole-sky projection, and so must not be drawn. */
@@ -411,10 +421,11 @@ export function chart(o: ChartOptions): Chart {
   let dots = "";
   let ring = "";
   const starLabels: Label[] = [];
-  const drawn = stars({ magnitude: o.magnitude });
+  const depth = depthOf(o.magnitude, o.zoom);
+  const drawn = stars({ magnitude: depth });
   for (const key of near) {
     const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;
-    if (extra !== undefined && extra.magnitude > o.magnitude) drawn.push(extra);
+    if (extra !== undefined && extra.magnitude > depth) drawn.push(extra);
   }
   for (const star of drawn) {
     const isNear = near.has(`S:${star.hr}`);

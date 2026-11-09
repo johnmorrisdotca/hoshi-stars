@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Zooming in shows fainter stars** (MODULES-716). The demo drew stars down to the slider's magnitude (5 by default) at every zoom, so a close view showed only a dozen stars. The faintest drawn now rises 2.5 magnitudes for each tenfold zoom, to the catalogue's faintest (6.0): at 25x round Sirius that is 37 stars instead of 12. The help says so in English and Japanese. The nearby stars and the NGC/IC layer when zoomed, and twinkling, are still to come.
+
 - **Printable sheets** (MODULES-685, 687, 688). A new entry point `@johnmorrisdotca/hoshi-stars/sheets`, pure SVG strings in millimetres: `dotsSvg` and `dotsFigure` (connect-the-dots constellations at three levels, dots sized by brightness, numbers in drawing order with a ring where the pencil is lifted, an answer page), `skyForLatitude` and `regionGuideSvg` (which constellations are always up, best this month or never seen at a latitude; Ursa Minor is never seen from Sydney, the Southern Cross never from Toronto), `starWheelDisc`, `starWheelPlate` and `starWheelPoster` (a planisphere for 20 to 70 degrees north or south, its window the horizon circle of the latitude, with a 400 mm poster version), and `skyMapSvg` (the evening sky of a month over a latitude). `kid` and `normal` types, English and Japanese. The demo has a new page `kids.html`: pick a sheet, a place (country and region from kuni, flags from hata, a latitude slider or your location when you ask) and a paper, see it in kazoku-ui's print layout and press Print / save PDF; the Pages build prints ready-made PDFs (`scripts/make-pdfs.mjs`). The package still has no runtime dependency (kuni, hata and kazoku-ui 0.22 are in the demo only). EN/JA guide `docs/guides/printable-sheets.md`.
 
 ## [0.7.0] - 2026-11-08
