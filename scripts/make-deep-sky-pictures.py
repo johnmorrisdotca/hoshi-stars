@@ -214,12 +214,12 @@ def stretch(bands, kind, galaxy=False):
     return np.clip(out, 0, 1)
 
 
-def to_image(rgb, feather=0.06):
+def to_image(rgb, feather=0.06, floor=0.06):
     """RGB (0 to 1, FITS order: south first) into an RGBA picture, north up: alpha is the brightness, the colour is divided by it, and the edges fade."""
     rgb = np.flipud(rgb)
     height, width = rgb.shape[:2]
     alpha = rgb.max(-1)
-    alpha = np.clip((alpha ** 0.9 * 1.15 - 0.06) / 0.94, 0, 1)  # the faintest noise of the sky goes clear, which is also what keeps a file small
+    alpha = np.clip((alpha ** 0.9 * 1.15 - floor) / (1 - floor), 0, 1)  # the faintest noise of the sky goes clear, which is also what keeps a file small
     colour = rgb / np.maximum(alpha[..., None], 1e-6)
     colour = np.clip(colour, 0, 1)
     edge = max(2, int(min(width, height) * feather))
@@ -257,7 +257,8 @@ def make(o, order):
         if share < 0.98:
             print(f"  {o['id']}: {spec['name']} does not cover the field ({share:.2f})")
             continue
-        image = to_image(stretch(bands, kind, galaxy=o["type"] == 1))
+        wide_glow = kind == "wise" and o["type"] == 1  # the haze of a galaxy's infrared surroundings is cut harder, and its edge faded longer, so that no box shows
+        image = to_image(stretch(bands, kind, galaxy=o["type"] == 1), feather=0.10 if wide_glow else 0.06, floor=0.12 if wide_glow else 0.06)
         return {"id": o["id"], "kind": kind, "image": image, "pixels": pixels, "field": field_arcmin, "scale": field_arcmin * 60 / pixels, "address": addresses[0]}
     return None
 
@@ -319,12 +320,18 @@ def make_release(object_id, release):
     # the picture's own edge and the black outside it go clear: where every channel is near zero, widened a little and softened
     inside = rgb.max(-1) > 0.035
     mask = Image.fromarray((inside * 255).astype(np.uint8), "L").filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.MinFilter(9)).filter(ImageFilter.GaussianBlur(3))
-    alpha = np.asarray(mask, dtype=np.float64) / 255
-    edge = max(2, int(min(width, height) * 0.03))
+    footprint = np.asarray(mask, dtype=np.float64) / 255
+    edge = max(2, int(min(width, height) * 0.05))
     ramp_x = np.minimum(1.0, np.minimum(np.arange(width) + 0.5, width - np.arange(width) - 0.5) / edge)
     ramp_y = np.minimum(1.0, np.minimum(np.arange(height) + 0.5, height - np.arange(height) - 0.5) / edge)
-    alpha = alpha * np.outer(ramp_y, ramp_x)
-    rgba = np.dstack([rgb, alpha])
+    window = np.outer(ramp_y, ramp_x)
+    # as for the survey pictures, the picture adds light and its dark sky is clear (what is faint is partly clear, and its colour is scaled up by the same share, so the light is unchanged);
+    # where it is bright it replaces what lies under it, so the sky of the survey picture is not seen through a galaxy
+    brightness = rgb.max(-1)
+    alpha = np.clip(brightness * 3, 0, 1) * footprint * window * window * (3 - 2 * window)
+    colour = np.clip(rgb * (np.maximum(footprint * window, 1e-6) / np.maximum(alpha, 1e-6))[..., None], 0, 1)
+    colour = np.where(alpha[..., None] > 1e-4, colour, rgb)
+    rgba = np.dstack([colour, alpha])
     credit = " ".join(html.unescape(tags["credit"] or "").split())
     return {"id": f"{object_id}-{release}", "kind": "esahubble", "image": Image.fromarray((np.clip(rgba, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA"), "pixels": width, "height": height, "field": scale * width / 60, "scale": scale,
             "ra": tags["value"][0], "dec": tags["value"][1], "rotation": (-tags["rotation"]) % 360, "address": page, "credit": f"{credit} ({'ESA/Hubble'})", "object": {"id": object_id}}

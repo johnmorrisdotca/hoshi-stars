@@ -97,7 +97,7 @@ M110|M110|1009190|4168540|432|432|559|0|0|https://skyview.gsfc.nasa.gov/current/
 NGC 104|NGC 104|602230|-7208140|720|720|463|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=6.02230%2C-72.08140&Size=0.92550&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 NGC 5139|NGC 5139|20169700|-4747950|720|720|539|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=201.69700%2C-47.47950&Size=1.07850&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 NGC 253|NGC 253|1188810|-2528880|720|720|415|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=11.88810%2C-25.28880&Size=0.82917&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
-NGC 5128|NGC 5128|20136510|-4301910|518|518|541|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=201.36510%2C-43.01910&Size=0.77817&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
+NGC 5128|NGC 5128|20136510|-4301910|720|720|389|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=201.36510%2C-43.01910&Size=0.77817&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 IC 434|IC 434|8525360|-245380|500|500|1260|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=85.25360%2C-2.45380&Size=1.75000&Pixels=500&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 NGC 7293|NGC 7293|33740950|-2083720|518|518|287|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=337.40950%2C-20.83720&Size=0.41267&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 NGC 3372|NGC 3372|16128550|-5986670|360|360|2500|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=161.28550%2C-59.86670&Size=2.50000&Pixels=500&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
@@ -126,19 +126,19 @@ NGC 6397|NGC 6397|26517540|-5367430|518|518|541|0|1|https://skyview.gsfc.nasa.go
 NGC 6752|NGC 6752|28771710|-5998460|612|612|369|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=287.71710%2C-59.98460&Size=0.62800&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M51-heic0506a|M51|20246807|4721317|768|533|75|919|3|https://esahubble.org/images/heic0506a/|NASA, ESA, S. Beckwith (STScI), and The Hubble Heritage Team (STScI/AURA) (ESA/Hubble)
 M42-heic0601a|M42|8379053|-541398|768|768|235|0|3|https://esahubble.org/images/heic0601a/|NASA, ESA, M. Robberto ( Space Telescope Science Institute/ESA) and the Hubble Space Telescope Orion Treasury Project Team (ESA/Hubble)
-M1-heic0515a|M1|8363553|2201524|768|768|50|0|3|https://esahubble.org/images/heic0515a/|NASA, ESA and Allison Loll/Jeff Hester (Arizona State University). Acknowledgement: Davide De Martin (ESA/Hubble) (ESA/Hubble)
+M1-heic0515a|M1|8363553|2201524|653|653|59|0|3|https://esahubble.org/images/heic0515a/|NASA, ESA and Allison Loll/Jeff Hester (Arizona State University). Acknowledgement: Davide De Martin (ESA/Hubble) (ESA/Hubble)
 M16-heic1501a|M16|27471966|-1383944|736|768|37|3250|3|https://esahubble.org/images/heic1501a/|NASA, ESA/Hubble and the Hubble Heritage Team (ESA/Hubble)
 M82-heic0604a|M82|14897915|6968171|768|598|62|3099|3|https://esahubble.org/images/heic0604a/|NASA, ESA and the Hubble Heritage Team (STScI/AURA). Acknowledgment: J. Gallagher (University of Wisconsin), M. Mountain (STScI) and P. Puxley (NSF). (ESA/Hubble)
 M104-opo0328a|M104|18999703|-1162275|768|430|75|50|3|https://esahubble.org/images/opo0328a/|NASA/ESA and The Hubble Heritage Team (STScI/AURA) (ESA/Hubble)
 M57-heic1310a|M57|28339672|3302893|768|768|16|3483|3|https://esahubble.org/images/heic1310a/|NASA, ESA, and C. Robert O’Dell (Vanderbilt University). (ESA/Hubble)
 M77-heic1305a|M77|4067080|-1454|768|605|19|3175|3|https://esahubble.org/images/heic1305a/|NASA, ESA & A. van der Hoeven (ESA/Hubble)
-M94-potw1542a|M94|19271884|4112221|768|752|13|751|3|https://esahubble.org/images/potw1542a/|ESA/Hubble & NASA (ESA/Hubble)
+M94-potw1542a|M94|19271884|4112221|553|553|18|751|3|https://esahubble.org/images/potw1542a/|ESA/Hubble & NASA (ESA/Hubble)
 M81-opo1438b|M81|14894005|6901263|768|526|69|3594|3|https://esahubble.org/images/opo1438b/|NASA, ESA, A. Zezas (CfA), and A. Filippenko (UC Berkeley) Acknowledgment: Hubble Heritage Team (STScI/AURA) & O. Fox (University of California, Berkeley) (ESA/Hubble)
 M83-heic1403a|M83|20425154|-2986319|768|500|59|847|3|https://esahubble.org/images/heic1403a/|NASA, ESA, and the Hubble Heritage Team (STScI/AURA)Acknowledgement: William Blair (Johns Hopkins University) (ESA/Hubble)
 M33-heic1901a|M33|2349191|3067168|768|432|158|1053|3|https://esahubble.org/images/heic1901a/|NASA, ESA, and M. Durbin, J. Dalcanton, and B. F. Williams (University of Washington) (ESA/Hubble)
 M31-heic1502a|M31|1115414|4159272|768|245|453|1235|3|https://esahubble.org/images/heic1502a/|NASA, ESA, J. Dalcanton (University of Washington, USA), B. F. Williams (University of Washington, USA), L. C. Johnson (University of Washington, USA), the PHAT team, and R. Gendler. (ESA/Hubble)
 M102-opo0624a|M102|22662642|5576019|652|768|24|2801|3|https://esahubble.org/images/opo0624a/|NASA, ESA, and The Hubble Heritage Team (STScI/AURA) (ESA/Hubble)
-NGC 104-heic1510a|NGC 104|602779|-7208135|461|461|36|3452|3|https://esahubble.org/images/heic1510a/|NASA, ESA, and the Hubble Heritage (STScI/AURA)-ESA/Hubble Collaboration Acknowledgment: J. Mack (STScI) and G. Piotto (University of Padova, Italy) (ESA/Hubble)
+NGC 104-heic1510a|NGC 104|602779|-7208135|384|384|44|3452|3|https://esahubble.org/images/heic1510a/|NASA, ESA, and the Hubble Heritage (STScI/AURA)-ESA/Hubble Collaboration Acknowledgment: J. Mack (STScI) and G. Piotto (University of Padova, Italy) (ESA/Hubble)
 NGC 7293-opo0432d|NGC 7293|33742466|-2083702|712|768|230|3597|3|https://esahubble.org/images/opo0432d/|NASA, ESA, C.R. O'Dell (Vanderbilt University), and M. Meixner, P. McCullough, and G. Bacon ( Space Telescope Science Institute) (ESA/Hubble)
-NGC 2070-heic1105a|NGC 2070|8443453|-6918671|752|768|26|158|3|https://esahubble.org/images/heic1105a/|NASA, ESA (ESA/Hubble)
+NGC 2070-heic1105a|NGC 2070|8443453|-6918671|541|541|36|158|3|https://esahubble.org/images/heic1105a/|NASA, ESA (ESA/Hubble)
 NGC 3372-opo0006a|NGC 3372|16118008|-5964905|768|496|31|1775|3|https://esahubble.org/images/opo0006a/|NASA/ESA, The Hubble Heritage Team (AURA/STScI) (ESA/Hubble)`;
