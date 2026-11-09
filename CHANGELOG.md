@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-09
+
 - **Sky cultures** (MODULES-594). `constellations`, `constellation`, `starsIn`, `figures` and `figureOf` take a `culture` as a last argument; left out they give the 88 constellations of the IAU, unchanged. Four new entry points, each its own import so the main tiers do not grow: `/culture` (the `Culture`, `Asterism`, `NameLanguage` and `AsterismKind` types and `defineCulture`), `/cultures/western` (the 88 constellations with their names in Latin, English, Japanese and Chinese, Simplified and Traditional with pinyin, and 17 asterisms: the Big Dipper, the Summer Triangle, the Great Square), `/cultures/japanese` (the 88 under their Japanese names and 18 traditional names and figures with readings: 昴, 北斗七星, 鼓星, 織姫, 彦星) and `/cultures/chinese` (三垣二十八宿, 238 asterisms with Traditional and Simplified names, pinyin, and for the 28 mansions an English name and their quarter of the sky). A lookup finds a figure by any of its names, in any language, or its reading. A figure with stars fainter than magnitude 6.0 draws the stars it has, and `missing` says at least how many it lacks. The Chinese asterisms are read from Wikidata (CC0) by `scripts/make-culture-data.py`; the lines are our own. The demo has a Sky culture choice kept in the address (`culture=chinese`) and a card for a picked figure; the embed page takes `culture=` too. Guides in English and Japanese.
 
 ## [0.8.0] - 2026-11-09
