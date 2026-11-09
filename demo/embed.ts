@@ -12,6 +12,7 @@ import { cultureOf } from "./cultures.ts";
 import { attachHands } from "./hands.ts";
 import { viewpointOf, skyOf } from "./from.ts";
 import { nearbyOf } from "./nearby.ts";
+import { faintFor } from "./faint.ts";
 
 const frame = document.getElementById("frame")!;
 const sky = document.getElementById("sky")!;
@@ -42,7 +43,8 @@ function draw(): void {
   const frameBox = frame.getBoundingClientRect();
   const at = tools.getBoundingClientRect();
   const keepClear = [{ x0: at.left - frameBox.left - 4, y0: at.top - frameBox.top - 4, x1: at.right - frameBox.left + 4, y1: at.bottom - frameBox.top + 4 }];
-  sky.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ja ? "星空の図" : "A chart of the sky"}">${chart({ ...choice, ...view, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen }).svg}</svg>`;
+  const faint = seen === undefined ? faintFor(view, width, height, choice.magnitude, choice.layers, schedule) : undefined;
+  sky.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ja ? "星空の図" : "A chart of the sky"}">${chart({ ...choice, ...view, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint }).svg}</svg>`;
   document.documentElement.dataset.ready = "true";
 }
 

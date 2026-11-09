@@ -8,11 +8,12 @@ import { figures, type CultureFigure } from "../src/lines.ts";
 import type { Culture } from "../src/culture.ts";
 import { western } from "../src/cultures/western.ts";
 import { milkyWayBands } from "../src/milky-way.ts";
+import { FAINT_LIMIT, type FaintStar } from "../src/faint-core.ts";
 import { project, unproject, type Projection, type SkyPoint } from "../src/projection.ts";
 import type { SeenSky } from "../src/sky-from.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
 
-export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "grid"] as const;
+export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "faint", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
 
@@ -42,6 +43,14 @@ export interface ChartOptions extends View {
   sky?: SeenSky | undefined;
   /** Rectangles in chart pixels that no name may cover, such as the page's own buttons laid over the chart. */
   keepClear?: readonly Box[] | undefined;
+  /** The faint stars of UCAC4 in the field (`faintFor`), drawn when the `faint` layer is on and the zoom reaches them. */
+  faint?: FaintDraw | undefined;
+}
+
+/** The faint stars to draw (the brightest first), and the magnitude the list is complete to in the field (a cap cuts it short). */
+export interface FaintDraw {
+  stars: readonly FaintStar[];
+  depth: number;
 }
 
 /** What a tap can land on, in chart pixels. */
@@ -124,6 +133,14 @@ const CATALOGUE_FAINTEST = Math.max(...stars().map((star) => star.magnitude));
  */
 export const depthOf = (magnitude: number, zoom: number): number =>
   Math.round(Math.min(CATALOGUE_FAINTEST, magnitude + 2.5 * Math.log10(Math.max(1, zoom))) * 100) / 100;
+
+/** The faint layer starts once the depth passes this: the stars of 6 to 7 are the Bright Star Catalogue's, and there is little to add. */
+export const FAINT_FROM = 7;
+/** The most faint stars one view draws, brightest first: a view is never millions of marks. */
+export const FAINT_DOT_CAP = 6000;
+
+/** The faintest magnitude the faint layer is asked for: the same telescope rule as `depthOf`, up to the faintest star of the tiles. */
+export const faintDepthOf = (magnitude: number, zoom: number): number => Math.round(Math.min(FAINT_LIMIT, magnitude + 2.5 * Math.log10(Math.max(1, zoom))) * 100) / 100;
 
 export const growOf = (zoom: number): number => Math.round(Math.min(1.8, 0.8 + zoom * 0.12) * 100) / 100;
 
@@ -296,9 +313,40 @@ function besideMarker(text: string, size: number, x: number, y: number, gap: num
   return { places, text, size, weight: 400, fill, opacity };
 }
 
+/** The colours of the faint stars by B-V (hot and blue to cool and red), and for a star with no colour; from the same black-body colours the bright stars use. */
+const FAINT_BREAKS = [0.2, 0.6, 1.0, 1.4] as const;
+const FAINT_COLOURS = [-0.1, 0.4, 0.8, 1.2, 1.7].map((bv) => blackBodyColour(starTemperatureK(bv))).concat("#d9deee");
+/** The faint stars of a size class are one path each: a size class by magnitude, a colour class by B-V, so a view is a dozen elements however many stars it holds. */
+const faintClassOf = (magnitude: number): number => (magnitude < 9 ? 0 : magnitude < 10.5 ? 1 : 2);
+const faintColourOf = (colourIndex: number | undefined): number => (colourIndex === undefined ? FAINT_BREAKS.length + 1 : FAINT_BREAKS.findIndex((b) => colourIndex < b) === -1 ? FAINT_BREAKS.length : FAINT_BREAKS.findIndex((b) => colourIndex < b));
+
+/** The faint stars as dots in a few paths (round caps on zero-length lines), the brightest first up to the cap, and what was drawn. */
+function faintMarks(faint: FaintDraw, place: Placer, inside: (at: [number, number], margin?: number) => boolean, grow: number): { svg: string; drawn: number; depth: number } {
+  const radii = [0.95, 0.8, 0.65];
+  const paths = new Map<number, string>();
+  let drawn = 0;
+  let depth = faint.depth;
+  for (const star of faint.stars) {
+    const at = place(star);
+    if (at === undefined || !inside(at, 2)) continue;
+    if (drawn === FAINT_DOT_CAP) {
+      depth = Math.min(depth, Math.floor(star.magnitude * 20) / 20 - 0.05);
+      break;
+    }
+    const key = faintClassOf(star.magnitude) * 8 + faintColourOf(star.colourIndex);
+    paths.set(key, (paths.get(key) ?? "") + `M${round(at[0])} ${round(at[1])}h.1`);
+    drawn++;
+  }
+  let svg = "";
+  for (const [key, d] of paths) svg += `<path d="${d}" stroke="${FAINT_COLOURS[key % 8]}" stroke-width="${round(2 * radii[Math.floor(key / 8)]! * grow)}" stroke-linecap="round" fill="none" stroke-opacity=".9"/>`;
+  return { svg: `<g data-layer="faint">${svg}</g>`, drawn, depth: Math.round(depth * 100) / 100 };
+}
+
 export interface Chart {
   svg: string;
   hits: Hit[];
+  /** The faint stars drawn: how many, and the magnitude they are complete to here. `undefined` where none were asked for. */
+  faint?: { drawn: number; depth: number };
 }
 
 /** A polygon of (longitude from the view's centre, declination) cut to the map's width, in pieces: Sutherland-Hodgman against the two edges, on the polygon and on its copies a turn to either side. */
@@ -486,6 +534,12 @@ export function chart(o: ChartOptions): Chart {
   }
 
   const grow = growOf(o.zoom);
+  let faintDrawn: Chart["faint"];
+  if (o.sky === undefined && layers.has("faint") && o.faint !== undefined) {
+    const marks = faintMarks(o.faint, place, inside, grow);
+    body += marks.svg;
+    faintDrawn = { drawn: marks.drawn, depth: marks.depth };
+  }
   const namedLimit = Math.min(o.magnitude, 1.6 + Math.log2(o.zoom) * 1.1);
   let dots = "";
   let ring = "";
@@ -555,7 +609,7 @@ export function chart(o: ChartOptions): Chart {
   });
   body += `<g font-family="system-ui, sans-serif"${culture.id === "chinese" ? ' lang="zh-Hant"' : ""} pointer-events="none" stroke="${COLOURS.ground}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${text}</g>`;
 
-  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits };
+  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
 }
 
 /** The key a seen star has on the chart and in a pick: the HR number as text, or `sun`. */

@@ -78,6 +78,7 @@ export const WORDS = {
     boundaries: "Boundaries",
     names: "Names",
     deep: "Messier",
+    faint: "Faint stars",
     grid: "Grid",
     zoomLevel: "Zoom level",
     zoomIn: "Zoom in",
@@ -200,6 +201,10 @@ export const WORDS = {
     drawCode: "Draw a chart",
     credit: "Stars: Yale Bright Star Catalogue. Figures: our own. Milky Way: SAO counts, NASA IRAS.",
     sampleCount: "stars shown",
+    faintHint: "Zoom in to add fainter stars, down to magnitude 12.",
+    faintLoading: "Loading fainter stars…",
+    faintDepth: "Stars to magnitude {depth} here ({count} faint ones drawn).",
+    faintFailed: "The faint stars could not be loaded.",
   },
   ja: {
     pitch: "肉眼で見える星の名前・色・距離、星座の線と境界、メシエ天体を、7種類の星図で描きます。",
@@ -277,6 +282,7 @@ export const WORDS = {
     boundaries: "境界線",
     names: "名前",
     deep: "メシエ",
+    faint: "暗い星",
     grid: "経緯線",
     zoomLevel: "ズーム倍率",
     zoomIn: "拡大",
@@ -399,6 +405,10 @@ export const WORDS = {
     drawCode: "星図を描く",
     credit: "星: イェール輝星カタログ。星座の線: 自作。天の川: SAOの星の数、NASAのIRAS。",
     sampleCount: "個の星を表示",
+    faintHint: "拡大すると、12等までの暗い星が増えます。",
+    faintLoading: "暗い星を読み込んでいます…",
+    faintDepth: "ここでは{depth}等の星まで見えています (暗い星{count}個を表示)。",
+    faintFailed: "暗い星を読み込めませんでした。",
   },
 };
 
