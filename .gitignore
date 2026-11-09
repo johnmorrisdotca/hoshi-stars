@@ -12,3 +12,4 @@ playwright-report/
 .usage/
 .docs-examples/
 .usage/
+dist-data/

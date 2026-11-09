@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Data files for other languages: every release attaches the stars, nearby stars, constellations, lines, boundaries, Messier, NGC/IC and star names as CSV and Parquet, each with a schema, checksums and a data licence note (which credit each table needs). `pnpm export:data` writes them locally. New guides: data files (loading from Python, R and Rust) and serve it yourself (a small Node query server you host).
+
 ## [0.6.0] - 2026-11-08
 
 - New entry point `@johnmorrisdotca/hoshi-stars/nearby`: `nearbyStars(options)` and `nearbyStarByName(text)` give 5,565 more stars from the Yale General Catalogue of Trigonometric Stellar Parallaxes (Proxima Centauri, Barnard's Star, Wolf 359 and the red dwarfs), none of them among the 5,080 bright stars, each with names and identifiers, a J2000 position with its source and error (4,352 from 2MASS, 1,213 the Yale catalogue's own and flagged coarse), parallax and distance with their errors, proper motion, V magnitude, spectral type and flags. About 240 kB gzipped, its own import; the bright-star import is unchanged. `nearest(..., { by: "space", among: [...stars(), ...nearbyStars()] })` counts them, and works out `error` for a nearby star. `scripts/make-nearby-data.py` builds the table (the Yale file is checked against a SHA-256, 2MASS is read from IRSA in batches). NOTICE.md carries the credits: the Yale catalogue states no licence and is removed on request; 2MASS's acknowledgement.

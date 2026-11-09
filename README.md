@@ -299,6 +299,10 @@ A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1
 
 Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
 
+## The data in other languages
+
+Every release attaches the data as CSV and Parquet files with a schema, checksums and a note on which credit each table needs, so Python, R or Rust can load it without this package: [data files](docs/guides/data-files.md). To answer queries from your own server, see [serve it yourself](docs/guides/serve-it-yourself.md); we host nothing.
+
 ## Where the data comes from
 
 The Yale Bright Star Catalogue (Hoffleit and Warren 1991), credited in [NOTICE.md](NOTICE.md). The nearby stars are the Yale General Catalogue of Trigonometric Stellar Parallaxes (van Altena, Lee and Hoffleit 1995; no licence stated, used with credit and removed on request) with 2MASS positions (IPAC acknowledgement in NOTICE.md). The larger catalogues (Hipparcos, Tycho, Gaia) are ESA's, licensed for non-commercial use only, so an MIT package cannot pass them on. Stars fainter than magnitude 6.0 are not in this package. The deep-sky objects are Wikidata's (CC0), with NASA HEASARC's Messier table and NED as checks. The Milky Way's brightness comes from SAO star counts (NASA HEASARC; no licence stated, used with credit and removed on request) and NASA's IRAS and COBE dust maps.
