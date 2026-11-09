@@ -100,6 +100,9 @@ test.describe("the element", () => {
 
   test("an address with no zoom opens on Orion and keeps the opening view as the box changes", async ({ page }) => {
     await open(page);
+    await page.setViewportSize({ width: 900, height: 700 });
+    await settle(page);
+    await expect.poll(async () => (await view(page)).zoom).toBeGreaterThan(0);
     const wide = (await view(page)).zoom;
     await page.setViewportSize({ width: 420, height: 700 });
     await expect.poll(async () => (await view(page)).zoom).not.toBe(wide);
@@ -115,7 +118,7 @@ test.describe("the element", () => {
     await expect.poll(async () => (await view(page)).zoom).toBe(500);
     await set(page, "zoom", "0.0001");
     await expect.poll(async () => (await view(page)).zoom).toBe(0.1);
-    expect(await inShadow(page, "svg circle")).toBeGreaterThan(30);
+    await expect.poll(() => inShadow(page, "svg circle")).toBeGreaterThan(30);
   });
 });
 
