@@ -22,7 +22,7 @@ console.log(`${proxima.positionSource} ${proxima.twoMass}`); // 2MASS 2MASS J142
 console.log(nearbyStars().length); // 5565
 ```
 
-Each `NearbyStar` carries a stable `id`, the names it has (`name`, `designation`, `aliases`, `gctp`, `hd`, `gliese`, `twoMass`), its J2000 position with where it comes from (`positionSource`) and its error (`positionErrorArcsec`), the parallax with its error, the distance in light-years and in parsecs with their errors, the proper motion and its source, the V magnitude with its kind and source, the spectral type and `flags`. The options of `nearbyStars` are `magnitude` (the faintest V), `maxRelativeError` and `withDistance`.
+Each `NearbyStar` carries a stable `id`, the names it has (`name`, `designation`, `aliases`, `gctp`, `hd`, `gliese`, `twoMass`), its J2000 position with where it comes from (`positionSource`) and its error (`positionErrorArcsec`), the parallax with its error, the distance in light-years and in parsecs with their errors, the proper motion and its source, the V magnitude with its kind and source, the spectral type and the luminosity class in it (`luminosityClass`: `V` for Proxima Centauri) and `flags`. The options of `nearbyStars` are `magnitude` (the faintest V), `maxRelativeError` and `withDistance`.
 
 ## Nearest in space, with them
 
@@ -35,7 +35,7 @@ import { nearest } from "@johnmorrisdotca/hoshi-stars/nearest";
 
 const among = [...stars(), ...nearbyStars()];
 const close = nearest({ x: 0, y: 0, z: 0 }, { by: "space", among, count: 4 });
-console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(2)}`).join(", ")); // Proxima Centauri 4.24, Rigil Kentaurus 4.34, Toliman 4.34, Barnard's Star 5.98
+console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(2)}`).join(", ")); // Proxima Centauri 4.24, Toliman 4.35, Rigil Kentaurus 4.35, Barnard's Star 5.98
 console.log(close[0].error.toFixed(2)); // 0.03
 ```
 

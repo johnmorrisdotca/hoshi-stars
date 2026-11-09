@@ -36,8 +36,26 @@ for (const name of ["Sirius", "Vega", "Betelgeuse"]) {
   console.log(name, light === undefined ? "not known" : `${Math.round(light)} light-years`);
 }
 // Sirius 9 light-years
-// Vega 27 light-years
-// Betelgeuse 652 light-years
+// Vega 25 light-years
+// Betelgeuse 333 light-years
 ```
 
-A parallax of a few milliarcseconds is only good to a few tens of per cent, so the distances to the faraway stars are rough.
+A parallax of a few milliarcseconds is only good to a few tens of per cent, so the distances to the faraway stars are rough. `starDistance` says how rough: it gives the distance with its error and the nearest and farthest it can be.
+
+```js
+import { starByName, starDistance } from "@johnmorrisdotca/hoshi-stars";
+
+for (const name of ["Sirius", "Vega", "Betelgeuse"]) {
+  const star = starByName(name);
+  const distance = starDistance(star);
+  const [near, far] = distance.lightYearsRange;
+  console.log(`${name} ${star.spectralType} (${star.luminosityClass}): ${distance.lightYears.toFixed(1)} light-years, from ${near.toFixed(1)} to ${far.toFixed(1)}`);
+}
+// Sirius A1Vm (V): 8.5 light-years, from 8.5 to 8.6
+// Vega A0Va (V): 25.1 light-years, from 24.8 to 25.5
+// Betelgeuse M1-2Ia-Iab (Ia): 332.8 light-years, from 224.9 to 639.5
+```
+
+The range is one standard error either side of the parallax. Sirius is known to a few hundredths of a light-year; Betelgeuse could be anywhere from 225 to 640. A parallax from the Bright Star Catalogue alone (`parallaxSource` is `"BSC"` or `"dynamical"`) has no error, so `lightYearsError` and `lightYearsRange` are `undefined`. Where the error is as large as the parallax, the farthest is `Infinity`.
+
+The whole spectral type (`spectralType`, `M1-2Ia-Iab` for Betelgeuse) and the luminosity class in it (`luminosityClass`: `Ia`, `Iab`, `Ib` and `I` supergiants, `II` bright giants, `III` giants, `IV` subgiants, `V` dwarfs, `VI` subdwarfs, `D` white dwarfs) tell a giant from a dwarf of the same colour. `luminosityClass(type)` reads the class from any spectral type string.

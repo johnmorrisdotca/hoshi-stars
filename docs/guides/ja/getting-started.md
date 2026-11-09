@@ -26,7 +26,7 @@ const sirius = starByName("Sirius");
 console.log(sirius.designation, sirius.magnitude, starColour(sirius));
 console.log(starDistanceLightYears(sirius).toFixed(1), "light-years");
 // α CMa -1.46 #c9daff
-// 8.7 light-years
+// 8.5 light-years
 ```
 
 等級は小さいほど明るい星です。いちばん明るいシリウスは-1.46等です。それぞれの項目の意味は[星のデータ](stars.md)にあります。

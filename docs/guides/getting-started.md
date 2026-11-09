@@ -26,7 +26,7 @@ const sirius = starByName("Sirius");
 console.log(sirius.designation, sirius.magnitude, starColour(sirius));
 console.log(starDistanceLightYears(sirius).toFixed(1), "light-years");
 // α CMa -1.46 #c9daff
-// 8.7 light-years
+// 8.5 light-years
 ```
 
 A smaller magnitude is a brighter star. Sirius, the brightest, is -1.46. [The stars](stars.md) says what every field is.

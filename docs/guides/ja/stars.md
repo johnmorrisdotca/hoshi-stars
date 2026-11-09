@@ -50,9 +50,10 @@ console.log(starByName("Atlantis"));
 | `constellation` | 符号がある星の、IAUの3文字略号（`CMa`）。どの星でも[`constellationAt`](constellations-and-lines.md)で分かります。 |
 | `rightAscension`, `declination` | J2000の赤経・赤緯（度） |
 | `magnitude` | 実視等級 |
-| `colourIndex`, `spectralClass` | B-V色指数とスペクトル型。[色と距離](colour-and-distance.md)を見てください。 |
+| `colourIndex`, `spectralClass` | B-V色指数と、スペクトル型の記号と数字（`A1`）。[色と距離](colour-and-distance.md)を見てください。 |
+| `spectralType`, `luminosityClass` | カタログのスペクトル型の全体（ベテルギウスは`M1-2Ia-Iab`）と、その中の光度階級（`Ia`は超巨星、`III`は巨星、`V`は矮星）。型に階級がなければ`undefined`です。 |
 | `properMotionRaMas`, `properMotionDecMas` | 星の動き（1年あたりのミリ秒角） |
-| `parallaxMas` | 年周視差。カタログにないときは0です。 |
+| `parallaxMas`, `parallaxErrorMas`, `parallaxSource` | 年周視差（ミリ秒角）、その標準誤差、出どころ。`"GCTP"`はイェール視差星表（0.1ミリ秒角の単位、誤差あり）、`"BSC"`と`"dynamical"`は輝星表（1ミリ秒角の単位、誤差なし）です。視差がない星は0と`undefined`です。[`starDistance`](colour-and-distance.md)で、距離とその範囲が分かります。 |
 
 星はすべて凍結されていて、共有の表を間違って書き換えることはありません。
 

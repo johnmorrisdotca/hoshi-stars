@@ -17,7 +17,7 @@ import { starByName, starColour, starDistanceLightYears, starPosition, stars } f
 
 const sirius = starByName("Sirius")!;
 console.log(sirius.designation, sirius.magnitude, starColour(sirius));          // α CMa -1.46 #c9daff
-console.log(starDistanceLightYears(sirius)?.toFixed(1), "light-years");          // 8.7 light-years
+console.log(starDistanceLightYears(sirius)?.toFixed(1), "light-years");          // 8.5 light-years
 console.log(starPosition(starByName("Arcturus")!, Date.UTC(2100, 0, 1)).rightAscension.toFixed(1));   // 213.9
 console.log(stars({ magnitude: 2 }).length, "stars as bright as magnitude 2");    // 50 stars as bright as magnitude 2
 ```
@@ -28,6 +28,8 @@ console.log(stars({ magnitude: 2 }).length, "stars as bright as magnitude 2");  
 | `starByHr(hr)`, `starByName(text)` | one star by its Bright Star Catalogue number, or its name (English or katakana) or designation |
 | `starPosition(star, when?)` | right ascension and declination (degrees, J2000 frame) carried by proper motion |
 | `starDistanceLightYears(star)` | the distance from the parallax |
+| `starDistance(star)` | the distance with its error and its nearest and farthest |
+| `luminosityClass(spectralType)` | the luminosity class in a spectral type: `Ia`, `III`, `V` |
 | `starTemperatureK(bv)`, `blackBodyColour(kelvin)`, `starColour(star)` | temperature and a colour to draw |
 
 Counts: 15 stars to magnitude 1, 50 to 2, 174 to 3, 518 to 4, 1,630 to 5 and 5,080 to 6.
@@ -208,8 +210,8 @@ const alcor = nearest("Mizar", { count: 3 }).find((n) => n.thing.name === "Alcor
 console.log(alcor.angle.toFixed(2));                                                          // 0.20
 console.log(within("Alcyone", 1, { magnitude: 5 }).length);                                // 5
 const close = nearest("Sirius", { by: "space", count: 2 });
-console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(1)}`));                    // [ 'Procyon 5.1', 'Ran 8.0' ]
-console.log(close.skipped);                                                                   // 2547
+console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(1)}`));                    // [ 'Procyon 5.2', 'Ran 8.0' ]
+console.log(close.skipped);                                                                   // 2517
 console.log(nearest("M31", { kind: "deep-sky", count: 2 }).map((n) => n.thing.id));          // [ 'M32', 'M110' ]
 console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));                    // [ 'Eri', 'Gem', 'Lep', 'Mon', 'Tau' ]
 ```
@@ -220,7 +222,7 @@ console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));      
 | `within(target, radius, options?)` | all of them within a radius (degrees, or light-years by space) |
 | `neighbouringConstellations(text)` | the constellations that share a piece of boundary |
 
-The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,533 stars of the 5,080 that have a parallax, and the parallaxes are whole milliarcseconds, so `error` is `undefined` and `skipped` counts the stars left out. Pass `among: [...stars(), ...nearbyStars()]` to count the nearby stars too (below). [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,563 stars of the 5,080 that have a parallax, and `error` is `undefined` for them (`nearest` does not use their parallax errors yet), and `skipped` counts the stars left out. Pass `among: [...stars(), ...nearbyStars()]` to count the nearby stars too (below). [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 ## Printable sheets
 

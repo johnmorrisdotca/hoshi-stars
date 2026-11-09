@@ -47,13 +47,13 @@ import { nearest } from "@johnmorrisdotca/hoshi-stars/nearest";
 const close = nearest("Sirius", { by: "space", count: 2 });
 console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(1)}`));
 console.log(close.skipped, close[0].error);
-// [ 'Procyon 5.1', 'Ran 8.0' ]
-// 2547 undefined
+// [ 'Procyon 5.2', 'Ran 8.0' ]
+// 2517 undefined
 ```
 
-- **Only this catalogue.** The answers cover the 2,533 of the 5,080 stars that have a parallax; Sirius's nearest neighbour here is Procyon, though fainter, closer stars exist that are not in the table. Pass `among: [...stars(), ...nearbyStars()]` to count the 5,565 stars of [Nearby stars](nearby-stars.md) too: Proxima Centauri, Barnard's Star and the red dwarfs.
+- **Only this catalogue.** The answers cover the 2,563 of the 5,080 stars that have a parallax; Sirius's nearest neighbour here is Procyon, though fainter, closer stars exist that are not in the table. Pass `among: [...stars(), ...nearbyStars()]` to count the 5,565 stars of [Nearby stars](nearby-stars.md) too: Proxima Centauri, Barnard's Star and the red dwarfs.
 - **`skipped`** is how many candidates had no usable distance (a parallax of 0 or less, or a deep-sky object) and were left out.
-- **`error`** is `undefined`: the Yale catalogue gives each parallax to a whole milliarcsecond and no error, so none can be worked out. A distance is good to a few per cent within 100 light-years and not at all for a faint, far star.
+- **`error`** is `undefined` for a bright star: `nearest` does not use the bright stars' `parallaxErrorMas` yet, so no error is worked out for them (`starDistance` gives one). A distance is good to a few per cent within 100 light-years and not at all for a faint, far star.
 - The target needs a distance: a star with a parallax, `{ rightAscension, declination, lightYears }`, or a point `{ x, y, z }` in parsecs on the J2000 equatorial axes with the Sun at the origin.
 
 ## Constellations that touch

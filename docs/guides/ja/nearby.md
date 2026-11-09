@@ -47,13 +47,13 @@ import { nearest } from "@johnmorrisdotca/hoshi-stars/nearest";
 const close = nearest("Sirius", { by: "space", count: 2 });
 console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(1)}`));
 console.log(close.skipped, close[0].error);
-// [ 'Procyon 5.1', 'Ran 8.0' ]
-// 2547 undefined
+// [ 'Procyon 5.2', 'Ran 8.0' ]
+// 2517 undefined
 ```
 
-- **この表の星だけです。** 答えは、5,080個のうち年周視差がある2,533個が対象です。この表に入っていない、もっと暗くて近い星もあります。`among: [...stars(), ...nearbyStars()]`を渡すと、[近くの星](nearby-stars.md)の5,565個(プロキシマ・ケンタウリ、バーナード星、赤色矮星)も数えます。
+- **この表の星だけです。** 答えは、5,080個のうち年周視差がある2,563個が対象です。この表に入っていない、もっと暗くて近い星もあります。`among: [...stars(), ...nearbyStars()]`を渡すと、[近くの星](nearby-stars.md)の5,565個(プロキシマ・ケンタウリ、バーナード星、赤色矮星)も数えます。
 - **`skipped`**は、使える距離がなくて外した個数です(視差が0以下の星と、メシエ天体など)。
-- **`error`**は`undefined`です。イェール星表は視差を1ミリ秒角の単位でしか載せていなくて、誤差も載っていないので、計算できません。距離は100光年以内で数パーセント程度の精度で、暗くて遠い星ではあてになりません。
+- **`error`**は明るい星では`undefined`です。`nearest`は明るい星の`parallaxErrorMas`をまだ使っていないので、誤差を計算しません(`starDistance`は誤差を返します)。距離は100光年以内で数パーセント程度の精度で、暗くて遠い星ではあてになりません。
 - `target`には距離が必要です。視差がある星、`{ rightAscension, declination, lightYears }`、または太陽を原点にしたJ2000赤道座標軸のパーセクの点`{ x, y, z }`です。
 
 ## となり合う星座
