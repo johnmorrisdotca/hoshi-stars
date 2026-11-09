@@ -9,6 +9,14 @@ description: Put a sky chart in a page with one tag, <hoshi-chart>, that draws, 
 
 `@johnmorrisdotca/hoshi-stars/chart` is the demo's chart as an import. It has two parts: the `<hoshi-chart>` element, which draws what its attributes say and carries the drag, the pinch, the wheel and the keys itself, and `chartSvg`, a plain function that gives the same chart as an SVG string for a page that runs no element (a server, a print, an email). The demo and the [embed page](embed-in-an-iframe.md) are made of this element.
 
+## Install
+
+With a bundler, install the package and kazoku-ui, which the element's hands come from (an optional peer dependency: only this entry reads it, and only while the controls are on). A page that loads the chart from a CDN needs nothing extra.
+
+```sh
+npm i @johnmorrisdotca/hoshi-stars @johnmorrisdotca/kazoku-ui
+```
+
 ## A tag on a page
 
 A page with no build step needs the module and an import map for the one package the hands come from (kazoku-ui). Then the tag is all there is:

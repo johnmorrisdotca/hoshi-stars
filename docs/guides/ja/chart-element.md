@@ -9,6 +9,14 @@ description: <hoshi-chart> タグ1つで、描画も拡大も回転もする星�
 
 `@johnmorrisdotca/hoshi-stars/chart`は、デモの星図をそのままimportできるようにしたものです。2つの部品があります。`<hoshi-chart>`要素は、属性に書かれたとおりに描き、ドラッグ、ピンチ、ホイール、キー操作も自分で受け持ちます。`chartSvg`は、要素を動かさないページ（サーバー、印刷、メールなど）のために、同じ星図をSVGの文字列で返す関数です。デモと[埋め込みページ](embed-in-an-iframe.md)も、この要素でできています。
 
+## インストール
+
+バンドラーを使うときは、パッケージと、要素の操作のもとになるkazoku-uiをインストールします（kazoku-uiはオプションのpeer dependencyで、このentryだけが、操作がオンのあいだだけ読み込みます）。CDNから星図を読み込むページには、追加で必要なものはありません。
+
+```sh
+npm i @johnmorrisdotca/hoshi-stars @johnmorrisdotca/kazoku-ui
+```
+
 ## ページにタグを置く
 
 ビルドのないページには、モジュールと、操作のもとになるパッケージ（kazoku-ui）1つのためのimport mapが必要です。あとはタグを置くだけです。

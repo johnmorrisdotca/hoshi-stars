@@ -290,12 +290,13 @@ test("wakusei-planets as a second opinion (dev only): its equatorialToHorizontal
   }
 });
 
-test("this package never imports wakusei-planets: no source mentions it and no dependency names it, kazoku-ui (the chart element's hands) being the one dependency", () => {
+test("this package never imports wakusei-planets: no source mentions it and no dependency names it, kazoku-ui (the chart element's hands) being the one optional peer", () => {
   const dir = new URL("../src/", import.meta.url);
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".ts"))) assert.ok(!/wakusei/i.test(readFileSync(new URL(file, dir), "utf8")), `src/${file} mentions wakusei`);
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as Record<string, unknown>;
-  assert.deepEqual(Object.keys((pkg.dependencies ?? {}) as object), ["@johnmorrisdotca/kazoku-ui"]);
-  assert.equal(pkg.peerDependencies, undefined);
+  assert.equal(pkg.dependencies, undefined);
+  assert.deepEqual(Object.keys((pkg.peerDependencies ?? {}) as object), ["@johnmorrisdotca/kazoku-ui"]);
+  assert.deepEqual(pkg.peerDependenciesMeta, { "@johnmorrisdotca/kazoku-ui": { optional: true } });
 });
 
 test("bad input throws, naming the argument and the value", () => {

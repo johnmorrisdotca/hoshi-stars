@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 - New entry point `@johnmorrisdotca/hoshi-stars/chart`: the demo's sky chart as something to import. `<hoshi-chart>` is a custom element with the attributes `projection`, `ra`, `dec`, `zoom` (0.1 to 500), `magnitude`, `layers` (`milky-way`, `lines`, `names`, `boundaries`, `deep-sky`, `grid`), `constellation`, `lang`, `theme` (`dark` or a new `light`), `near`, `by`, `controls` and `hover`; it carries the drag, the pinch, the wheel and the keys itself (kazoku-ui's `carryControls`, read only when they are on; `controls="none"` turns them off), and says where it was moved and what was tapped with `hoshi-viewchange`, `hoshi-pick`, `hoshi-hover`, `hoshi-resize` and `hoshi-draw`. `chartSvg(options)` gives the same chart as a string for a page with no element, after `await loadChartData(options)` for the layers that need data. The entry is 127 kB gzipped (the stars are 114 kB of it); the Milky Way (8 kB), the boundaries (8 kB), the Messier objects (4 kB) and the nearest tier (13 kB, 2 kB beside those) are read only when a layer asks. The demo and the embed page are made of this element and look the same. The guide `chart-element` (English and Japanese) and tested examples for a CDN, Vite, React, Vue, Svelte, Angular and Node are new.
-- kazoku-ui ^0.21.1 is now the package's one dependency (it was a dev dependency), for the chart element's hands; no other entry point reads it.
+- kazoku-ui (>=0.21.1) is an optional peer dependency, for the chart element's hands; no other entry point reads it. The data entries still have no dependencies.
 
 ## [0.6.0] - 2026-11-08
 

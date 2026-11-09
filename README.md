@@ -6,7 +6,7 @@
 
 **[Try the demo](https://johnmorrisdotca.github.io/hoshi-stars/)**: a sky chart you turn, zoom and search, in English and Japanese.
 
-The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, about 100 kB gzipped; the data has no dependencies, and the chart element has one, kazoku-ui, for its hands. Hoshi (星) is the Japanese word for a star.
+The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, about 100 kB gzipped, no dependencies for the data; the chart element needs `@johnmorrisdotca/kazoku-ui`. Hoshi (星) is the Japanese word for a star.
 
 ```sh
 npm install @johnmorrisdotca/hoshi-stars
@@ -239,7 +239,7 @@ await loadChartData(options);
 console.log(chartSvg(options).includes("オリオン座"));
 ```
 
-Attributes: `projection`, `ra`, `dec`, `zoom` (0.1 to 500), `magnitude`, `layers` (`milky-way`, `lines`, `names`, `boundaries`, `deep-sky`, `grid`), `constellation`, `lang` (`en` or `ja`), `theme` (`dark` or `light`), `near` and `by` (what is near a star, a Messier object or a constellation), and `controls="none"` to take the controls off. The hands are [kazoku-ui](https://github.com/johnmorrisdotca/kazoku-ui)'s, the package's one dependency, and only the chart entry reads it.
+Attributes: `projection`, `ra`, `dec`, `zoom` (0.1 to 500), `magnitude`, `layers` (`milky-way`, `lines`, `names`, `boundaries`, `deep-sky`, `grid`), `constellation`, `lang` (`en` or `ja`), `theme` (`dark` or `light`), `near` and `by` (what is near a star, a Messier object or a constellation), and `controls="none"` to take the controls off. The hands are [kazoku-ui](https://github.com/johnmorrisdotca/kazoku-ui)'s, an optional peer dependency that only the chart entry reads: `npm i @johnmorrisdotca/hoshi-stars @johnmorrisdotca/kazoku-ui`.
 
 ## Put a chart in a page
 

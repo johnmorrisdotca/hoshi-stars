@@ -1,7 +1,7 @@
 {
   "name": "@johnmorrisdotca/hoshi-stars",
   "version": "0.6.0",
-  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed; the data has no dependencies and the chart element has one, kazoku-ui.",
+  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed, no dependencies for the data; the chart element needs @johnmorrisdotca/kazoku-ui.",
   "keywords": [
     "stars",
     "milky-way",
@@ -16,6 +16,7 @@
     "ngc",
     "proper-motion",
     "javascript",
+    "zero-dependencies",
     "react",
     "galaxy",
     "component",
@@ -173,10 +174,16 @@
     "size": "node scripts/docs-site.mjs size",
     "check:standard": "node scripts/check-standard.mjs"
   },
-  "dependencies": {
-    "@johnmorrisdotca/kazoku-ui": "^0.21.1"
+  "peerDependencies": {
+    "@johnmorrisdotca/kazoku-ui": ">=0.21.1"
+  },
+  "peerDependenciesMeta": {
+    "@johnmorrisdotca/kazoku-ui": {
+      "optional": true
+    }
   },
   "devDependencies": {
+    "@johnmorrisdotca/kazoku-ui": "^0.21.1",
     "@angular/common": "^22.2.5",
     "@angular/compiler": "^22.2.5",
     "@angular/core": "^22.2.5",

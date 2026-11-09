@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      '@johnmorrisdotca/kazoku-ui':
-        specifier: ^0.21.1
-        version: 0.21.1
     devDependencies:
       '@angular/common':
         specifier: ^22.2.5
@@ -27,6 +23,9 @@ importers:
       '@eslint/js':
         specifier: ^9.0.0
         version: 9.39.5
+      '@johnmorrisdotca/kazoku-ui':
+        specifier: ^0.21.1
+        version: 0.21.1
       '@johnmorrisdotca/wakusei-planets':
         specifier: ^0.20.0
         version: 0.20.0
