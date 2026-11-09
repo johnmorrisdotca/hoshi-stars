@@ -20,7 +20,7 @@ test("a Black holes button sits in the Show row, off to begin with; turning it o
   await expect(button).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => holes(page).count()).toBeGreaterThan(280);
   for (const kind of ["stellar", "quiet", "supermassive"]) expect(await holes(page, kind).count()).toBeGreaterThan(0);
-  await expect.poll(() => param(page, "layers")).toBe("milky,lines,names,holes,grid");
+  await expect.poll(() => param(page, "layers")).toBe("milky,lines,names,holes,faint,grid");
   await open(page, "?layers=holes&proj=hammer&zoom=1&ra=180&dec=0");
   await expect(page.locator('#seg-layers button[data-value="holes"]')).toHaveAttribute("aria-pressed", "true");
   await expect.poll(() => holes(page).count()).toBeGreaterThan(280);
