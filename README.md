@@ -211,6 +211,18 @@ An object has `id`, `messier`, `ngc`, `ic` (each a string such as `"NGC 224"`), 
 - **Magnitudes and sizes of the Messier objects** are the published visual magnitudes and major axes of NASA HEASARC's Messier table, because Wikidata's V-band magnitudes for 14 of them are more than a magnitude off (the central star's, for the four planetary nebulae). The NGC and IC magnitudes are Wikidata's, except that a planetary nebula has none (Wikidata's is its central star's); about four in ten have none, and almost none has a size.
 - **Positions** are Wikidata's. Every Messier object was compared with NED and a sample of the others too; the objects that were more than an arc-minute apart are listed in [NOTICE.md](NOTICE.md), and where Wikidata was wrong the table has NED's position.
 
+## Black holes
+
+`@johnmorrisdotca/hoshi-stars/black-holes` is 301 black holes with a place on the sky: 78 stellar-mass ones in X-ray binaries (Cygnus X-1, V404 Cygni, A0620-00), 5 quiet ones found from their companion's orbit or a lensed star (Gaia BH1, BH2 and BH3, VFTS 243, OGLE-2011-BLG-0462) and 218 supermassive ones with a measured mass (Sagittarius A*, M87*, M31's). Each has its mass and distance with their ranges, the companion star, how it was found, the year and the paper behind each fact. It is its own import (about 22 kB gzipped); the guide, [black holes](docs/guides/black-holes.md), has the details, what a `candidate` is and what is left out, and [NOTICE.md](NOTICE.md) has the sources and their terms.
+
+```ts
+import { blackHole, blackHoles } from "@johnmorrisdotca/hoshi-stars/black-holes";
+
+const sgr = blackHole("Sgr A*")!;     // or "Sagittarius A*", in any case
+console.log(sgr.kind, sgr.constellation, sgr.massSuns?.value, sgr.sources.mass[0]?.citation);  // supermassive Sgr 4297000 GRAVITY Collaboration 2022, A&A 657, L12
+console.log(blackHoles({ kind: "quiet" }).map((b) => b.name).join(", "));  // VFTS 243, Gaia BH2, Gaia BH1, OGLE-2011-BLG-0462, Gaia BH3
+```
+
 ## The Milky Way
 
 `@johnmorrisdotca/hoshi-stars/milky-way` is a brightness map of the Milky Way in about 11 kB: the band along the galactic equator, the bright core toward Sagittarius, and the Great Rift, the Coalsack and the Cygnus Rift as dimmer places. It is made by `scripts/make-milky-way-data.py` from SAO star counts, NASA's IRAS 100 micron dust map and a bulge of our own figures (see [NOTICE.md](NOTICE.md)); no picture of the sky is traced.
