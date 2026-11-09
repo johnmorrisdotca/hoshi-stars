@@ -1,19 +1,31 @@
-// The sky chart the demo and the embed page draw: stars, constellation lines, boundaries, names, Messier objects and a grid, as one SVG string, in any of the seven projections.
+// The sky chart: stars, constellation lines, boundaries, names, Messier objects and a grid, as one SVG string, in any of the seven projections.
 // It only calls the package: the numbers (positions, colours, outlines, figures) are the package's; the pixels are decided here.
-import { starByHr, starColour, stars, type Star } from "../src/index.ts";
-import { boundaries, constellationAt } from "../src/boundaries.ts";
-import { constellations, type Constellation } from "../src/constellations.ts";
-import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
-import { figures } from "../src/lines.ts";
-import { milkyWayBands } from "../src/milky-way.ts";
-import { project, unproject, type Projection, type SkyPoint } from "../src/projection.ts";
+// The stars, the constellation names and the lines are in the entry; the boundaries, the Messier objects, the Milky Way and the nearby table come in only when a layer asks (`loadChartData`).
+import type { Constellation } from "../constellations.ts";
+import type { DeepSkyObject } from "../deep-sky.ts";
+import { constellations } from "../constellations.ts";
+import { figures } from "../lines.ts";
+import { project, unproject, type Projection, type SkyPoint } from "../projection.ts";
+import { starByHr, starColour, stars, type Star } from "../stars.ts";
+import { have } from "./data.ts";
+import type { Layer } from "./data.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
 
-export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "grid"] as const;
-export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
+/** The chart's look: `dark` is the night sky (the default), `light` is ink on paper, for a page or a print that is light. */
+export type Theme = "dark" | "light";
 
-/** Where the chart looks: the projection, the point in the middle (degrees) and the zoom, 1 being the projection's own fit. */
+/**
+ * Where the chart looks: the projection, the point in the middle (degrees) and the zoom, 1 being the projection's own fit.
+ *
+ * @example
+ * ```ts
+ * import type { View } from "@johnmorrisdotca/hoshi-stars/chart";
+ *
+ * const orion: View = { projection: "stereographic", ra: 84, dec: 0, zoom: 1 };
+ * console.log(orion.projection);
+ * ```
+ */
 export interface View {
   projection: Projection;
   ra: number;
@@ -27,6 +39,7 @@ export interface ChartOptions extends View {
   magnitude: number;
   layers: ReadonlySet<Layer>;
   lang: Language;
+  theme?: Theme | undefined;
   /** The constellation (abbreviation) to show brighter, with its boundary even when boundaries are off. */
   highlight?: string | undefined;
   /** The star (HR number) or Messier object (`M31`) that is picked. */
@@ -37,7 +50,17 @@ export interface ChartOptions extends View {
   keepClear?: readonly Box[] | undefined;
 }
 
-/** What a tap can land on, in chart pixels. */
+/**
+ * What a tap can land on, in chart pixels: a star (`kind: "star"`, `key` its HR number) or a Messier object (`kind: "deep"`, `key` its id), and where it was drawn.
+ *
+ * @example
+ * ```ts
+ * import type { Hit } from "@johnmorrisdotca/hoshi-stars/chart";
+ *
+ * const sirius: Hit = { x: 120, y: 80, kind: "star", key: "2491" };
+ * console.log(sirius.kind);
+ * ```
+ */
 export interface Hit {
   x: number;
   y: number;
@@ -46,8 +69,27 @@ export interface Hit {
 }
 
 export const DEFAULT_VIEW: View = { projection: "stereographic", ra: 84, dec: 0, zoom: 1 };
-/** The least zoom: the whole sky, small. The most: about 0.7 degree across a desk-wide chart, where the closest naked-eye pairs (Mizar and Alcor, 12 arc-minutes) still draw apart. */
+/**
+ * The least zoom: the whole sky, small.
+ *
+ * @example
+ * ```ts
+ * import { ZOOM_MIN } from "@johnmorrisdotca/hoshi-stars/chart";
+ *
+ * console.log(ZOOM_MIN); // 0.1
+ * ```
+ */
 export const ZOOM_MIN = 0.1;
+/**
+ * The most zoom: about 0.7 degree across a desk-wide chart, where the closest naked-eye pairs (Mizar and Alcor, 12 arc-minutes) still draw apart.
+ *
+ * @example
+ * ```ts
+ * import { ZOOM_MAX } from "@johnmorrisdotca/hoshi-stars/chart";
+ *
+ * console.log(ZOOM_MAX); // 500
+ * ```
+ */
 export const ZOOM_MAX = 500;
 const WIDE: readonly Projection[] = ["equirectangular", "mollweide", "hammer"];
 const SQRT8 = Math.sqrt(8);
@@ -65,7 +107,21 @@ export function fitScale(kind: Projection, width: number, height: number): numbe
   }
 }
 
-/** The zoom that opens the chart on Orion about 90 degrees wide on a desk and 60 on a phone (a chart under 600 pixels wide), measured across the middle. */
+/**
+ * The zoom that opens the chart on Orion about 90 degrees wide on a desk and 60 on a phone (a chart under 600 pixels wide), measured across the middle.
+ *
+ * @param kind - The projection.
+ * @param width - The chart's width in pixels.
+ * @param height - The chart's height in pixels.
+ * @returns The zoom, between `ZOOM_MIN` and `ZOOM_MAX`.
+ *
+ * @example
+ * ```ts
+ * import { defaultZoom } from "@johnmorrisdotca/hoshi-stars/chart";
+ *
+ * console.log(defaultZoom("stereographic", 800, 600), defaultZoom("stereographic", 360, 400));
+ * ```
+ */
 export function defaultZoom(kind: Projection, width: number, height: number): number {
   const half = width < 600 ? 30 : 45;
   const edge = project(kind, { rightAscension: DEFAULT_VIEW.ra + half, declination: DEFAULT_VIEW.dec }, { centre: { rightAscension: DEFAULT_VIEW.ra, declination: DEFAULT_VIEW.dec }, scale: fitScale(kind, width, height) });
@@ -80,13 +136,46 @@ const wrap360 = (degrees: number): number => ((degrees % 360) + 360) % 360;
 const round = (n: number): string => n.toFixed(1);
 const escapeXml = (text: string): string => text.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
-/** Where a point of the sky lands in the chart's pixels, or `undefined` when it is on the far side. */
+/**
+ * Where a point of the sky lands in the chart's pixels.
+ *
+ * @param view - Where the chart looks.
+ * @param width - The chart's width in pixels.
+ * @param height - The chart's height in pixels.
+ * @param point - The point of the sky, right ascension and declination in degrees.
+ * @returns `[x, y]` in pixels from the chart's top left, or `undefined` when the point is on the far side of the projection.
+ *
+ * @example
+ * ```ts
+ * import { toScreen } from "@johnmorrisdotca/hoshi-stars/chart";
+ *
+ * const middle = toScreen({ projection: "stereographic", ra: 84, dec: 0, zoom: 1 }, 800, 600, { rightAscension: 84, declination: 0 });
+ * console.log(middle); // [ 400, 300 ]
+ * ```
+ */
 export function toScreen(view: View, width: number, height: number, point: SkyPoint): [number, number] | undefined {
   const p = project(view.projection, point, { centre: centreOf(view), scale: scaleOf(view, width, height) });
   return p === undefined ? undefined : [width / 2 + p.x, height / 2 - p.y];
 }
 
-/** The point of the sky under a pixel of the chart, or `undefined` off the sky. */
+/**
+ * The point of the sky under a pixel of the chart.
+ *
+ * @param view - Where the chart looks.
+ * @param width - The chart's width in pixels.
+ * @param height - The chart's height in pixels.
+ * @param x - Pixels from the chart's left.
+ * @param y - Pixels from the chart's top.
+ * @returns The right ascension and declination in degrees, or `undefined` off the sky (outside a whole-sky map's edge).
+ *
+ * @example
+ * ```ts
+ * import { fromScreen } from "@johnmorrisdotca/hoshi-stars/chart";
+ *
+ * const sky = fromScreen({ projection: "stereographic", ra: 84, dec: 0, zoom: 1 }, 800, 600, 400, 300);
+ * console.log(sky?.rightAscension, sky?.declination); // 84 0
+ * ```
+ */
 export function fromScreen(view: View, width: number, height: number, x: number, y: number): SkyPoint | undefined {
   return unproject(view.projection, { x: x - width / 2, y: height / 2 - y }, { centre: centreOf(view), scale: scaleOf(view, width, height) });
 }
@@ -185,10 +274,20 @@ export function reachOfConstellation(abbreviation: string): number {
 
 /** The Milky Way's bands, faint to bright: the colour, and how much of the night sky each one lightens. The glow is cool, the core warm. */
 const MILKY = { levels: [0.04, 0.08, 0.13, 0.2, 0.3, 0.42, 0.58, 0.76], fills: ["#6a80c8", "#7a90d2", "#8da1dc", "#a6b6e6", "#c3cdee", "#e0e4f2", "#f7eedd", "#fff3d8"], opacities: [0.16, 0.14, 0.14, 0.14, 0.15, 0.16, 0.18, 0.2] } as const;
+const MILKY_LIGHT = { fills: ["#8a96c4", "#7c89bb", "#6e7db1", "#6272a8", "#56679e", "#4a5b94", "#3f5088", "#35457c"], opacities: [0.1, 0.09, 0.09, 0.09, 0.1, 0.1, 0.11, 0.12] } as const;
 
-const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4" };
+const DARK = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4" };
+const LIGHT = { ground: "#f8f6ef", grid: "#d5d9e8", equator: "#aab4d6", lines: "#3f5fb0", linesOn: "#b36b00", boundary: "#8a97c4", boundaryOn: "#b36b00", name: "#4a5a8f", nameOn: "#8a4b00", star: "#10152b", deep: "#a8620a", pick: "#d6401f", near: "#0a8f78" };
+type Colours = typeof DARK;
 
-function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean, near = false): string {
+/** A star's colour on paper: its own hue, darkened so that a white star still shows. */
+function inkOf(hex: string): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const part = (shift: number): string => Math.round(((n >> shift) & 255) * 0.38).toString(16).padStart(2, "0");
+  return `#${part(16)}${part(8)}${part(0)}`;
+}
+
+function shapeOf(COLOURS: Colours, object: DeepSkyObject, x: number, y: number, pick: boolean, near = false): string {
   const stroke = pick ? COLOURS.pick : near ? COLOURS.near : COLOURS.deep;
   const common = `fill="none" stroke="${stroke}" stroke-width="${pick ? 2 : near ? 1.8 : 1.2}"`;
   switch (object.type) {
@@ -256,7 +355,7 @@ function withinWidth(ring: Array<[number, number]>): Array<Array<[number, number
 }
 
 /** The Milky Way: a few soft bands of light, each a set of ribbons along the galactic equator, drawn under everything else. */
-function milkyWay(view: View, place: Placer, width: number, height: number): string {
+function milkyWay(view: View, place: Placer, width: number, height: number, light: boolean): string {
   const here = toScreen(view, width, height, centreOf(view));
   const aside = toScreen(view, width, height, { rightAscension: view.ra, declination: view.dec > 89 ? view.dec - 1 : view.dec + 1 });
   const perDegree = here === undefined || aside === undefined ? 4 : Math.hypot(here[0] - aside[0], here[1] - aside[1]);
@@ -305,7 +404,8 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
     return found;
   };
   let svg = "";
-  milkyWayBands(MILKY.levels, { step: view.zoom >= 1.8 ? 1 : 2 }).forEach((band, i) => {
+  const ramp = light ? MILKY_LIGHT : MILKY;
+  have("milky").milkyWayBands(MILKY.levels, { step: view.zoom >= 1.8 ? 1 : 2 }).forEach((band, i) => {
     let d = "";
     for (const strip of band.strips) {
       for (const polygon of polygons(strip)) {
@@ -318,7 +418,7 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
         d += `M${at.map(([x, y]) => `${round(x)} ${round(y)}`).join("L")}Z`;
       }
     }
-    if (d !== "") svg += `<path d="${d}" fill="${MILKY.fills[i]}" fill-opacity="${MILKY.opacities[i]}"/>`;
+    if (d !== "") svg += `<path d="${d}" fill="${ramp.fills[i]}" fill-opacity="${ramp.opacities[i]}"/>`;
   });
   const id = "hoshi-milky-blur";
   return `<defs><filter id="${id}" filterUnits="userSpaceOnUse" x="-30" y="-30" width="${width + 60}" height="${height + 60}"><feGaussianBlur stdDeviation="${round(blur)}"/></filter></defs><g data-layer="milky" filter="url(#${id})">${svg}</g>`;
@@ -327,13 +427,15 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
 /** One frame of the chart: an SVG string of the size asked, and what a tap can land on. */
 export function chart(o: ChartOptions): Chart {
   const { width, height, layers, lang } = o;
+  const light = o.theme === "light";
+  const COLOURS = light ? LIGHT : DARK;
   const place = placer(o, width, height);
   const view: View = o;
   const hits: Hit[] = [];
   let body = `<rect width="${width}" height="${height}" fill="${COLOURS.ground}"/>`;
   const inside = (at: [number, number], margin = 24): boolean => at[0] > -margin && at[0] < width + margin && at[1] > -margin && at[1] < height + margin;
 
-  if (layers.has("milky")) body += milkyWay(view, place, width, height);
+  if (layers.has("milky")) body += milkyWay(view, place, width, height, light);
 
   if (layers.has("grid")) {
     let d = "";
@@ -358,7 +460,7 @@ export function chart(o: ChartOptions): Chart {
     let quiet = "";
     let loud = "";
     let neighbours = "";
-    for (const boundary of boundaries({ step: 2 })) {
+    for (const boundary of have("boundaries").boundaries({ step: 2 })) {
       const on = boundary.constellation.abbreviation === o.highlight;
       const next = nearConstellations.has(boundary.constellation.abbreviation);
       if (!on && !next && !layers.has("boundaries")) continue;
@@ -393,13 +495,13 @@ export function chart(o: ChartOptions): Chart {
   const around = (x: number, y: number, r: number): Box => ({ x0: x - r, y0: y - r, x1: x + r, y1: y + r });
   const deepLabels: Label[] = [];
   if (layers.has("deep") || [...near].some((key) => key.startsWith("D:"))) {
-    for (const object of messier()) {
+    for (const object of have("deep").messier()) {
       const key = object.id;
       const isNear = near.has(`D:${key}`);
       if (!layers.has("deep") && !isNear) continue;
       const at = place(object);
       if (at === undefined || !inside(at)) continue;
-      body += shapeOf(object, at[0], at[1], key === o.picked, isNear);
+      body += shapeOf(COLOURS, object, at[0], at[1], key === o.picked, isNear);
       obstacles.push(around(at[0], at[1], 7));
       if (o.zoom >= 2.5 || (object.magnitude ?? 9) <= 5 || key === o.picked || isNear) deepLabels.push({ rank: key === o.picked ? -1 : isNear ? 900 : 2000 + (object.magnitude ?? 9), ...besideMarker(key, 11, at[0], at[1], 8, key === o.picked ? COLOURS.pick : isNear ? COLOURS.near : COLOURS.deep, 1) });
       hits.push({ x: at[0], y: at[1], kind: "deep", key });
@@ -421,7 +523,7 @@ export function chart(o: ChartOptions): Chart {
     const at = place(star);
     if (at === undefined || !inside(at)) continue;
     const r = Math.max(0.7, (o.magnitude - star.magnitude) * 0.55 + 1.1) * grow;
-    dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${starColour(star)}"/>`;
+    dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${light ? inkOf(starColour(star)) : starColour(star)}"/>`;
     hits.push({ x: at[0], y: at[1], kind: "star", key: String(star.hr) });
     if (r >= 2.6) obstacles.push(around(at[0], at[1], r + 1));
     if (String(star.hr) === o.picked) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
@@ -470,7 +572,7 @@ export function chart(o: ChartOptions): Chart {
 /** The constellation under a pixel of the chart, or `undefined` off the sky. */
 export function constellationUnder(view: View, width: number, height: number, x: number, y: number): Constellation | undefined {
   const at = fromScreen(view, width, height, x, y);
-  return at === undefined ? undefined : constellationAt(at);
+  return at === undefined ? undefined : have("boundaries").constellationAt(at);
 }
 
-export type { DeepSkyObject, Star };
+export type { Box, DeepSkyObject, Star };

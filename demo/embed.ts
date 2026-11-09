@@ -4,28 +4,27 @@
 //   &mag=5               the faintest star                   &layers=milky,lines,names,grid  or none (also boundaries, deep)
 //   &lang=ja             constellation names in Japanese     &c=Ori                  one constellation brighter, with its boundary
 //   &near=S:2491         ring what is near a star (S:<HR number>), a Messier object (D:M31) or a constellation (C:Ori)   &by=space  measure the stars' nearness in space
-import { chart, defaultZoom, type View } from "./chart.ts";
+import "../src/chart.ts";
+import type { HoshiChart, ViewChangeDetail } from "../src/chart.ts";
 import { choiceOf } from "./choice.ts";
-import { attachHands } from "./hands.ts";
-import { nearbyOf } from "./nearby.ts";
 
-const frame = document.getElementById("frame")!;
-const sky = document.getElementById("sky")!;
+const frame = document.getElementById("frame") as unknown as HoshiChart;
 const tools = document.getElementById("tools")!;
-const sizeOf = (): { width: number; height: number } => ({ width: Math.max(1, Math.round(frame.clientWidth)), height: Math.max(1, Math.round(frame.clientHeight)) });
-let { width, height } = sizeOf();
-const choice = choiceOf(new URLSearchParams(location.search), width, height);
+const query = new URLSearchParams(location.search);
+const choice = choiceOf(query, frame.size.width || 480, frame.size.height || 360);
 const ja = choice.lang === "ja";
-const near = nearbyOf(choice.nearTo, choice.nearBy ?? "sky");
-const nearKeys = near === undefined ? [] : near.rows.map((row) => row.key);
-const target = choice.nearTo !== undefined && !choice.nearTo.startsWith("C:") ? choice.nearTo.slice(2) : undefined;
-const highlight = choice.highlight ?? (choice.nearTo?.startsWith("C:") ? choice.nearTo.slice(2) : undefined);
-let view: View = { projection: choice.projection, ra: choice.ra, dec: choice.dec, zoom: choice.zoom };
-const opening = (): number => defaultZoom(view.projection, width, height);
-const start = { ...view };
-const askedZoom = new URLSearchParams(location.search).has("zoom");
-const home = (): View => ({ ...start, zoom: askedZoom ? start.zoom : opening() });
+const askedZoom = query.has("zoom");
 
+frame.setAttribute("projection", choice.projection);
+frame.setAttribute("ra", String(choice.ra));
+frame.setAttribute("dec", String(choice.dec));
+if (askedZoom) frame.setAttribute("zoom", String(choice.zoom));
+frame.setAttribute("magnitude", String(choice.magnitude));
+frame.setAttribute("layers", [...choice.layers].join(",") || "none");
+frame.setAttribute("lang", choice.lang);
+if (choice.highlight !== undefined) frame.setAttribute("constellation", choice.highlight);
+if (choice.nearTo !== undefined) frame.setAttribute("near", choice.nearTo);
+if (choice.nearBy === "space") frame.setAttribute("by", "space");
 frame.setAttribute("aria-label", ja ? "星空の図" : "A chart of the sky");
 for (const [id, label] of [["zoom-in", ja ? "拡大" : "Zoom in"], ["zoom-out", ja ? "縮小" : "Zoom out"], ["reset", ja ? "元の位置に戻す" : "Back to the start"]] as const) {
   const button = document.getElementById(id)!;
@@ -33,67 +32,37 @@ for (const [id, label] of [["zoom-in", ja ? "拡大" : "Zoom in"], ["zoom-out", 
   button.title = label;
 }
 
-function draw(): void {
+frame.keepClear = () => {
   const frameBox = frame.getBoundingClientRect();
   const at = tools.getBoundingClientRect();
-  const keepClear = [{ x0: at.left - frameBox.left - 4, y0: at.top - frameBox.top - 4, x1: at.right - frameBox.left + 4, y1: at.bottom - frameBox.top + 4 }];
-  sky.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${ja ? "星空の図" : "A chart of the sky"}">${chart({ ...choice, ...view, width, height, keepClear, highlight, near: nearKeys, picked: target }).svg}</svg>`;
+  return [{ x0: at.left - frameBox.left - 4, y0: at.top - frameBox.top - 4, x1: at.right - frameBox.left + 4, y1: at.bottom - frameBox.top + 4 }];
+};
+frame.addEventListener("hoshi-draw", () => {
   document.documentElement.dataset.ready = "true";
-}
-
-let queued = false;
-function schedule(): void {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(() => {
-    queued = false;
-    draw();
-  });
-}
+});
 
 let written: ReturnType<typeof setTimeout> | undefined;
-function writeAddress(): void {
+function writeAddress(view: ViewChangeDetail["view"]): void {
   clearTimeout(written);
   written = setTimeout(() => {
-    const query = new URLSearchParams(location.search);
-    query.set("ra", view.ra.toFixed(2));
-    query.set("dec", view.dec.toFixed(2));
-    query.set("zoom", String(Math.round(view.zoom * 100) / 100));
+    const next = new URLSearchParams(location.search);
+    next.set("ra", view.ra.toFixed(2));
+    next.set("dec", view.dec.toFixed(2));
+    next.set("zoom", String(Math.round(view.zoom * 100) / 100));
     try {
-      history.replaceState(null, "", `?${query.toString()}`);
+      history.replaceState(null, "", `?${next.toString()}`);
     } catch {
       // A frame that may not rewrite its own address keeps the chart all the same.
     }
   }, 150);
 }
-
-const hands = attachHands(frame, {
-  view: () => view,
-  size: () => ({ width, height }),
-  opening,
-  home,
-  moved(next, final) {
-    view = next;
-    schedule();
-    if (final) writeAddress();
-  },
+frame.addEventListener("hoshi-viewchange", (event) => {
+  const { view, final } = (event as CustomEvent<ViewChangeDetail>).detail;
+  if (final) writeAddress(view);
 });
 
-document.getElementById("zoom-in")!.addEventListener("click", () => hands.zoomBy(1.6));
-document.getElementById("zoom-out")!.addEventListener("click", () => hands.zoomBy(1 / 1.6));
+document.getElementById("zoom-in")!.addEventListener("click", () => frame.zoomBy(1.6));
+document.getElementById("zoom-out")!.addEventListener("click", () => frame.zoomBy(1 / 1.6));
 document.getElementById("reset")!.addEventListener("click", () => {
-  view = home();
-  hands.sync();
-  schedule();
-  writeAddress();
+  frame.reset();
 });
-
-addEventListener("resize", () => {
-  ({ width, height } = sizeOf());
-  if (!new URLSearchParams(location.search).has("zoom")) view = { ...view, zoom: opening() };
-  hands.sync();
-  draw();
-});
-
-hands.sync();
-draw();

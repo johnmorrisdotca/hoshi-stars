@@ -19,7 +19,7 @@ try {
   const pack = JSON.parse(run("npm", ["pack", "--json", "--ignore-scripts", "--pack-destination", scratch], root)) as Array<{ filename: string; files: Array<{ path: string }> }>;
   const files = pack[0]!.files.map((f) => f.path);
   if (files.some((f) => /^(demo|docs|scripts|test|e2e|site|src)\//.test(f))) throw new Error("Source, tests or the demo entered the npm package");
-  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/milky-way.js", "dist/milky-way.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/lines.js", "dist/lines.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts", "dist/nearest.js", "dist/nearest.d.ts", "dist/nearby.js", "dist/nearby.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
+  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/milky-way.js", "dist/milky-way.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/lines.js", "dist/lines.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts", "dist/nearest.js", "dist/nearest.d.ts", "dist/nearby.js", "dist/nearby.d.ts", "dist/chart.js", "dist/chart.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", join(scratch, pack[0]!.filename)], scratch);
   writeFileSync(
     join(scratch, "check.mjs"),
@@ -63,6 +63,10 @@ assert.deepEqual(near.neighbouringConstellations("Ori").map((c) => c.abbreviatio
 const nearby = await import(${JSON.stringify(pkg.name + "/nearby")});
 assert.ok(Math.abs(nearby.nearbyStarByName("Proxima Centauri").lightYears - 4.24) < 0.05);
 assert.ok(nearby.nearbyStars().length > 5000);
+const chart = await import(${JSON.stringify(pkg.name + "/chart")});
+assert.ok(chart.chartSvg({ width: 320, height: 240, layers: ["lines", "names"] }).startsWith("<svg"));
+await chart.loadChartData({ layers: ["milky-way"] });
+assert.ok(chart.chartSvg({ width: 320, height: 240, layers: ["milky-way"] }).includes('data-layer="milky"'));
 let required = false;
 try { createRequire(import.meta.url)(${JSON.stringify(pkg.name)}); required = true; } catch (error) { assert.equal(error.code, "ERR_REQUIRE_ESM"); }
 console.log("package ok: " + esm.stars().length + " stars" + (required ? ", also by require" : ""));

@@ -1,8 +1,9 @@
-// What the Nearby panel and the embed page share: the things near a picked star, Messier object or constellation, as keys the chart can ring (`S:<HR>`, `D:<id>`, `C:<abbreviation>`).
-import { constellation } from "../src/constellations.ts";
-import { deepSkyObject } from "../src/deep-sky.ts";
-import { starByHr } from "../src/index.ts";
-import { nearest, neighbouringConstellations } from "../src/nearest.ts";
+// What the chart rings when it is told what is near: the things near a picked star, Messier object or constellation, as keys the chart can ring (`S:<HR>`, `D:<id>`, `C:<abbreviation>`).
+// It is its own file because it reads the nearest tier; a chart that rings nothing never loads it.
+import { constellation } from "../constellations.ts";
+import { deepSkyObject } from "../deep-sky.ts";
+import { nearest, neighbouringConstellations } from "../nearest.ts";
+import { starByHr } from "../stars.ts";
 
 export type By = "sky" | "space";
 export const NEARBY_COUNT = 10;

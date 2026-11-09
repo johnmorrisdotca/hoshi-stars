@@ -8,11 +8,13 @@ import { starByHr, starColour, starDistanceLightYears, stars, type Star } from "
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
-import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, fitScale, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
-import { attachHands } from "./hands.ts";
-import { nearbyOf, type By } from "./nearby.ts";
+import "../src/chart.ts";
+import { chartSvg, type HoshiChart, type PickDetail, type ViewChangeDetail } from "../src/chart.ts";
+import { centreOfConstellation, DEFAULT_VIEW, defaultZoom, fitScale, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type View } from "../src/chart/draw.ts";
+import { LAYERS, type Layer } from "../src/chart/data.ts";
+import { nearbyOf, type By } from "../src/chart/nearby.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
-import type { Box } from "./labels.ts";
+import type { Box } from "../src/chart/labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -29,7 +31,6 @@ let magnitude = DEFAULT_MAGNITUDE;
 let layers: Set<Layer> = layersOf(null);
 let picked: string | null = null;
 let by: By = "sky";
-let nearKeys: string[] = [];
 let hover: string | undefined;
 
 function read(): void {
@@ -47,7 +48,7 @@ function read(): void {
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
   by = address.get("by") === "space" ? "space" : "sky";
-  hands.sync();
+  chartEl.view = view;
 }
 
 function writeView(): void {
@@ -56,13 +57,11 @@ function writeView(): void {
 }
 
 // ----- drawing -----
-const svg = $("chart") as unknown as SVGSVGElement;
-const box = $("chart-box");
-let width = Math.max(200, Math.round(box.clientWidth)) || 800;
-let height = Math.max(200, Math.round(box.clientHeight)) || 560;
+// The chart is the package's own element; the page tells it what to show and hears where its hands took it.
+const chartEl = $("chart") as unknown as HoshiChart;
+let width = chartEl.size.width || 800;
+let height = chartEl.size.height || 560;
 const opening = (): number => defaultZoom(view.projection, width, height);
-let hits: Hit[] = [];
-let queued = false;
 
 const pickedConstellation = (): string | undefined => {
   if (picked === null) return undefined;
@@ -74,29 +73,31 @@ const pickedConstellation = (): string | undefined => {
 
 function clear(): Box[] {
   const tools = $("zoom-in").parentElement!.getBoundingClientRect();
-  const at = svg.getBoundingClientRect();
+  const at = chartEl.getBoundingClientRect();
   return [{ x0: tools.left - at.left - 4, y0: tools.top - at.top - 4, x1: tools.right - at.left + 4, y1: tools.bottom - at.top + 4 }];
 }
+chartEl.keepClear = clear;
 
+const setAttr = (name: string, value: string | null): void => {
+  if (value === null) chartEl.removeAttribute(name);
+  else if (chartEl.getAttribute(name) !== value) chartEl.setAttribute(name, value);
+};
+/** Tell the chart what the page now shows. The chart draws on its own, once per frame at most. */
 function draw(): void {
-  queued = false;
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined });
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.innerHTML = out.svg;
-  hits = out.hits;
+  setAttr("magnitude", String(magnitude));
+  setAttr("layers", [...layers].join(",") || "none");
+  setAttr("lang", lang());
+  setAttr("constellation", hover ?? pickedConstellation() ?? null);
+  setAttr("near", picked);
+  setAttr("by", by === "space" ? "space" : null);
 }
-function schedule(): void {
-  if (queued) return;
-  queued = true;
-  requestAnimationFrame(draw);
-}
-new ResizeObserver(() => {
-  width = Math.max(200, Math.round(box.clientWidth));
-  height = Math.max(200, Math.round(box.clientHeight));
+const schedule = draw;
+chartEl.addEventListener("hoshi-resize", () => {
+  width = chartEl.size.width;
+  height = chartEl.size.height;
   if (address.get("zoom") === null) view = { ...view, zoom: opening() };
-  hands.sync();
-  schedule();
-}).observe(box);
+  chartEl.view = view;
+});
 
 // ----- the panel's choices -----
 function seg(id: string, items: ReadonlyArray<readonly [string, string]>, click: (value: string) => void): void {
@@ -139,102 +140,43 @@ $("magnitude").addEventListener("input", () => {
 });
 
 // ----- turning, zooming and tapping -----
-// The drag, the two-finger pinch, the wheel, the keys and the double tap are the family's view controller (hands.ts); a tap on the sky is the page's own.
-interface Touch {
-  x: number;
-  y: number;
-}
-const touches = new Map<number, Touch>();
-let moved = 0;
+// The drag, the two-finger pinch, the wheel, the keys and the double tap, and a tap on the sky, are the chart element's own (`hoshi-viewchange`, `hoshi-pick`); the page keeps the address and the panels.
 let settle: ReturnType<typeof setTimeout> | undefined;
-const local = (event: { clientX: number; clientY: number }): Touch => {
-  const at = svg.getBoundingClientRect();
-  return { x: event.clientX - at.left, y: event.clientY - at.top };
-};
 function settled(): void {
   writeView();
   clearTimeout(settle);
   settle = setTimeout(codes, 150);
 }
-const hands = attachHands(box, {
-  view: () => view,
-  size: () => ({ width, height }),
-  opening,
-  moved(next, final) {
-    cancelFly();
-    view = next;
-    schedule();
-    if (final) settled();
-  },
+chartEl.addEventListener("hoshi-viewchange", (event) => {
+  const { view: next, final } = (event as CustomEvent<ViewChangeDetail>).detail;
+  cancelFly();
+  view = next;
+  if (final) settled();
+});
+chartEl.addEventListener("hoshi-pick", (event) => {
+  const { key } = (event as CustomEvent<PickDetail>).detail;
+  pick(key);
+  settled();
+});
+chartEl.addEventListener("hoshi-hover", (event) => {
+  const abbreviation = (event as CustomEvent<{ abbreviation: string | null }>).detail.abbreviation;
+  const found = abbreviation === null ? undefined : constellation(abbreviation);
+  hover = found?.abbreviation;
+  $("under").textContent = found === undefined ? "" : lang() === "ja" ? found.japanese : found.name;
+  schedule();
 });
 function setView(next: View): void {
   view = next;
-  hands.sync();
+  chartEl.view = next;
 }
-box.addEventListener("pointerdown", (event) => {
-  if ((event.pointerType === "mouse" && event.button !== 0) || (event.target as Element).closest("button") !== null) return;
-  touches.set(event.pointerId, local(event));
-  moved = touches.size > 1 ? 99 : 0;
-});
-box.addEventListener("pointermove", (event) => {
-  const here = local(event);
-  const before = touches.get(event.pointerId);
-  if (before === undefined) {
-    if (event.pointerType === "mouse") hovering(here);
-    return;
-  }
-  moved += Math.abs(here.x - before.x) + Math.abs(here.y - before.y);
-  touches.set(event.pointerId, here);
-});
-const release = (event: PointerEvent): void => {
-  const was = touches.get(event.pointerId);
-  touches.delete(event.pointerId);
-  if (was !== undefined && touches.size === 0 && moved <= 6 && event.type === "pointerup") tap(was.x, was.y);
-};
-box.addEventListener("pointerup", release);
-box.addEventListener("pointercancel", release);
-box.addEventListener("pointerleave", () => {
-  if (hover !== undefined) {
-    hover = undefined;
-    $("under").textContent = "";
-    schedule();
-  }
-});
-$("zoom-in").addEventListener("click", () => hands.zoomBy(1.6));
-$("zoom-out").addEventListener("click", () => hands.zoomBy(1 / 1.6));
+$("zoom-in").addEventListener("click", () => chartEl.zoomBy(1.6));
+$("zoom-out").addEventListener("click", () => chartEl.zoomBy(1 / 1.6));
 $("reset").addEventListener("click", () => {
   fly({ ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: opening() });
   address.set("pick", null);
   picked = null;
   details();
 });
-
-function hovering(at: Touch): void {
-  const found = constellationUnder(view, width, height, at.x, at.y);
-  const next = found?.abbreviation;
-  if (next === hover) return;
-  hover = next;
-  $("under").textContent = found === undefined ? "" : lang() === "ja" ? found.japanese : found.name;
-  schedule();
-}
-
-function tap(x: number, y: number): void {
-  let best: Hit | undefined;
-  let near = 22 * 22;
-  for (const hit of hits) {
-    const d = (hit.x - x) ** 2 + (hit.y - y) ** 2;
-    if (d < near) {
-      near = d;
-      best = hit;
-    }
-  }
-  if (best !== undefined) pick(best.kind === "star" ? `S:${best.key}` : `D:${best.key}`);
-  else {
-    const found = constellationUnder(view, width, height, x, y);
-    pick(found === undefined ? null : `C:${found.abbreviation}`);
-  }
-  settled();
-}
 
 function pick(key: string | null): void {
   picked = key;
@@ -284,7 +226,6 @@ function fly(to: Place): void {
     if (mine !== flying) return;
     const t = Math.min(1, (now - started) / 700);
     setView(place(t * t * (3 - 2 * t)));
-    draw();
     if (t < 1) requestAnimationFrame(step);
     else settled();
   };
@@ -464,7 +405,6 @@ function nearbyPanel(): void {
   const host = $("nearby");
   host.replaceChildren();
   const found = nearbyOf(picked, by);
-  nearKeys = found === undefined ? [] : found.rows.map((row) => row.key);
   const title = Object.assign(document.createElement("h3"), { textContent: say("nearbyHeading") });
   host.append(title);
   if (found === undefined) {
@@ -537,7 +477,8 @@ panel.preview = ({ kind, size }) => {
   const holder = document.createElement("div");
   holder.style.cssText = `width: ${size}px; max-width: 100%; line-height: 0`;
   const c = choice(size);
-  holder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${heightFor(size)}" style="display:block;width:100%;height:auto">${chart({ ...c, width: size, height: heightFor(size), layers: new Set(c.layers.has("lines") ? (["lines"] as const) : []), highlight: undefined, picked: undefined }).svg}</svg>`;
+  holder.innerHTML = chartSvg({ ...c, width: size, height: heightFor(size), layers: c.layers.has("lines") ? ["lines"] : [] });
+  holder.querySelector("svg")!.setAttribute("style", "display:block;width:100%;height:auto");
   return holder;
 };
 panel.credits = say("credit");

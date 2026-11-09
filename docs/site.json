@@ -55,6 +55,11 @@
       "ja": "星・天体・位置の近くにあるもの (空と宇宙で)、隣り合う星座",
       "platform": "neutral"
     },
+    "./chart": {
+      "en": "The <hoshi-chart> element and chartSvg: the sky chart, ready to import",
+      "ja": "<hoshi-chart> 要素と chartSvg (そのまま使える星図)",
+      "platform": "neutral"
+    },
     "./nearby": {
       "en": "Nearby stars: Proxima Centauri, Barnard's Star and about 5,600 more, with distance and error",
       "ja": "近くの星 (プロキシマ・ケンタウリ、バーナード星など約5,600個、距離と誤差つき)",

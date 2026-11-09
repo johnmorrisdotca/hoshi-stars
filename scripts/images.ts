@@ -2,9 +2,11 @@
 // with its constellation lines and the Milky Way, drawn by the demo's own chart function. `pnpm images`. Needs Chromium; it opens one headless browser and no server.
 import { mkdirSync } from "node:fs";
 import { chromium } from "@playwright/test";
-import { chart, defaultZoom, DEFAULT_VIEW } from "../demo/chart.ts";
+import { chart, defaultZoom, DEFAULT_VIEW } from "../src/chart/draw.ts";
+import { loadChartData } from "../src/chart/data.ts";
 import { captureDrawing, composeThumbnails } from "./family-thumbnail.mjs";
 
+await loadChartData({ layers: ["milky"] });
 mkdirSync(new URL("../docs/images/", import.meta.url).pathname, { recursive: true });
 
 const sky = (width: number, height: number, zoom: number) =>

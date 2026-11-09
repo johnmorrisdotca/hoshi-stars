@@ -1,5 +1,6 @@
 // What the demo, the embed page and the code to copy all agree on: a chart as a handful of choices, and how they are written into an address.
-import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "./chart.ts";
+import { defaultZoom, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type View } from "../src/chart/draw.ts";
+import { LAYERS, type Layer } from "../src/chart/data.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 
 export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "grid"];

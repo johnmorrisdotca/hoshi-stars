@@ -1,12 +1,15 @@
 // The code the demo hands out draws the stars of the chart it sits beside: the module's own lines are run here, against the package, and their circles are the chart's.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW } from "../demo/chart.ts";
+import { chart, DEFAULT_VIEW } from "../src/chart/draw.ts";
 import { chartLines, embedCode, heightFor } from "../demo/embed-code.ts";
 import type { Choice } from "../demo/choice.ts";
 import { figures } from "../src/lines.ts";
 import { project } from "../src/projection.ts";
 import { starColour, stars } from "../src/stars.ts";
+import { loadChartData } from "../src/chart/data.ts";
+
+await loadChartData({ layers: ["milky", "lines", "names", "grid"] });
 
 const choice: Choice = { ...DEFAULT_VIEW, magnitude: 4, layers: new Set(["lines"]), lang: "en" };
 

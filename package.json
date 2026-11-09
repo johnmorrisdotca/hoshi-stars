@@ -1,7 +1,7 @@
 {
   "name": "@johnmorrisdotca/hoshi-stars",
   "version": "0.6.0",
-  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed, no dependencies.",
+  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed; the data has no dependencies and the chart element has one, kazoku-ui.",
   "keywords": [
     "stars",
     "milky-way",
@@ -20,7 +20,6 @@
     "galaxy",
     "component",
     "typescript",
-    "zero-dependencies",
     "itsutsu",
     "spaceprogramx",
     "spx",
@@ -67,7 +66,12 @@
   "author": "John Morris",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/chart.js",
+    "./dist/chart/element.js",
+    "./src/chart.ts",
+    "./src/chart/element.ts"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -127,6 +131,11 @@
       "import": "./dist/nearby.js",
       "default": "./dist/nearby.js"
     },
+    "./chart": {
+      "types": "./dist/chart.d.ts",
+      "import": "./dist/chart.js",
+      "default": "./dist/chart.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -164,13 +173,15 @@
     "size": "node scripts/docs-site.mjs size",
     "check:standard": "node scripts/check-standard.mjs"
   },
+  "dependencies": {
+    "@johnmorrisdotca/kazoku-ui": "^0.21.1"
+  },
   "devDependencies": {
     "@angular/common": "^22.2.5",
     "@angular/compiler": "^22.2.5",
     "@angular/core": "^22.2.5",
     "@angular/platform-browser": "^22.2.5",
     "@eslint/js": "^9.0.0",
-    "@johnmorrisdotca/kazoku-ui": "^0.21.1",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

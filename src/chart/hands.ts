@@ -2,8 +2,9 @@
 // The controller keeps a zoom, a pan and a turn; the chart's truth is its View (centre and zoom, in sky coordinates), so every change of the controller is read as
 // the step it made (a zoom about a point, a slide, a turn) and played onto the View with the chart's own projection maths (`zoomedAbout`, `dragged`).
 // Zoom 1 of the controller is the chart's opening zoom, "Fit": there the plain wheel scrolls the page and a drag turns the sky; zoomed in, the wheel and a drag move it.
-import { createViewController, type ViewController, type ViewState } from "@johnmorrisdotca/kazoku-ui/view-controls";
-import { DEFAULT_VIEW, dragged, fitScale, ZOOM_MAX, ZOOM_MIN, zoomedAbout, type View } from "./chart.ts";
+// The element carries them itself (kazoku-ui's `carryControls`): `controls="none"` takes them off, and the module is read only when they are on.
+import type { carryControls, ViewController, ViewState } from "@johnmorrisdotca/kazoku-ui/view-controls";
+import { DEFAULT_VIEW, dragged, fitScale, ZOOM_MAX, ZOOM_MIN, zoomedAbout, type View } from "./draw.ts";
 
 export interface HandsHost {
   view(): View;
@@ -16,6 +17,11 @@ export interface HandsHost {
   home?(): View;
 }
 
+/** What `attachHands` needs of `@johnmorrisdotca/kazoku-ui/view-controls`: the page's own call, so the module is read only when the hands are on. */
+export interface HandsKit {
+  carryControls: typeof carryControls;
+}
+
 export interface Hands {
   readonly controller: ViewController;
   /** The view was set from outside (a flight, a search, a reset, the address): tell the controller where it is now. */
@@ -23,24 +29,30 @@ export interface Hands {
   zoomBy(factor: number): void;
   /** Where Home and 0 go. */
   home(): View;
+  /** Let every hand go. */
+  unbind(): void;
 }
 
 const KEY_STEP = 48;
 const KEY_STEP_FAR = 160;
 const wrap180 = (degrees: number): number => ((((degrees + 180) % 360) + 360) % 360) - 180;
 
-/** Bind the family's hands to `box` (the element the pointer, the wheel and the keys go to) and play what they do onto the chart through `host`. */
-export function attachHands(box: HTMLElement, host: HandsHost): Hands {
+/** Put the family's hands on `box` (the element the pointer, the wheel and the keys go to) and play what they do onto the chart through `host`. */
+export function attachHands(kit: HandsKit, box: HTMLElement, host: HandsHost): Hands {
   let syncing = false;
   let shift = false;
-  const controller = createViewController({
+  const carried = kit.carryControls(box, {
     turnable: true,
     limits: { tiltMax: 1e9, zoomMin: 0.01, zoomMax: 10 },
     objectSize: { width: 1e7, height: 1e7 },
     onChange: (state, info) => change(state, info.reason, info.final),
   });
+  const controller: ViewController = carried.controller;
   let last: ViewState = { ...controller.state };
-  box.addEventListener("keydown", (event) => (shift = event.shiftKey), true);
+  const keys = (event: KeyboardEvent): void => {
+    shift = event.shiftKey;
+  };
+  box.addEventListener("keydown", keys, true);
 
   const home = (): View => host.home?.() ?? { ...host.view(), ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: host.opening() };
 
@@ -98,11 +110,14 @@ export function attachHands(box: HTMLElement, host: HandsHost): Hands {
   }
 
   sync();
-  controller.bind(box);
   return {
     controller,
     sync,
     zoomBy: (factor) => controller.zoomBy(factor),
     home,
+    unbind() {
+      box.removeEventListener("keydown", keys, true);
+      carried.unbind();
+    },
   };
 }

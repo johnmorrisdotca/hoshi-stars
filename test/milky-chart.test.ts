@@ -1,10 +1,13 @@
 // The Milky Way in the demo's chart: it draws in each of the seven projections, under the stars and the lines, follows the galactic equator on the screen, and the layer off draws nothing.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW, LAYERS, toScreen, type ChartOptions } from "../demo/chart.ts";
+import { chart, DEFAULT_VIEW, toScreen, type ChartOptions } from "../src/chart/draw.ts";
+import { LAYERS, loadChartData } from "../src/chart/data.ts";
 import { layersOf, layersText } from "../demo/choice.ts";
 import { fromGalactic } from "../src/milky-way.ts";
 import { PROJECTIONS } from "../src/projection.ts";
+
+await loadChartData({ layers: LAYERS, constellation: "Ori", near: "S:2491" });
 
 const size = { width: 800, height: 520 };
 const options = (extra: Partial<ChartOptions>): ChartOptions => ({ ...DEFAULT_VIEW, ...size, zoom: 1, magnitude: 3, layers: new Set(["milky"] as const), lang: "en", ...extra });
