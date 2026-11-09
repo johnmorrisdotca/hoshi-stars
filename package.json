@@ -168,10 +168,22 @@
       "import": "./dist/sky-from-nearby.js",
       "default": "./dist/sky-from-nearby.js"
     },
+    "./thumbnails": {
+      "types": "./dist/thumbnails.d.ts",
+      "import": "./dist/thumbnails.js",
+      "default": "./dist/thumbnails.js"
+    },
+    "./thumbnails/*": "./thumbnails/*",
+    "./constellation-facts": {
+      "types": "./dist/constellation-facts.d.ts",
+      "import": "./dist/constellation-facts.js",
+      "default": "./dist/constellation-facts.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "dist",
+    "thumbnails",
     "LICENSE",
     "NOTICE.md",
     "CHANGELOG.md",
@@ -190,8 +202,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.tools.json && tsc -p tsconfig.demo.json",
     "test": "node --test test/*.test.ts",
-    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && node scripts/check-package.ts",
-    "test:package": "pnpm build && node scripts/check-package.ts",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm thumbnails && node scripts/check-package.ts",
+    "test:package": "pnpm build && pnpm thumbnails && node scripts/check-package.ts",
     "prepublishOnly": "pnpm check",
     "site": "pnpm build && node scripts/site.ts",
     "dev": "pnpm site && node scripts/dev.ts",
@@ -204,7 +216,8 @@
     "docs:site": "pnpm build && node scripts/docs-site.mjs build",
     "docs:check": "pnpm build && node scripts/docs-site.mjs check",
     "size": "node scripts/docs-site.mjs size",
-    "check:standard": "node scripts/check-standard.mjs"
+    "check:standard": "node scripts/check-standard.mjs",
+    "thumbnails": "node scripts/make-thumbnails.ts"
   },
   "devDependencies": {
     "@angular/common": "^22.2.5",
@@ -217,6 +230,7 @@
     "@johnmorrisdotca/kuni": "^1.5.0",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/node": "^24.0.0",
     "@types/react": "^19.3.0",

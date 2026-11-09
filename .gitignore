@@ -13,3 +13,4 @@ playwright-report/
 .docs-examples/
 .usage/
 dist-data/
+thumbnails/
