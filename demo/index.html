@@ -23,17 +23,30 @@
           <div class="picker-strip" id="picker-strip" data-testid="picker-strip" role="group" data-say-label="pk_label"></div>
           <p class="fam-fine" data-pick-none data-say="pk_none" hidden></p>
         </div>
-        <div class="sky-grid">
-          <div class="chart-box" id="chart-box">
-            <svg id="chart" class="chart" data-testid="chart" role="img" tabindex="0" data-say-label="chartLabel"></svg>
-            <div class="chart-tools" role="group" data-say-label="chartLabel">
-              <button type="button" id="zoom-in" class="fam-button" data-testid="zoom-in" data-say="zoomIn"></button>
-              <button type="button" id="zoom-out" class="fam-button" data-testid="zoom-out" data-say="zoomOut"></button>
-              <button type="button" id="reset" class="fam-button" data-testid="reset" data-say="reset"></button>
+        <div class="sky-grid kazoku-stage">
+          <div class="map-column kazoku-view">
+            <div class="chart-box" id="chart-box">
+              <svg id="chart" class="chart" data-testid="chart" role="img" tabindex="0" data-say-label="chartLabel"></svg>
+              <div class="chart-tools" role="group" data-say-label="chartLabel">
+                <button type="button" id="zoom-in" class="fam-button" data-testid="zoom-in" data-say="zoomIn"></button>
+                <output id="zoom-readout" class="zoom-readout" data-testid="zoom-readout" aria-live="polite" data-say-label="zoomLevel"></output>
+                <button type="button" id="zoom-out" class="fam-button" data-testid="zoom-out" data-say="zoomOut"></button>
+                <button type="button" id="reset" class="fam-button" data-testid="reset" data-say="reset"></button>
+              </div>
+              <kazoku-wide-toggle id="wide-toggle" class="wide-toggle" address data-testid="wide-toggle"></kazoku-wide-toggle>
+              <p class="under" id="under" data-testid="under" aria-hidden="true"></p>
             </div>
-            <p class="under" id="under" data-testid="under" aria-hidden="true"></p>
+            <div class="controls">
+              <div class="fam-row"><span class="fam-label" data-say="projection"></span><span class="fam-seg" id="seg-projection" data-testid="projections" role="group" data-say-label="projection"></span></div>
+              <div class="fam-row"><span class="fam-label" data-say="layers"></span><span class="fam-seg" id="seg-layers" data-testid="layers" role="group" data-say-label="layers"></span></div>
+              <div class="fam-row"><span class="fam-label" data-say="culture"></span><span class="fam-seg" id="seg-culture" data-testid="cultures" role="group" data-say-label="culture"></span></div>
+              <p class="fam-fine" id="culture-note" data-testid="culture-note" aria-live="polite"></p>
+              <div class="fam-row"><label class="fam-label" for="from" data-say="viewFrom"></label><select id="from" class="fam-field" data-testid="from"></select></div>
+              <p class="fam-fine" id="from-note" data-testid="from-note" aria-live="polite" hidden></p>
+              <div class="fam-row"><label class="fam-label" for="magnitude" data-say="magnitude"></label><input id="magnitude" class="fam-range" data-testid="magnitude" type="range" min="2" max="6" step="0.5" value="5" /><output id="magnitude-out" class="fam-chip" for="magnitude"></output><span class="fam-fine" id="shown" data-testid="shown"></span></div>
+            </div>
           </div>
-          <div class="side">
+          <div class="side kazoku-side">
             <form class="find" id="find" role="search" autocomplete="off">
               <h3 data-say="searchHeading"></h3>
               <div class="fam-row">
@@ -46,15 +59,6 @@
             <div class="picked" id="picked" data-testid="picked" aria-live="polite"></div>
             <div class="picked nearby" id="nearby" data-testid="nearby" aria-live="polite"></div>
           </div>
-        </div>
-        <div class="controls">
-          <div class="fam-row"><span class="fam-label" data-say="projection"></span><span class="fam-seg" id="seg-projection" data-testid="projections" role="group" data-say-label="projection"></span></div>
-          <div class="fam-row"><span class="fam-label" data-say="layers"></span><span class="fam-seg" id="seg-layers" data-testid="layers" role="group" data-say-label="layers"></span></div>
-          <div class="fam-row"><span class="fam-label" data-say="culture"></span><span class="fam-seg" id="seg-culture" data-testid="cultures" role="group" data-say-label="culture"></span></div>
-          <p class="fam-fine" id="culture-note" data-testid="culture-note" aria-live="polite"></p>
-          <div class="fam-row"><label class="fam-label" for="from" data-say="viewFrom"></label><select id="from" class="fam-field" data-testid="from"></select></div>
-          <p class="fam-fine" id="from-note" data-testid="from-note" aria-live="polite" hidden></p>
-          <div class="fam-row"><label class="fam-label" for="magnitude" data-say="magnitude"></label><input id="magnitude" class="fam-range" data-testid="magnitude" type="range" min="2" max="6" step="0.5" value="5" /><output id="magnitude-out" class="fam-chip" for="magnitude"></output><span class="fam-fine" id="shown" data-testid="shown"></span></div>
         </div>
       </section>
       <section class="more" aria-labelledby="code-heading">

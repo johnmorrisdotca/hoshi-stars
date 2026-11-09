@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The demo's map controls sit right under the map** (MODULES-740, 717). The side panel scrolls beside the map instead of pushing the Map, Show, Sky culture, View from and Faintest star controls down; on a phone the order is map, controls, panel. A zoom readout sits between Zoom in and Zoom out, and the shared Wide toggle from kazoku-ui 0.23.0 gives the map the page's full width with the panel below it (`?wide=on`, the T key).
+
 ## [0.10.0] - 2026-11-09
 
 - **A picture of each of the 88 constellations** (MODULES-736). The constellation framed in a square, its boundary dashed, its figure and stars in full and the neighbours faint round it, in a light and a dark look, with no text in the drawing. New entry point `@johnmorrisdotca/hoshi-stars/thumbnails` (`constellationThumbnail`, and `thumbnailSvg`, the same drawing for any other figure, such as the Japanese and Chinese ones to come); the main entry is unchanged. The package ships the files: `thumbnails/svg/<light|dark>/<abbreviation>.svg` and `thumbnails/png/160/...` (SVG and a 160-pixel PNG for a picker; about 3 MB packed); the demo site also has PNGs at 480 and 1200 pixels. `pnpm thumbnails [folder] [sizes]` makes them (resvg, no browser), and the data export carries the SVGs.

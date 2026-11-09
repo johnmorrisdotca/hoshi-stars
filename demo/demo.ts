@@ -1,6 +1,9 @@
 // The demo page: a sky you turn with a drag, zoom with the wheel or a pinch, tap for a star, a Messier object or a constellation, and search by name in English or Japanese.
 // Every choice is kept in the address. The language is the family's: the chooser in the header fills the page's fixed words, and this script rewrites what it draws itself.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
+import { zoomText } from "@johnmorrisdotca/kazoku-ui/view-controls";
+import { wideCss } from "@johnmorrisdotca/kazoku-ui/wide-layout";
+import "@johnmorrisdotca/kazoku-ui/wide-layout/define";
 import "@johnmorrisdotca/kazoku-ui/embed-panel/define";
 import type { EmbedChangeDetail, EmbedPanelElement } from "@johnmorrisdotca/kazoku-ui/embed-panel/element";
 import { WORDS } from "../scripts/page-words.ts";
@@ -21,6 +24,10 @@ import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.t
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 import { mountPicker } from "./picker.ts";
+
+const wideStyle = document.createElement("style");
+wideStyle.textContent = wideCss({ side: "340px" });
+document.head.append(wideStyle);
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const lang = (): "en" | "ja" => (document.documentElement.lang === "ja" ? "ja" : "en");
@@ -88,14 +95,18 @@ const pickedConstellation = (): string | undefined => {
   return culture.id === "chinese" ? figuresOf(culture).find((f) => f.stars.includes(star))?.asterism.id : star.constellation;
 };
 
+/** The chart's corners that hold buttons (the zoom tools, the Wide toggle): no label is drawn under them. */
 function clear(): Box[] {
-  const tools = $("zoom-in").parentElement!.getBoundingClientRect();
   const at = svg.getBoundingClientRect();
-  return [{ x0: tools.left - at.left - 4, y0: tools.top - at.top - 4, x1: tools.right - at.left + 4, y1: tools.bottom - at.top + 4 }];
+  return [$("zoom-in").parentElement!, $("wide-toggle")]
+    .map((element) => element.getBoundingClientRect())
+    .filter((box) => box.width > 0)
+    .map((box) => ({ x0: box.left - at.left - 4, y0: box.top - at.top - 4, x1: box.right - at.left + 4, y1: box.bottom - at.top + 4 }));
 }
 
 function draw(): void {
   queued = false;
+  $("zoom-readout").textContent = zoomText(view.zoom / opening());
   const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined, sky });
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
@@ -139,6 +150,7 @@ function pressed(): void {
   fromChoices();
 }
 function words(): void {
+  $("wide-toggle").setAttribute("lang", lang());
   seg("seg-projection", PROJECTIONS.map((kind) => [kind, say(kind)] as const), (kind) => {
     setView({ ...view, projection: kind as Projection, ...(address.get("zoom") === null ? { zoom: defaultZoom(kind as Projection, width, height) } : {}) });
     address.set("proj", kind);
