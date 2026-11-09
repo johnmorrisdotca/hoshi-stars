@@ -13,6 +13,7 @@ What it keeps
 - A position more than 1 arc-minute from NED's is replaced by NED's (scripts/check-deep-sky-ned.py, applied from NED_POSITIONS).
 - The Messier objects' magnitudes and sizes are NASA HEASARC's Messier table (heasarc_messier) where it has them; Wikidata's V band mixes in the central star's magnitude for
   planetary nebulae and values that differ by more than a magnitude for others. A planetary nebula outside the Messier list gets no magnitude, for the same reason.
+- The constellation is the one the position is in by the IAU boundaries (scripts/deep-sky-constellations.ts, run last), not Wikidata's statement.
 - Type (P31) is mapped to a small fixed vocabulary; magnitude is the V band (P1215 with band V, Q4892529); size is the angular diameter (P5348) in arc-minutes.
 - Two items that carry the same catalogue number and sit within 1 arc-minute are one object (the Messier item, else the one labelled with the number, else the one with more
   data, is kept); where they sit further apart the number stays with the item labelled with it.
@@ -28,6 +29,7 @@ import gzip
 import json
 import math
 import re
+import subprocess
 import sys
 import time
 import unicodedata
@@ -418,6 +420,7 @@ def main() -> None:
     print("\n".join(differences))
     print(f"positions taken from NED: {corrections} of {len(ned)} in the file")
     print(f"left out for positions that disagree: {ambiguous_dropped}; types: {dict(counts)}")
+    subprocess.run(["node", str(ROOT / "scripts" / "deep-sky-constellations.ts")], check=True, cwd=ROOT)
 
 
 if __name__ == "__main__":

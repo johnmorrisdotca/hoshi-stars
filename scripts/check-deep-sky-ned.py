@@ -38,10 +38,27 @@ def rows(name: str, constant: str):
 
 
 def designation(o) -> str:
-    """The name NED is asked for: NGC, else IC, else Messier."""
-    if o["ngc"]:
-        return f"NGC {o['ngc'].split(',')[0]}"
-    return f"IC {o['ic'].split(',')[0]}" if o["ic"] else f"M{o['messier']}"
+    """The name NED is asked for first: NGC, else IC, else Messier."""
+    return designations(o)[0]
+
+
+def designations(o) -> list:
+    """Every NGC and IC name of the object (NGC first), else its Messier name. A Wikidata item can carry two numbers that are two NED entries: NGC 2652 is an old
+    catalogue place with no object type, and the galaxy is NGC 2974."""
+    names = [f"NGC {n}" for n in o["ngc"].split(",") if n] + [f"IC {n}" for n in o["ic"].split(",") if n]
+    return names or [f"M{o['messier']}"]
+
+
+def best(o, cache):
+    """NED's place for the object: the first name's, unless the names are more than 1 arc-minute apart in NED, when the first one NED gives an object type wins."""
+    found = [(n, cache.get(n)) for n in designations(o) if cache.get(n) is not None]
+    if not found:
+        return None
+    first = found[0][1]
+    if all(separation_arcmin(first, f) <= 1.0 for _, f in found):
+        return first
+    typed = [f for _, f in found if len(f) > 2 and f[2]]
+    return typed[0] if typed else first
 
 
 def key(o) -> str:
@@ -64,7 +81,7 @@ def lookup(name: str):
             found = answer.get("Preferred")
             if found is None or not understood(name, answer["Interpreted"]["Name"]):
                 return None
-            return [found["Position"]["RA"], found["Position"]["Dec"]]
+            return [found["Position"]["RA"], found["Position"]["Dec"], (found.get("ObjType") or {}).get("Value") or ""]
         except Exception:
             time.sleep(3)
     return None
@@ -113,10 +130,10 @@ def main() -> None:
         seed = int(sys.argv[sys.argv.index("--seed") + 1]) if "--seed" in sys.argv else 1
         random.seed(seed)
         chosen, label = messier + random.sample(others, min(sample, len(others))), f"the Messier objects and {sample} random others (seed {seed})"
-    cache = ask(sorted({designation(o) for o in chosen}), cache_path)
+    cache = ask(sorted({n for o in chosen for n in designations(o)}), cache_path)
     results, fixes = [], []
     for o in chosen:
-        found = cache.get(designation(o))
+        found = best(o, cache)
         s = None if found is None else separation_arcmin((o["ra"], o["dec"]), found)
         results.append((key(o), s))
         if s is not None and s > 1.0:
