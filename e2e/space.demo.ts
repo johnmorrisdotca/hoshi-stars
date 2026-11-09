@@ -97,7 +97,7 @@ test("Turn 90° turns it side-on: the distances lie side by side, the scale appe
 });
 
 test("a drag turns it, and the turn is kept in the address", async ({ page, isMobile }) => {
-  test.skip(isMobile, "a touch drag scrolls the page");
+  test.skip(isMobile || (page.viewportSize()?.width ?? 1280) < 500, "a phone's drag is a finger's, and the gesture check drives it; a mouse in a phone-sized WebKit is not one");
   await open(page);
   const box = (await page.locator("#sp-view").boundingBox())!;
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
