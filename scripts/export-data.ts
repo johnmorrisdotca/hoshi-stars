@@ -1,0 +1,55 @@
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { BOUNDARY_ROWS } from "../src/data/boundaries.ts";
+import { LINE_ROWS } from "../src/data/lines.ts";
+import { stars } from "../src/stars.ts";
+import { nearbyStars } from "../src/nearby.ts";
+import { constellations } from "../src/constellations.ts";
+import { messier } from "../src/deep-sky.ts";
+import { deepSky } from "../src/deep-sky-ngc-ic.ts";
+
+type Value = string | number | boolean | null | undefined;
+type Row = Record<string, Value>;
+type Kind = "string" | "integer" | "number" | "boolean";
+type Column = { name: string; type: Kind; unit: string | null; meaning: string; source: string };
+const column = (name: string, type: Kind, meaning: string, source: string, unit: string | null = null): Column => ({ name, type, unit, meaning, source });
+const bsc = "Yale Bright Star Catalogue V/50; see NOTICE.md";
+const gctp = "Yale GCTP I/238A and 2MASS; see NOTICE.md";
+const iau = "IAU constellation list and NAOJ names; see NOTICE.md";
+const deep = "Wikidata CC0, NED and HEASARC corrections; see NOTICE.md";
+const named = "IAU Working Group on Star Names and package Japanese transliterations; see NOTICE.md";
+const location = (source: string) => [column("rightAscension", "number", "J2000 right ascension", source, "degree"), column("declination", "number", "J2000 declination", source, "degree")];
+const starColumns = [column("hr", "integer", "Harvard Revised catalogue number", bsc), column("name", "string", "English star name", named), column("nameJa", "string", "Japanese star name in katakana", named), column("designation", "string", "Bayer or Flamsteed designation", bsc), column("constellation", "string", "IAU constellation abbreviation", "Yale BSC and Roman boundaries; see NOTICE.md"), ...location(bsc), column("magnitude", "number", "Visual magnitude", bsc, "magnitude"), column("colourIndex", "number", "B minus V colour index", bsc, "magnitude"), column("spectralClass", "string", "Spectral class", bsc), column("properMotionRaMas", "number", "Right ascension proper motion multiplied by cosine of declination", bsc, "milliarcsecond/year"), column("properMotionDecMas", "number", "Declination proper motion", bsc, "milliarcsecond/year"), column("parallaxMas", "number", "Annual parallax; zero means unknown", bsc, "milliarcsecond")];
+const nearbyColumns = [column("id", "string", "Stable GCTP-based identifier", gctp), column("name", "string", "Common name", gctp), column("designation", "string", "Bayer or Flamsteed designation", gctp), column("aliases", "string", "Other names as a JSON array", gctp), column("gctp", "string", "GCTP number including component", gctp), column("hd", "integer", "Henry Draper identifier", gctp), column("gliese", "string", "Gliese-Jahreiss identifier", gctp), column("twoMass", "string", "2MASS identifier", gctp), ...location(gctp), column("positionSource", "string", "Position catalogue", gctp), column("positionErrorArcsec", "number", "Position uncertainty", gctp, "arcsecond"), column("gctpOffsetArcsec", "number", "Offset from propagated GCTP position", gctp, "arcsecond"), column("parallaxMas", "number", "Annual parallax", gctp, "milliarcsecond"), column("parallaxErrorMas", "number", "Parallax standard error", gctp, "milliarcsecond"), column("lightYears", "number", "Distance from parallax", gctp, "light-year"), column("lightYearsError", "number", "First-order distance uncertainty", gctp, "light-year"), column("parsecs", "number", "Distance from parallax", gctp, "parsec"), column("parsecsError", "number", "First-order distance uncertainty", gctp, "parsec"), column("relativeError", "number", "Parallax error divided by parallax", gctp), column("properMotionRaMas", "number", "Right ascension motion multiplied by cosine of declination", gctp, "milliarcsecond/year"), column("properMotionDecMas", "number", "Declination proper motion", gctp, "milliarcsecond/year"), column("properMotionSource", "string", "Proper motion source", gctp), column("magnitude", "number", "Catalogue magnitude", gctp, "magnitude"), column("magnitudeKind", "string", "Magnitude measurement kind", gctp), column("magnitudeSource", "string", "Magnitude source", gctp), column("spectralType", "string", "Catalogue spectral type", gctp), column("coarsePosition", "boolean", "Position comes from GCTP", gctp), column("excludedFromSpace", "boolean", "Nonpositive parallax prevents a space distance", gctp), column("ambiguousMatch", "boolean", "Match to another catalogue is ambiguous", gctp)];
+const deepColumns = [column("id", "string", "Primary catalogue identifier", deep), column("messier", "string", "Messier identifier", deep), column("ngc", "string", "NGC identifier", deep), column("ic", "string", "IC identifier", deep), column("otherIds", "string", "Other catalogue identifiers as a JSON array", deep), column("name", "string", "English common name", deep), column("type", "string", "Object type", deep), column("constellation", "string", "IAU constellation abbreviation", deep), ...location(deep), column("magnitude", "number", "Visual magnitude", deep, "magnitude"), column("sizeArcmin", "number", "Angular major axis", deep, "arcminute")];
+const asRows = (data: readonly object[]): Row[] => data.map((item) => Object.fromEntries(Object.entries(item).map(([key, value]) => [key, Array.isArray(value) ? JSON.stringify(value) : value])) as Row);
+const nearby = nearbyStars().map(({ flags, aliases, ...rest }) => ({ ...rest, aliases: JSON.stringify(aliases), ...flags }));
+const lineRows = LINE_ROWS.split("\n").flatMap((line) => { const [abbr, chains] = line.split("|"); return chains!.split(";").flatMap((chain, chainIndex) => chain.split("-").map((hr, position) => ({ constellation: abbr!, chain: chainIndex + 1, position: position + 1, hr: Number(hr) }))); });
+const boundaryRows = BOUNDARY_ROWS.split("\n").map((line, index) => { const [lower, upper, declination, abbreviation] = line.trim().split(/\s+/); return { order: index + 1, lowerRaHours: Number(lower), upperRaHours: Number(upper), lowerDec: Number(declination), constellation: abbreviation! }; });
+const allStars = stars();
+const tables: { name: string; columns: Column[]; rows: Row[] }[] = [
+  { name: "stars", columns: starColumns, rows: asRows(allStars) },
+  { name: "nearby-stars", columns: nearbyColumns, rows: asRows(nearby) },
+  { name: "constellations", columns: [column("abbreviation", "string", "IAU abbreviation", iau), column("name", "string", "Latin name", iau), column("genitive", "string", "Latin genitive", iau), column("english", "string", "English name", iau), column("japanese", "string", "Japanese name", iau), column("reading", "string", "Japanese reading", iau)], rows: asRows(constellations()) },
+  { name: "constellation-lines", columns: [column("constellation", "string", "IAU abbreviation", "Original figures; see NOTICE.md"), column("chain", "integer", "One-based chain number", "Original figures; see NOTICE.md"), column("position", "integer", "One-based position within chain", "Original figures; see NOTICE.md"), column("hr", "integer", "Bright-star HR number", bsc)], rows: lineRows },
+  { name: "boundaries", columns: [column("order", "integer", "Roman table row order", "Roman 1987, VizieR VI/42; see NOTICE.md"), column("lowerRaHours", "number", "Lower right ascension, B1875", "Roman 1987, VizieR VI/42; see NOTICE.md", "hour"), column("upperRaHours", "number", "Upper right ascension, B1875", "Roman 1987, VizieR VI/42; see NOTICE.md", "hour"), column("lowerDec", "number", "Lower declination, B1875", "Roman 1987, VizieR VI/42; see NOTICE.md", "degree"), column("constellation", "string", "IAU abbreviation", "Roman 1987, VizieR VI/42; see NOTICE.md")], rows: boundaryRows },
+  { name: "messier", columns: deepColumns, rows: asRows(messier()) },
+  { name: "ngc-ic", columns: deepColumns, rows: asRows(deepSky().slice(messier().length)) },
+  { name: "star-names", columns: [column("hr", "integer", "Harvard Revised catalogue number", bsc), column("name", "string", "English name", named), column("nameJa", "string", "Japanese name in katakana", named)], rows: asRows(allStars.filter((star) => star.name !== undefined).map(({ hr, name, nameJa }) => ({ hr, name, nameJa }))) },
+];
+const csvCell = (value: Value): string => { if (value === undefined || value === null) return "\\N"; const text = String(value); if (text === "\\N") throw new Error("The CSV null marker is reserved"); return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text; };
+const output = resolve(process.argv[2] ?? "dist-data");
+await mkdir(output, { recursive: true });
+const files: string[] = [];
+for (const { name, columns, rows } of tables) {
+  const csv = [columns.map((c) => c.name).join(","), ...rows.map((row) => columns.map((c) => csvCell(row[c.name])).join(","))].join("\n") + "\n";
+  const schema = { table: name, rows: rows.length, encoding: "UTF-8", null: "\\N", columns };
+  for (const [file, content] of [[`${name}.csv`, csv], [`${name}.schema.json`, JSON.stringify(schema, null, 2) + "\n"]] as const) { await writeFile(join(output, file), content); files.push(file); }
+}
+const notice = await readFile(new URL("../NOTICE.md", import.meta.url), "utf8");
+await writeFile(join(output, "LICENCE-DATA.md"), `# Data licence and credits\n\nThe package code is MIT. Each data source keeps its own terms, including the sources with no stated licence. The following is the package's complete source notice.\n\n${notice}`);
+files.push("LICENCE-DATA.md");
+const sums = await Promise.all(files.sort().map(async (file) => `${createHash("sha256").update(await readFile(join(output, file))).digest("hex")}  ${file}`));
+await writeFile(join(output, "SHA256SUMS"), sums.join("\n") + "\n");
+console.log(`Exported ${tables.length} tables to ${output}`);
