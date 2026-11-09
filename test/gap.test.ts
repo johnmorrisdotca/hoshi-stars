@@ -17,7 +17,12 @@ const report = JSON.parse(read("docs/research/gap-6.5-8.json")) as {
   gapTiles: Record<string, { stars: number; tiles: number; bytes: number; from: number; to: number }>;
   knownStars: { sao: Array<{ sao: number; ra: number; dec: number; v: number; type: string }>; apass2mass: Array<{ apass: string; twomass: string; ra: number; dec: number; v: number; bv: number }> };
 };
-const index = JSON.parse(read("faint-tiles/index.json")) as { stars: number; levels: Array<{ stars: number }>; gapFill: { level: number; stars: number; sources: Array<{ name: string; starsBuilt: number; starsKept: number }> } };
+const index = JSON.parse(read("faint-tiles/index.json")) as {
+  stars: number;
+  levels: Array<{ stars: number }>;
+  gapFill: { level: number; stars: number; sources: Array<{ name: string; starsBuilt: number; starsKept: number }> };
+  apassV: { declinationMax: number; tiles: Record<string, [number, number]> };
+};
 const ARC_SECOND = 1 / 3600;
 const sum = (key: string): number => report.compare.perQuarter.reduce((a, q) => a + q[key]!, 0);
 
@@ -155,11 +160,15 @@ test("none of the tiles on file holds a bright star or one of UCAC4's own stars 
         for (const d of [Math.floor(dec) - 1, Math.floor(dec), Math.floor(dec) + 1]) {
           for (const b of byDegree.get(d) ?? []) if (Math.abs(b.v - v) <= 1.5 && separation(ra, dec, b.ra, b.dec) <= 19 * ARC_SECOND) assert.fail(`${name}: a star at ${ra}, ${dec} is bright star ${b.ra}, ${b.dec} again`);
         }
-        // UCAC4's own stars in the shipped tiles (none of them is a gap star while no source is merged)
+        // UCAC4's own stars in the shipped tiles (none of them is a gap star while no source is merged). The gap sources were built against UCAC4's magnitudes as they were; since MODULES-786 a UCAC4 star that APASS DR10 corrected is
+        // brighter, so it may now lie within 1.9 magnitudes of a gap star it was not near before. That is allowed only where a correction was made (the tile says so, and south of the declination APASS reaches), and the merge
+        // (`load_gap` in scripts/make-faint-data.py) drops such a gap star.
         if (index.gapFill.stars === 0 && checked % 7 === 0) {
           const field = { rightAscension: ra, declination: dec, radius: 4.5 * ARC_SECOND };  // the build's 5 arc-seconds, less the half arc-second that a tile's grid rounds a position by
-          const twin = faintStarsIn(faintTilesFor(field, 10).map(tileOf), field, 10).stars.find((f) => Math.abs(f.magnitude - v) <= 1.9);
-          assert.equal(twin, undefined, `${name}: a star at ${ra}, ${dec} is a UCAC4 star again`);
+          const twins = faintStarsIn(faintTilesFor(field, 10).map(tileOf), field, 10).stars.filter((f) => Math.abs(f.magnitude - v) <= 1.9);
+          const tiles = faintTilesFor(field, 10).map((id) => `L${id.level}/${id.band}-${id.column}`);
+          const corrected = dec <= index.apassV.declinationMax && tiles.some((path) => index.apassV.tiles[path] !== undefined);
+          if (!corrected) assert.equal(twins.length, 0, `${name}: a star at ${ra}, ${dec} is a UCAC4 star again`);
         }
         checked++;
       }

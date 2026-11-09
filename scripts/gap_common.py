@@ -180,18 +180,39 @@ def tap_job(base, query, poll_seconds=10, attempts=720):
     return text
 
 
+def tap_cone_upload(base, table, columns, points, radius_arcsec):
+    """The rows of `table` (columns of the alias `p`) within `radius_arcsec` of each of `points` ((id, ra, dec) in degrees), as CSV text: the positions go up as a VOTable, and the query joins them on the server (IRSA's TAP service; one synchronous call).
+    The first column of the answer is `cid`, the id of the point the row is near."""
+    import uuid
+
+    rows = "".join(f"<TR><TD>{cid}</TD><TD>{ra!r}</TD><TD>{dec!r}</TD></TR>" for cid, ra, dec in points)
+    votable = (
+        '<?xml version="1.0"?><VOTABLE version="1.3" xmlns="http://www.ivoa.net/xml/VOTable/v1.3"><RESOURCE type="results"><TABLE name="cand">'
+        '<FIELD name="cid" datatype="long"/><FIELD name="cra" datatype="double" unit="deg"/><FIELD name="cdec" datatype="double" unit="deg"/>'
+        f"<DATA><TABLEDATA>{rows}</TABLEDATA></DATA></TABLE></RESOURCE></VOTABLE>"
+    ).encode()
+    query = f"SELECT c.cid, {columns} FROM {table} AS p, TAP_UPLOAD.cand AS c WHERE CONTAINS(POINT('ICRS',p.ra,p.dec),CIRCLE('ICRS',c.cra,c.cdec,{radius_arcsec / 3600}))=1"
+    boundary = uuid.uuid4().hex
+    fields = {"REQUEST": "doQuery", "LANG": "ADQL", "FORMAT": "csv", "QUERY": query, "UPLOAD": "cand,param:cand"}
+    body = b"".join(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'.encode() for k, v in fields.items())
+    body += f'--{boundary}\r\nContent-Disposition: form-data; name="cand"; filename="cand.xml"\r\nContent-Type: text/xml\r\n\r\n'.encode() + votable + f"\r\n--{boundary}--\r\n".encode()
+    req = urllib.request.Request(base + "/sync", data=body, headers={"Content-Type": f"multipart/form-data; boundary={boundary}", "User-Agent": USER_AGENT, "Accept-Encoding": "identity"})
+    with urllib.request.urlopen(req, timeout=900) as r:
+        return r.read().decode()
+
+
 def tap_count(base, query_from_where):
     """`SELECT COUNT(*)` of `FROM ... WHERE ...` as an async job (the sync route times out on the big tables)."""
     text = tap_job(base, f"SELECT COUNT(*) AS n {query_from_where}")
     return int(list(csv.reader(io.StringIO(text)))[1][0])
 
 
-def download_bands(base, raw_dir, name, select, table, extra_where, band_degrees, pause_seconds, count_base=None):
-    """One CSV per band of declination in `raw_dir`, named `<name>-dec<low>-<high>.csv`. A band already saved is skipped; each is checked against a COUNT of the same query before it is saved."""
+def download_bands(base, raw_dir, name, select, table, extra_where, band_degrees, pause_seconds, count_base=None, dec_to=90):
+    """One CSV per band of declination in `raw_dir` (from -90 up to `dec_to`), named `<name>-dec<low>-<high>.csv`. A band already saved is skipped; each is checked against a COUNT of the same query before it is saved."""
     raw_dir = Path(raw_dir)
     raw_dir.mkdir(parents=True, exist_ok=True)
-    for low in range(-90, 90, band_degrees):
-        high = low + band_degrees
+    for low in range(-90, dec_to, band_degrees):
+        high = min(low + band_degrees, dec_to)
         path = raw_dir / f"{name}-dec{low:+03d}-{high:+03d}.csv"
         if path.exists():
             print(f"have {path.name}", flush=True)

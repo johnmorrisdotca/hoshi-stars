@@ -92,7 +92,7 @@ export interface FaintStar {
   rightAscension: number;
   /** Declination in degrees at J2000, -90 to 90. */
   declination: number;
-  /** The magnitude to 0.05: APASS V where UCAC4 carries one of APASS's own, else UCAC4's own model magnitude (between V and R). Smaller is brighter. */
+  /** The magnitude to 0.05: APASS DR10's V for a bright star it holds (V 7.0 to 10.2, south of declination +20.0), else APASS V as UCAC4 carries it where it is APASS's own, else UCAC4's own model magnitude (between V and R). Smaller is brighter. */
   magnitude: number;
   /** B-V in magnitudes from APASS, to 0.0125, or `undefined` where UCAC4 has no APASS B and V for the star (about one star in ten). */
   colourIndex: number | undefined;

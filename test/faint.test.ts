@@ -1,5 +1,6 @@
 // The faint stars: the tiles against the build report (scripts/make-faint-data.py), three UCAC4 stars where the catalogue puts them, three of UCAC4's copies of Hipparcos and Tycho-2 stars absent,
-// no duplicate of a bright star, the tile grid, the selection of a patch of sky with a cap, and the loader with a fetch that reads the tiles from disk.
+// no duplicate of a bright star, no ghost in the halo of a bright star that 2MASS does not confirm (MODULES-769), three stars that carry APASS DR10's magnitude (MODULES-786) and the counts of both against the build report,
+// the tile grid, the selection of a patch of sky with a cap, and the loader with a fetch that reads the tiles from disk.
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -13,7 +14,18 @@ const index = JSON.parse(readFileSync(new URL("index.json", DIR), "utf8")) as {
   levels: Array<{ level: number; faintest: number; bandDegrees: number; tiles: number; stars: number; bytes: number }>;
   keptByHalfMagnitude: Record<string, number>;
   report: Record<string, number>;
+  keptByQuarterMagnitude: Record<string, number>;
   gapFill: { level: number; stars: number; sources: Array<{ name: string; starsKept: number }> };
+  ghosts: {
+    inHalo: number;
+    confirmed: number;
+    dropped: number;
+    brightStarsWithAGhost: number;
+    confirmedStars: Array<[number, number, number, number, string]>;
+    droppedExamples: Array<[number, number, number, number]>;
+  };
+  apassV: { from: number; to: number; declinationMax: number; stars: number; colours: number; tiles: Record<string, [number, number]> };
+  saoV?: unknown;
 };
 const ARC_SECOND = 1 / 3600;
 
@@ -235,4 +247,127 @@ test("faintSky loads only the tiles a patch needs, once, answers from them, and 
   const broken = faintSky({ baseUrl: "https://tiles.example/nothing-here/", fetch: fetchFromDisk });
   await assert.rejects(broken.load(orion, 12), /could not be fetched \(404\)/);
   assert.equal(broken.stars(orion, 12).loaded, false);
+});
+
+// ----- ghosts in the halo of a bright star (MODULES-769) -----
+/** The reach in arc-seconds of the halo of a bright star of visual magnitude `v`: scripts/make-faint-data.py `ghost_radius`. */
+const haloRadius = (v: number): number => Math.min(120, 30 * 10 ** (0.2 * (5.5 - v)));
+/** The position a 2MASS designation names: hhmmssss then the sign and ddmmsss (J2000), so 05283322-0441493 is 05h 28m 33.22s, -04d 41m 49.3s. */
+function twoMassPosition(designation: string): { ra: number; dec: number } {
+  const m = /^(\d\d)(\d\d)(\d\d)(\d\d)([+-])(\d\d)(\d\d)(\d\d)(\d)$/.exec(designation);
+  assert.ok(m, designation);
+  return { ra: (Number(m[1]) + Number(m[2]) / 60 + Number(`${m[3]}.${m[4]}`) / 3600) * 15, dec: (m[5] === "-" ? -1 : 1) * (Number(m[6]) + Number(m[7]) / 60 + Number(`${m[8]}.${m[9]}`) / 3600) };
+}
+
+test("no faint star lies in the halo of a bright star unless a 2MASS source confirms it, and each confirmation is a source that is where the star is", () => {
+  const confirmed = index.ghosts.confirmedStars;
+  const isConfirmed = (ra: number, dec: number, magnitude: number): boolean => confirmed.some((c) => separation(c[0], c[1], ra, dec) < 1.0 * ARC_SECOND && Math.abs(c[2] - magnitude) <= 0.026);
+  let checked = 0;
+  let inHalo = 0;
+  for (const star of stars()) {
+    const reach = haloRadius(star.magnitude) - 1; // less an arc-second, which a tile's grid rounds a position by
+    const field = { rightAscension: star.rightAscension, declination: star.declination, radius: reach * ARC_SECOND };
+    for (const f of faintStarsIn(faintTilesFor(field).map(tileOf), field).stars) {
+      const d = separation(f.rightAscension, f.declination, star.rightAscension, star.declination) / ARC_SECOND;
+      if (d > reach) continue;
+      inHalo++;
+      assert.ok(isConfirmed(f.rightAscension, f.declination, f.magnitude), `HR ${star.hr} (V ${star.magnitude}): a faint star of ${f.magnitude} ${d.toFixed(1)} arc-seconds away is in its halo and nothing confirms it`);
+    }
+    checked++;
+  }
+  assert.equal(checked, 5080);
+  assert.ok(inHalo > 100, `${inHalo} stars in the halos`);
+  // the confirmations: each is in the tiles, and its 2MASS source (named by its designation, which is its position) is within the 2 arc-seconds the rule allows, less the grid's rounding
+  for (const [ra, dec, magnitude, brightV, designation] of confirmed) {
+    const found = near(ra, dec, 1.0);
+    assert.equal(found.length, 1, `confirmed star at ${ra}, ${dec}`);
+    assert.ok(Math.abs(found[0]!.magnitude - magnitude) <= 0.026);
+    const source = twoMassPosition(designation);
+    assert.ok(separation(source.ra, source.dec, ra, dec) <= 2.1 * ARC_SECOND, `${designation} is ${(separation(source.ra, source.dec, ra, dec) / ARC_SECOND).toFixed(2)} arc-seconds from the star`);
+    assert.ok(brightV > -2 && brightV <= 6.1);
+  }
+  // the dropped ghosts are not there
+  for (const [ra, dec, , v] of index.ghosts.droppedExamples) {
+    assert.ok(v > -2 && v <= 6.1);
+    assert.equal(near(ra, dec, 0.5).length, 0, `a ghost at ${ra}, ${dec} is still in the tiles`);
+  }
+});
+
+test("the ghost counts add up, and the build report adds up to the tiles", () => {
+  const g = index.ghosts;
+  assert.equal(g.inHalo, g.confirmed + g.dropped);
+  assert.equal(g.confirmedStars.length, g.confirmed);
+  assert.equal(index.report["ghost rule: kept stars in the halo of a bright star"], g.inHalo);
+  assert.equal(index.report["ghost rule: confirmed by a 2MASS source, kept"], g.confirmed);
+  assert.equal(index.report["dropped: ghost, in the halo of a bright star with no 2MASS source"], g.dropped);
+  assert.ok(g.dropped > 500 && g.brightStarsWithAGhost > 400 && g.brightStarsWithAGhost <= g.dropped);
+  // every row read is a star of the tiles or is dropped for a reason the report names
+  const dropped = Object.entries(index.report).filter(([k]) => k.startsWith("dropped: ")).reduce((a, [, v]) => a + v, 0);
+  assert.equal(index.report["rows read"]! - dropped, index.report["kept"]);
+  assert.equal(index.report["kept"]! + index.gapFill.stars, index.stars);
+});
+
+test("the counts by quarter magnitude are the tiles' own", () => {
+  const byQuarter = new Map<string, number>();
+  for (const tile of everyTile()) for (let i = 0; i < tile.count; i++) {
+    const q = (Math.floor(tile.magnitude[i]! * 4 + 1e-6) / 4).toFixed(2);
+    byQuarter.set(q, (byQuarter.get(q) ?? 0) + 1);
+  }
+  for (const [q, n] of Object.entries(index.keptByQuarterMagnitude)) assert.equal(byQuarter.get(q) ?? 0, n, `quarter magnitude ${q}`);
+  assert.ok(Object.keys(index.keptByQuarterMagnitude).includes("7.00") && Object.keys(index.keptByQuarterMagnitude).includes("10.00"));
+});
+
+// ----- APASS DR10's magnitudes for UCAC4's bright stars (MODULES-786) -----
+test("three stars carry APASS DR10's V and B-V, not UCAC4's, which ran a magnitude too faint", () => {
+  // UCAC4 (IRSA ucac4_sources, 2026-11-09): id, J2000 position, the V it gave (APASS DR6's, saturated). APASS DR10 (GAVO apass.dr10, 2026-11-09): id, V and B (so B-V). The tile holds V to 0.05 and B-V to 0.0125.
+  const known: Array<{ ucac4: string; ra: number; dec: number; ucacV: number; apass: string; v: number; b: number }> = [
+    { ucac4: "368-064024", ra: 193.3007611, dec: -16.5922033, ucacV: 9.073, apass: "070-4715278", v: 8.061, b: 8.973 },
+    { ucac4: "521-019709", ra: 91.0463344, dec: 14.0735975, ucacV: 9.334, apass: "100-1283734", v: 8.233, b: 8.644 },
+    { ucac4: "078-051921", ra: 349.6123733, dec: -74.5162114, ucacV: 9.108, apass: "015-1507731", v: 7.951, b: 8.421 },
+  ];
+  for (const k of known) {
+    const found = near(k.ra, k.dec, 1.5);
+    assert.equal(found.length, 1, `${k.ucac4}: ${found.length} stars within 1.5 arc-seconds`);
+    const star = found[0]!;
+    assert.ok(Math.abs(star.magnitude - k.v) <= 0.026, `${k.ucac4} (APASS ${k.apass}): ${star.magnitude} against APASS DR10's ${k.v}`);
+    assert.ok(k.ucacV - star.magnitude > 0.9, `${k.ucac4} is ${k.ucacV - star.magnitude} magnitudes brighter than UCAC4's ${k.ucacV}`);
+    assert.ok(star.colourIndex !== undefined && Math.abs(star.colourIndex - (k.b - k.v)) <= 0.0126, `${k.ucac4}: B-V ${star.colourIndex} against ${(k.b - k.v).toFixed(3)}`);
+  }
+});
+
+test("the index says per tile how many stars took APASS's V, none north of +20 degrees, and the counts are the report's", () => {
+  const a = index.apassV;
+  assert.equal(a.from, 7);
+  assert.equal(a.declinationMax, 20);
+  assert.equal(index.report["magnitude taken from APASS DR10"], a.stars);
+  assert.equal(index.report["colour taken from APASS DR10 (B-V, both errors under 0.1)"], a.colours);
+  let stars = 0;
+  let colours = 0;
+  for (const [path, [took, colour]] of Object.entries(a.tiles)) {
+    const [level, rest] = path.split("/") as [string, string];
+    const [band, column] = rest.replace(".bin", "").split("-").map(Number) as [number, number];
+    const id = { level: Number(level.slice(1)), band, column };
+    assert.ok(existsSync(new URL(`${path}.bin`, DIR)), path);
+    assert.ok(took >= 1 && took <= tileOf(id).count && colour <= took, path);
+    assert.ok(faintTileBounds(id).decFrom < a.declinationMax, `${path} reaches past +${a.declinationMax}`);
+    stars += took;
+    colours += colour;
+  }
+  assert.equal(stars, a.stars);
+  assert.equal(colours, a.colours);
+  assert.ok(a.stars > 100_000, `${a.stars} stars took APASS's V`);
+});
+
+test("SAO's magnitudes are not used while its terms are unconfirmed, and nothing of Hipparcos, Tycho or Gaia is read for the repairs", () => {
+  const notice = readFileSync(new URL("../NOTICE.md", import.meta.url), "utf8");
+  assert.match(notice, /SAO[^\n]*confirmation requested 2026-11-09/);
+  assert.equal(index.saoV, undefined, "SAO's V is in the tiles while NOTICE.md says its terms are unconfirmed");
+  assert.equal(index.report["magnitude taken from SAO"], undefined);
+  const script = readFileSync(new URL("../scripts/make-faint-data.py", import.meta.url), "utf8");
+  // the new queries, by name: APASS DR10 through GAVO and 2MASS through IRSA, columns that carry no value of Hipparcos, Tycho or Gaia
+  assert.match(script, /APASS_TABLE = "apass\.dr10"/);
+  assert.match(script, /APASS_COLUMNS = "id, ra, dec, ra_error, dec_error, nobs_v, mag_v, err_mag_v, nobs_b, mag_b, err_mag_b"/);
+  assert.match(script, /"fp_psc", "p\.designation, p\.ra, p\.dec, p\.j_m, p\.ph_qual, p\.cc_flg"/);
+  for (const section of [index.ghosts, index.apassV]) for (const key of JSON.stringify(section).match(/"[A-Za-z][A-Za-z ,.()0-9-]*":/g) ?? []) assert.doesNotMatch(key, /hipparcos|tycho|gaia/i, key);
+  for (const key of Object.keys(index.report).filter((k) => /ghost|APASS DR10|SAO/.test(k))) assert.doesNotMatch(key, /hipparcos|tycho|gaia/i, key);
 });
