@@ -445,7 +445,7 @@ Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page
 
 ## Faint stars
 
-`@johnmorrisdotca/hoshi-stars/faint` adds 2,462,539 more stars, to magnitude 12, from UCAC4 (the U.S. Naval Observatory's CCD astrograph catalogue), as sky tiles of a few thousand stars that a page loads for the part of the sky it shows: nothing is added to the main import. Only the rows UCAC4 measured itself are in it, never the ones it copied from Hipparcos or Tycho; the magnitude is APASS V where UCAC4 has one, else UCAC4's own (between V and R); the colour is APASS B-V. It is thin brighter than about magnitude 9. The tiles are on the demo's Pages site (12.6 MB gzipped in all, not in the npm package) and `faintSky()` loads them:
+`@johnmorrisdotca/hoshi-stars/faint` adds 2,462,539 more stars, to magnitude 12, from UCAC4 (the U.S. Naval Observatory's CCD astrograph catalogue), as sky tiles of a few thousand stars that a page loads for the part of the sky it shows: nothing is added to the main import. Only the rows UCAC4 measured itself are in it, never the ones it copied from Hipparcos or Tycho; the magnitude is APASS V where UCAC4 has one, else UCAC4's own (between V and R); the colour is APASS B-V. It is thin brighter than about magnitude 9 (3,138 stars between 6.5 and 8), and its magnitudes of stars brighter than about 9.5 run 0.4 to 1.2 too faint; fills for the gap are built and on file, not merged yet (the guide). The tiles are on the demo's Pages site (12.6 MB gzipped in all, not in the npm package) and `faintSky()` loads them:
 
 ```js
 import { faintTilePath, faintTilesFor } from "@johnmorrisdotca/hoshi-stars/faint";

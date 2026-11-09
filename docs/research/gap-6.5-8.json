@@ -1,0 +1,960 @@
+{
+ "about": "The numbers of docs/research/gap-6.5-8.md, written by scripts/compare-gap.py (the comparison), scripts/make-gap-sao.py and scripts/make-gap-apass.py (the two build reports), and the demo counts measured by hand on 2026-11-09. Not shipped in the npm package.",
+ "built": "2026-11-09",
+ "compare": {
+  "2MASS sources read (J 9.5 or brighter)": 1776401,
+  "APASS rows matched to a 2MASS source, V 6.0 to 9.0": 76649,
+  "APASS match report": {
+   "apass rows read, V from 6.0 to 9.2": 98081,
+   "APASS rows with more than one 2MASS candidate (the nearest taken)": 1226,
+   "APASS rows with no 2MASS source within 5 arc-seconds": 674,
+   "APASS rows that share a 2MASS source with another (one kept)": 54
+  },
+  "perQuarter": [
+   {
+    "from": 6.0,
+    "expected": 1491,
+    "bright5080": 57,
+    "ucac4Own": 18,
+    "saoAll": 1804,
+    "apass2massAll": 526,
+    "saoNew": 1148,
+    "apass2massNew": 57
+   },
+   {
+    "from": 6.25,
+    "expected": 1955,
+    "bright5080": 0,
+    "ucac4Own": 26,
+    "saoAll": 1673,
+    "apass2massAll": 959,
+    "saoNew": 1632,
+    "apass2massNew": 317
+   },
+   {
+    "from": 6.5,
+    "expected": 2562,
+    "bright5080": 0,
+    "ucac4Own": 45,
+    "saoAll": 3306,
+    "apass2massAll": 1565,
+    "saoNew": 3279,
+    "apass2massNew": 1251
+   },
+   {
+    "from": 6.75,
+    "expected": 3358,
+    "bright5080": 0,
+    "ucac4Own": 36,
+    "saoAll": 2913,
+    "apass2massAll": 2284,
+    "saoNew": 2867,
+    "apass2massNew": 2221
+   },
+   {
+    "from": 7.0,
+    "expected": 4401,
+    "bright5080": 0,
+    "ucac4Own": 33,
+    "saoAll": 5198,
+    "apass2massAll": 3229,
+    "saoNew": 4874,
+    "apass2massNew": 3173
+   },
+   {
+    "from": 7.25,
+    "expected": 5769,
+    "bright5080": 0,
+    "ucac4Own": 207,
+    "saoAll": 4147,
+    "apass2massAll": 4074,
+    "saoNew": 3382,
+    "apass2massNew": 3741
+   },
+   {
+    "from": 7.5,
+    "expected": 7561,
+    "bright5080": 0,
+    "ucac4Own": 920,
+    "saoAll": 8299,
+    "apass2massAll": 5216,
+    "saoNew": 4973,
+    "apass2massNew": 3324
+   },
+   {
+    "from": 7.75,
+    "expected": 9910,
+    "bright5080": 0,
+    "ucac4Own": 1917,
+    "saoAll": 7171,
+    "apass2massAll": 6580,
+    "saoNew": 2637,
+    "apass2massNew": 1826
+   },
+   {
+    "from": 8.0,
+    "expected": 12989,
+    "bright5080": 0,
+    "ucac4Own": 3715,
+    "saoAll": 18843,
+    "apass2massAll": 8630,
+    "saoNew": 3252,
+    "apass2massNew": 458
+   },
+   {
+    "from": 8.25,
+    "expected": 17024,
+    "bright5080": 0,
+    "ucac4Own": 5844,
+    "saoAll": 16265,
+    "apass2massAll": 11229,
+    "saoNew": 941,
+    "apass2massNew": 122
+   },
+   {
+    "from": 8.5,
+    "expected": 22314,
+    "bright5080": 0,
+    "ucac4Own": 11863,
+    "saoAll": 42222,
+    "apass2massAll": 14114,
+    "saoNew": 946,
+    "apass2massNew": 61
+   },
+   {
+    "from": 8.75,
+    "expected": 29246,
+    "bright5080": 0,
+    "ucac4Own": 24215,
+    "saoAll": 36161,
+    "apass2massAll": 18243,
+    "saoNew": 528,
+    "apass2massNew": 51
+   }
+  ],
+  "SAO stars 6.0 to 9.0 with a 2MASS source within 15 arc-seconds": 147600,
+  "SAO stars 6.0 to 9.0": 148002,
+  "SAO against 2MASS, separation arc-seconds (all matched)": {
+   "median": 1.1447272678657159,
+   "p95": 3.1225599575158824,
+   "n": 147600
+  },
+  "SAO epoch test, stars moving 0.1 arc-seconds a year or more": {
+   "n": 10402,
+   "asGivenMedian": 1.2565686582021696,
+   "asGivenP95": 4.034898846130224,
+   "movedFifty YearsMedian": 8.149619053776902
+  },
+  "SAO against 2MASS, stars moving under 0.1 arc-seconds a year": {
+   "median": 1.136822113041525,
+   "p95": 3.063551250797586,
+   "n": 137198
+  },
+  "SAO against 2MASS by quarter magnitude": {
+   "6.00": {
+    "n": 1803,
+    "median": 0.8439752854625158,
+    "p95": 2.552748063091655
+   },
+   "6.25": {
+    "n": 1672,
+    "median": 0.9553245875224038,
+    "p95": 2.723475628244115
+   },
+   "6.50": {
+    "n": 3303,
+    "median": 1.093088602287197,
+    "p95": 3.0448383525066287
+   },
+   "6.75": {
+    "n": 2912,
+    "median": 1.2258639002187248,
+    "p95": 3.3070925443902035
+   },
+   "7.00": {
+    "n": 5195,
+    "median": 1.251507691046646,
+    "p95": 3.199047114233484
+   },
+   "7.25": {
+    "n": 4141,
+    "median": 1.2312474835337235,
+    "p95": 3.1725727471801335
+   },
+   "7.50": {
+    "n": 8292,
+    "median": 1.2029841230608636,
+    "p95": 3.2047667103882165
+   },
+   "7.75": {
+    "n": 7165,
+    "median": 1.1506180082247006,
+    "p95": 3.091256631143011
+   },
+   "8.00": {
+    "n": 18822,
+    "median": 1.1410507188676537,
+    "p95": 3.147545101084337
+   },
+   "8.25": {
+    "n": 16257,
+    "median": 1.129460031849927,
+    "p95": 3.116646643235981
+   },
+   "8.50": {
+    "n": 42129,
+    "median": 1.1315114577312835,
+    "p95": 3.0737727887691633
+   },
+   "8.75": {
+    "n": 35909,
+    "median": 1.1532742422472975,
+    "p95": 3.15247862811627
+   }
+  },
+  "SAO stars with no 2MASS source within 15 arc-seconds, by quarter magnitude": {
+   "6.00": 1,
+   "6.25": 1,
+   "6.50": 3,
+   "6.75": 1,
+   "7.00": 3,
+   "7.25": 6,
+   "7.50": 7,
+   "7.75": 6,
+   "8.00": 21,
+   "8.25": 8,
+   "8.50": 93,
+   "8.75": 252
+  },
+  "SAO stars matched to an APASS star through the same 2MASS source": 65471,
+  "SAO V minus APASS V": {
+   "6.0-6.5 by APASS V": {
+    "n": 484,
+    "median": -0.10000000000000053,
+    "robustSigma": 0.2223899999999992,
+    "p16": -0.34999999999999964,
+    "p84": 0.10000000000000053
+   },
+   "6.5-7.0 by APASS V": {
+    "n": 3613,
+    "median": -0.15000000000000036,
+    "robustSigma": 0.2223900000000005,
+    "p16": -0.40000000000000036,
+    "p84": 0.09999999999999964
+   },
+   "7.0-7.5 by APASS V": {
+    "n": 7213,
+    "median": 0.04999999999999982,
+    "robustSigma": 0.29652000000000023,
+    "p16": -0.20000000000000018,
+    "p84": 0.4500000000000002
+   },
+   "7.5-8.0 by APASS V": {
+    "n": 11369,
+    "median": 0.10000000000000053,
+    "robustSigma": 0.29651999999999895,
+    "p16": -0.10000000000000053,
+    "p84": 0.4500000000000002
+   },
+   "8.0-8.5 by APASS V": {
+    "n": 18240,
+    "median": 0.05000000000000071,
+    "robustSigma": 0.2223900000000005,
+    "p16": -0.15000000000000036,
+    "p84": 0.3000000000000007
+   },
+   "8.5-9.0 by APASS V": {
+    "n": 24552,
+    "median": -0.09999999999999964,
+    "robustSigma": 0.22238999999999787,
+    "p16": -0.3000000000000007,
+    "p84": 0.09999999999999964
+   },
+   "7.5-8.5 by APASS V": {
+    "n": 29609,
+    "median": 0.09999999999999964,
+    "robustSigma": 0.2223900000000005,
+    "p16": -0.15000000000000036,
+    "p84": 0.34999999999999964
+   },
+   "6.0-6.5 by SAO V": {
+    "n": 1554,
+    "median": -0.35000000000000053,
+    "robustSigma": 0.2223899999999992
+   },
+   "6.5-7.0 by SAO V": {
+    "n": 3123,
+    "median": -0.15000000000000036,
+    "robustSigma": 0.14826000000000078
+   },
+   "7.0-7.5 by SAO V": {
+    "n": 4995,
+    "median": -0.04999999999999982,
+    "robustSigma": 0.14826000000000078
+   },
+   "7.5-8.0 by SAO V": {
+    "n": 8810,
+    "median": 0.04999999999999982,
+    "robustSigma": 0.2223900000000005
+   },
+   "8.0-8.5 by SAO V": {
+    "n": 19891,
+    "median": 0.0,
+    "robustSigma": 0.29651999999999895
+   },
+   "8.5-9.0 by SAO V": {
+    "n": 27098,
+    "median": 0.0,
+    "robustSigma": 0.2223900000000005
+   }
+  },
+  "overlapPerQuarter": [
+   {
+    "from": 6.0,
+    "saoStars": 1804,
+    "apassStars": 526,
+    "apassStarsSaoHas": 66,
+    "apassOnly": 460
+   },
+   {
+    "from": 6.25,
+    "saoStars": 1673,
+    "apassStars": 959,
+    "apassStarsSaoHas": 416,
+    "apassOnly": 543
+   },
+   {
+    "from": 6.5,
+    "saoStars": 3306,
+    "apassStars": 1565,
+    "apassStarsSaoHas": 1362,
+    "apassOnly": 203
+   },
+   {
+    "from": 6.75,
+    "saoStars": 2913,
+    "apassStars": 2284,
+    "apassStarsSaoHas": 2245,
+    "apassOnly": 39
+   },
+   {
+    "from": 7.0,
+    "saoStars": 5198,
+    "apassStars": 3229,
+    "apassStarsSaoHas": 3202,
+    "apassOnly": 27
+   },
+   {
+    "from": 7.25,
+    "saoStars": 4147,
+    "apassStars": 4074,
+    "apassStarsSaoHas": 4008,
+    "apassOnly": 66
+   },
+   {
+    "from": 7.5,
+    "saoStars": 8299,
+    "apassStars": 5216,
+    "apassStarsSaoHas": 5062,
+    "apassOnly": 154
+   },
+   {
+    "from": 7.75,
+    "saoStars": 7171,
+    "apassStars": 6580,
+    "apassStarsSaoHas": 6304,
+    "apassOnly": 276
+   },
+   {
+    "from": 8.0,
+    "saoStars": 18843,
+    "apassStars": 8630,
+    "apassStarsSaoHas": 8081,
+    "apassOnly": 549
+   },
+   {
+    "from": 8.25,
+    "saoStars": 16265,
+    "apassStars": 11229,
+    "apassStarsSaoHas": 10158,
+    "apassOnly": 1071
+   },
+   {
+    "from": 8.5,
+    "saoStars": 42222,
+    "apassStars": 14114,
+    "apassStarsSaoHas": 12013,
+    "apassOnly": 2101
+   },
+   {
+    "from": 8.75,
+    "saoStars": 36161,
+    "apassStars": 18243,
+    "apassStarsSaoHas": 12537,
+    "apassOnly": 5706
+   }
+  ],
+  "coverage per declination band, stars 7.5 to 8.5 per square degree": {
+   "-90": {
+    "saoPerSqDeg": 0.71,
+    "apassPerSqDeg": 0.53,
+    "ucac4PerSqDeg": 0.28,
+    "tiles": 6
+   },
+   "-80": {
+    "saoPerSqDeg": 0.8,
+    "apassPerSqDeg": 1.02,
+    "ucac4PerSqDeg": 0.23,
+    "tiles": 12
+   },
+   "-70": {
+    "saoPerSqDeg": 1.22,
+    "apassPerSqDeg": 1.38,
+    "ucac4PerSqDeg": 0.43,
+    "tiles": 18
+   },
+   "-60": {
+    "saoPerSqDeg": 1.49,
+    "apassPerSqDeg": 1.42,
+    "ucac4PerSqDeg": 0.44,
+    "tiles": 23
+   },
+   "-50": {
+    "saoPerSqDeg": 1.17,
+    "apassPerSqDeg": 1.24,
+    "ucac4PerSqDeg": 0.32,
+    "tiles": 27
+   },
+   "-40": {
+    "saoPerSqDeg": 1.2,
+    "apassPerSqDeg": 1.0,
+    "ucac4PerSqDeg": 0.34,
+    "tiles": 31
+   },
+   "-30": {
+    "saoPerSqDeg": 1.26,
+    "apassPerSqDeg": 0.96,
+    "ucac4PerSqDeg": 0.29,
+    "tiles": 33
+   },
+   "-20": {
+    "saoPerSqDeg": 1.0,
+    "apassPerSqDeg": 0.94,
+    "ucac4PerSqDeg": 0.24,
+    "tiles": 35
+   },
+   "-10": {
+    "saoPerSqDeg": 0.97,
+    "apassPerSqDeg": 0.92,
+    "ucac4PerSqDeg": 0.21,
+    "tiles": 36
+   },
+   "+0": {
+    "saoPerSqDeg": 0.95,
+    "apassPerSqDeg": 0.92,
+    "ucac4PerSqDeg": 0.22,
+    "tiles": 36
+   },
+   "+10": {
+    "saoPerSqDeg": 1.13,
+    "apassPerSqDeg": 0.97,
+    "ucac4PerSqDeg": 0.23,
+    "tiles": 35
+   },
+   "+20": {
+    "saoPerSqDeg": 1.15,
+    "apassPerSqDeg": 0.23,
+    "ucac4PerSqDeg": 0.35,
+    "tiles": 33
+   },
+   "+30": {
+    "saoPerSqDeg": 1.57,
+    "apassPerSqDeg": 0.23,
+    "ucac4PerSqDeg": 0.38,
+    "tiles": 31
+   },
+   "+40": {
+    "saoPerSqDeg": 1.81,
+    "apassPerSqDeg": 0.2,
+    "ucac4PerSqDeg": 0.33,
+    "tiles": 27
+   },
+   "+50": {
+    "saoPerSqDeg": 1.57,
+    "apassPerSqDeg": 0.24,
+    "ucac4PerSqDeg": 0.38,
+    "tiles": 23
+   },
+   "+60": {
+    "saoPerSqDeg": 1.48,
+    "apassPerSqDeg": 0.24,
+    "ucac4PerSqDeg": 0.3,
+    "tiles": 18
+   },
+   "+70": {
+    "saoPerSqDeg": 1.15,
+    "apassPerSqDeg": 0.22,
+    "ucac4PerSqDeg": 0.21,
+    "tiles": 12
+   },
+   "+80": {
+    "saoPerSqDeg": 0.93,
+    "apassPerSqDeg": 0.17,
+    "ucac4PerSqDeg": 0.22,
+    "tiles": 6
+   }
+  },
+  "expected per square degree, 7.5 to 8.5": 1.15,
+  "tiles where APASS+2MASS holds under half of SAO's stars (7.5 to 8.5, SAO 20 or more)": {
+   "count": 164,
+   "of": 442,
+   "examples": [
+    [
+     -90,
+     0,
+     47,
+     22
+    ],
+    [
+     -80,
+     10,
+     75,
+     19
+    ],
+    [
+     -70,
+     15,
+     71,
+     24
+    ],
+    [
+     -60,
+     19,
+     104,
+     46
+    ],
+    [
+     -60,
+     20,
+     96,
+     30
+    ],
+    [
+     -50,
+     24,
+     87,
+     42
+    ],
+    [
+     -40,
+     20,
+     114,
+     52
+    ],
+    [
+     -40,
+     22,
+     195,
+     89
+    ],
+    [
+     -40,
+     27,
+     88,
+     35
+    ],
+    [
+     -30,
+     27,
+     132,
+     45
+    ],
+    [
+     -30,
+     28,
+     109,
+     49
+    ],
+    [
+     -30,
+     29,
+     107,
+     52
+    ]
+   ]
+  },
+  "tiles where SAO holds under half of APASS+2MASS's stars (7.5 to 8.5, APASS 20 or more)": {
+   "count": 1,
+   "of": 354,
+   "examples": [
+    [
+     -80,
+     5,
+     54,
+     112
+    ]
+   ]
+  },
+  "APASS DR10 and SAO stars 7.5 to 8.5 per square degree, by degree of declination": {
+   "+10": {
+    "apassPerSqDeg": 0.97,
+    "saoPerSqDeg": 1.01
+   },
+   "+11": {
+    "apassPerSqDeg": 0.98,
+    "saoPerSqDeg": 0.99
+   },
+   "+12": {
+    "apassPerSqDeg": 0.94,
+    "saoPerSqDeg": 1.04
+   },
+   "+13": {
+    "apassPerSqDeg": 0.91,
+    "saoPerSqDeg": 1.06
+   },
+   "+14": {
+    "apassPerSqDeg": 0.98,
+    "saoPerSqDeg": 0.98
+   },
+   "+15": {
+    "apassPerSqDeg": 1.04,
+    "saoPerSqDeg": 1.23
+   },
+   "+16": {
+    "apassPerSqDeg": 1.01,
+    "saoPerSqDeg": 1.23
+   },
+   "+17": {
+    "apassPerSqDeg": 0.95,
+    "saoPerSqDeg": 1.22
+   },
+   "+18": {
+    "apassPerSqDeg": 1.08,
+    "saoPerSqDeg": 1.28
+   },
+   "+19": {
+    "apassPerSqDeg": 1.15,
+    "saoPerSqDeg": 1.27
+   },
+   "+20": {
+    "apassPerSqDeg": 0.62,
+    "saoPerSqDeg": 1.12
+   },
+   "+21": {
+    "apassPerSqDeg": 0.16,
+    "saoPerSqDeg": 1.17
+   },
+   "+22": {
+    "apassPerSqDeg": 0.1,
+    "saoPerSqDeg": 1.11
+   },
+   "+23": {
+    "apassPerSqDeg": 0.12,
+    "saoPerSqDeg": 1.11
+   },
+   "+24": {
+    "apassPerSqDeg": 0.14,
+    "saoPerSqDeg": 1.05
+   },
+   "+25": {
+    "apassPerSqDeg": 0.13,
+    "saoPerSqDeg": 1.21
+   },
+   "+26": {
+    "apassPerSqDeg": 0.15,
+    "saoPerSqDeg": 1.16
+   },
+   "+27": {
+    "apassPerSqDeg": 0.16,
+    "saoPerSqDeg": 1.18
+   },
+   "+28": {
+    "apassPerSqDeg": 0.32,
+    "saoPerSqDeg": 1.19
+   },
+   "+29": {
+    "apassPerSqDeg": 0.43,
+    "saoPerSqDeg": 1.15
+   }
+  },
+  "APASS DR10 stars as a fraction of SAO's, 7.5 to 8.5: south of +20 and north of +21": [
+   0.96,
+   0.151
+  ],
+  "share of the sky south of +20 degrees": 0.671,
+  "UCAC4 V minus APASS DR10 V for the same stars, south of +15, by APASS V (UCAC4 stars to 11 as the faint layer keeps them)": {
+   "7.0": {
+    "n": 407,
+    "median": 1.229,
+    "p16": 0.03388000000000067,
+    "p84": 1.5671599999999994
+   },
+   "7.5": {
+    "n": 6164,
+    "median": 0.9799999999999995,
+    "p16": 0.07399999999999984,
+    "p84": 1.2569999999999997
+   },
+   "8.0": {
+    "n": 16858,
+    "median": 0.6980000000000004,
+    "p16": 0.11400000000000077,
+    "p84": 0.9719999999999995
+   },
+   "8.5": {
+    "n": 28245,
+    "median": 0.42600000000000016,
+    "p16": 0.0940000000000012,
+    "p84": 0.6809999999999992
+   }
+  },
+  "UCAC4 V minus SAO V for the same stars, by SAO V": {
+   "6.0": {
+    "n": 69,
+    "median": 2.1499999999999995,
+    "p16": 0.7879999999999999,
+    "p84": 2.6500000000000004
+   },
+   "6.5": {
+    "n": 91,
+    "median": 1.75,
+    "p16": 0.6000000000000005,
+    "p84": 2.2499999999999996
+   },
+   "7.0": {
+    "n": 1120,
+    "median": 1.2000000000000002,
+    "p16": 0.25,
+    "p84": 1.5999999999999996
+   },
+   "7.5": {
+    "n": 7877,
+    "median": 0.9000000000000004,
+    "p16": 0.15000000000000036,
+    "p84": 1.25
+   },
+   "8.0": {
+    "n": 30937,
+    "median": 0.6000000000000014,
+    "p16": 0.15000000000000036,
+    "p84": 0.9499999999999993
+   },
+   "8.5": {
+    "n": 76926,
+    "median": 0.5,
+    "p16": 0.1999999999999993,
+    "p84": 0.7999999999999989
+   }
+  },
+  "SAO stars that APASS+2MASS does not hold (after both dropped what UCAC4 and the bright stars have), by quarter magnitude": {
+   "6.00": 653,
+   "6.25": 879,
+   "6.50": 1692,
+   "6.75": 1389,
+   "7.00": 2238,
+   "7.25": 1525,
+   "7.50": 2044,
+   "7.75": 1048,
+   "8.00": 1368,
+   "8.25": 421,
+   "8.50": 652,
+   "8.75": 501
+  },
+  "SAO new stars total / APASS+2MASS new stars total / SAO beyond APASS+2MASS": [
+   30459,
+   16602,
+   14410
+  ]
+ },
+ "buildReports": {
+  "sao": {
+   "SAO stars read": 258944,
+   "UCAC4 stars to 11 kept by the faint layer": 950428,
+   "dropped: already a star UCAC4 keeps": 116854,
+   "dropped: already one of the 5,080 bright stars": 689,
+   "kept": 30459,
+   "kept with a colour from the spectral type": 30027,
+   "kept without a colour": 432,
+   "no visual magnitude (not used)": 1467,
+   "visual magnitude from 6.0 to 9.0": 148002
+  },
+  "apass-2mass": {
+   "2MASS sources matched to an APASS star": 97353,
+   "2MASS sources read (J 9.5 or brighter)": 1776401,
+   "APASS rows that share a 2MASS source with another (one kept)": 54,
+   "APASS rows with more than one 2MASS candidate (the nearest taken)": 1226,
+   "APASS rows with no 2MASS source within 5 arc-seconds": 674,
+   "UCAC4 stars to 11 kept by the faint layer": 950428,
+   "apass rows read, V from 6.0 to 9.2": 98081,
+   "dropped: already a star UCAC4 keeps": 58600,
+   "dropped: already one of the 5,080 bright stars": 1447,
+   "kept": 16602,
+   "kept with an APASS colour": 12079,
+   "kept without a colour": 4523,
+   "matched, V from 6.0 to 9.0": 76649
+  }
+ },
+ "gapTiles": {
+  "sao": {
+   "source": "Smithsonian Astrophysical Observatory Star Catalog (SAO Staff 1966), the J2000 version of the Astronomical Data Center (I/131A), as NASA HEASARC serves it (table sao)",
+   "built": "2026-11-09",
+   "from": 6.0,
+   "to": 9.0,
+   "magnitudeStep": 0.05,
+   "colour": {
+    "offset": 0.6,
+    "step": 80,
+    "none": 255
+   },
+   "stars": 30459,
+   "tiles": 442,
+   "bytes": 182754
+  },
+  "apass-2mass": {
+   "source": "APASS DR10 (Henden et al.) V and B-V through the GAVO Data Center's TAP service (apass.dr10); positions from the 2MASS Point Source Catalog (Cutri et al. 2003) through NASA/IPAC IRSA's TAP service (fp_psc)",
+   "built": "2026-11-09",
+   "from": 6.0,
+   "to": 9.0,
+   "magnitudeStep": 0.05,
+   "colour": {
+    "offset": 0.6,
+    "step": 80,
+    "none": 255
+   },
+   "stars": 16602,
+   "tiles": 403,
+   "bytes": 99612
+  }
+ },
+ "knownStars": {
+  "note": "Three stars of the band from each source, as the source gives them (SAO: HEASARC's heasarc_sao.tdat.gz row, J2000 position, visual magnitude, spectral type; APASS + 2MASS: the APASS DR10 id with its V and B-V, and the 2MASS designation whose position is used). Checked against the gap tiles on file by test/gap.test.ts.",
+  "sao": [
+   {
+    "sao": 132347,
+    "hd": 37151,
+    "type": "B9",
+    "ra": 84.02635,
+    "dec": -7.39628889,
+    "v": 7.3
+   },
+   {
+    "sao": 132172,
+    "hd": 36151,
+    "type": "B5",
+    "ra": 82.35552083,
+    "dec": -7.26165,
+    "v": 6.5
+   },
+   {
+    "sao": 132655,
+    "hd": 39958,
+    "type": "K0",
+    "ra": 88.8977,
+    "dec": -7.67091389,
+    "v": 7.5
+   }
+  ],
+  "apass2mass": [
+   {
+    "apass": "085-0004323",
+    "twomass": "05283322-0441493",
+    "ra": 82.138456,
+    "dec": -4.697046,
+    "v": 7.45,
+    "bv": 0.225
+   },
+   {
+    "apass": "085-0005577",
+    "twomass": "05305293-0415167",
+    "ra": 82.720546,
+    "dec": -4.254663,
+    "v": 7.5,
+    "bv": 0.115
+   },
+   {
+    "apass": "085-4271631",
+    "twomass": "05211151-0251355",
+    "ra": 80.297966,
+    "dec": -2.859876,
+    "v": 7.85,
+    "bv": 0.998
+   }
+  ]
+ },
+ "demo": {
+  "note": "Faint stars drawn (the bright 5,080 are drawn besides) at the readout's zoom, 1280 by 900. before: faint-tiles as shipped. sao: the same build with --gap sao. saoJumpLifted: also FAINT_JUMP_ZOOM out of reach and FAINT_FROM 6.5 (tried and put back). depth: the magnitude the map says it is complete to.",
+  "before": {
+   "orion2": {
+    "dots": 0
+   },
+   "orion3": {
+    "dots": 263,
+    "depth": 8.6
+   },
+   "orion5": {
+    "dots": 556,
+    "depth": 9.2
+   },
+   "cygnus2": {
+    "dots": 0
+   },
+   "cygnus3": {
+    "dots": 1258,
+    "depth": 8.6
+   },
+   "cygnus5": {
+    "dots": 1862,
+    "depth": 9.2
+   }
+  },
+  "sao": {
+   "orion2": {
+    "dots": 0
+   },
+   "orion3": {
+    "dots": 1012,
+    "depth": 8.6
+   },
+   "orion5": {
+    "dots": 860,
+    "depth": 9.2
+   },
+   "cygnus2": {
+    "dots": 0
+   },
+   "cygnus3": {
+    "dots": 2311,
+    "depth": 8.6
+   },
+   "cygnus5": {
+    "dots": 2308,
+    "depth": 9.2
+   }
+  },
+  "saoJumpLifted": {
+   "orion2": {
+    "dots": 495,
+    "depth": 6.9
+   },
+   "orion3": {
+    "dots": 342,
+    "depth": 7.4
+   },
+   "orion5": {
+    "dots": 209,
+    "depth": 7.9
+   },
+   "cygnus2": {
+    "dots": 0
+   },
+   "cygnus3": {
+    "dots": 553,
+    "depth": 7.4
+   },
+   "cygnus5": {
+    "dots": 460,
+    "depth": 7.9
+   }
+  }
+ }
+}

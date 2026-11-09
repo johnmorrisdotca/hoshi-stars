@@ -31,7 +31,11 @@ By magnitude (a star is counted in the half magnitude it is in: `8.0` holds 8.0 
 | 8.5 to 9 | 36,078 | exactly 12.0 | 113,803 |
 | 9 to 9.5 | 94,559 | | |
 
-**Brighter than about magnitude 9 this layer is thin, and between 6 and 8 it is nearly empty** (3,138 stars between 6.5 and 8). The stars UCAC4 only copied from Hipparcos and Tycho are the bright ones, and they are the rows that were dropped. The map says how deep it is complete (`stars to magnitude 9.5 here`), and the figure comes from the layer's own counts; a fuller 6.5 to 8 band needs another source and is not in this package yet.
+**Brighter than about magnitude 9 this layer is thin, and between 6 and 8 it is nearly empty** (3,138 stars between 6.5 and 8). The stars UCAC4 only copied from Hipparcos and Tycho are the bright ones, and they are the rows that were dropped. The map says how deep it is complete (`stars to magnitude 9.5 here`), and the figure comes from the layer's own counts.
+
+**A second reason the band looks thin: UCAC4's magnitudes of its bright stars run too faint.** Against APASS DR10 and the SAO Star Catalog, which agree with each other, the layer's magnitude of a star that is really 7.5 to 8 is 0.98 magnitudes too faint at the median, of one of 8 to 8.5 0.7 too faint, and of one of 8.5 to 9 0.43 too faint (the stars of 7 to 7.5 1.2). APASS saturates near V 7 to 10, and UCAC4's model magnitude is not calibrated for bright stars. So many stars of true magnitude 8 are in this layer at 9, and the band between 7.5 and 9 is thin because they are counted fainter than they are. A star of this layer brighter than about 9.5 is usually brighter in the sky than its magnitude says. A correction is a ticket of its own.
+
+**A fill for the band is built and kept on file, and not in the tiles yet.** Two sources were built and compared (`docs/research/gap-6.5-8.md` in the repository): the SAO Star Catalog (30,459 more stars between 6.0 and 9.0, 22,012 of them between 6.5 and 8, over the whole sky; its terms wait on NASA HEASARC's answer) and APASS with 2MASS positions (16,602, clean terms, but APASS has no bright stars north of declination +20 degrees). `NOTICE.md` has the licence sentences. `python3 scripts/make-faint-data.py build --gap sao` merges SAO into level 0 once its terms are confirmed.
 
 ## The tiles
 
