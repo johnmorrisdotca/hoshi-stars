@@ -6,7 +6,7 @@
 
 **[Try the demo](https://johnmorrisdotca.github.io/hoshi-stars/)**: a sky chart you turn, zoom and search, in English and Japanese.
 
-The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, no dependencies, about 100 kB gzipped. Hoshi (星) is the Japanese word for a star.
+The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, no dependencies, about 100 kB gzipped; 2.5 million fainter ones are a separate, tiled import. Hoshi (星) is the Japanese word for a star.
 
 ```sh
 npm install @johnmorrisdotca/hoshi-stars
@@ -408,6 +408,18 @@ console.log(figureOf("すばる", japanese).asterism.names.en, figureOf("羽林�
 A Chinese asterism with stars fainter than magnitude 6.0 draws only the stars we have, and `missing` says at least how many it lacks. The lines of the Chinese figures are our own joins, not the traditional drawing. The Chinese asterisms are read from Wikidata (CC0); Stellarium's sky-culture files (GPL, CC BY-SA) are not used (`NOTICE.md`). The demo has a **Sky culture** choice, kept in the address as `culture=chinese`, and picking a figure shows its card. [Sky cultures](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
+
+## Faint stars
+
+`@johnmorrisdotca/hoshi-stars/faint` adds 2,462,539 more stars, to magnitude 12, from UCAC4 (the U.S. Naval Observatory's CCD astrograph catalogue), as sky tiles of a few thousand stars that a page loads for the part of the sky it shows: nothing is added to the main import. Only the rows UCAC4 measured itself are in it, never the ones it copied from Hipparcos or Tycho; the magnitude is APASS V where UCAC4 has one, else UCAC4's own (between V and R); the colour is APASS B-V. It is thin brighter than about magnitude 9. The tiles are on the demo's Pages site (12.6 MB gzipped in all, not in the npm package) and `faintSky()` loads them:
+
+```js
+import { faintTilePath, faintTilesFor } from "@johnmorrisdotca/hoshi-stars/faint";
+
+console.log(faintTilesFor({ rightAscension: 83.8, declination: -5.4, radius: 1 }, 9).map(faintTilePath).join(" ")); // L0/8-8.bin
+```
+
+The demo's map has a **Faint stars** layer: zoom into Orion and more stars appear, with `Stars to magnitude 9.5 here` under the map. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the counts, the tile format and what is left out (`NOTICE.md` has the licence sentences).
 
 ## The data in other languages
 
