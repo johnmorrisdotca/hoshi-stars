@@ -327,7 +327,7 @@ HAND = [
     },
     {
         "name": "1E 1740.7-2942", "others": ["Great Annihilator"], "kind": "stellar", "status": "candidate", "wd": "Q16839981", "companion": None, "companionType": None,
-        "mass": None, "distance": None, "found": "x-rays", "year": 1984, "note": "Near the Galactic centre; a microquasar whose compact object is thought to be a black hole.",
+        "mass": None, "distance": None, "found": "x-rays", "year": None, "note": "Near the Galactic centre; a microquasar whose compact object is thought to be a black hole.",
         "refs": {"position": WD("Q16839981")},
     },
     {
@@ -361,7 +361,7 @@ HAND = [
 HAND_SUPERMASSIVE = [
     {
         "digits": 4, "name": "Sagittarius A*", "others": ["Sgr A*", "Milky Way"], "kind": "supermassive", "status": "confirmed", "wd": "Q237284", "companion": None, "companionType": None,
-        "mass": (4.297e6, 4.255e6, 4.339e6, ""), "distance": (8277, 8243, 8311, ""), "found": "stars", "year": 2022, "note": "At the centre of the Milky Way; its mass comes from the orbit of the star S2.",
+        "mass": (4.297e6, 4.285e6, 4.309e6, ""), "distance": (8277, 8268, 8286, ""), "found": "stars", "year": 2022, "note": "At the centre of the Milky Way; its mass comes from the orbits of the stars around it, S2 above all; the range is the statistical error.",
         "refs": {"position": WD("Q237284"), "mass": R("GRAVITY2022", "2022A&A...657L..12G", "GRAVITY Collaboration 2022, A&A 657, L12"), "distance": R("GRAVITY2022", "2022A&A...657L..12G"), "found": R("GRAVITY2022", "2022A&A...657L..12G")},
     },
     {

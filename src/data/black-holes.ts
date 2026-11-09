@@ -48,7 +48,7 @@ grs-1730-312|GRS 1730-312|KS 1730-312|0|1|2633833|-312044|Sco|||||||||||0|1994|V
 gs-1734-275|GS 1734-275|GRO 1735-27;KS 1732-273|0|1|2640083|-274281|Oph|||||||||||0|1988|Voges1999,,,,Makino1988a|
 grs-1737-31|GRS 1737-31||0|1|2650375|-310400|Sco|||||||||||0|1997|Ueda1997,,,,Sunyaev1997|
 grs-1739-278|GRS 1739-278|V2606 Oph|0|1|2656668|-277480|Oph|||||7250|6000|8500|||>F5 V|0|1996|Hjellming1996,,Greiner1996,Chaty2002a,Paul1996|
-1e-1740-7-2942|1E 1740.7-2942|Great Annihilator|0|1|2659785|-297452|Oph|||||||||||0|1984|Wikidata-Q16839981,,,,|Near the Galactic centre; a microquasar whose compact object is thought to be a black hole.
+1e-1740-7-2942|1E 1740.7-2942|Great Annihilator|0|1|2659785|-297452|Oph|||||||||||0||Wikidata-Q16839981,,,,|Near the Galactic centre; a microquasar whose compact object is thought to be a black hole.
 igr-j17451-3022|IGR J17451-3022||0|1|2662780|-303787|Sco|||||||||||0|2014|Chakrabarty2014,,,,Chenevez2014b|
 swift-j174510-8-262411|Swift J174510.8-262411||0|1|2662952|-264035|Sgr||||||||||>K0|0|2012|Miller-Jones2012,,,Lopez2019,Cummings2012|
 igr-j17454-2919|IGR J17454-2919||0|1|2663653|-293315|Sgr|||||||||||0|2014|Paizis2015,,,,Chenevez2014|
@@ -284,7 +284,7 @@ ngc-6240-s|NGC 6240 S*||2|0|2532453|24009|Oph|1.48e9|9.12e8|2.4e9||1.05e8|9.45e7
 ngc-6264|NGC 6264*||2|0|2543172|278496|Her|3.09e7|2.75e7|3.47e7||1.48e8||||||5|2011|NED,kuo11,vandenBosch2016,,kuo11|
 pg-1700p518|PG 1700+518*||2|0|2553534|518223|Dra|5.75e8|3.55e8|9.33e8||||||||6|2004|NED,peterson04,vandenBosch2016,,peterson04|
 ngc-6323|NGC 6323*||2|0|2583252|437825|Her|1e7|8.91e6|1.12e7||1.13e8|1.01e8|1.26e8||||5|2011|NED,kuo11,vandenBosch2016,,kuo11|
-sagittarius-a|Sagittarius A*|Sgr A*;Milky Way|2|0|2664168|-290078|Sgr|4.297e6|4.255e6|4.339e6||8277|8243|8311||||3|2022|Wikidata-Q237284,GRAVITY2022,GRAVITY2022,,GRAVITY2022|At the centre of the Milky Way; its mass comes from the orbit of the star S2.
+sagittarius-a|Sagittarius A*|Sgr A*;Milky Way|2|0|2664168|-290078|Sgr|4.297e6|4.285e6|4.309e6||8277|8268|8286||||3|2022|Wikidata-Q237284,GRAVITY2022,GRAVITY2022,,GRAVITY2022|At the centre of the Milky Way; its mass comes from the orbits of the stars around it, S2 above all; the range is the statistical error.
 ngc-6500|NGC 6500*||2|0|2689991|183382|Her|2.19e8|1.2e8|3.98e8||3.65e7|3.29e7|4.01e7||||4|2012|NED,beifiori12,vandenBosch2016,,beifiori12|
 3c-390-3|3C 390.3*||2|0|2805375|797714|Dra|4.17e8|2.88e8|6.03e8||2.4e8|2.16e8|2.64e8||||6|2012|NED,dietrich12,vandenBosch2016,,dietrich12|
 zw-229-015|Zw 229-015*||2|0|2863581|424610|Lyr|7.59e6|4.68e6|1.23e7||1.19e8||||||6||NED,barth11,vandenBosch2016,,barth11|
