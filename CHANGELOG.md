@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-08
+
 - Data files for other languages: every release attaches the stars, nearby stars, constellations, lines, boundaries, Messier, NGC/IC and star names as CSV and Parquet, each with a schema, checksums and a data licence note (which credit each table needs). `pnpm export:data` writes them locally. New guides: data files (loading from Python, R and Rust) and serve it yourself (a small Node query server you host).
 
 ## [0.6.0] - 2026-11-08
