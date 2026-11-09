@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
+    <link rel="stylesheet" href="whole-sky.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="wsky" aria-labelledby="ws-heading">
+        <h1 id="ws-heading" class="gl-title" data-say="ws_heading"></h1>
+        <p class="lead" data-say="ws_lede"></p>
+        <div class="ws-stage">
+          <div class="ws-box" id="ws-box" data-testid="ws-box" tabindex="0" role="group" data-say-label="ws_skyLabel">
+            <svg id="ws-sky" class="ws-sky" data-testid="ws-sky" aria-hidden="false"></svg>
+            <svg id="ws-labels" class="ws-labels" data-testid="ws-labels" aria-hidden="true"></svg>
+            <p class="under" id="ws-under" data-testid="ws-under" aria-hidden="true"></p>
+          </div>
+          <kazoku-view-controls id="ws-bar" for="ws-box" flat controls="basic" layout="horizontal" zoom-min="1" zoom-max="24" data-testid="ws-bar"></kazoku-view-controls>
+        </div>
+        <div class="ws-options" data-testid="ws-options">
+          <span class="fam-seg" id="ws-frame" data-testid="ws-frame" role="group" data-say-label="ws_frame"></span>
+          <span class="fam-seg" id="ws-map" data-testid="ws-map" role="group" data-say-label="projection"></span>
+          <span class="fam-seg" id="ws-culture" data-testid="ws-culture" role="group" data-say-label="culture"></span>
+          <span class="fam-seg" id="ws-layers" data-testid="ws-layers" role="group" data-say-label="layers"></span>
+        </div>
+        <p class="fam-fine" id="ws-note" data-testid="ws-note" aria-live="polite"></p>
+        <div class="picker" id="picker" data-testid="picker">
+          <div class="fam-row">
+            <label class="fam-label" for="picker-search" data-say="pk_label"></label>
+            <input id="picker-search" type="search" class="fam-field" data-testid="picker-search" data-say-placeholder="pk_placeholder" autocomplete="off" enterkeyhint="search" />
+          </div>
+          <div class="picker-strip" id="picker-strip" data-testid="picker-strip" role="group" data-say-label="pk_label"></div>
+          <p class="fam-fine" data-pick-none data-say="pk_none" hidden></p>
+        </div>
+        <div class="picked ws-card" id="ws-card" data-testid="ws-card" aria-live="polite" hidden></div>
+        <div class="ws-print" data-testid="ws-print">
+          <span class="fam-label" data-say="ws_print"></span>
+          <span class="fam-seg" id="ws-paper" data-testid="ws-paper" role="group" data-say-label="ws_paper"></span>
+          <span class="fam-seg" id="ws-form" data-testid="ws-form" role="group" data-say-label="ws_form"></span>
+          <button type="button" class="fam-button" id="ws-go" data-primary="true" data-testid="ws-print-go" data-say="ws_print"></button>
+          <span class="fam-fine" id="ws-info" data-testid="ws-info" role="status"></span>
+        </div>
+        <p class="fam-fine" data-say="ws_hint"></p>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

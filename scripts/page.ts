@@ -6,7 +6,7 @@ import { ALL_WORDS } from "./gallery-words.ts";
 import { WORDS } from "./page-words.ts";
 
 const id = "hoshi-stars";
-const LINKS = [{ href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
+const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
 export function renderIndex(): string {
