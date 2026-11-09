@@ -50,9 +50,10 @@ console.log(starByName("Atlantis"));
 | `constellation` | The IAU abbreviation (`CMa`), where the star has a designation. For any star, [`constellationAt`](constellations-and-lines.md) gives it. |
 | `rightAscension`, `declination` | Degrees, J2000. |
 | `magnitude` | Visual magnitude. |
-| `colourIndex`, `spectralClass` | B-V and the spectral class. See [Colour and distance](colour-and-distance.md). |
+| `colourIndex`, `spectralClass` | B-V and the spectral class and subclass (`A1`). See [Colour and distance](colour-and-distance.md). |
+| `spectralType`, `luminosityClass` | The whole spectral type as the catalogue gives it (`M1-2Ia-Iab` for Betelgeuse) and the luminosity class in it (`Ia` supergiant, `III` giant, `V` dwarf), which is `undefined` where the type states none. |
 | `properMotionRaMas`, `properMotionDecMas` | How the star drifts, in milliarcseconds a year. |
-| `parallaxMas` | The parallax; 0 where the catalogue has none. |
+| `parallaxMas`, `parallaxErrorMas`, `parallaxSource` | The parallax in milliarcseconds, its standard error, and where it is from: `"GCTP"` (the Yale parallax catalogue, to a tenth of a milliarcsecond, with an error), `"BSC"` or `"dynamical"` (the Bright Star Catalogue's, to a whole milliarcsecond, no error). 0 and `undefined` where the star has none. [`starDistance`](colour-and-distance.md) turns them into a distance with its range. |
 
 Every star is frozen: you cannot change the shared table by accident.
 

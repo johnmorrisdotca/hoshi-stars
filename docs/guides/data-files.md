@@ -12,8 +12,8 @@ Download `hoshi-stars-data-v<version>.zip` or the individual files from a GitHub
 
 | Table | Contents |
 | --- | --- |
-| `stars` | HR number, English and Japanese names, designation, constellation, J2000 coordinates, magnitude, colour index, spectral class, proper motion and parallax. |
-| `nearby-stars` | GCTP and other identifiers, names, J2000 coordinates and source, position error, parallax and error, distance and error, proper motion, magnitude, spectral type and quality flags. |
+| `stars` | HR number, English and Japanese names, designation, constellation, J2000 coordinates, magnitude, colour index, spectral class, whole spectral type and luminosity class, proper motion, and parallax with its error and source. |
+| `nearby-stars` | GCTP and other identifiers, names, J2000 coordinates and source, position error, parallax and error, distance and error, proper motion, magnitude, spectral type, luminosity class and quality flags. |
 | `constellations` | IAU abbreviation, Latin name and genitive, English name, Japanese name and reading. |
 | `constellation-lines` | Constellation abbreviation, chain and position (both one-based), and HR number. Join successive positions in each chain. |
 | `boundaries` | Roman table order, lower and upper right ascension in hours, lower declination in degrees and constellation abbreviation; frame B1875. |
