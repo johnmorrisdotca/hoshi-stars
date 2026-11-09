@@ -169,7 +169,7 @@ test("the disc: the ring of dates, the stars and the figures, a disc that fits t
   for (let month = 1; month <= 12; month += 1) assert.ok(disc.includes(`data-month="${month}"`), `month ${month}`);
   const edge = circles(disc, 'data-cut="disc"')[0]!;
   assert.ok(edge.cx - edge.r >= 0 && edge.cx + edge.r <= 184.6 && edge.cy - edge.r >= 0 && edge.cy + edge.r <= 195, "the disc is on the page");
-  assert.ok(edge.r * 2 >= 150, "and large");
+  assert.ok(edge.r * 2 >= 135, "and large");
   assert.ok((disc.match(/<circle /g) ?? []).length > 150, "stars");
   assert.equal(starWheelDisc(5, { widthMm: 184.6, heightMm: 195 }), starWheelDisc(20, { widthMm: 184.6, heightMm: 195 }));
   assert.throws(() => starWheelDisc(120, { widthMm: 1, heightMm: 1 }), RangeError);
@@ -190,9 +190,10 @@ test("the sky map shows only what is above the horizon: Ursa Minor from Toronto 
   assert.ok(!names(skyMapSvg(-33.9, 7, options)).includes("UMi"));
   assert.ok(!names(skyMapSvg(43.7, 7, options)).includes("Cru"));
   const sydney = skyMapSvg(-33.9, 7, { ...options, type: "kid" });
-  assert.ok(sydney.includes("Face north"), "the southern note");
-  assert.ok(skyMapSvg(43.7, 11, { ...options, type: "kid" }).includes("Face south"));
-  assert.ok(skyMapSvg(43.7, 11, options).includes("November"));
+  const said = (svg: string): string => texts(svg).filter((t) => t.size > 0).map((t) => t.body).join(" ");
+  assert.ok(said(sydney).includes("Face north"), "the southern note");
+  assert.ok(said(skyMapSvg(43.7, 11, { ...options, type: "kid" })).includes("Face south"));
+  assert.ok(said(skyMapSvg(43.7, 11, options)).includes("November"));
   const map = skyMapSvg(43.7, 1, options);
   const horizon = circles(map, 'data-horizon=""')[0]!;
   const stars = [...map.matchAll(/<circle cx="(-?[\d.]+)" cy="(-?[\d.]+)" r="[\d.]+" fill="#000"\/>/g)].map((m) => Math.hypot(Number(m[1]) - horizon.cx, Number(m[2]) - horizon.cy));
@@ -249,6 +250,9 @@ function turned(latitude: number, month: number, day: number, hour: number, name
   const disc = starWheelDisc(latitude, { ...room, lang: "en" });
   const plate = starWheelPlate(latitude, { ...room, lang: "en" });
   const pin = circles(disc, 'data-pin=""')[0]!;
+  const platePin = circles(plate, 'data-pin=""')[0]!;
+  assert.ok(Math.abs(pin.cx - platePin.cx) < 0.01 && Math.abs(pin.cy - platePin.cy) < 0.01, "the pins are in the same place on both pages");
+  assert.ok(Math.abs(circles(disc, 'data-cut="disc"')[0]!.r - circles(plate, 'data-cut="plate"')[0]!.r) < 0.01, "and the disc and the plate are the same size");
   const north = latitude >= 0;
   const angle = (x: number, y: number): number => (Math.atan2(x - pin.cx, -(y - pin.cy)) * 180) / Math.PI;
   const date = new RegExp(`<line x1="[\\d.-]+" y1="[\\d.-]+" x2="([\\d.-]+)" y2="([\\d.-]+)"[^>]*data-date="${month}-${day}"`).exec(disc)!;

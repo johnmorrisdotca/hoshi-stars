@@ -163,13 +163,13 @@ function plateMarkup(p: Plan, lang: Lang): string {
 const HOW = {
   en: {
     disc: "Cut out the star wheel along the outside line. The date is on its edge. Names are the best known constellations.",
-    plate: "Cut out the plate and then the window. Put the wheel under it, push a pin through both middles (ask a grown-up), and turn the wheel until the date is at the time you look: the stars in the window are in your sky.",
+    plate: "Cut out the plate, then the window. Pin it over the wheel through both middles (ask a grown-up). Turn the wheel so the date is at the time you look. The window shows your sky.",
     north: "Face north to start.",
     south: "Face south to start.",
   },
   ja: {
     disc: "ほしの ばんを そとがわの せんで きりとります。ふちに ひづけが あります。なまえは よく しられた ほしざです。",
-    plate: "ばんの うえに のせる いたを きって、まども きりぬきます。ふたつの まんなかに ピンを さして (おとなと いっしょに)、ひづけを みる じかんに あわせます。まどの なかの ほしが、いま みえる ほしです。",
+    plate: "いたを きって、まども きりぬきます。ばんの うえに ピンで とめます (おとなと いっしょに)。ひづけを みる じかんに あわせます。まどに みえる ほしが、いまの そらです。",
     north: "はじめは きたを むいて みます。",
     south: "はじめは みなみを むいて みます。",
   },
@@ -225,10 +225,12 @@ function wheelPage(latitude: number, options: { widthMm: number; heightMm: numbe
   const type = options.type ?? "kid";
   const t = TYPES[type];
   const how = HOW[lang];
-  const words = `${how[which]} ${latitude >= 0 ? how.north : how.south}`;
-  const block = footer(words, options.widthMm, options.heightMm, t.bodyMm);
-  const box = fit(options.widthMm, options.heightMm, block.height + 4);
-  const p = plan(latitude, box.cx, box.cy, box.radius - 0.5, type);
+  const wordsOf = (page: "disc" | "plate"): string => `${how[page]} ${latitude >= 0 ? how.north : how.south}`;
+  const words = wordsOf(which);
+  // the disc and the plate are laid over each other, so both are drawn at the size the longer of their two sets of words leaves
+  const longer = Math.max(footer(wordsOf("disc"), options.widthMm, options.heightMm, t.bodyMm).height, footer(wordsOf("plate"), options.widthMm, options.heightMm, t.bodyMm).height);
+  const box = fit(options.widthMm, options.heightMm, longer + 4);
+  const p = plan(latitude, box.cx, box.cy, box.radius - 3, type);
   const say = footer(words, options.widthMm, options.heightMm, t.bodyMm, ' data-say=""');
   const label = `${which === "disc" ? "Star wheel" : "Window plate"} ${Math.round(Math.abs(p.latitude))}`;
   return `${svgOpen(options.widthMm, options.heightMm, label, `wheel-${which}-${p.north ? "n" : "s"}${Math.round(p.latitude)}`)}${which === "disc" ? discMarkup(p, lang) : plateMarkup(p, lang)}${say.markup}</svg>`;
