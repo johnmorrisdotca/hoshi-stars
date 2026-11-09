@@ -3,6 +3,7 @@
 import type { DeepSkyObject } from "../src/deep-sky-core.ts";
 import { starsInside } from "../src/deep-sky-members.ts";
 import { deepSkyPictures, pictureCorners, pictureUrl, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
+import { pictureBlobs } from "./picture-cache.ts";
 import { deepSkyOutline, measuredParts, offsetOnSky, type DeepSkyShape } from "../src/deep-sky-shape.ts";
 import type { SkyPoint } from "../src/projection.ts";
 import type { Star } from "../src/stars.ts";
@@ -123,7 +124,7 @@ function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: M
     const opacity = smooth(SHOW_FROM, SHOW_FULL, widthPx);
     if (opacity <= 0.01) continue;
     shown.set(picture.object, Math.max(shown.get(picture.object) ?? 0, opacity));
-    under += `<image data-pic="${picture.id}" href="${pictureUrl(picture, c.base)}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.map((n) => n.toFixed(6)).join(" ")})" opacity="${opacity.toFixed(3)}" preserveAspectRatio="none"/>`;
+    under += `<image data-pic="${picture.id}" href="${pictureBlobs.get(picture.id) ?? pictureUrl(picture, c.base)}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.map((n) => n.toFixed(6)).join(" ")})" opacity="${opacity.toFixed(3)}" preserveAspectRatio="none"/>`;
   }
   return { under, wanted: [...chosen].sort((a, b) => b.widthPx - a.widthPx).map((x) => x.picture.id), shown };
 }

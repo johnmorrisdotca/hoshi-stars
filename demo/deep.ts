@@ -3,6 +3,7 @@
 import type { DeepSkyObject } from "../src/deep-sky-core.ts";
 import type { DeepSkyShape } from "../src/deep-sky-shape.ts";
 import { MAX_PICTURES } from "./deep-draw.ts";
+import { pictureBlobs } from "./picture-cache.ts";
 import { deepSkyPictures, pictureUrl } from "../src/deep-sky-pictures.ts";
 
 /** The zoom from which the NGC and IC objects are fetched, when the deep-sky layer is on. */
@@ -52,14 +53,27 @@ export function createDeepFetcher(base: string, changed: () => void): DeepFetche
         const picture = pictureById().get(id);
         if (picture === undefined) continue;
         asked.add(id);
-        const image = new Image();
-        image.decoding = "async";
-        image.onload = () => {
-          ready.add(id);
-          changed();
+        const url = pictureUrl(picture, base);
+        const fallback = (): void => {
+          // a server that will not be fetched from (no CORS): let the browser load it as an image, as before
+          const image = new Image();
+          image.decoding = "async";
+          image.onload = () => {
+            ready.add(id);
+            changed();
+          };
+          image.onerror = () => asked.delete(id);
+          image.src = url;
         };
-        image.onerror = () => asked.delete(id);
-        image.src = pictureUrl(picture, base);
+        // fetched once and held as a blob, so every later draw shows it without asking the server again
+        fetch(url)
+          .then((answer) => (answer.ok ? answer.blob() : Promise.reject(new Error(String(answer.status)))))
+          .then((blob) => {
+            pictureBlobs.set(id, URL.createObjectURL(blob));
+            ready.add(id);
+            changed();
+          })
+          .catch(fallback);
       }
     },
   };
