@@ -70,3 +70,10 @@ export function paragraph(words: string, x: number, y: number, widthMm: number, 
 }
 
 export const svgOpen = (width: number, height: number, label: string, id: string): string => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n(width)} ${n(height)}" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${esc(label)}" data-hoshi-sheet="${esc(id)}" font-family="inherit"><title>${esc(label)}</title>`;
+
+/** Lines of words at the foot of a page: the last baseline sits `0.55` of a line above the edge, so the letters that hang below it still fit the room in a font taller than the sheet's own. */
+export function footer(words: string, widthMm: number, heightMm: number, sizeMm: number, extra = ""): { markup: string; height: number } {
+  const lines = wrap(words, widthMm, sizeMm);
+  const last = heightMm - 0.55 * sizeMm;
+  return { markup: lines.map((line, i) => text(0, last - (lines.length - 1 - i) * sizeMm * 1.3, sizeMm, line, extra)).join(""), height: lines.length * sizeMm * 1.3 + 0.25 * sizeMm };
+}

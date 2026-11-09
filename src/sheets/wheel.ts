@@ -3,7 +3,7 @@
 import { constellations } from "../constellations.ts";
 import { figureOf } from "../lines.ts";
 import { stars as allStars, type Star } from "../stars.ts";
-import { TYPES, n, paragraph, svgOpen, textWidth, type Lang } from "./common.ts";
+import { TYPES, footer, n, svgOpen, textWidth, type Lang } from "./common.ts";
 import { skyForLatitude, sunRightAscension } from "./region.ts";
 
 const RAD = Math.PI / 180;
@@ -226,10 +226,10 @@ function wheelPage(latitude: number, options: { widthMm: number; heightMm: numbe
   const t = TYPES[type];
   const how = HOW[lang];
   const words = `${how[which]} ${latitude >= 0 ? how.north : how.south}`;
-  const block = paragraph(words, 0, 0, options.widthMm, t.bodyMm);
+  const block = footer(words, options.widthMm, options.heightMm, t.bodyMm);
   const box = fit(options.widthMm, options.heightMm, block.height + 4);
   const p = plan(latitude, box.cx, box.cy, box.radius - 0.5, type);
-  const say = paragraph(words, 0, options.heightMm - block.height + t.bodyMm, options.widthMm, t.bodyMm, ' data-say=""');
+  const say = footer(words, options.widthMm, options.heightMm, t.bodyMm, ' data-say=""');
   const label = `${which === "disc" ? "Star wheel" : "Window plate"} ${Math.round(Math.abs(p.latitude))}`;
   return `${svgOpen(options.widthMm, options.heightMm, label, `wheel-${which}-${p.north ? "n" : "s"}${Math.round(p.latitude)}`)}${which === "disc" ? discMarkup(p, lang) : plateMarkup(p, lang)}${say.markup}</svg>`;
 }

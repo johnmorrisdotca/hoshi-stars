@@ -3,7 +3,7 @@
 import { constellations } from "../constellations.ts";
 import { figureOf } from "../lines.ts";
 import { stars as allStars, type Star } from "../stars.ts";
-import { TYPES, n, paragraph, svgOpen, textWidth, type Lang } from "./common.ts";
+import { TYPES, footer, n, svgOpen, textWidth, type Lang } from "./common.ts";
 import { monthName, skyForLatitude, sunRightAscension } from "./region.ts";
 
 const RAD = Math.PI / 180;
@@ -56,7 +56,7 @@ export function skyMapSvg(latitude: number, month: number, options: { widthMm: n
   const type = options.type ?? "kid";
   const t = TYPES[type];
   const north = latitude >= 0;
-  const block = paragraph(HOW[lang](monthName(month, lang), north), 0, 0, options.widthMm, t.bodyMm);
+  const block = footer(HOW[lang](monthName(month, lang), north), options.widthMm, options.heightMm, t.bodyMm);
   const letter = t.nameMm;
   const words = lang === "ja" ? { e: "ひがし", w: "にし" } : { e: "E", w: "W" };
   const side = Math.max(textWidth(words.e, letter), textWidth(words.w, letter)) + 4;
@@ -104,6 +104,6 @@ export function skyMapSvg(latitude: number, month: number, options: { widthMm: n
   const word = (x: number, y: number, body: string, key: string): string => `<text x="${n(x)}" y="${n(y + letter * 0.35)}" font-size="${n(letter)}" font-weight="800" text-anchor="middle" fill="#000" data-direction="${key}">${body}</text>`;
   parts.push(word(cx, cy - radius - letter * 0.55, names.n, "north"), word(cx, cy + radius + letter * 0.55, names.s, "south"));
   parts.push(word(cx - radius - textWidth(names.e, letter) / 2 - 3, cy, names.e, "east"), word(cx + radius + textWidth(names.w, letter) / 2 + 3, cy, names.w, "west"));
-  const say = paragraph(HOW[lang](monthName(month, lang), north), 0, options.heightMm - block.height + t.bodyMm, options.widthMm, t.bodyMm, ' data-say=""');
+  const say = footer(HOW[lang](monthName(month, lang), north), options.widthMm, options.heightMm, t.bodyMm, ' data-say=""');
   return `${svgOpen(options.widthMm, options.heightMm, `${monthName(month, lang)}`, `sky-${Math.round(latitude)}-${month}`)}${parts.join("")}${say.markup}</svg>`;
 }

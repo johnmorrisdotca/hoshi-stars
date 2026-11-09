@@ -4,7 +4,7 @@ import { constellation, type Constellation } from "../constellations.ts";
 import { figureOf } from "../lines.ts";
 import { project } from "../projection.ts";
 import type { Star } from "../stars.ts";
-import { TYPES, n, paragraph, svgOpen, text as write, textWidth, type Lang } from "./common.ts";
+import { TYPES, footer, n, svgOpen, text as write, textWidth, type Lang } from "./common.ts";
 
 /**
  * How hard a sheet is: `easy` joins only the brightest 5 to 10 stars of the figure, `medium` joins every star of its lines, and `hard` has the same dots with no numbers to find.
@@ -180,7 +180,7 @@ function placeLabels(dots: Dot[], width: number, height: number, type: "kid" | "
   for (const dot of order) {
     const words = dot.numbers.join("·");
     const w = textWidth(words, size);
-    const h = size * 0.9;
+    const h = size * 1.2;
     let best: { score: number; box: Box; anchor: Dot["label"]["anchor"]; x: number; y: number } | undefined;
     for (let k = 0; k < 16; k += 1) {
       const angle = (k / 16) * 2 * Math.PI;
@@ -198,7 +198,7 @@ function placeLabels(dots: Dot[], width: number, height: number, type: "kid" | "
       }
       for (const other of placed) score = Math.min(score, gap(box, other));
       if (box.x < 0 || box.y < 0 || box.x + box.w > width || box.y + box.h > height) score -= 50;
-      if (best === undefined || score > best.score) best = { score, box, anchor: "middle", x: cx, y: cy + h * 0.5 - h * 0.08 };
+      if (best === undefined || score > best.score) best = { score, box, anchor: "middle", x: cx, y: box.y + size * 0.95 };
     }
     placed.push(best!.box);
     dot.label = { x: best!.x, y: best!.y, anchor: "middle" };
@@ -254,7 +254,7 @@ export function dotsSvg(text: string, options: { level?: DotLevel; widthMm: numb
   const t = TYPES[type];
   const probe = dotsFigure(text, { ...options, heightMm: options.heightMm });
   const say = words(probe, lang, options.answer === true);
-  const block = paragraph(say, 0, 0, options.widthMm, t.bodyMm);
+  const block = footer(say, options.widthMm, options.heightMm, t.bodyMm);
   const roomHeight = options.heightMm - block.height - 4;
   const figure = dotsFigure(text, { level: options.level, widthMm: options.widthMm, heightMm: roomHeight, type });
   const answer = options.answer === true;
@@ -265,7 +265,7 @@ export function dotsSvg(text: string, options: { level?: DotLevel; widthMm: numb
     if (dot.ring) parts.push(`<circle cx="${n(dot.x)}" cy="${n(dot.y)}" r="${n(dot.r + 2.2)}" fill="none" stroke="#000" stroke-width="${n(Math.max(0.6, t.lineMm * 0.5))}" data-ring=""/>`);
   }
   for (const dot of figure.dots) if (dot.numbers.length > 0) parts.push(write(dot.label.x, dot.label.y, t.bodyMm, dot.numbers.join("·"), ` text-anchor="middle" data-number="${dot.numbers[0]}"`));
-  const sayBlock = paragraph(say, 0, roomHeight + 4 + t.bodyMm, options.widthMm, t.bodyMm, " data-say=\"\"");
+  const sayBlock = footer(say, options.widthMm, options.heightMm, t.bodyMm, " data-say=\"\"");
   const label = NAME_LANG(figure.constellation, lang);
   return `${svgOpen(options.widthMm, options.heightMm, label, `${figure.constellation.abbreviation}-${figure.level}${answer ? "-answer" : ""}`)}${parts.join("")}${sayBlock.markup}</svg>`;
 }
