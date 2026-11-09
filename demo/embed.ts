@@ -1,7 +1,7 @@
 // The embed page: it draws what its address says, for a site that cannot run script of its own, and takes the family's hands: a drag turns it, a pinch or Ctrl and the wheel zooms,
 // the keys and the + and - buttons zoom, and the plain wheel scrolls the page at the opening view. Where it looks is written back into its own address. The address is read as text:
 //   ?proj=stereographic  one of the seven projections         &ra=84&dec=0&zoom=3     where it looks (degrees) and how far in (0.1 to 500; left out: Orion, 90 degrees wide, 60 under 600 px)
-//   &mag=5               the faintest star                   &layers=milky,lines,names,grid  or none (also boundaries, deep)
+//   &mag=5               the faintest star                   &layers=milky,lines,names,faint,grid  or none (also boundaries, deep)
 //   &lang=ja             constellation names in Japanese     &c=Ori                  one constellation brighter, with its boundary
 //   &culture=chinese     the sky culture drawn: western (the 88 constellations and asterisms, the default), japanese or chinese
 //   &from=HR5459        the sky seen from a star (Bright Star Catalogue number: Alpha Centauri; it needs a distance)
