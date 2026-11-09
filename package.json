@@ -171,6 +171,11 @@
       "import": "./dist/nearby.js",
       "default": "./dist/nearby.js"
     },
+    "./faint": {
+      "types": "./dist/faint.d.ts",
+      "import": "./dist/faint.js",
+      "default": "./dist/faint.js"
+    },
     "./sky-from": {
       "types": "./dist/sky-from.d.ts",
       "import": "./dist/sky-from.js",
