@@ -241,8 +241,9 @@ test("no two names touch, or cover a bright star, at the opening view, in either
     await open(page, query);
     await expect(page.locator("#chart text").first()).toBeVisible();
     const found = await page.evaluate(() => {
-      const svg = document.querySelector("#chart")!;
-      const frame = svg.getBoundingClientRect();
+      const host = document.querySelector("#chart")!;
+      const svg = host.shadowRoot!;
+      const frame = host.getBoundingClientRect();
       const texts = [...svg.querySelectorAll("text")].map((t) => ({ text: t.textContent ?? "", r: t.getBoundingClientRect() }));
       const dots = [...svg.querySelectorAll("circle:not([fill='none'])")].map((c) => ({ r: c.getBoundingClientRect(), size: Number(c.getAttribute("r")) })).filter((c) => c.size > 2.8);
       const touch = (a: DOMRect, b: DOMRect, slack: number) => Math.min(a.right, b.right) - Math.max(a.left, b.left) > slack && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > slack;
