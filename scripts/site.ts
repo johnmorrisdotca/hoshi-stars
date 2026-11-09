@@ -5,7 +5,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
-import { familyBoot, renderIndex, renderKids } from "./page.ts";
+import { familyBoot, renderConstellationPage, renderIndex, renderKids } from "./page.ts";
+import { writeThumbnails } from "./thumbnail-files.ts";
 
 /** What the family's card shows (scripts/images.ts makes it): the words of og:image:alt and of the README's top picture. */
 const ALT = "Hoshi Stars: a sky chart of Orion with its constellation lines, on the soft band of the Milky Way.";
@@ -18,10 +19,14 @@ mkdirSync(site, { recursive: true });
 writeFileSync(join(site, "index.html"), renderIndex().replace("</head>", `${thumbnailHead(pkg, { alt: ALT })}</head>`));
 publishThumbnails(root, site);
 writeFileSync(join(site, "kids.html"), renderKids());
+writeFileSync(join(site, "constellations.html"), renderConstellationPage("gallery.html", "gl_title", "gl_description", "gallery"));
+writeFileSync(join(site, "constellation.html"), renderConstellationPage("constellation.html", "cp_title", "cp_description", "constellation"));
+writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
+writeThumbnails(join(site, "thumbnails"));
 writeFileSync(join(site, "family-boot.js"), familyBoot());
-for (const file of ["embed.html", "demo.css", "family.css"]) cpSync(join(root, "demo", file), join(site, file));
+for (const file of ["embed.html", "demo.css", "family.css", "gallery.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), kids: join(root, "demo", "kids.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts") },
   outdir: join(site, "js"),
   bundle: true,
   format: "esm",

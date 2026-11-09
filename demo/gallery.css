@@ -1,0 +1,57 @@
+/* The constellation picker, gallery, constellation page and list. After demo.css; the family's variables and buttons. */
+.picker { display: grid; gap: 6px; margin: 0 0 12px; }
+.picker .fam-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.picker input[type="search"] { flex: 1 1 14rem; min-width: 0; max-width: 28rem; }
+.picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+.pick-tile { flex: 0 0 auto; width: 92px; display: grid; justify-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; cursor: pointer; scroll-snap-align: start; }
+.pick-tile[hidden] { display: none; }
+.pick-tile img { display: block; width: 80px; height: 80px; border-radius: 6px; background: var(--rule); }
+.pick-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-tile:hover { border-color: var(--accent); }
+.pick-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; }
+.pick-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* the gallery */
+.gl-title { margin: 0 0 4px; font-size: 1.4rem; }
+.gallery .fam-row, .cpage .fam-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.gallery input[type="search"] { flex: 1 1 14rem; min-width: 0; max-width: 28rem; }
+.gl-grid { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 640px) { .gl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .gl-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1200px) { .gl-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.gl-tile { display: grid; gap: 2px; padding: 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); text-decoration: none; }
+.gl-tile:hover { border-color: var(--accent); }
+.gl-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.gl-tile img { display: block; width: 100%; height: auto; aspect-ratio: 1; border-radius: 6px; background: var(--rule); }
+.gl-name { font-weight: 600; margin-top: 4px; }
+.gl-sub { color: var(--muted); font-size: .8rem; }
+.gl-pager { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
+.gl-pager .fam-button[aria-current="page"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 700; }
+
+/* a constellation's own page */
+.cpage h2 { font-size: 1rem; margin: 18px 0 6px; }
+.cp-grid { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { .cp-grid { grid-template-columns: minmax(0, 560px) minmax(0, 1fr); } }
+.cp-picture img { display: block; width: 100%; height: auto; aspect-ratio: 1; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--rule); }
+.cp-files { margin-top: 8px; }
+#cp-files { display: flex; flex-wrap: wrap; gap: 6px; }
+.cp-side h2:first-child { margin-top: 0; }
+.cp-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.cp-links a, .cp-files a { display: inline-flex; align-items: center; min-height: 48px; text-decoration: none; color: var(--ink); }
+.cp-turn { margin-top: 20px; justify-content: space-between; }
+
+/* the list */
+.clist .fam-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.ls-filters { display: grid; gap: 8px; margin-bottom: 8px; }
+.ls-filters .fam-label { min-width: 8rem; }
+.ls-seg { flex-wrap: wrap; }
+.ls-bar { margin: 8px 0; }
+.ls-count { font-weight: 600; }
+.ls-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--radius); }
+.ls-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ls-table { border-collapse: collapse; width: 100%; min-width: 64rem; font-size: .85rem; }
+.ls-table th, .ls-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+.ls-table th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
+.ls-table img { display: block; width: 72px; height: 72px; border-radius: 6px; background: var(--rule); }
+.ls-name a { font-weight: 600; color: var(--ink); }
+.ls-table .fam-button { text-decoration: none; }

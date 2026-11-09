@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="gallery" aria-labelledby="gl-heading">
+        <h1 id="gl-heading" class="gl-title" data-say="gl_heading"></h1>
+        <p class="lead" data-say="gl_lede"></p>
+        <form class="fam-row" id="gl-find" role="search" autocomplete="off">
+          <label class="fam-label" for="gl-search" data-say="gl_search"></label>
+          <input id="gl-search" type="search" class="fam-field" data-testid="gallery-search" data-say-placeholder="gl_placeholder" enterkeyhint="search" />
+          <output class="fam-fine" id="gl-count" data-testid="gallery-count" aria-live="polite"></output>
+        </form>
+        <ul class="gl-grid" id="gl-grid" data-testid="gallery-grid"></ul>
+        <p class="fam-fine" id="gl-none" data-say="gl_none" hidden></p>
+        <nav class="gl-pager" id="gl-pager" data-testid="gallery-pager" data-say-label="gl_pages"></nav>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

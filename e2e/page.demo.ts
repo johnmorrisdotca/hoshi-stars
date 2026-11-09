@@ -10,6 +10,7 @@ async function open(page: Page, query = ""): Promise<void> {
   await expect(page.locator("#chart circle").first()).toBeVisible();
 }
 async function middle(page: Page): Promise<{ x: number; y: number }> {
+  await chart(page).scrollIntoViewIfNeeded();
   const box = (await chart(page).boundingBox())!;
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }

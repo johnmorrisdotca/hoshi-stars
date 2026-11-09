@@ -2,10 +2,11 @@
 // and the dev server serves the same files, so the tests play the page that is published.
 import { readFileSync } from "node:fs";
 import { FAMILY_SCRIPT, familyFooter, familyHead, familyHeader, familyUnreviewed } from "./family-template.mjs";
+import { ALL_WORDS } from "./gallery-words.ts";
 import { WORDS } from "./page-words.ts";
 
 const id = "hoshi-stars";
-const LINKS = [{ href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
+const LINKS = [{ href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
 export function renderIndex(): string {
@@ -29,7 +30,19 @@ export function renderKids(): string {
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/kids.js"></script>`);
 }
 
+/** One of the constellation pages (gallery.html, constellation.html), made as the others are. `title` and `description` are the English words' keys. */
+export function renderConstellationPage(file: string, title: string, description: string, script: string): string {
+  const html = readFileSync(new URL(`../demo/${file}`, import.meta.url), "utf8");
+  const words = ALL_WORDS.en as Record<string, string>;
+  return html
+    .replace("<!--family:head-->", familyHead({ id, title: words[title]!.replace("{name}", "Constellation"), description: words[description]!.replace("{name}", "A constellation").replace("({abbreviation})", "") }))
+    .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
+    .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
+    .replace("<!--family:footer-->", familyFooter({ id }))
+    .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/${script}.js"></script>`);
+}
+
 /** The classic script that defines familyLanguage and fills the header. An external file, so the page's script policy stays 'self'. It tells the page's own script when the language changes. */
 export function familyBoot(): string {
-  return `${FAMILY_SCRIPT}\nfamilyLanguage({ id: ${JSON.stringify(id)}, words: ${JSON.stringify(WORDS)}, onChange: function (lang) { document.dispatchEvent(new CustomEvent("hoshi-language", { detail: { lang: lang } })); } });\n`;
+  return `${FAMILY_SCRIPT}\nfamilyLanguage({ id: ${JSON.stringify(id)}, words: ${JSON.stringify(ALL_WORDS)}, onChange: function (lang) { document.dispatchEvent(new CustomEvent("hoshi-language", { detail: { lang: lang } })); } });\n`;
 }

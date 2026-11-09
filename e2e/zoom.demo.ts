@@ -20,7 +20,11 @@ for (const where of PAGES) {
         (window as unknown as { wheels: boolean[] }).wheels = [];
         addEventListener("wheel", (event) => (window as unknown as { wheels: boolean[] }).wheels.push(event.defaultPrevented));
       });
-      const box = (await page.locator(where.box).boundingBox())!;
+      let box = (await page.locator(where.box).boundingBox())!;
+      if (box.y + Math.min(box.height / 2, 300) > page.viewportSize()!.height - 20) {
+        await page.locator(where.box).scrollIntoViewIfNeeded();
+        box = (await page.locator(where.box).boundingBox())!;
+      }
       return { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 300) };
     }
     const wheels = (page: Page): Promise<boolean[]> => page.evaluate(() => (window as unknown as { wheels: boolean[] }).wheels);

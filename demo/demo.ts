@@ -20,6 +20,7 @@ import { nearbyOf, type By } from "./nearby.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
+import { mountPicker } from "./picker.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const lang = (): "en" | "ja" => (document.documentElement.lang === "ja" ? "ja" : "en");
@@ -452,6 +453,9 @@ $("find").addEventListener("submit", (event) => {
   else goTo(first.key);
 });
 
+// ----- the picker over the map -----
+const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), go: (abbreviation) => goTo(`C:${abbreviation}`), current: pickedConstellation, say });
+
 // ----- what is picked -----
 function fact(list: HTMLElement, name: string, value: string | Node): void {
   const dt = Object.assign(document.createElement("dt"), { textContent: say(name) });
@@ -470,6 +474,7 @@ function linkTo(text: string, key: string): HTMLButtonElement {
 const nameOf = (c: Constellation): string => (lang() === "ja" ? c.japanese : c.name);
 
 function details(): void {
+  picker.refresh();
   nearbyPanel();
   const host = $("picked");
   host.replaceChildren();
@@ -691,3 +696,8 @@ read();
 words();
 details();
 everything();
+const goAsked = constellation(address.get("go") ?? "");
+if (goAsked !== undefined) {
+  address.set("go", null);
+  goTo(`C:${goAsked.abbreviation}`);
+}

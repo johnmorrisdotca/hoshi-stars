@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="cpage" aria-labelledby="cp-heading">
+        <p class="fam-row"><a class="fam-button" href="constellations.html" id="cp-back" data-say="cp_back"></a></p>
+        <div id="cp-missing" hidden><h1 data-say="cp_unknown"></h1></div>
+        <div id="cp-body" hidden>
+          <h1 id="cp-heading" class="gl-title" data-testid="cp-name"></h1>
+          <p class="lead" id="cp-sub"></p>
+          <div class="cp-grid">
+            <div class="cp-picture">
+              <img id="cp-image" data-testid="cp-image" width="560" height="560" alt="" />
+              <p class="fam-row"><a class="fam-button" data-primary="true" id="cp-map" data-testid="cp-map" data-say="cp_map"></a></p>
+              <p class="fam-row cp-files"><span class="fam-label" data-say="cp_files"></span><span id="cp-files"></span></p>
+            </div>
+            <div class="cp-side">
+              <h2 data-say="cp_facts"></h2>
+              <dl class="facts" id="cp-facts" data-testid="cp-facts"></dl>
+              <p class="fam-row" id="cp-say"></p>
+              <h2 data-say="cp_neighbours"></h2>
+              <div class="cp-links" id="cp-neighbours"></div>
+            </div>
+          </div>
+          <h2 data-say="cp_stars"></h2>
+          <div class="cp-links" id="cp-stars" data-testid="cp-stars"></div>
+          <h2 data-say="cp_messier"></h2>
+          <div class="cp-links" id="cp-messier" data-testid="cp-messier"></div>
+          <p class="fam-row cp-turn"><a class="fam-button" id="cp-prev"></a><a class="fam-button" id="cp-next"></a></p>
+        </div>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

@@ -5,6 +5,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
     <link rel="stylesheet" href="family.css" />
     <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
   </head>
   <body>
     <main>
@@ -13,6 +14,15 @@
       <section class="sky" aria-labelledby="heading">
         <h2 id="heading" data-say="heading"></h2>
         <p class="lead" data-say="intro"></p>
+        <div class="picker" id="picker" data-testid="picker">
+          <div class="fam-row">
+            <label class="fam-label" for="picker-search" data-say="pk_label"></label>
+            <input id="picker-search" type="search" class="fam-field" data-testid="picker-search" data-say-placeholder="pk_placeholder" autocomplete="off" enterkeyhint="search" />
+            <a class="fam-button" href="constellations.html" data-say="pk_all"></a>
+          </div>
+          <div class="picker-strip" id="picker-strip" data-testid="picker-strip" role="group" data-say-label="pk_label"></div>
+          <p class="fam-fine" data-pick-none data-say="pk_none" hidden></p>
+        </div>
         <div class="sky-grid">
           <div class="chart-box" id="chart-box">
             <svg id="chart" class="chart" data-testid="chart" role="img" tabindex="0" data-say-label="chartLabel"></svg>
