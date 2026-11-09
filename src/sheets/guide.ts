@@ -95,7 +95,7 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
   const cell = options.widthMm / columns;
   const head = t.nameMm * 0.75;
   const neverWords = never6.map((e) => (lang === "ja" ? e.constellation.japanese : e.constellation.name)).join(lang === "ja" ? "、" : ", ");
-  const neverLines = wrap(neverWords === "" ? "-" : neverWords, options.widthMm, t.bodyMm);
+  const neverLines = wrap(neverWords === "" ? "-" : neverWords, options.widthMm - 2.4, t.bodyMm);
   const whyEntry = [...always, ...best][0];
   const why = whyEntry === undefined ? undefined : whyFamous(whyEntry.constellation.abbreviation, lang);
   const lay = (shrink: number, withWhy: boolean, bestRows: number): { parts: string[]; end: number } => {
@@ -104,7 +104,7 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
     const parts: string[] = [];
     let y = 0;
     const heading = (words: string): void => {
-      parts.push(text(0, y + head * 1.05, head, words, ' data-heading=""'));
+      parts.push(text(1.2, y + head * 1.05, head, words, ' data-heading=""'));
       y += head + 4;
     };
     const grid = (list: RegionEntry[], rows: number): void => {
@@ -113,19 +113,19 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
     };
     heading(say.always);
     if (always.length === 0) {
-      parts.push(text(0, y + t.bodyMm, t.bodyMm, say.none));
+      parts.push(text(1.2, y + t.bodyMm, t.bodyMm, say.none));
       y += t.bodyMm * 1.5;
     } else grid(always, 1);
     heading(say.best(monthName(month, lang)));
     if (best.length === 0) {
-      parts.push(text(0, y + t.bodyMm, t.bodyMm, say.noneBest));
+      parts.push(text(1.2, y + t.bodyMm, t.bodyMm, say.noneBest));
       y += t.bodyMm * 1.5;
     } else grid(best, Math.min(bestRows, Math.ceil(best.length / columns)));
     heading(say.never);
-    neverLines.forEach((line, i) => parts.push(text(0, y + t.bodyMm + i * t.bodyMm * 1.3, t.bodyMm, line)));
+    neverLines.forEach((line, i) => parts.push(text(1.2, y + t.bodyMm + i * t.bodyMm * 1.3, t.bodyMm, line)));
     y += neverLines.length * t.bodyMm * 1.3 + 3;
     if (withWhy && why !== undefined) {
-      const block = paragraph(why, 0, y + t.bodyMm, options.widthMm, t.bodyMm, ' data-why=""');
+      const block = paragraph(why, 1.2, y + t.bodyMm, options.widthMm - 2.4, t.bodyMm, ' data-why=""');
       parts.push(block.markup);
       y += block.height;
     }

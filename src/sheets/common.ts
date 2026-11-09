@@ -73,7 +73,7 @@ export const svgOpen = (width: number, height: number, label: string, id: string
 
 /** Lines of words at the foot of a page: the last baseline sits `0.55` of a line above the edge, so the letters that hang below it still fit the room in a font taller than the sheet's own. */
 export function footer(words: string, widthMm: number, heightMm: number, sizeMm: number, extra = ""): { markup: string; height: number } {
-  const lines = wrap(words, widthMm, sizeMm);
+  const lines = wrap(words, widthMm - 2.4, sizeMm);
   const last = heightMm - 0.55 * sizeMm;
-  return { markup: lines.map((line, i) => text(0, last - (lines.length - 1 - i) * sizeMm * 1.3, sizeMm, line, extra)).join(""), height: lines.length * sizeMm * 1.3 + 0.25 * sizeMm };
+  return { markup: lines.map((line, i) => text(1.2, last - (lines.length - 1 - i) * sizeMm * 1.3, sizeMm, line, extra)).join(""), height: lines.length * sizeMm * 1.3 + 0.25 * sizeMm };
 }
