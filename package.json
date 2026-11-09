@@ -138,6 +138,11 @@
       "import": "./dist/projection.js",
       "default": "./dist/projection.js"
     },
+    "./all-sky": {
+      "types": "./dist/all-sky.d.ts",
+      "import": "./dist/all-sky.js",
+      "default": "./dist/all-sky.js"
+    },
     "./milky-way": {
       "types": "./dist/milky-way.d.ts",
       "import": "./dist/milky-way.js",
@@ -226,7 +231,7 @@
     "@angular/platform-browser": "^22.2.5",
     "@eslint/js": "^9.0.0",
     "@johnmorrisdotca/hata": "^1.8.0",
-    "@johnmorrisdotca/kazoku-ui": "^0.23.0",
+    "@johnmorrisdotca/kazoku-ui": "^0.24.0",
     "@johnmorrisdotca/kuni": "^1.5.0",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",
