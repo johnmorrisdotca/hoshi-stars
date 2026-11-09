@@ -25,9 +25,9 @@ writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.h
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
 writeThumbnails(join(site, "thumbnails"));
 writeFileSync(join(site, "family-boot.js"), familyBoot());
-for (const file of ["embed.html", "demo.css", "family.css", "gallery.css", "whole-sky.css"]) cpSync(join(root, "demo", file), join(site, file));
+for (const file of ["embed.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts") },
   outdir: join(site, "js"),
   bundle: true,
   format: "esm",
