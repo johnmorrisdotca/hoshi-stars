@@ -14,7 +14,8 @@ export const UNIT_W = 1000;
 export const UNIT_H = 500;
 export type Look = "night" | "paper";
 export type Language = "en" | "ja";
-export const LAYERS = ["milky", "grid", "boundaries", "lines", "names"] as const;
+/** `faint` is drawn on its own layer of the page (`whole-sky.ts`), as it depends on the zoom; the printed map does not carry it. */
+export const LAYERS = ["milky", "grid", "boundaries", "lines", "names", "faint"] as const;
 export type Layer = (typeof LAYERS)[number];
 
 export const PALETTE = {

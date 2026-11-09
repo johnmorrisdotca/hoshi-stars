@@ -18,11 +18,13 @@
         <div class="ws-stage">
           <div class="ws-box" id="ws-box" data-testid="ws-box" tabindex="0" role="group" data-say-label="ws_skyLabel">
             <svg id="ws-sky" class="ws-sky" data-testid="ws-sky" aria-hidden="false"></svg>
+            <svg id="ws-faint" class="ws-faint" data-testid="ws-faint" aria-hidden="true"></svg>
             <svg id="ws-labels" class="ws-labels" data-testid="ws-labels" aria-hidden="true"></svg>
             <p class="under" id="ws-under" data-testid="ws-under" aria-hidden="true"></p>
           </div>
           <kazoku-view-controls id="ws-bar" for="ws-box" flat controls="basic" layout="horizontal" zoom-min="1" zoom-max="24" data-testid="ws-bar"></kazoku-view-controls>
         </div>
+        <p class="fam-fine faint-note" id="ws-faint-note" data-testid="faint-note" aria-live="polite"></p>
         <div class="ws-options" data-testid="ws-options">
           <span class="fam-seg" id="ws-frame" data-testid="ws-frame" role="group" data-say-label="ws_frame"></span>
           <span class="fam-seg" id="ws-map" data-testid="ws-map" role="group" data-say-label="projection"></span>

@@ -4,15 +4,18 @@ import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { buildSheet, fitToPage, printCss, printSheet, tilePoster, type PageName } from "@johnmorrisdotca/kazoku-ui/print";
 import "@johnmorrisdotca/kazoku-ui/view-controls/define";
 import type { ViewControlsElement } from "@johnmorrisdotca/kazoku-ui/view-controls/element";
-import { ALL_SKY_FRAMES, ALL_SKY_PROJECTIONS, allSkyUnproject, type AllSkyFrame, type AllSkyProjection } from "../src/all-sky.ts";
+import { ALL_SKY_FRAMES, ALL_SKY_PROJECTIONS, allSkyProject, allSkyUnproject, type AllSkyFrame, type AllSkyProjection } from "../src/all-sky.ts";
 import { constellationAt } from "../src/boundaries.ts";
 import { constellation } from "../src/constellations.ts";
 import type { Culture } from "../src/culture.ts";
 import { western } from "../src/cultures/western.ts";
 import { CULTURE_IDS, cultureOf } from "./cultures.ts";
+import { faintAt } from "./faint.ts";
+import { faintDepthOf, faintMarks } from "./faint-layer.ts";
 import { mountPicker } from "./picker.ts";
 import { langNow, nameIn, type Lang } from "./thumbs.ts";
 import { geometryOf, LAYERS, layoutLabels, labelsSvg, mapSvg, paperSvg, UNIT_H, UNIT_W, type Geometry, type Layer } from "./whole-sky-draw.ts";
+import { chartZoomOf, skyFieldOf, visibleBox, WHOLE_SKY_MAGNITUDE, WHOLE_SKY_ZOOM_MAX } from "./whole-sky-field.ts";
 import { milkyPicture } from "./whole-sky-milky.ts";
 import { say } from "./words.ts";
 
@@ -21,7 +24,7 @@ const ADDRESS = "https://johnmorrisdotca.github.io/hoshi-stars/whole-sky.html";
 const PAPERS: readonly PageName[] = ["a4", "letter", "a3", "tabloid"];
 const FORMS = ["page", "poster"] as const;
 type Form = (typeof FORMS)[number];
-const DEFAULT_LAYERS: readonly Layer[] = ["milky", "boundaries", "lines", "names"];
+const DEFAULT_LAYERS: readonly Layer[] = ["milky", "boundaries", "lines", "names", "faint"];
 const POSTER_MM = { widthMm: 600, heightMm: 300 };
 const FONT = 11;
 
@@ -55,6 +58,7 @@ function read(): void {
 // ----- the map on the screen -----
 const box = $<HTMLElement>("ws-box");
 const sky = $<SVGSVGElement>("ws-sky");
+const faintLayer = $<SVGSVGElement>("ws-faint");
 const labelLayer = $<SVGSVGElement>("ws-labels");
 const bar = $<ViewControlsElement>("ws-bar");
 let width = Math.max(200, Math.round(box.clientWidth));
@@ -78,7 +82,8 @@ const nameOf = (abbreviation: string): string => {
 
 /** The ground, the Milky Way, the grid, boundaries, lines and stars: made again only when the orientation, map, culture, layers or language change. */
 function build(): void {
-  const key = `${frame}|${projection}|${culture.id}|${[...layers].sort().join(",")}|${langNow()}`;
+  // the faint layer is drawn by `drawFaint` on every draw, so it is not part of what the ground is made from
+  const key = `${frame}|${projection}|${culture.id}|${[...layers].filter((l) => l !== "faint").sort().join(",")}|${langNow()}`;
   if (key === built && world !== undefined) return;
   geometry = geometryOf(frame, projection);
   const milky = layers.has("milky") ? milkyPicture(frame, projection, "night", 720) : undefined;
@@ -93,6 +98,7 @@ function size(): void {
   width = Math.max(200, Math.round(box.clientWidth));
   sky.setAttribute("viewBox", `0 0 ${width} ${width / 2}`);
   labelLayer.setAttribute("viewBox", `0 0 ${width} ${width / 2}`);
+  faintLayer.setAttribute("viewBox", `0 0 ${width} ${width / 2}`);
 }
 
 function draw(): void {
@@ -105,7 +111,42 @@ function draw(): void {
   box.dataset.zoomed = String(view.zoom > 1.02);
   const labels = layers.has("names") ? layoutLabels({ geometry, culture, lang: langNow(), width, zoom: view.zoom, panX: view.panX, panY: view.panY, fontSize: langNow() === "ja" ? FONT + 1 : FONT }) : [];
   labelLayer.innerHTML = labelsSvg(labels, "night");
+  drawFaint(height, k);
   paintOn();
+}
+
+/** The faint stars are a third of a pixel to a pixel wide: smaller than the Bright Star Catalogue's faintest on this map (1.2 pixels), as they are fainter. */
+const FAINT_GROW = 0.6;
+let faintDrawn = "";
+
+/**
+ * The faint stars of UCAC4 for what the map shows now, drawn in the screen's own pixels over the map: the same depth rule as the sky chart (read from the zoom that gives the same pixels to the degree), at most 6,000 dots,
+ * and the line under the map. The tiles are asked for only when the map is zoomed in to where the layer starts, and only for the patch of sky on the screen; nothing is drawn or fetched until the map is moved or zoomed.
+ */
+function drawFaint(height: number, k: number): void {
+  let text = "";
+  let svg = "";
+  if (layers.has("faint")) {
+    const limit = faintDepthOf(WHOLE_SKY_MAGNITUDE, chartZoomOf(view.zoom));
+    const got = faintAt(limit, () => skyFieldOf(geometry.options, visibleBox(width, view.zoom, view.panX, view.panY)), schedule);
+    if (got === undefined) text = say("ws_faintHint", { depth: Math.round(faintDepthOf(WHOLE_SKY_MAGNITUDE, chartZoomOf(WHOLE_SKY_ZOOM_MAX))) });
+    else if (got.state === "failed") text = say("faintFailed");
+    else {
+      const place = (star: { rightAscension: number; declination: number }): [number, number] => {
+        const at = allSkyProject(star, geometry.options);
+        return [width / 2 + view.panX + (at.x - UNIT_W / 2) * k, height / 2 + view.panY + (at.y - UNIT_H / 2) * k];
+      };
+      const marks = faintMarks(got, place, (at, margin = 0) => at[0] > -margin && at[0] < width + margin && at[1] > -margin && at[1] < height + margin, FAINT_GROW);
+      svg = marks.svg;
+      text = got.state === "loading" ? say("faintLoading") : say("faintDepth", { depth: marks.depth.toFixed(1), count: marks.drawn.toLocaleString(langNow()) });
+    }
+  }
+  if (svg !== faintDrawn) {
+    faintLayer.innerHTML = svg;
+    faintDrawn = svg;
+  }
+  const note = $("ws-faint-note");
+  if (note.textContent !== text) note.textContent = text;
 }
 
 function schedule(): void {
