@@ -1,6 +1,9 @@
 // The demo page: a sky you turn with a drag, zoom with the wheel or a pinch, tap for a star, a Messier object or a constellation, and search by name in English or Japanese.
 // Every choice is kept in the address. The language is the family's: the chooser in the header fills the page's fixed words, and this script rewrites what it draws itself.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
+import { zoomText } from "@johnmorrisdotca/kazoku-ui/view-controls";
+import { wideCss } from "@johnmorrisdotca/kazoku-ui/wide-layout";
+import "@johnmorrisdotca/kazoku-ui/wide-layout/define";
 import "@johnmorrisdotca/kazoku-ui/embed-panel/define";
 import type { EmbedChangeDetail, EmbedPanelElement } from "@johnmorrisdotca/kazoku-ui/embed-panel/element";
 import { WORDS } from "../scripts/page-words.ts";
@@ -21,6 +24,10 @@ import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.t
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 import { mountPicker } from "./picker.ts";
+
+const wideStyle = document.createElement("style");
+wideStyle.textContent = wideCss({ side: "340px" });
+document.head.append(wideStyle);
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const lang = (): "en" | "ja" => (document.documentElement.lang === "ja" ? "ja" : "en");
@@ -96,6 +103,7 @@ function clear(): Box[] {
 
 function draw(): void {
   queued = false;
+  $("zoom-readout").textContent = zoomText(view.zoom / opening());
   const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined, sky });
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
