@@ -23,10 +23,12 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
   const height = heightFor(width);
   const withLines = choice.layers.has("lines");
   const hr = choice.from === undefined ? undefined : Number(choice.from.slice(2));
+  const culture = choice.cultureId === "japanese" || choice.cultureId === "chinese" ? choice.cultureId : undefined;
   const imports: Import[] = [
     hr === undefined ? { names: "starColour, stars", sub: "" } : { names: "blackBodyColour, starByHr, starTemperatureK", sub: "" },
     ...(hr === undefined ? [] : [{ names: "skyFrom", sub: "/sky-from" }]),
     ...(withLines ? [{ names: "figures", sub: "/lines" }] : []),
+    ...(withLines && culture !== undefined ? [{ names: culture, sub: `/cultures/${culture}` }] : []),
     { names: "project", sub: "/projection" },
   ];
   const scale = Math.round(fitScale(choice.projection, width, height) * choice.zoom * 100) / 100;
@@ -42,7 +44,7 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
     ...(withLines
       ? [
           `  let d = "";`,
-          `  for (const { segments } of figures()) {`,
+          `  for (const { segments } of figures(${culture ?? ""})) {`,
           `    for (const [a, b] of segments) {`,
           ...(hr === undefined ? [`      const from = place(a);`, `      const to = place(b);`] : [`      const from = seen.has(\`hr-\${a.hr}\`) && place(seen.get(\`hr-\${a.hr}\`));`, `      const to = seen.has(\`hr-\${b.hr}\`) && place(seen.get(\`hr-\${b.hr}\`));`]),
           `      if (from && to && Math.hypot(to[0] - from[0], to[1] - from[1]) < ${width / 2}) d += \`M\${from[0].toFixed(1)} \${from[1].toFixed(1)}L\${to[0].toFixed(1)} \${to[1].toFixed(1)}\`;`,

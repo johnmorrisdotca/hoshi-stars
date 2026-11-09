@@ -1,5 +1,6 @@
 // What the demo, the embed page and the code to copy all agree on: a chart as a handful of choices, and how they are written into an address.
 import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "./chart.ts";
+import { cultureOf, DEFAULT_CULTURE } from "./cultures.ts";
 import { fromText, viewpointOf } from "./from.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 
@@ -17,6 +18,8 @@ export interface Choice extends View {
   nearBy?: "sky" | "space" | undefined;
   /** The star the sky is seen from, written `HR5459`; left out for the Earth's sky. */
   from?: string | undefined;
+  /** The sky culture drawn: `western`, `japanese` or `chinese`; left out for the Western sky. */
+  cultureId?: string | undefined;
 }
 
 const number = (text: string | null, fallback: number, low: number, high: number): number => {
@@ -43,6 +46,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
   const highlight = query.get("c") ?? undefined;
   const near = /^[SDC]:[\w.-]+$/.test(query.get("near") ?? "") ? query.get("near")! : undefined;
   const from = viewpointOf(query.get("from"));
+  const culture = cultureOf(query.get("culture"));
   return {
     projection,
     ra: ((number(query.get("ra"), DEFAULT_VIEW.ra, -1e6, 1e6) % 360) + 360) % 360,
@@ -53,6 +57,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
     lang: query.get("lang") === "ja" ? "ja" : "en",
     ...(highlight === undefined ? {} : { highlight }),
     ...(from === undefined ? {} : { from: fromText(from) }),
+    ...(culture === undefined || culture.id === DEFAULT_CULTURE ? {} : { cultureId: culture.id }),
     ...(near === undefined ? {} : { nearTo: near }),
     ...(near !== undefined && query.get("by") === "space" ? { nearBy: "space" as const } : {}),
   };
@@ -64,6 +69,7 @@ export function frameQuery(choice: Choice): string {
   if (choice.lang === "ja") q.set("lang", "ja");
   if (choice.highlight !== undefined) q.set("c", choice.highlight);
   if (choice.from !== undefined) q.set("from", choice.from);
+  if (choice.cultureId !== undefined && choice.cultureId !== DEFAULT_CULTURE) q.set("culture", choice.cultureId);
   if (choice.nearTo !== undefined) q.set("near", choice.nearTo);
   if (choice.nearTo !== undefined && choice.nearBy === "space") q.set("by", "space");
   return q.toString();

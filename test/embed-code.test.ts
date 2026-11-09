@@ -4,6 +4,8 @@ import { test } from "node:test";
 import { chart, DEFAULT_VIEW } from "../demo/chart.ts";
 import { chartLines, embedCode, heightFor } from "../demo/embed-code.ts";
 import type { Choice } from "../demo/choice.ts";
+import { chinese } from "../src/cultures/chinese.ts";
+import { cultureOf } from "../demo/cultures.ts";
 import { figures } from "../src/lines.ts";
 import { project } from "../src/projection.ts";
 import { skyFrom } from "../src/sky-from.ts";
@@ -67,4 +69,19 @@ test("seen from another star the code moves the stars with skyFrom, and its circ
   assert.ok(short.length > 5);
   for (const piece of short) assert.ok(lines.has(piece), `the chart draws ${piece} and the code does not`);
   assert.notEqual(path(theirs), path(chart({ ...from, width, height: heightFor(width) }).svg));
+});
+
+test("in a sky culture the code imports it and draws its figures, the chart's own lines", () => {
+  const width = 480;
+  const culture: Choice = { ...choice, cultureId: "chinese", ra: 190, dec: 55, zoom: 4 };
+  const { body, imports } = chartLines(culture, width);
+  assert.ok(imports.some((one) => one.sub === "/cultures/chinese" && one.names === "chinese"));
+  assert.ok(body.includes("figures(chinese)"));
+  const svg = new Function("stars", "starColour", "figures", "chinese", "project", `${body}\nreturn skyChart();`)(stars, starColour, figures, chinese, project) as string;
+  const path = (text: string): string => /<path d="([^"]*)" fill="none" stroke="#6f93e0"/.exec(text)?.[1] ?? "";
+  const mine = new Set(path(svg).split("M").filter(Boolean));
+  const theirs = path(chart({ ...culture, culture: cultureOf("chinese"), width, height: heightFor(width) }).svg).split("M").filter(Boolean);
+  assert.ok(theirs.length > 5);
+  for (const piece of theirs) assert.ok(mine.has(piece), `the chart draws ${piece} and the code does not`);
+  assert.ok(!chartLines({ ...choice, cultureId: "western" }, width).body.includes("chinese"));
 });

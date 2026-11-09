@@ -6,10 +6,14 @@ import type { EmbedChangeDetail, EmbedPanelElement } from "@johnmorrisdotca/kazo
 import { WORDS } from "../scripts/page-words.ts";
 import { starByHr, starColour, starDistance, starDistanceLightYears, stars, type Star } from "../src/index.ts";
 import type { SeenSky, SeenStar } from "../src/sky-from.ts";
-import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
+import { constellation, starsIn, type Constellation } from "../src/constellations.ts";
+import type { Culture } from "../src/culture.ts";
+import type { CultureFigure } from "../src/lines.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
-import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, fitScale, keyOfSeen, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
+import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
+import { CULTURE_IDS, cultureOf, cultureText } from "./cultures.ts";
+import { western } from "../src/cultures/western.ts";
 import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
 import { attachHands } from "./hands.ts";
 import { nearbyOf, type By } from "./nearby.ts";
@@ -32,6 +36,7 @@ let layers: Set<Layer> = layersOf(null);
 let picked: string | null = null;
 let by: By = "sky";
 let from: Star | undefined;
+let culture: Culture = western;
 let sky: SeenSky | undefined;
 let nearKeys: string[] = [];
 let hover: string | undefined;
@@ -53,6 +58,8 @@ function read(): void {
   by = address.get("by") === "space" ? "space" : "sky";
   from = viewpointOf(address.get("from"));
   sky = skyOf(from);
+  culture = cultureOf(address.get("culture")) ?? western;
+  if (picked?.startsWith("C:") && figureById(picked.slice(2), culture) === undefined) picked = null;
   hands.sync();
 }
 
@@ -70,12 +77,14 @@ const opening = (): number => defaultZoom(view.projection, width, height);
 let hits: Hit[] = [];
 let queued = false;
 
+/** The figure to show brighter: the picked figure, or the figure of the culture the picked star is in (its constellation in the Western and Japanese skies). */
 const pickedConstellation = (): string | undefined => {
   if (picked === null) return undefined;
   const [kind, key = ""] = [picked.slice(0, 1), picked.slice(2)];
   if (kind === "C") return key;
   const star = kind === "S" ? starByHr(Number(key)) : undefined;
-  return star?.constellation;
+  if (star === undefined) return undefined;
+  return culture.id === "chinese" ? figuresOf(culture).find((f) => f.stars.includes(star))?.asterism.id : star.constellation;
 };
 
 function clear(): Box[] {
@@ -86,7 +95,7 @@ function clear(): Box[] {
 
 function draw(): void {
   queued = false;
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined, sky });
+  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined, sky });
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
   hits = out.hits;
@@ -120,6 +129,8 @@ function seg(id: string, items: ReadonlyArray<readonly [string, string]>, click:
 function pressed(): void {
   $("seg-projection").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === view.projection)));
   $("seg-layers").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(layers.has(b.dataset.value as Layer))));
+  $("seg-culture").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === culture.id)));
+  $("culture-note").textContent = say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`);
   const slider = $<HTMLInputElement>("magnitude");
   slider.value = String(magnitude);
   $("magnitude-out").textContent = magnitude.toFixed(1);
@@ -131,6 +142,16 @@ function words(): void {
     setView({ ...view, projection: kind as Projection, ...(address.get("zoom") === null ? { zoom: defaultZoom(kind as Projection, width, height) } : {}) });
     address.set("proj", kind);
     everything();
+  });
+  seg("seg-culture", CULTURE_IDS.map((id) => [id, say(`culture${id[0]!.toUpperCase()}${id.slice(1)}`)] as const), (id) => {
+    culture = cultureOf(id) ?? western;
+    address.set("culture", cultureText(culture));
+    if (picked?.startsWith("C:") && figureById(picked.slice(2), culture) === undefined) pick(null);
+    hover = undefined;
+    details();
+    showResults(search(field.value), field.value);
+    everything();
+    settled();
   });
   seg("seg-layers", LAYERS.map((layer) => [layer, say(layer)] as const), (layer) => {
     if (layers.has(layer as Layer)) layers.delete(layer as Layer);
@@ -239,12 +260,22 @@ $("reset").addEventListener("click", () => {
   details();
 });
 
+/** The figure of the sky culture under a pixel: an asterism near a line or star of it, else (in a sky with constellations) the constellation whose boundary holds the pixel. */
+function figureAt(x: number, y: number): CultureFigure | undefined {
+  if (sky !== undefined) return undefined;
+  const near = figureUnder(view, width, height, x, y, culture);
+  if (near !== undefined) return near;
+  if (culture.id === "chinese") return undefined;
+  const found = constellationUnder(view, width, height, x, y);
+  return found === undefined ? undefined : figureById(found.abbreviation, culture);
+}
+
 function hovering(at: Touch): void {
-  const found = sky === undefined ? constellationUnder(view, width, height, at.x, at.y) : undefined;
-  const next = found?.abbreviation;
+  const found = figureAt(at.x, at.y);
+  const next = found?.asterism.id;
   if (next === hover) return;
   hover = next;
-  $("under").textContent = found === undefined ? "" : lang() === "ja" ? found.japanese : found.name;
+  $("under").textContent = found === undefined ? "" : labelOf(found, culture, lang());
   schedule();
 }
 
@@ -260,8 +291,8 @@ function tap(x: number, y: number): void {
   }
   if (best !== undefined) pick(best.kind === "star" ? `S:${best.key}` : `D:${best.key}`);
   else {
-    const found = sky === undefined ? constellationUnder(view, width, height, x, y) : undefined;
-    pick(found === undefined ? null : `C:${found.abbreviation}`);
+    const found = figureAt(x, y);
+    pick(found === undefined ? null : `C:${found.asterism.id}`);
   }
   settled();
 }
@@ -323,9 +354,9 @@ function fly(to: Place): void {
 
 /** The zoom at which a constellation's figure fits the chart. */
 function zoomFor(abbreviation: string): number {
-  const middle = centreOfConstellation(abbreviation);
+  const middle = centreOfConstellation(abbreviation, culture);
   if (middle === undefined) return 3;
-  const reach = Math.min(80, reachOfConstellation(abbreviation) + 4);
+  const reach = Math.min(80, reachOfConstellation(abbreviation, culture) * (culture.id === "chinese" ? 1.6 : 1) + 4);
   const test = { ...view, ra: middle.rightAscension, dec: middle.declination, zoom: 1 };
   const at = toScreen(test, width, height, { rightAscension: middle.rightAscension, declination: Math.min(89.9, middle.declination + reach) }) ?? toScreen(test, width, height, { rightAscension: middle.rightAscension, declination: middle.declination - reach });
   const radius = at === undefined ? fitScale(view.projection, width, height) : Math.hypot(at[0] - width / 2, at[1] - height / 2);
@@ -350,8 +381,9 @@ function search(text: string): Found[] {
   const q = fold(text);
   if (q === "") return [];
   const out: Found[] = [];
-  const exact = constellation(text);
-  if (exact !== undefined) out.push({ label: lang() === "ja" ? exact.japanese : exact.name, kind: say("constellationKind"), key: `C:${exact.abbreviation}` });
+  const kindOf = (figure: CultureFigure): string => say(figure.asterism.kind === "constellation" ? "constellationKind" : figure.asterism.kind === "mansion" ? "mansionKind" : "asterismKind");
+  const exact = culture.find(text);
+  if (exact !== undefined) out.push({ label: labelOf(figureById(exact.id, culture)!, culture, lang()), kind: kindOf(figureById(exact.id, culture)!), key: `C:${exact.id}` });
   const starts: Found[] = [];
   const contains: Found[] = [];
   if (sky !== undefined && [fold("Sun"), fold("太陽")].some((name) => name.startsWith(q))) starts.push({ label: say("sun"), kind: say("starKind"), key: "S:sun" });
@@ -362,9 +394,11 @@ function search(text: string): Found[] {
     if (names.some((name) => name.startsWith(q))) starts.push(found);
     else if (names.some((name) => name.includes(q))) contains.push(found);
   }
-  for (const c of constellations()) {
-    if (out.some((one) => one.key === `C:${c.abbreviation}`)) continue;
-    if ([c.name, c.genitive, c.english, c.japanese, c.reading, c.abbreviation].some((name) => fold(name).includes(q))) (fold(c.name).startsWith(q) || fold(c.japanese).startsWith(q) ? starts : contains).push({ label: lang() === "ja" ? c.japanese : c.name, kind: say("constellationKind"), key: `C:${c.abbreviation}` });
+  for (const figure of figuresOf(culture)) {
+    const a = figure.asterism;
+    if (out.some((one) => one.key === `C:${a.id}`)) continue;
+    const names = [a.name, ...Object.values(a.names), a.readings.ja, a.readings.zh, ...a.aka, a.id].filter((name): name is string => name !== undefined && name !== "");
+    if (names.some((name) => fold(name).includes(q))) (names.some((name) => fold(name).startsWith(q)) ? starts : contains).push({ label: labelOf(figure, culture, lang()), kind: kindOf(figure), key: `C:${a.id}` });
   }
   for (const object of messier()) {
     const name = object.name === undefined ? "" : fold(object.name);
@@ -383,7 +417,7 @@ function placeOf(key: string): Place | undefined {
     const object = deepSkyObject(id);
     return object && { ra: object.rightAscension, dec: object.declination, zoom: Math.max(view.zoom, 6) };
   }
-  const middle = centreOfConstellation(id);
+  const middle = centreOfConstellation(id, culture);
   return middle && { ra: middle.rightAscension, dec: middle.declination, zoom: zoomFor(id) };
 }
 
@@ -477,7 +511,14 @@ function details(): void {
     if (star.spectralClass !== "") fact(list, "fieldClass", star.spectralClass);
     if (star.constellation !== undefined) {
       const c = constellation(star.constellation);
-      if (c !== undefined) fact(list, "fieldIn", linkTo(nameOf(c), `C:${c.abbreviation}`));
+      if (c !== undefined) fact(list, "fieldIn", figureById(c.abbreviation, culture) === undefined ? nameOf(c) : linkTo(nameOf(c), `C:${c.abbreviation}`));
+    }
+    const parts = figuresOf(culture).filter((f) => f.asterism.kind !== "constellation" && f.stars.includes(star)).slice(0, 4);
+    if (parts.length > 0) {
+      const holder = document.createElement("span");
+      holder.className = "chips";
+      for (const part of parts) holder.append(linkTo(labelOf(part, culture, lang()), `C:${part.asterism.id}`));
+      fact(list, "fieldPartOf", holder);
     }
   } else if (picked.startsWith("D:")) {
     const object = deepSkyObject(id) as DeepSkyObject | undefined;
@@ -491,17 +532,41 @@ function details(): void {
     const c = object.constellation === undefined ? undefined : constellation(object.constellation);
     if (c !== undefined) fact(list, "fieldIn", linkTo(nameOf(c), `C:${c.abbreviation}`));
   } else {
-    const c = constellation(id);
-    if (c === undefined) return;
-    title.textContent = nameOf(c);
-    fact(list, "constellationKind", c.abbreviation);
-    fact(list, "fieldLatin", `${c.name} (${c.genitive})`);
-    fact(list, "fieldEnglish", c.english);
-    fact(list, "fieldJapanese", `${c.japanese} (${c.reading})`);
+    const figure = figureById(id, culture);
+    if (figure === undefined) return;
+    const a = figure.asterism;
+    title.textContent = labelOf(figure, culture, lang());
+    if (culture.id === "chinese") title.lang = "zh-Hant";
+    const c = a.kind === "constellation" ? constellation(a.id) : undefined;
+    if (c !== undefined) {
+      fact(list, "constellationKind", c.abbreviation);
+      fact(list, "fieldLatin", `${c.name} (${c.genitive})`);
+      fact(list, "fieldEnglish", c.english);
+      fact(list, "fieldJapanese", `${c.japanese} (${c.reading})`);
+    } else {
+      fact(list, "fieldType", say(a.kind === "mansion" ? "mansionKind" : "asterismKind"));
+      if (a.names.en !== undefined && a.names.en !== title.textContent) fact(list, "fieldEnglish", a.names.en);
+      if (a.names.ja !== undefined && culture.id !== "chinese") fact(list, "fieldJapanese", a.readings.ja === undefined || a.readings.ja === a.names.ja ? a.names.ja : `${a.names.ja} (${a.readings.ja})`);
+      if (a.about !== "") fact(list, "fieldAbout", a.about);
+      if (a.group !== undefined) fact(list, "fieldQuarter", say(a.group));
+      const lies = [...new Set(figure.stars.map((star) => constellation(star.constellation)).filter((one): one is Constellation => one !== undefined))];
+      if (lies.length > 0) fact(list, "fieldLiesIn", lies.map(nameOf).join(", "));
+    }
+    if (a.names["zh-Hant"] !== undefined) fact(list, "fieldChinese", `${a.names["zh-Hant"]}${a.names["zh-Hans"] !== a.names["zh-Hant"] ? ` / ${a.names["zh-Hans"]}` : ""}${a.readings.zh === undefined ? "" : ` (${a.readings.zh})`}`);
+    if (a.aka.length > 0 && culture.id === "japanese" && a.kind === "asterism") fact(list, "fieldReading", a.aka.join("、"));
     const chips = document.createElement("div");
     chips.className = "chips";
-    for (const star of starsIn(c.abbreviation).slice(0, 12)) chips.append(linkTo(starName(star), `S:${star.hr}`));
+    const members = c === undefined ? figure.stars : starsIn(c.abbreviation);
+    for (const star of [...members].sort((x, y) => x.magnitude - y.magnitude).slice(0, 12)) chips.append(linkTo(starName(star), `S:${star.hr}`));
     host.append(Object.assign(document.createElement("h4"), { textContent: say("starsIn") }), chips);
+    const notes: string[] = [];
+    if (a.missing > 0) notes.push(say("noteMissing").replace("{missing}", String(a.missing)).replace("{held}", String(figure.stars.length)));
+    if (culture.id === "chinese") notes.push(say("noteChineseLines"));
+    for (const note of notes) {
+      const line = Object.assign(document.createElement("p"), { className: "fam-fine", textContent: note });
+      line.dataset.testid = "figure-note";
+      host.append(line);
+    }
   }
 }
 
@@ -509,8 +574,8 @@ function details(): void {
 function nearbyPanel(): void {
   const host = $("nearby");
   host.replaceChildren();
-  const found = nearbyOf(picked, by, sky);
-  nearKeys = found === undefined ? [] : found.rows.map((row) => row.key);
+  const found = nearbyOf(picked !== null && picked.startsWith("C:") && constellation(picked.slice(2)) === undefined ? null : picked, by, sky);
+  nearKeys = found === undefined ? [] : found.rows.filter((row) => !row.key.startsWith("C:") || figureById(row.key.slice(2), culture) !== undefined).map((row) => row.key);
   const title = Object.assign(document.createElement("h3"), { textContent: say("nearbyHeading") });
   host.append(title);
   if (found === undefined) {
@@ -575,7 +640,7 @@ function nearbyPanel(): void {
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(from === undefined ? {} : { from: fromText(from) }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 panel.generate = ({ kind, size, preview }) => (kind === "iframe" ? frameCode(choice(size), say("chartLabel"), size, preview) : (embedCode(kind, choice(size), size) ?? ""));
 panel.preview = ({ kind, size }) => {

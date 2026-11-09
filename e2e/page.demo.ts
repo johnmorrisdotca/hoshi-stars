@@ -19,7 +19,7 @@ test("the sky draws stars, lines, names and a grid, and says how many stars it s
   await open(page);
   expect(await stars(page)).toBeGreaterThan(100);
   await expect(page.locator("#chart path[stroke='#6f93e0']")).toHaveCount(1);
-  await expect(page.locator("#chart text", { hasText: "Orion" })).toHaveCount(1);
+  await expect(page.locator("#chart text", { hasText: /^Orion$/ })).toHaveCount(1);
   await expect(page.locator("#shown")).toContainText("1,630 stars shown");
 });
 

@@ -2,9 +2,11 @@
 // It only calls the package: the numbers (positions, colours, outlines, figures) are the package's; the pixels are decided here.
 import { blackBodyColour, starByHr, starColour, starTemperatureK, stars, type Star } from "../src/index.ts";
 import { boundaries, constellationAt } from "../src/boundaries.ts";
-import { constellations, type Constellation } from "../src/constellations.ts";
+import type { Constellation } from "../src/constellations.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
-import { figures } from "../src/lines.ts";
+import { figures, type CultureFigure } from "../src/lines.ts";
+import type { Culture } from "../src/culture.ts";
+import { western } from "../src/cultures/western.ts";
 import { milkyWayBands } from "../src/milky-way.ts";
 import { project, unproject, type Projection, type SkyPoint } from "../src/projection.ts";
 import type { SeenSky } from "../src/sky-from.ts";
@@ -28,7 +30,9 @@ export interface ChartOptions extends View {
   magnitude: number;
   layers: ReadonlySet<Layer>;
   lang: Language;
-  /** The constellation (abbreviation) to show brighter, with its boundary even when boundaries are off. */
+  /** The sky culture whose figures and names are drawn: the Western sky (the 88 constellations and the asterisms) when left out. */
+  culture?: Culture | undefined;
+  /** The figure (a constellation's abbreviation in the Western and Japanese cultures, else the figure's id) to show brighter, with its boundary when it is a constellation, even when boundaries are off. */
   highlight?: string | undefined;
   /** The star (HR number) or Messier object (`M31`) that is picked. */
   picked?: string | undefined;
@@ -157,12 +161,18 @@ function pathOf(view: View, place: Placer, points: readonly SkyPoint[]): string 
   return d;
 }
 
-let centroids: Map<string, SkyPoint> | undefined;
-/** The middle of each constellation's figure, where its name goes. */
-function centroidOf(abbreviation: string): SkyPoint | undefined {
-  if (centroids === undefined) {
-    centroids = new Map();
-    for (const figure of figures()) {
+interface Figures {
+  list: CultureFigure[];
+  centroids: Map<string, SkyPoint>;
+}
+const cultureFigures = new Map<string, Figures>();
+/** A culture's figures and the middle of each, where its name goes. */
+function figuresOfCulture(culture: Culture): Figures {
+  let found = cultureFigures.get(culture.id);
+  if (found === undefined) {
+    const list = figures(culture);
+    const centroids = new Map<string, SkyPoint>();
+    for (const figure of list) {
       let x = 0;
       let y = 0;
       let z = 0;
@@ -173,17 +183,37 @@ function centroidOf(abbreviation: string): SkyPoint | undefined {
         y += Math.cos(dec) * Math.sin(ra);
         z += Math.sin(dec);
       }
-      centroids.set(figure.constellation.abbreviation, { rightAscension: wrap360((Math.atan2(y, x) * 180) / Math.PI), declination: (Math.atan2(z, Math.hypot(x, y)) * 180) / Math.PI });
+      centroids.set(figure.asterism.id, { rightAscension: wrap360((Math.atan2(y, x) * 180) / Math.PI), declination: (Math.atan2(z, Math.hypot(x, y)) * 180) / Math.PI });
     }
+    found = { list, centroids };
+    cultureFigures.set(culture.id, found);
   }
-  return centroids.get(abbreviation);
+  return found;
+}
+
+/** The figures of a culture (the Western sky when left out), for a page that lists them. */
+export const figuresOf = (culture: Culture = western): readonly CultureFigure[] => figuresOfCulture(culture).list;
+
+/** The figure of a culture by its id. */
+export const figureById = (id: string, culture: Culture = western): CultureFigure | undefined => figuresOfCulture(culture).list.find((f) => f.asterism.id === id);
+
+/** What a figure is called on the chart: a constellation by its Latin name (its Japanese one in Japanese); a figure of the Japanese or Chinese sky in its own characters; a Western asterism by its English name (its Japanese one, if it has one, in Japanese). */
+export function labelOf(figure: CultureFigure, culture: Culture, lang: Language): string {
+  const a = figure.asterism;
+  if (a.kind === "constellation") return lang === "ja" ? a.names.ja ?? a.name : a.names.la ?? a.name;
+  if (culture.id === "western") return lang === "ja" ? a.names.ja ?? a.names.en ?? a.name : a.names.en ?? a.name;
+  return a.name;
+}
+
+function centroidOf(id: string, culture: Culture): SkyPoint | undefined {
+  return figuresOfCulture(culture).centroids.get(id);
 }
 
 /** The middle of each figure as the stars of the sky seen from another star put it, from the figure's stars that sky holds (two at least). */
-function centroidsSeen(sky: SeenSky): Map<string, SkyPoint> {
+function centroidsSeen(sky: SeenSky, culture: Culture): Map<string, SkyPoint> {
   const seen = new Map(sky.map((star) => [star.id, star]));
   const found = new Map<string, SkyPoint>();
-  for (const figure of figures()) {
+  for (const figure of figuresOfCulture(culture).list) {
     let x = 0;
     let y = 0;
     let z = 0;
@@ -198,21 +228,21 @@ function centroidsSeen(sky: SeenSky): Map<string, SkyPoint> {
       z += Math.sin(dec);
       count++;
     }
-    if (count >= 2) found.set(figure.constellation.abbreviation, { rightAscension: wrap360((Math.atan2(y, x) * 180) / Math.PI), declination: (Math.atan2(z, Math.hypot(x, y)) * 180) / Math.PI });
+    if (count >= 2) found.set(figure.asterism.id, { rightAscension: wrap360((Math.atan2(y, x) * 180) / Math.PI), declination: (Math.atan2(z, Math.hypot(x, y)) * 180) / Math.PI });
   }
   return found;
 }
 
-/** The middle of a constellation's figure (degrees), for flying to it. */
-export const centreOfConstellation = (abbreviation: string): SkyPoint | undefined => centroidOf(abbreviation);
+/** The middle of a figure (degrees), for flying to it. */
+export const centreOfConstellation = (id: string, culture: Culture = western): SkyPoint | undefined => centroidOf(id, culture);
 
-/** How far (degrees) a constellation's figure reaches from its middle: the zoom that shows all of it comes from this. */
-export function reachOfConstellation(abbreviation: string): number {
-  const middle = centroidOf(abbreviation);
-  const figure = figures().find((f) => f.constellation.abbreviation === abbreviation);
+/** How far (degrees) a figure reaches from its middle: the zoom that shows all of it comes from this. */
+export function reachOfConstellation(id: string, culture: Culture = western): number {
+  const middle = centroidOf(id, culture);
+  const figure = figureById(id, culture);
   if (middle === undefined || figure === undefined) return 30;
   const rad = Math.PI / 180;
-  let far = 5;
+  let far = culture.id === "chinese" ? 1.5 : 5;
   for (const star of figure.stars) {
     const c = Math.sin(middle.declination * rad) * Math.sin(star.declination * rad) + Math.cos(middle.declination * rad) * Math.cos(star.declination * rad) * Math.cos((middle.rightAscension - star.rightAscension) * rad);
     far = Math.max(far, Math.acos(Math.max(-1, Math.min(1, c))) / rad);
@@ -223,7 +253,7 @@ export function reachOfConstellation(abbreviation: string): number {
 /** The Milky Way's bands, faint to bright: the colour, and how much of the night sky each one lightens. The glow is cool, the core warm. */
 const MILKY = { levels: [0.04, 0.08, 0.13, 0.2, 0.3, 0.42, 0.58, 0.76], fills: ["#6a80c8", "#7a90d2", "#8da1dc", "#a6b6e6", "#c3cdee", "#e0e4f2", "#f7eedd", "#fff3d8"], opacities: [0.16, 0.14, 0.14, 0.14, 0.15, 0.16, 0.18, 0.2] } as const;
 
-const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4" };
+const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4" };
 
 function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean, near = false): string {
   const stroke = pick ? COLOURS.pick : near ? COLOURS.near : COLOURS.deep;
@@ -364,6 +394,8 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
 /** One frame of the chart: an SVG string of the size asked, and what a tap can land on. */
 export function chart(o: ChartOptions): Chart {
   const { width, height, layers, lang } = o;
+  const culture = o.culture ?? western;
+  const drawn = figuresOfCulture(culture).list;
   const place = placer(o, width, height);
   const view: View = o;
   const hits: Hit[] = [];
@@ -410,13 +442,15 @@ export function chart(o: ChartOptions): Chart {
 
   if (layers.has("lines") || o.highlight !== undefined) {
     let quiet = "";
+    let other = "";
     let loud = "";
-    for (const figure of figures()) {
-      const on = figure.constellation.abbreviation === o.highlight;
+    for (const figure of drawn) {
+      const on = figure.asterism.id === o.highlight;
       if (!on && !layers.has("lines")) continue;
-      for (const [star, other] of figure.segments) {
+      const side = figure.asterism.kind === "asterism" && culture.id !== "chinese";
+      for (const [star, next] of figure.segments) {
         const a = seen === undefined ? star : seen.get(`hr-${star.hr}`);
-        const b = seen === undefined ? other : seen.get(`hr-${other.hr}`);
+        const b = seen === undefined ? next : seen.get(`hr-${next.hr}`);
         if (a === undefined || b === undefined) continue;
         const from = place(a);
         const to = place(b);
@@ -424,10 +458,11 @@ export function chart(o: ChartOptions): Chart {
         if ((from[0] < 0 && to[0] < 0) || (from[0] > width && to[0] > width) || (from[1] < 0 && to[1] < 0) || (from[1] > height && to[1] > height)) continue;
         const piece = `M${round(from[0])} ${round(from[1])}L${round(to[0])} ${round(to[1])}`;
         if (on) loud += piece;
+        else if (side) other += piece;
         else quiet += piece;
       }
     }
-    body += `<path d="${quiet}" fill="none" stroke="${COLOURS.lines}" stroke-width="1.2" stroke-opacity=".8"/><path d="${loud}" fill="none" stroke="${COLOURS.linesOn}" stroke-width="2.2"/>`;
+    body += `<path d="${quiet}" fill="none" stroke="${COLOURS.lines}" stroke-width="1.2" stroke-opacity=".8"/><path d="${other}" fill="none" stroke="${COLOURS.asterism}" stroke-width="1.2" stroke-opacity=".85" stroke-dasharray="4 3"/><path d="${loud}" fill="none" stroke="${COLOURS.linesOn}" stroke-width="2.2"/>`;
   }
 
   const obstacles: Box[] = [{ x0: -1e4, y0: -1e4, x1: 0, y1: 1e4 }, { x0: width, y0: -1e4, x1: 1e4, y1: 1e4 }, { x0: -1e4, y0: -1e4, x1: 1e4, y1: 0 }, { x0: -1e4, y0: height, x1: 1e4, y1: 1e4 }, ...(o.keepClear ?? [])];
@@ -482,24 +517,26 @@ export function chart(o: ChartOptions): Chart {
   }
 
   const nameLabels: Label[] = [];
-  const middles = o.sky === undefined ? undefined : centroidsSeen(o.sky);
+  const middles = o.sky === undefined ? undefined : centroidsSeen(o.sky, culture);
   if (layers.has("names") && o.zoom >= 0.25) {
-    for (const c of constellations()) {
-      const abbreviation = c.abbreviation;
-      const middle = middles === undefined ? centroidOf(abbreviation) : middles.get(abbreviation);
+    for (const figure of drawn) {
+      const id = figure.asterism.id;
+      const middle = middles === undefined ? centroidOf(id, culture) : middles.get(id);
       const at = middle === undefined ? undefined : place(middle);
       if (at === undefined || !inside(at, -8)) continue;
-      const on = abbreviation === o.highlight;
-      const isNear = nearConstellations.has(abbreviation);
-      const size = on ? 15 : 13;
-      const text = lang === "ja" ? c.japanese : c.name;
+      const on = id === o.highlight;
+      const isNear = nearConstellations.has(id);
+      const small = figure.asterism.kind === "asterism" && culture.id !== "chinese";
+      const size = on ? 15 : small ? 12 : 13;
+      const text = labelOf(figure, culture, lang);
       const { w, h } = textSize(text, size);
       const places = [[0, 0], [0, -h], [0, h], [-w * 0.6, 0], [w * 0.6, 0], [0, -2 * h], [0, 2 * h], [-w * 0.6, -h], [w * 0.6, -h], [-w * 0.6, h], [w * 0.6, h], [0, -3 * h], [0, 3 * h]].map(([dx, dy]) => {
         const x = at[0] + dx!;
         const y = at[1] + dy!;
         return { x, y, anchor: "middle" as const, box: { x0: x - w / 2 - 1, y0: y - size * 0.85, x1: x + w / 2 + 1, y1: y + size * 0.3 } };
       });
-      nameLabels.push({ rank: on ? -1 : isNear ? 899 : 1001.8 + 1.2 * (1 - Math.min(1, reachOfConstellation(abbreviation) / 50)), places, text, size, weight: on || isNear ? 700 : 400, fill: on ? COLOURS.nameOn : isNear ? COLOURS.near : COLOURS.name, opacity: on || isNear ? 1 : 0.75 });
+      const rank = (small ? 1003.5 : 1001.8) + 1.2 * (1 - Math.min(1, reachOfConstellation(id, culture) / 50)) - (figure.asterism.kind === "mansion" ? 0.8 : 0);
+      nameLabels.push({ rank: on ? -1 : isNear ? 899 : rank, places, text, size, weight: on || isNear ? 700 : 400, fill: on ? COLOURS.nameOn : isNear ? COLOURS.near : small ? COLOURS.asterismName : COLOURS.name, opacity: on || isNear ? 1 : 0.75 });
     }
   }
   body += `<g>${dots}</g>${ring}`;
@@ -513,7 +550,7 @@ export function chart(o: ChartOptions): Chart {
     const p = l.places[at]!;
     text += `<text x="${round(p.x)}" y="${round(p.y)}" text-anchor="${p.anchor}" font-size="${l.size}" font-weight="${l.weight}" fill="${l.fill}" fill-opacity="${l.opacity}">${escapeXml(l.text)}</text>`;
   });
-  body += `<g font-family="system-ui, sans-serif" pointer-events="none" stroke="${COLOURS.ground}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${text}</g>`;
+  body += `<g font-family="system-ui, sans-serif"${culture.id === "chinese" ? ' lang="zh-Hant"' : ""} pointer-events="none" stroke="${COLOURS.ground}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${text}</g>`;
 
   return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits };
 }
@@ -525,6 +562,58 @@ export const keyOfSeen = (id: string): string => (id.startsWith("hr-") ? id.slic
 export function constellationUnder(view: View, width: number, height: number, x: number, y: number): Constellation | undefined {
   const at = fromScreen(view, width, height, x, y);
   return at === undefined ? undefined : constellationAt(at);
+}
+
+/**
+ * The figure of a culture nearest a pixel of the chart, within `reach` pixels of one of its lines or stars. Only the figures a tap should find: the asterisms, and every figure of a culture that has no constellations (the Chinese sky).
+ *
+ * @param view - The chart's view.
+ * @param width - The chart's width in pixels.
+ * @param height - The chart's height in pixels.
+ * @param x - The pixel.
+ * @param y - The pixel.
+ * @param culture - The sky culture drawn.
+ * @param reach - How near a line or star must be, in pixels.
+ * @returns The figure, or `undefined` where none is near.
+ *
+ * @example
+ * ```ts
+ * import { chinese } from "../src/cultures/chinese.ts";
+ * import { DEFAULT_VIEW, figureUnder } from "./chart.ts";
+ *
+ * console.log(figureUnder(DEFAULT_VIEW, 480, 360, 240, 180, chinese)?.asterism.name);
+ * ```
+ */
+export function figureUnder(view: View, width: number, height: number, x: number, y: number, culture: Culture, reach = 12): CultureFigure | undefined {
+  const place = placer(view, width, height);
+  let best: CultureFigure | undefined;
+  let nearest = reach * reach;
+  for (const figure of figuresOfCulture(culture).list) {
+    if (figure.asterism.kind === "constellation") continue;
+    const spots = figure.stars.map((star) => place(star));
+    const ends = figure.segments.map(([a, b]) => [place(a), place(b)] as const);
+    for (const at of spots) {
+      if (at === undefined) continue;
+      const d = (at[0] - x) ** 2 + (at[1] - y) ** 2;
+      if (d < nearest) {
+        nearest = d;
+        best = figure;
+      }
+    }
+    for (const [from, to] of ends) {
+      if (from === undefined || to === undefined) continue;
+      const dx = to[0] - from[0];
+      const dy = to[1] - from[1];
+      const length = dx * dx + dy * dy;
+      const t = length === 0 ? 0 : Math.max(0, Math.min(1, ((x - from[0]) * dx + (y - from[1]) * dy) / length));
+      const d = (from[0] + t * dx - x) ** 2 + (from[1] + t * dy - y) ** 2;
+      if (d < nearest) {
+        nearest = d;
+        best = figure;
+      }
+    }
+  }
+  return best;
 }
 
 export type { DeepSkyObject, Star };
