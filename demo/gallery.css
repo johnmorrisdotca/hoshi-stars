@@ -49,11 +49,45 @@
 .cp-turn { margin-top: 20px; justify-content: space-between; }
 
 /* the list */
-.clist .fam-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.ls-filters { display: grid; gap: 8px; margin-bottom: 8px; }
-.ls-filters .fam-label { min-width: 8rem; }
-.ls-seg { flex-wrap: wrap; }
-.ls-bar { margin: 8px 0; }
+/* the filter bar: a chip for each filter on a desk (a menu of its choices under it), one Filters button and a sheet on a phone */
+.ls-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0; }
+.ls-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ls-chip { position: relative; }
+.ls-chip-button, .ls-choice { min-height: 44px; padding: 0 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: .85rem; font-weight: 600; }
+.ls-chip-button { display: inline-flex; align-items: center; white-space: nowrap; }
+.ls-chip-button::after { content: ""; width: 6px; height: 6px; margin: -3px 0 0 7px; border: solid currentColor; border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.ls-chip-button[aria-expanded="true"]::after { margin-top: 3px; transform: rotate(-135deg); }
+.ls-chip-value { margin-left: 4px; font-weight: 500; color: var(--muted); }
+.ls-on > .ls-chip-button, .ls-open.ls-on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.ls-on .ls-chip-value { color: var(--ink); font-weight: 700; }
+.ls-chip-button:hover, .ls-choice:hover { border-color: var(--ink); }
+.ls-menu { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; min-width: 100%; display: grid; gap: 2px; padding: 4px; background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; box-shadow: 0 10px 28px rgba(0, 0, 0, .22); }
+.ls-menu-right { left: auto; right: 0; }
+.ls-menu-grid { grid-template-columns: repeat(4, minmax(4.2rem, 1fr)); }
+.ls-item { position: relative; min-height: 44px; padding: 0 14px 0 30px; border: 0; border-radius: 10px; background: transparent; color: var(--ink); text-align: left; white-space: nowrap; font-size: .85rem; }
+.ls-item:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.ls-item[aria-checked="true"] { font-weight: 700; }
+.ls-item[aria-checked="true"]::before { content: "\2713"; position: absolute; left: 10px; color: var(--accent); }
+.ls-chip-button:focus-visible, .ls-item:focus-visible, .ls-choice:focus-visible, .ls-open:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ls-open { display: none; }
+.ls-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: .75rem; }
+.ls-tally { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+@media (max-width: 720px) {
+  .ls-chips { display: none; }
+  .ls-open { display: inline-flex; }
+}
+.ls-sheet { margin: auto 0 0; width: 100%; max-width: 100%; max-height: 88vh; padding: 0; border: 1px solid var(--rule); border-radius: 18px 18px 0 0; background: var(--page); color: var(--ink); overflow: hidden; }
+.ls-sheet[open] { display: flex; flex-direction: column; }
+.ls-sheet::backdrop { background: rgba(0, 0, 0, .5); }
+.ls-sheet-head, .ls-sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; }
+.ls-sheet-head { border-bottom: 1px solid var(--rule); }
+.ls-sheet-foot { border-top: 1px solid var(--rule); }
+.ls-sheet-title { margin: 0; font-size: 1.1rem; }
+.ls-sheet-body { overflow-y: auto; display: grid; gap: 12px; padding: 12px 16px; }
+.ls-sheet-row { display: grid; gap: 4px; }
+.ls-sheet-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.ls-choice[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.ls-show { flex: 1; background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .ls-count { font-weight: 600; }
 .ls-scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: var(--radius); }
 .ls-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }

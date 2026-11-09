@@ -1,29 +1,26 @@
-// The list: a table of all 88 constellations with their pictures and facts, and filters that combine (hemisphere, best month, origin, how easy, asterisms, meteor showers), a count and Clear all.
-// Within one filter the choices add up (north or south); between filters they narrow (north and easy). The choices are kept in the address.
+// The list: a table of the IAU's 88 constellations (the Western sky) with their pictures and facts, and filters that combine (hemisphere, best month, origin, how easy, asterisms, meteor showers), a count and Clear all.
+// The filters are a row of chips on a desk and a sheet on a phone (list-filters.ts). Within one filter the choices add up (north or south); between filters they narrow (north and easy). The choices are kept in the address.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { allConstellationFacts, type ConstellationFacts } from "../src/constellation-facts.ts";
 import { inOrder, langNow, lookNow, nameIn, onLook, thumbSrc } from "./thumbs.ts";
+import { mountFilterBar, type FilterGroup } from "./list-filters.ts";
 import { monthName, say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const address = createAddressState();
 
-interface Group {
-  key: string;
-  label: string;
-  values: readonly string[];
-  text: (value: string) => string;
+interface Group extends FilterGroup {
   of: (facts: ConstellationFacts) => string;
 }
 
 const shortMonth = (month: number): string => new Date(2026, month - 1, 15).toLocaleString(langNow() === "ja" ? "ja-JP" : "en", { month: "short" });
 const GROUPS: readonly Group[] = [
   { key: "hemi", label: "ls_hemi", values: ["north", "south", "both"], text: (v) => say(`hemi_${v}`), of: (f) => f.hemisphere },
-  { key: "month", label: "ls_month", values: Array.from({ length: 12 }, (_, i) => String(i + 1)), text: (v) => shortMonth(Number(v)), of: (f) => String(f.bestMonth) },
-  { key: "origin", label: "ls_origin", values: ["ancient", "voyages", "early", "modern"], text: (v) => say(`origin_${v}`), of: (f) => f.origin },
+  { key: "month", label: "ls_month", chip: "ls_month_chip", values: Array.from({ length: 12 }, (_, i) => String(i + 1)), text: (v) => shortMonth(Number(v)), of: (f) => String(f.bestMonth) },
+  { key: "origin", label: "ls_origin", chip: "ls_origin_chip", values: ["ancient", "voyages", "early", "modern"], text: (v) => say(`origin_${v}`), of: (f) => f.origin },
   { key: "easy", label: "ls_easy", values: ["easy", "medium", "hard"], text: (v) => say(`diff_${v}`), of: (f) => f.difficulty },
   { key: "ast", label: "ls_ast", values: ["yes", "no"], text: (v) => say(v === "yes" ? "ls_yes" : "ls_no"), of: (f) => (f.asterisms.length > 0 ? "yes" : "no") },
-  { key: "shower", label: "ls_shower", values: ["yes", "no"], text: (v) => say(v === "yes" ? "ls_yes" : "ls_no"), of: (f) => (f.meteorShowers.length > 0 ? "yes" : "no") },
+  { key: "shower", label: "ls_shower", chip: "ls_shower_chip", values: ["yes", "no"], text: (v) => say(v === "yes" ? "ls_yes" : "ls_no"), of: (f) => (f.meteorShowers.length > 0 ? "yes" : "no") },
 ];
 
 const chosen = (group: Group): string[] => (address.get(group.key) ?? "").split(",").filter((value) => group.values.includes(value));
@@ -36,46 +33,26 @@ function toggle(group: Group, value: string): void {
 }
 
 let builtFor = "";
-function buildFilters(): void {
-  const host = $("ls-filters");
-  host.replaceChildren(
-    ...GROUPS.map((group) => {
-      const row = document.createElement("div");
-      row.className = "fam-row";
-      const label = Object.assign(document.createElement("span"), { className: "fam-label", textContent: say(group.label) });
-      const seg = document.createElement("span");
-      seg.className = "fam-seg ls-seg";
-      seg.dataset.group = group.key;
-      seg.setAttribute("role", "group");
-      seg.setAttribute("aria-label", say(group.label));
-      for (const value of group.values) {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.dataset.value = value;
-        button.textContent = group.text(value);
-        button.addEventListener("click", () => toggle(group, value));
-        seg.append(button);
-      }
-      row.append(label, seg);
-      return row;
-    }),
-  );
-  builtFor = langNow();
+const shownNow = (): ConstellationFacts[] => allConstellationFacts().filter((facts) => GROUPS.every((group) => chosen(group).length === 0 || chosen(group).includes(group.of(facts))));
+
+/** The lede, with its one link (to the sky map, where the Japanese and Chinese skies are) put in where the words say `{map}`. */
+function fillLede(): void {
+  const [before = "", after = ""] = say("ls_lede", { map: "\u0000" }).split("\u0000");
+  const link = Object.assign(document.createElement("a"), { href: "./", textContent: say("ls_lede_map") });
+  $("ls-lede").replaceChildren(before, link, after);
 }
 
 function render(): void {
-  if (builtFor !== langNow()) buildFilters();
+  if (builtFor !== langNow()) {
+    builtFor = langNow();
+    fillLede();
+    bar.rebuild();
+  }
+  bar.refresh();
   const lang = langNow();
   const look = lookNow();
-  for (const group of GROUPS) {
-    const on = chosen(group);
-    $("ls-filters")
-      .querySelectorAll<HTMLButtonElement>(`[data-group="${group.key}"] button`)
-      .forEach((button) => button.setAttribute("aria-pressed", String(on.includes(button.dataset.value!))));
-  }
   const order = new Map(inOrder(lang).map((c, index) => [c.abbreviation, index]));
-  const shown = allConstellationFacts()
-    .filter((facts) => GROUPS.every((group) => chosen(group).length === 0 || chosen(group).includes(group.of(facts))))
+  const shown = shownNow()
     .sort((a, b) => order.get(a.constellation.abbreviation)! - order.get(b.constellation.abbreviation)!);
   $("ls-count").textContent = say("ls_count", { n: shown.length });
   $<HTMLButtonElement>("ls-clear").disabled = GROUPS.every((group) => chosen(group).length === 0);
@@ -122,10 +99,15 @@ function render(): void {
   table.replaceChildren(head, body);
 }
 
-$("ls-clear").addEventListener("click", () => {
+const clearAll = (): void => {
   address.setMany(Object.fromEntries(GROUPS.map((group) => [group.key, null])));
   render();
-});
+};
+$("ls-clear").addEventListener("click", clearAll);
+const bar = mountFilterBar($("ls-chips"), $<HTMLDialogElement>("ls-sheet"), $<HTMLButtonElement>("ls-open-sheet"), { groups: GROUPS, chosen, toggle, clearAll, shown: () => shownNow().length });
+builtFor = langNow();
+fillLede();
+
 address.subscribe(({ source }) => {
   if (source === "navigation") render();
 });
