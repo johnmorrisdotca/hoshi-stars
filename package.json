@@ -14,6 +14,9 @@
     "deep-sky",
     "messier",
     "ngc",
+    "black-hole",
+    "black-holes",
+    "supermassive-black-hole",
     "proper-motion",
     "javascript",
     "react",
@@ -127,6 +130,11 @@
       "types": "./dist/deep-sky.d.ts",
       "import": "./dist/deep-sky.js",
       "default": "./dist/deep-sky.js"
+    },
+    "./black-holes": {
+      "types": "./dist/black-holes.d.ts",
+      "import": "./dist/black-holes.js",
+      "default": "./dist/black-holes.js"
     },
     "./deep-sky/ngc-ic": {
       "types": "./dist/deep-sky-ngc-ic.d.ts",
