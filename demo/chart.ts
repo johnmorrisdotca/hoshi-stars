@@ -44,8 +44,9 @@ export interface Hit {
 }
 
 export const DEFAULT_VIEW: View = { projection: "stereographic", ra: 84, dec: 0, zoom: 1 };
-export const ZOOM_MIN = 0.6;
-export const ZOOM_MAX = 60;
+/** The least zoom: the whole sky, small. The most: about 0.7 degree across a desk-wide chart, where the closest naked-eye pairs (Mizar and Alcor, 12 arc-minutes) still draw apart. */
+export const ZOOM_MIN = 0.1;
+export const ZOOM_MAX = 500;
 const WIDE: readonly Projection[] = ["equirectangular", "mollweide", "hammer"];
 const SQRT8 = Math.sqrt(8);
 
@@ -118,7 +119,7 @@ function crossesSeam(view: View, a: SkyPoint, b: SkyPoint): boolean {
 type Placer = (point: SkyPoint) => [number, number] | undefined;
 
 function placer(view: View, width: number, height: number): Placer {
-  const reach = 6 * Math.max(width, height);
+  const reach = Math.max(6 * Math.max(width, height), 1e5);
   return (point) => {
     const at = toScreen(view, width, height, point);
     return at === undefined || Math.abs(at[0] - width / 2) > reach || Math.abs(at[1] - height / 2) > reach ? undefined : at;
@@ -414,7 +415,7 @@ export function chart(o: ChartOptions): Chart {
   }
 
   const nameLabels: Label[] = [];
-  if (layers.has("names")) {
+  if (layers.has("names") && o.zoom >= 0.25) {
     for (const c of constellations()) {
       const abbreviation = c.abbreviation;
       const middle = centroidOf(abbreviation);

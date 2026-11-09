@@ -8,7 +8,8 @@ import { starByHr, starColour, starDistanceLightYears, stars, type Star } from "
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
-import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, dragged, fitScale, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, zoomedAbout, type Hit, type Layer, type View } from "./chart.ts";
+import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, fitScale, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
+import { attachHands } from "./hands.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
@@ -42,6 +43,7 @@ function read(): void {
   const named = address.get("layers");
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
+  hands.sync();
 }
 
 function writeView(): void {
@@ -88,6 +90,7 @@ new ResizeObserver(() => {
   width = Math.max(200, Math.round(box.clientWidth));
   height = Math.max(200, Math.round(box.clientHeight));
   if (address.get("zoom") === null) view = { ...view, zoom: opening() };
+  hands.sync();
   schedule();
 }).observe(box);
 
@@ -114,8 +117,7 @@ function pressed(): void {
 }
 function words(): void {
   seg("seg-projection", PROJECTIONS.map((kind) => [kind, say(kind)] as const), (kind) => {
-    view = { ...view, projection: kind as Projection };
-    if (address.get("zoom") === null) view = { ...view, zoom: opening() };
+    setView({ ...view, projection: kind as Projection, ...(address.get("zoom") === null ? { zoom: defaultZoom(kind as Projection, width, height) } : {}) });
     address.set("proj", kind);
     everything();
   });
@@ -133,13 +135,13 @@ $("magnitude").addEventListener("input", () => {
 });
 
 // ----- turning, zooming and tapping -----
+// The drag, the two-finger pinch, the wheel, the keys and the double tap are the family's view controller (hands.ts); a tap on the sky is the page's own.
 interface Touch {
   x: number;
   y: number;
 }
 const touches = new Map<number, Touch>();
 let moved = 0;
-let pinch = 0;
 let settle: ReturnType<typeof setTimeout> | undefined;
 const local = (event: { clientX: number; clientY: number }): Touch => {
   const at = svg.getBoundingClientRect();
@@ -150,91 +152,52 @@ function settled(): void {
   clearTimeout(settle);
   settle = setTimeout(codes, 150);
 }
-svg.addEventListener("pointerdown", (event) => {
-  if (event.button !== 0 && event.pointerType === "mouse") return;
-  svg.setPointerCapture(event.pointerId);
+const hands = attachHands(box, {
+  view: () => view,
+  size: () => ({ width, height }),
+  opening,
+  moved(next, final) {
+    cancelFly();
+    view = next;
+    schedule();
+    if (final) settled();
+  },
+});
+function setView(next: View): void {
+  view = next;
+  hands.sync();
+}
+box.addEventListener("pointerdown", (event) => {
+  if ((event.pointerType === "mouse" && event.button !== 0) || (event.target as Element).closest("button") !== null) return;
   touches.set(event.pointerId, local(event));
   moved = touches.size > 1 ? 99 : 0;
-  pinch = 0;
-  cancelFly();
 });
-svg.addEventListener("pointermove", (event) => {
+box.addEventListener("pointermove", (event) => {
   const here = local(event);
   const before = touches.get(event.pointerId);
   if (before === undefined) {
     if (event.pointerType === "mouse") hovering(here);
     return;
   }
-  if (touches.size === 1) {
-    moved += Math.abs(here.x - before.x) + Math.abs(here.y - before.y);
-    if (moved > 6) view = dragged(view, width, height, here.x - before.x, here.y - before.y);
-  } else if (touches.size === 2) {
-    const others = [...touches.entries()].find(([id]) => id !== event.pointerId)![1];
-    const distance = Math.hypot(here.x - others.x, here.y - others.y);
-    const middleBefore = { x: (before.x + others.x) / 2, y: (before.y + others.y) / 2 };
-    const middle = { x: (here.x + others.x) / 2, y: (here.y + others.y) / 2 };
-    view = dragged(view, width, height, middle.x - middleBefore.x, middle.y - middleBefore.y);
-    if (pinch > 0 && distance > 0) view = zoomedAbout(view, width, height, distance / pinch, middle.x, middle.y);
-    pinch = distance;
-  }
+  moved += Math.abs(here.x - before.x) + Math.abs(here.y - before.y);
   touches.set(event.pointerId, here);
-  schedule();
 });
 const release = (event: PointerEvent): void => {
   const was = touches.get(event.pointerId);
   touches.delete(event.pointerId);
-  if (touches.size < 2) pinch = 0;
-  if (was === undefined) return;
-  if (touches.size === 0) {
-    if (moved <= 6 && event.type === "pointerup") tap(was.x, was.y);
-    else settled();
-  }
+  if (was !== undefined && touches.size === 0 && moved <= 6 && event.type === "pointerup") tap(was.x, was.y);
 };
-svg.addEventListener("pointerup", release);
-svg.addEventListener("pointercancel", release);
-svg.addEventListener("pointerleave", () => {
+box.addEventListener("pointerup", release);
+box.addEventListener("pointercancel", release);
+box.addEventListener("pointerleave", () => {
   if (hover !== undefined) {
     hover = undefined;
     $("under").textContent = "";
     schedule();
   }
 });
-svg.addEventListener(
-  "wheel",
-  (event) => {
-    event.preventDefault();
-    cancelFly();
-    const at = local(event);
-    view = zoomedAbout(view, width, height, Math.exp((-event.deltaY * (event.deltaMode === 1 ? 16 : 1)) / 400), at.x, at.y);
-    schedule();
-    settled();
-  },
-  { passive: false },
-);
-svg.addEventListener("keydown", (event) => {
-  const step = event.shiftKey ? 160 : 48;
-  const move: Record<string, [number, number]> = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
-  if (event.key in move) {
-    const [dx, dy] = move[event.key]!;
-    view = dragged(view, width, height, dx, dy);
-  } else if (event.key === "+" || event.key === "=") view = zoomedAbout(view, width, height, 1.4, width / 2, height / 2);
-  else if (event.key === "-" || event.key === "_") view = zoomedAbout(view, width, height, 1 / 1.4, width / 2, height / 2);
-  else if (event.key === "0" || event.key === "Home") view = { ...view, ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: opening() };
-  else return;
-  event.preventDefault();
-  schedule();
-  settled();
-});
-$("zoom-in").addEventListener("click", () => {
-  view = zoomedAbout(view, width, height, 1.6, width / 2, height / 2);
-  schedule();
-  settled();
-});
-$("zoom-out").addEventListener("click", () => {
-  view = zoomedAbout(view, width, height, 1 / 1.6, width / 2, height / 2);
-  schedule();
-  settled();
-});
+$("zoom-in").addEventListener("click", () => hands.zoomBy(1.6));
+$("zoom-out").addEventListener("click", () => hands.zoomBy(1 / 1.6));
 $("reset").addEventListener("click", () => {
   fly({ ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: opening() });
   address.set("pick", null);
@@ -307,7 +270,7 @@ function fly(to: Place): void {
     return { ...from, ra: wrap360((Math.atan2(y, x) * 180) / Math.PI), dec: (Math.atan2(z, Math.hypot(x, y)) * 180) / Math.PI, zoom: Math.exp(Math.log(from.zoom) * (1 - t) + Math.log(zoom) * t) };
   };
   if (reduced) {
-    view = place(1);
+    setView(place(1));
     schedule();
     settled();
     return;
@@ -316,7 +279,7 @@ function fly(to: Place): void {
   const step = (now: number): void => {
     if (mine !== flying) return;
     const t = Math.min(1, (now - started) / 700);
-    view = place(t * t * (3 - 2 * t));
+    setView(place(t * t * (3 - 2 * t)));
     draw();
     if (t < 1) requestAnimationFrame(step);
     else settled();

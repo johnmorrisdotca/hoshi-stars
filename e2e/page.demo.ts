@@ -37,16 +37,18 @@ test("a drag turns the sky and the address remembers where it looks", async ({ p
   expect(Number(param(page, "dec"))).toBeGreaterThan(0);
 });
 
-test("the wheel and the zoom buttons zoom, within limits", async ({ page, isMobile }) => {
+test("Ctrl and the wheel and the zoom buttons zoom, within limits", async ({ page, isMobile }) => {
   await open(page);
   await page.getByTestId("zoom-in").click();
   await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(1.5);
-  for (let i = 0; i < 6; i += 1) await page.getByTestId("zoom-out").click();
-  await expect.poll(() => param(page, "zoom")).toBe("0.6");
+  for (let i = 0; i < 12; i += 1) await page.getByTestId("zoom-out").click();
+  await expect.poll(() => param(page, "zoom")).toBe("0.1");
   if (!isMobile) {
     const at = await middle(page);
     await page.mouse.move(at.x, at.y);
+    await page.keyboard.down("Control");
     await page.mouse.wheel(0, -2000);
+    await page.keyboard.up("Control");
     await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(5);
   }
   await page.getByTestId("reset").click();
