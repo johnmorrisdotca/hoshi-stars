@@ -162,7 +162,7 @@ box.addEventListener("pointerleave", () => setHover(null));
 let down: { x: number; y: number; multi: boolean } | undefined;
 const touching = new Set<number>();
 let openTimer = 0;
-let lastTap = 0;
+let lastTap = -Infinity;
 const DOUBLE_MS = 320;
 box.addEventListener("pointerdown", (event) => {
   window.clearTimeout(openTimer);
@@ -179,13 +179,14 @@ box.addEventListener("pointerup", (event) => {
   if (Math.hypot(at.x - start.x, at.y - start.y) > 8) return;
   const found = under(at.x, at.y);
   if (found === null) return;
-  // Zoomed in, a double tap is the family's "fit": the first tap waits a moment to see whether a second one follows.
-  if (view.zoom <= 1.02) location.href = mapHref(found);
-  else if (event.timeStamp - lastTap < DOUBLE_MS) lastTap = 0;
-  else {
-    lastTap = event.timeStamp;
-    openTimer = window.setTimeout(() => (location.href = mapHref(found)), DOUBLE_MS);
+  // Zoomed in, a double tap is the family's "fit": the first tap waits a moment to see whether a second one follows, and the second is not a tap of its own.
+  if (event.timeStamp - lastTap < DOUBLE_MS) {
+    lastTap = -Infinity;
+    return;
   }
+  lastTap = event.timeStamp;
+  if (view.zoom <= 1.02) location.href = mapHref(found);
+  else openTimer = window.setTimeout(() => (location.href = mapHref(found)), DOUBLE_MS);
 });
 box.addEventListener("pointercancel", (event) => {
   touching.delete(event.pointerId);

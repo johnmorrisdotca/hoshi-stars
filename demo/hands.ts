@@ -37,8 +37,13 @@ export function attachHands(box: HTMLElement, host: HandsHost): Hands {
     turnable: true,
     limits: { tiltMax: 1e9, zoomMin: 0.01, zoomMax: 10 },
     objectSize: { width: 1e7, height: 1e7 },
-    onChange: (state, info) => change(state, info.reason, info.final),
+    onChange: (state, info) => {
+      // The family's gesture check (kazoku-ui/testing `checkGestures`) reads the view from the element: its `controller`, its `state` and a `kazoku-viewchange` event for every change.
+      box.dispatchEvent(new CustomEvent("kazoku-viewchange", { detail: { ...state, final: info.final, reason: info.reason } }));
+      change(state, info.reason, info.final);
+    },
   });
+  Object.defineProperties(box, { controller: { value: controller, configurable: true }, state: { get: () => ({ ...controller.state }), configurable: true } });
   let last: ViewState = { ...controller.state };
   box.addEventListener("keydown", (event) => (shift = event.shiftKey), true);
 

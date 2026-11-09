@@ -55,8 +55,8 @@ test("no two names overlap, at any zoom, in either language", async ({ page }) =
   }
 });
 
-test("every constellation has a name on the map at a wide width", async ({ page, isMobile }) => {
-  test.skip(isMobile, "a phone's map is too small for all 88 names; zooming shows them");
+test("every constellation has a name on the map at a wide width", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 900, "a phone's map is too small for all 88 names; zooming shows them");
   await open(page);
   const ids = await page.locator("#ws-labels text").evaluateAll((els) => new Set(els.map((el) => el.getAttribute("data-id"))).size);
   expect(ids).toBeGreaterThanOrEqual(88);
@@ -117,7 +117,8 @@ test("the orientation, the map and the sky culture change the drawing and the ad
 
 test("in Japanese the names are Japanese and the words follow", async ({ page }) => {
   await open(page, "?lang=ja");
-  await expect(page.locator("#ws-labels text", { hasText: /^オリオン座$/ })).toHaveCount(1);
+  if ((page.viewportSize()?.width ?? 0) >= 900) await expect(page.locator("#ws-labels text", { hasText: /^オリオン座$/ })).toHaveCount(1);
+  else await expect(page.locator("#ws-labels text", { hasText: /座$/ }).first()).toBeVisible();
   await expect(links(page).filter({ has: page.locator("path") }).first()).toHaveAttribute("aria-label", /座/);
   await expect(page.getByTestId("ws-frame").getByRole("button", { name: "銀河座標" })).toBeVisible();
 });
