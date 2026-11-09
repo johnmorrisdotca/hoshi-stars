@@ -1,9 +1,10 @@
 // Builds the static demo for GitHub Pages into ./site: the page, the embed page, their styles and scripts. Every address in it is relative, so it works at the Pages address
 // (https://johnmorrisdotca.github.io/hoshi-stars/) and anywhere else. `pnpm site` builds the package first.
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { build } from "esbuild";
+import { build, type Plugin } from "esbuild";
+import { SWAPPED, noGctp } from "./data-source.mjs";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
 import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderSpace } from "./page.ts";
 import { writeThumbnails } from "./thumbnail-files.ts";
@@ -29,6 +30,17 @@ writeThumbnails(join(site, "thumbnails"));
 cpSync(join(root, "faint-tiles"), join(site, "faint-tiles"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 for (const file of ["embed.html", "embed-3d.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
+/** The fallback parallax data (scripts/data-source.mjs): the two tables the bundle imports are the ones in data-no-gctp/. Nothing when the Yale GCTP data is in. */
+const fallbackData: Plugin = {
+  name: "hoshi-fallback-data",
+  setup(esbuild) {
+    esbuild.onResolve({ filter: /\/data\/(stars|nearby)\.ts$/ }, (args) => {
+      const swapped = SWAPPED.find((one) => one.shippedPath === resolve(args.resolveDir, args.path));
+      return swapped === undefined ? undefined : { path: swapped.fallbackPath };
+    });
+  },
+};
+const demoBundle = noGctp() ? "fallback (no Yale GCTP)" : "default";
 await build({
   entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts") },
   outdir: join(site, "js"),
@@ -37,11 +49,12 @@ await build({
   target: "es2022",
   minify: true,
   legalComments: "none",
-  define: { __HOSHI_VERSION__: JSON.stringify(pkg.version) },
+  define: { __HOSHI_VERSION__: JSON.stringify(pkg.version), __HOSHI_NO_GCTP__: JSON.stringify(noGctp()) },
+  plugins: noGctp() ? [fallbackData] : [],
   logLevel: "warning",
 });
 writeFileSync(join(site, "kazoku-parts.src.js"), `import "@johnmorrisdotca/kazoku-ui/language-picker/define";\nimport "@johnmorrisdotca/kazoku-ui/theme-switch/define";\n`);
 await build({ entryPoints: [join(site, "kazoku-parts.src.js")], outfile: join(site, "kazoku-parts.js"), bundle: true, format: "esm", minify: true, logLevel: "warning", absWorkingDir: root });
 rmSync(join(site, "kazoku-parts.src.js"));
 writeFileSync(join(site, ".nojekyll"), "");
-console.log("site/ is ready");
+console.log(`site/ is ready (${demoBundle} data)`);

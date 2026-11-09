@@ -3,11 +3,13 @@
 //
 //     python3 -I scripts/make-star-data.py && node scripts/set-star-constellations.ts
 //
+// With a path (`node scripts/set-star-constellations.ts data-no-gctp/stars.ts`) it fills that file instead: the fallback build's table (MODULES-779).
 // It is not part of the test or the build; test/stars.test.ts holds the result to the boundaries.
 import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { constellationAt } from "../src/boundaries.ts";
 
-const file = new URL("../src/data/stars.ts", import.meta.url);
+const file = process.argv[2] === undefined ? new URL("../src/data/stars.ts", import.meta.url) : resolve(process.argv[2]);
 const text = readFileSync(file, "utf8");
 const start = text.indexOf("STAR_ROWS = `") + "STAR_ROWS = `".length;
 const end = text.indexOf("`;", start);

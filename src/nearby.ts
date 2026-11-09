@@ -127,7 +127,8 @@ const byText = new Map<string, NearbyStar>();
 
 function load(): void {
   if (stored.length > 0) return;
-  for (const row of NEARBY_ROWS.split("\n")) {
+  // The fallback build has no stars here (data-no-gctp/nearby.ts): an empty table is no rows, not one empty row.
+  for (const row of NEARBY_ROWS.length === 0 ? [] : NEARBY_ROWS.split("\n")) {
     const p = row.split("|");
     const gctp = p[0]!;
     const parallaxTenths = Number(p[10]);
