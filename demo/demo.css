@@ -73,3 +73,5 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .kids-paper { position: relative; width: 100%; overflow: hidden; border-radius: 6px; background: #1a2233; }
 #paper-inner { transform-origin: 0 0; width: max-content; }
 #paper-inner .kazoku-sheet { display: flex; flex-direction: column; gap: 6mm; }
+.papers { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: .85rem; }
+.papers a { color: inherit; overflow-wrap: anywhere; }
