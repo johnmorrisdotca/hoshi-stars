@@ -13,6 +13,7 @@ const index = JSON.parse(readFileSync(new URL("index.json", DIR), "utf8")) as {
   levels: Array<{ level: number; faintest: number; bandDegrees: number; tiles: number; stars: number; bytes: number }>;
   keptByHalfMagnitude: Record<string, number>;
   report: Record<string, number>;
+  gapFill: { level: number; stars: number; sources: Array<{ name: string; starsKept: number }> };
 };
 const ARC_SECOND = 1 / 3600;
 
@@ -111,7 +112,8 @@ test("UCAC4's copies of Hipparcos and Tycho-2 stars are not in the tiles", () =>
     ["655-082797, type 6, Cygnus", 299.5099264, 40.9268431],
     ["150-113928, type 6, Crux, with an APASS V", 191.8992128, -60.0809917],
   ];
-  for (const [name, ra, dec] of copies) assert.equal(near(ra, dec, 2).length, 0, name);
+  // These are real stars. A gap fill (SAO, or APASS with 2MASS: measured on their own, test/gap.test.ts) may hold them, so the position check is for a build with none.
+  if (index.gapFill.stars === 0) for (const [name, ra, dec] of copies) assert.equal(near(ra, dec, 2).length, 0, name);
   for (const dropped of ["dropped: object type 4, external high-proper-motion data", "dropped: object type 6, substituted from FK6, Hipparcos or Tycho-2", "dropped: object type 7, supplement star from FK6, Hipparcos or Tycho-2"]) assert.ok((index.report[dropped] ?? 0) > 0, dropped);
   assert.equal(Object.keys(index.report).filter((k) => /^kept.*object type [467]/.test(k)).length, 0);
 });
