@@ -3,6 +3,7 @@
 import { blackBodyColour, starByHr, starColour, starTemperatureK, stars, type Star } from "../src/index.ts";
 import { boundaries, constellationAt } from "../src/boundaries.ts";
 import type { Constellation } from "../src/constellations.ts";
+import { blackHoles, type BlackHole } from "../src/black-holes.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { figures, type CultureFigure } from "../src/lines.ts";
 import type { Culture } from "../src/culture.ts";
@@ -12,7 +13,7 @@ import { project, unproject, type Projection, type SkyPoint } from "../src/proje
 import type { SeenSky } from "../src/sky-from.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
 
-export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "grid"] as const;
+export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "holes", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
 
@@ -36,6 +37,8 @@ export interface ChartOptions extends View {
   highlight?: string | undefined;
   /** The star (HR number) or Messier object (`M31`) that is picked. */
   picked?: string | undefined;
+  /** The black hole (its id, `cygnus-x-1`) that is picked; it is drawn and named even when the black-hole layer is off. */
+  pickedHole?: string | undefined;
   /** What is near the picked thing, drawn ringed: keys `S:<HR number>`, `D:<Messier id>` and `C:<abbreviation>`. */
   near?: readonly string[] | undefined;
   /** The sky seen from another star (`skyFrom`): the stars are drawn where it puts them, with its magnitudes, and the lines join them there. A star it leaves out (no distance) is not drawn, nor a line to it. The boundaries are the Earth's and are not drawn. */
@@ -48,7 +51,7 @@ export interface ChartOptions extends View {
 export interface Hit {
   x: number;
   y: number;
-  kind: "star" | "deep";
+  kind: "star" | "deep" | "hole";
   key: string;
 }
 
@@ -256,7 +259,7 @@ const MILKY = { levels: [0.04, 0.08, 0.13, 0.2, 0.3, 0.42, 0.58, 0.76], fills: [
 /** Constellation boundaries are dashed on every map of the demo (this one and the whole-sky page): dash and gap in pixels. */
 export const BOUNDARY_DASH = [5, 4] as const;
 
-const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4" };
+const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4", hole: "#d68cff", holeCore: "#04060d" };
 
 function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean, near = false): string {
   const stroke = pick ? COLOURS.pick : near ? COLOURS.near : COLOURS.deep;
@@ -269,6 +272,29 @@ function shapeOf(object: DeepSkyObject, x: number, y: number, pick: boolean, nea
     default: return `<rect x="${round(x - 4)}" y="${round(y - 4)}" width="8" height="8" ${common}/>`;
   }
 }
+
+/** The black hole's own symbol, `k` times its full size (smaller when the chart is zoomed out, so a crowded patch stays readable): a dark disc ringed in violet with a jet each way for a stellar-mass one, a dashed ring round a dark centre for a quiet one, a dark disc inside a tilted ring for a supermassive one. A candidate is drawn fainter. */
+function holeShape(hole: BlackHole, x: number, y: number, pick: boolean, k: number): string {
+  const cx = Math.round(x * 10) / 10;
+  const cy = Math.round(y * 10) / 10;
+  const n = (v: number): number => Math.round(v * k * 10) / 10;
+  const stroke = pick ? COLOURS.pick : COLOURS.hole;
+  const width = Math.max(1, (pick ? 2 : 1.4) * Math.sqrt(k));
+  const fade = hole.status === "candidate" && !pick ? ' stroke-opacity=".6"' : "";
+  const line = `fill="none" stroke="${stroke}" stroke-width="${width}"${fade}`;
+  const core = `fill="${COLOURS.holeCore}" stroke="${stroke}" stroke-width="${width}"${fade}`;
+  switch (hole.kind) {
+    case "stellar": return `<path d="M${cx} ${cy - n(5.5)}v${-n(4)}M${cx} ${cy + n(5.5)}v${n(4)}" ${line}/><circle cx="${cx}" cy="${cy}" r="${n(3.6)}" ${core}/>`;
+    case "quiet": return `<circle cx="${cx}" cy="${cy}" r="${n(4.8)}" ${core} stroke-dasharray="${n(2.2)} ${n(2)}"/>`;
+    default: return `<ellipse cx="${cx}" cy="${cy}" rx="${n(8)}" ry="${n(3)}" transform="rotate(-22 ${cx} ${cy})" ${line}/><circle cx="${cx}" cy="${cy}" r="${n(3.2)}" ${core}/>`;
+  }
+}
+
+/** How big the black holes are drawn: full size from a zoom of 2, down to 0.6 of it when the whole sky is on the chart. */
+const holeScale = (zoom: number): number => (zoom >= 2 ? 1 : zoom <= 0.5 ? 0.6 : 0.6 + (0.4 * (zoom - 0.5)) / 1.5);
+
+/** The black holes that are named at any zoom, since they are the ones people look for. */
+const FAMOUS_HOLES: ReadonlySet<string> = new Set(["sagittarius-a", "m87", "m31", "cygnus-x-1", "gaia-bh1"]);
 
 interface Place {
   x: number;
@@ -294,6 +320,13 @@ function besideMarker(text: string, size: number, x: number, y: number, gap: num
   const row = (base: number, left: number, anchor: Place["anchor"]): Place => ({ x: anchor === "middle" ? left + w / 2 : anchor === "end" ? left + w : left, y: base, anchor, box: { x0: left - 1, y0: top(base), x1: left + w + 1, y1: base + size * 0.3 } });
   const places = [row(y + 4, x + gap, "start"), row(y + 4, x - gap - w, "end"), row(y - gap - 2, x - w / 2, "middle"), row(y + gap + size * 0.85, x - w / 2, "middle"), row(y - gap, x + gap * 0.6, "start"), row(y - gap, x - gap * 0.6 - w, "end"), row(y + gap + size * 0.85, x + gap * 0.6, "start"), row(y + gap + size * 0.85, x - gap * 0.6 - w, "end")];
   return { places, text, size, weight: 400, fill, opacity };
+}
+
+/** A name that matters (the picked one, a famous one) is offered more places when the ones beside its marker are taken: further out, `rings` times. */
+function withFarther(text: string, x: number, y: number, gap: number, fill: string, rings: number): Omit<Label, "rank"> {
+  const near = besideMarker(text, 11, x, y, gap, fill, 1);
+  const out = Array.from({ length: rings }, (_, i) => besideMarker(text, 11, x, y, gap + 16 * (i + 1), fill, 1).places);
+  return { ...near, places: [...near.places, ...out.flat()] };
 }
 
 export interface Chart {
@@ -485,6 +518,21 @@ export function chart(o: ChartOptions): Chart {
     }
   }
 
+  const holeLabels: Label[] = [];
+  if (o.sky === undefined && (layers.has("holes") || o.pickedHole !== undefined)) {
+    for (const hole of blackHoles()) {
+      const isPicked = hole.id === o.pickedHole;
+      if (!layers.has("holes") && !isPicked) continue;
+      const at = place(hole);
+      if (at === undefined || !inside(at)) continue;
+      body += `<g data-hole="${hole.id}" data-kind="${hole.kind}">${holeShape(hole, at[0], at[1], isPicked, holeScale(o.zoom))}</g>`;
+      obstacles.push(around(at[0], at[1], 8 * holeScale(o.zoom)));
+      const famous = FAMOUS_HOLES.has(hole.id);
+      if (isPicked || (famous ? o.zoom >= 1.5 : hole.kind === "supermassive" ? o.zoom >= 8 : o.zoom >= 3)) holeLabels.push({ rank: isPicked ? -1 : famous ? 1500 : 1600 + (hole.kind === "supermassive" ? 100 : 0) + (hole.status === "candidate" ? 50 : 0), ...(isPicked ? withFarther(hole.name, at[0], at[1], 9, COLOURS.pick, 2) : famous ? withFarther(hole.name, at[0], at[1], 9, COLOURS.hole, 1) : besideMarker(hole.name, 11, at[0], at[1], 9, COLOURS.hole, 1)) });
+      hits.push({ x: at[0], y: at[1], kind: "hole", key: hole.id });
+    }
+  }
+
   const grow = growOf(o.zoom);
   const namedLimit = Math.min(o.magnitude, 1.6 + Math.log2(o.zoom) * 1.1);
   let dots = "";
@@ -544,7 +592,7 @@ export function chart(o: ChartOptions): Chart {
   }
   body += `<g>${dots}</g>${ring}`;
 
-  const labels = [...starLabels, ...nameLabels, ...deepLabels].sort((a, b) => a.rank - b.rank);
+  const labels = [...starLabels, ...nameLabels, ...deepLabels, ...holeLabels].sort((a, b) => a.rank - b.rank);
   const chosen = placeLabels(labels.map((l) => l.places.map((p) => p.box)), obstacles);
   let text = "";
   labels.forEach((l, i) => {
@@ -619,4 +667,4 @@ export function figureUnder(view: View, width: number, height: number, x: number
   return best;
 }
 
-export type { DeepSkyObject, Star };
+export type { BlackHole, DeepSkyObject, Star };

@@ -1,5 +1,6 @@
 // What the Nearby panel and the embed page share: the things near a picked star, Messier object or constellation, as keys the chart can ring (`S:<HR>`, `D:<id>`, `C:<abbreviation>`).
 import { constellation } from "../src/constellations.ts";
+import { blackHole } from "../src/black-holes.ts";
 import { deepSkyObject } from "../src/deep-sky.ts";
 import { starByHr } from "../src/index.ts";
 import { nearest, neighbouringConstellations } from "../src/nearest.ts";
@@ -86,6 +87,11 @@ export function nearbyOf(pick: string | null | undefined, by: By, sky?: SeenSky)
     const object = deepSkyObject(id);
     if (object === undefined) return undefined;
     return { kind: "deep", rows: nearest(object, { count: NEARBY_COUNT }).map((n) => ({ key: `S:${n.thing.hr}`, value: n.angle })), skipped: 0, canSpace: false };
+  }
+  if (pick.startsWith("B:")) {
+    const hole = blackHole(id);
+    if (hole === undefined) return undefined;
+    return { kind: "deep", rows: nearest(hole, { count: NEARBY_COUNT }).map((n) => ({ key: `S:${n.thing.hr}`, value: n.angle })), skipped: 0, canSpace: false };
   }
   return undefined;
 }
