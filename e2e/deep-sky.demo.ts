@@ -22,13 +22,15 @@ async function fly(page: Page, text: string): Promise<void> {
 }
 
 test("a galaxy is drawn at its true size and grows with the zoom", async ({ page }) => {
-  await page.goto("/hoshi-stars/?layers=milky,deep,names&ra=10.68&dec=41.27&zoom=20");
-  await expect(page.locator('#chart [data-deep="M31"]')).toHaveCount(1);
-  const near = await widthOf(page, "M31");
-  await page.goto("/hoshi-stars/?layers=milky,deep,names&ra=10.68&dec=41.27&zoom=40");
-  await expect(page.locator('#chart [data-deep="M31"]')).toHaveCount(1);
-  const closer = await widthOf(page, "M31");
-  expect(near).toBeGreaterThan(20);
+  const measured = async (zoom: number): Promise<number> => {
+    await page.goto(`/hoshi-stars/?layers=milky,deep,names&ra=10.68&dec=41.27&zoom=${zoom}`);
+    await expect(page.locator('#chart [data-deep="M31"]')).toHaveCount(1);
+    // the chart is laid out a frame after it is drawn: wait for the outline to have a width
+    await expect.poll(() => widthOf(page, "M31")).toBeGreaterThan(20);
+    return widthOf(page, "M31");
+  };
+  const near = await measured(20);
+  const closer = await measured(40);
   expect(closer / near).toBeGreaterThan(1.6);
   expect(closer / near).toBeLessThan(2.4);
 });
