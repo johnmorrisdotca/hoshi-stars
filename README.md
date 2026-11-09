@@ -356,6 +356,19 @@ console.log(sky.length, sky.skipped);                                           
 
 The demo has a **View from** choice (the Earth's sky, Alpha Centauri, Sirius and more, or the star you picked) that redraws the chart, the constellation lines and the Nearby panel from there, kept in the address as `from=HR5459`. `scripts/check-sky-from.py` checks the result against astropy by hand. [The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
+## A constellation in 3D
+
+`@johnmorrisdotca/hoshi-stars/constellation-3d` places the stars of a constellation's figure in space from their positions and parallaxes, each with the range its parallax error allows and the Earth's line of sight to it. Seen from the Earth every star is where the sky chart puts it, whatever its distance; turned to the side, the distances lie side by side. The Yale catalogue's ground-based parallaxes are rough, so each star has a quality (`good` under 5% error, `fair` to 20%, `rough` above, `none`) and a star is never put at a guessed distance: with no parallax it is a line of sight, and with an error bar wider than its distance it is a range with no point in the middle. Of the 593 stars in the 88 figures 25 have a good distance, 108 a fair one, 370 a rough one and 90 none; `distanceQualityTable()` says which constellations are worth turning today.
+
+```js
+import { constellationIn3D } from "@johnmorrisdotca/hoshi-stars/constellation-3d";
+
+const orion = constellationIn3D("Ori");
+console.log(orion.counts); // { good: 0, fair: 0, rough: 7, none: 1 }: Alnilam has no parallax, so no distance
+```
+
+The demo has a page for it (`constellation-3d.html`, also from "See it in 3D" on each constellation's page): pick a constellation, see it as from the Earth, then drag or press **Turn 90°** to see each star at its distance in light-years with its error bar, or **View from** another star. It is drawn with kazoku-ui's shared renderer (one WebGL context, drawn only when something moves, at most 30 frames a second) and has an embed page, `embed-3d.html`, and code for every way a page is made. A page with no WebGL can draw the figure from the side as SVG from the same numbers. [A constellation in 3D](docs/guides/constellation-in-3d.md) has the details.
+
 ## Sky cultures
 
 The same stars under other figures and names. `constellations`, `constellation`, `starsIn`, `figures` and `figureOf` take a culture as an extra argument, and leave out they give the 88 constellations of the IAU, as before. Each culture is its own import: `/cultures/western` (the 88 with their names in Latin, English, Japanese and Chinese, Simplified and Traditional, with pinyin, and 17 asterisms such as the Big Dipper and the Summer Triangle), `/cultures/japanese` (the 88 under their Japanese names and 18 traditional names and figures: 昴 Subaru, 北斗七星, 鼓星, 織姫 and 彦星, with readings) and `/cultures/chinese` (三垣二十八宿, the Three Enclosures and the Twenty-Eight Mansions: 238 asterisms with Traditional and Simplified names and pinyin).
