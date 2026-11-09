@@ -63,6 +63,10 @@ assert.deepEqual(near.neighbouringConstellations("Ori").map((c) => c.abbreviatio
 const nearby = await import(${JSON.stringify(pkg.name + "/nearby")});
 assert.ok(Math.abs(nearby.nearbyStarByName("Proxima Centauri").lightYears - 4.24) < 0.05);
 assert.ok(nearby.nearbyStars().length > 5000);
+const sheets = await import(${JSON.stringify(pkg.name + "/sheets")});
+assert.ok(sheets.dotsSvg("Cas", { widthMm: 184.6, heightMm: 170 }).includes("Join the dots from 1 to"));
+assert.equal(sheets.skyForLatitude(-33.9).find((e) => e.constellation.abbreviation === "UMi").standing, "never");
+assert.ok(sheets.starWheelPlate(45, { widthMm: 184.6, heightMm: 195 }).includes('data-cut="window"'));
 let required = false;
 try { createRequire(import.meta.url)(${JSON.stringify(pkg.name)}); required = true; } catch (error) { assert.equal(error.code, "ERR_REQUIRE_ESM"); }
 console.log("package ok: " + esm.stars().length + " stars" + (required ? ", also by require" : ""));

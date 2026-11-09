@@ -88,6 +88,11 @@
       "import": "./dist/lines.js",
       "default": "./dist/lines.js"
     },
+    "./sheets": {
+      "types": "./dist/sheets/index.d.ts",
+      "import": "./dist/sheets/index.js",
+      "default": "./dist/sheets/index.js"
+    },
     "./boundaries": {
       "types": "./dist/boundaries.d.ts",
       "import": "./dist/boundaries.js",
@@ -172,7 +177,9 @@
     "@angular/core": "^22.2.5",
     "@angular/platform-browser": "^22.2.5",
     "@eslint/js": "^9.0.0",
-    "@johnmorrisdotca/kazoku-ui": "^0.20.0",
+    "@johnmorrisdotca/hata": "^1.8.0",
+    "@johnmorrisdotca/kazoku-ui": "^0.22.0",
+    "@johnmorrisdotca/kuni": "^1.5.0",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",

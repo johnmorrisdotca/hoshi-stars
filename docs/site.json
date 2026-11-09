@@ -20,6 +20,11 @@
       "ja": "88星座 (英語と日本語)",
       "platform": "neutral"
     },
+    "./sheets": {
+      "en": "Printable sheets: connect-the-dots constellations, the constellations for a latitude, a star wheel to cut out and a sky map for each month",
+      "ja": "印刷するシート: 星座の点つなぎ、緯度に合わせた星座、切り抜きの星の回転盤、月ごとの星空の地図",
+      "platform": "neutral"
+    },
     "./lines": {
       "en": "Constellation lines",
       "ja": "星座の線",
