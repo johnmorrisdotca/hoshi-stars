@@ -26,6 +26,17 @@ console.log(latitudeBand(-33.9, "ja"), monthName(7, "ja"));
 console.log(starWheelPlate(-34, { ...room, lang: "ja" }).includes('data-cut="window"'), skyMapSvg(-34, 7, { ...room, lang: "ja" }).includes("きた"));
 ```
 
+## 関数
+
+| 関数 | 返すもの |
+|---|---|
+| `DOT_LEVELS`, `dotsFigure(name, { level, widthMm, heightMm, type })` | むずかしさ (`easy`, `medium`, `hard`) と、点・番号・線にならべた図 |
+| `dotsSvg(name, { level, widthMm, heightMm, lang, answer, type })`, `dotsSubtitle(constellation, lang)` | 問題か答えの1ページと、タイトルの下の意味の行 (`Orion: the Hunter`) |
+| `skyForLatitude(latitude, month?)`, `latitudeBand(latitude, lang)`, `monthName(month, lang)`, `whyFamous(abbreviation, lang)` | ある場所から見た星座、10度の緯度の帯、月の名前、有名な星座のひとこと |
+| `regionGuideSvg(latitude, month, options)` | 「すんでいる ところの ほしざ」のシート |
+| `WHEEL_LATITUDES`, `starWheelDisc`, `starWheelPlate`, `starWheelPoster` | 回転盤の対応する緯度 (20〜70) と、その3つの絵 |
+| `skyMapSvg(latitude, month, options)` | ある月の夜の空 |
+
 ## 絵のまわりのページ
 
 絵はシートの本文です。ヘッダー (ブランド、パッケージ名、タイトル、「なまえ:」のらん)、地域・旗・緯度の帯の箱、フッター (クレジット、バージョン、日付、デモへの QR コード) は、[kazoku-ui の印刷パート](https://github.com/johnmorrisdotca/kazoku-ui/blob/main/docs/guides/print.md)のものです。このパッケージはそれに依存せず、デモが作ります。文字は `kid` (名前28 pt、本文18 pt、線3 mm) か `normal` です。ページの本文の本当の広さをはかって、`widthMm` と `heightMm` にわたします。

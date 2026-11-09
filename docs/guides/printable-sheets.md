@@ -26,6 +26,17 @@ console.log(latitudeBand(-33.9, "en"), monthName(7, "en"));
 console.log(starWheelPlate(-34, { ...room, lang: "en" }).includes('data-cut="window"'), skyMapSvg(-34, 7, { ...room }).includes("Face north"));
 ```
 
+## The functions
+
+| Function | Gives |
+|---|---|
+| `DOT_LEVELS`, `dotsFigure(name, { level, widthMm, heightMm, type })` | the levels (`easy`, `medium`, `hard`) and a figure laid out as dots, numbers and lines |
+| `dotsSvg(name, { level, widthMm, heightMm, lang, answer, type })`, `dotsSubtitle(constellation, lang)` | a page of the puzzle or its answer, and the line of meaning for a title (`Orion: the Hunter`) |
+| `skyForLatitude(latitude, month?)`, `latitudeBand(latitude, lang)`, `monthName(month, lang)`, `whyFamous(abbreviation, lang)` | the constellations as a place sees them, the band of ten degrees, a month's name and a note on a famous constellation |
+| `regionGuideSvg(latitude, month, options)` | the sheet "constellations for where you live" |
+| `WHEEL_LATITUDES`, `starWheelDisc`, `starWheelPlate`, `starWheelPoster` | the latitudes a wheel is made for (20 to 70) and the three drawings of it |
+| `skyMapSvg(latitude, month, options)` | the evening sky of a month |
+
 ## The page around a picture
 
 The pictures are the sheet's body. The header (the brand, the package and the title, and a "Name:" box), the optional box with the region, flag and latitude band, and the footer (credits, version, date and a QR code back to the demo) are [kazoku-ui's print part](https://github.com/johnmorrisdotca/kazoku-ui/blob/main/docs/guides/print.md), which this package does not depend on: the demo builds them, in the `kid` type (names 28 pt, body 18 pt, lines 3 mm) or `normal`. Measure the room the page's body really has and give it to the function as `widthMm` and `heightMm`:
