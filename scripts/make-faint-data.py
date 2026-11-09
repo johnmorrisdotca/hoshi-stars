@@ -18,7 +18,12 @@ A record whose `tf` is not 0 but whose position and magnitude are UCAC's own (a 
 Also dropped: the stars the 5,080 bright stars (src/data/stars.ts) already hold, matched by position (within 20 arc-seconds) and magnitude (within 1.5).
 
     python3 -I scripts/make-faint-data.py download [RAW_DIR]   # IRSA TAP, 18 asynchronous jobs a pause apart, into RAW_DIR (default ~/Projects/backups/hoshi-stars/2026-11-09-ucac4-raw, or $HOSHI_STARS_BACKUP_DIR)
-    python3 -I scripts/make-faint-data.py build [RAW_DIR]      # reads the CSVs, writes faint-tiles/ and faint-tiles/report.json
+    python3 -I scripts/make-faint-data.py build [RAW_DIR] [--gap NAME[,NAME...]]   # reads the CSVs, writes faint-tiles/ and faint-tiles/index.json
+        --gap adds the fill of the gap between the bright stars and UCAC4's own stars (see below); without it the build uses DEFAULT_GAP. `--gap none` adds nothing.
+
+The gap between the bright stars and UCAC4's own stars (magnitude 6.0 to 9.0, where UCAC4 holds few stars, because its rows there are copies of Hipparcos and Tycho-2 and are dropped) is filled by a source of its own,
+built by scripts/make-gap-apass.py (APASS V with 2MASS positions) or scripts/make-gap-sao.py (the SAO Star Catalog) into level 0 tiles of their own in `<backups>/2026-11-09-gap-tiles/<name>/`. `--gap` merges the ones it names into level 0 here, the first named winning where two of
+them hold the same star (5 arc-seconds, 2 magnitudes), and the index says how many stars each source gave (`gapFill`). The tile format has no room for a mark on each star, so the source of a star is not in the tile: the index records it per source.
 
 Neither runs in the test. The raw downloads stay out of the repository; only the built tiles are committed.
 
@@ -46,6 +51,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "faint-tiles"
 STARS_TS = ROOT / "src" / "data" / "stars.ts"
+GAP_ROOT = Path(os.environ.get("HOSHI_STARS_BACKUP_DIR", Path.home() / "Projects" / "backups" / "hoshi-stars")) / "2026-11-09-gap-tiles"
+DEFAULT_GAP = []  # nothing is merged until NOTICE.md says a source ships: `--gap sao` once HEASARC confirms its terms, or `--gap apass-2mass,sao` to prefer APASS+2MASS where it has the star
+GAP_MATCH_ARCSEC = 5.0
+GAP_MATCH_MAG = 2.0
 DEFAULT_RAW = Path(os.environ.get("HOSHI_STARS_BACKUP_DIR", Path.home() / "Projects" / "backups" / "hoshi-stars")) / "2026-11-09-ucac4-raw"
 
 # ----- download -----
@@ -226,7 +235,34 @@ def number(text):
     return None if text == "" else float(text)
 
 
-def build(raw: Path):
+def load_gap(names):
+    """The gap fill: (stars as (ra, dec, mag, colour), the per-source list for the index). The sources are merged in the order named; a star within 5 arc-seconds and 2 magnitudes of one already taken is the same star and is dropped."""
+    import importlib.util
+
+    sys.dont_write_bytecode = True
+    spec = importlib.util.spec_from_file_location("gap_common", Path(__file__).resolve().parent / "gap_common.py")
+    common = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(common)
+    taken = common.SkyIndex()
+    stars = []
+    sources = []
+    for name in names:
+        info = json.loads((GAP_ROOT / name / "index.json").read_text())
+        mine = common.read_gap_tiles(GAP_ROOT / name)
+        if len(mine) != info["stars"]:
+            raise RuntimeError(f"gap source {name}: {len(mine)} stars in its tiles, its index says {info['stars']}")
+        added = 0
+        for ra, dec, mag, colour in mine:
+            if any(abs(p[2] - mag) <= GAP_MATCH_MAG for _, p in taken.near(ra, dec, GAP_MATCH_ARCSEC)):
+                continue
+            taken.add((ra, dec, mag))
+            stars.append((ra, dec, mag, colour))
+            added += 1
+        sources.append({"name": name, "source": info["source"], "from": info["from"], "to": info["to"], "built": info["built"], "starsBuilt": info["stars"], "starsKept": added, "report": info["report"]})
+    return stars, sources
+
+
+def build(raw: Path, gap_names=()):
     bright = BrightIndex(bright_stars())
     report = Counter()
     by_type = Counter()
@@ -280,6 +316,18 @@ def build(raw: Path):
         if colour is None:
             report["kept without a colour"] += 1
 
+    # the gap fill: level 0 stars (to magnitude 10) from the sources named by --gap
+    gap_stars, gap_sources = load_gap(gap_names) if gap_names else ([], [])
+    for ra, dec, mag, colour in gap_stars:
+        key = level_of(mag)
+        if key != 0:
+            raise RuntimeError(f"a gap star of magnitude {mag} is not in level 0")
+        kept.setdefault((0,) + tile_of(0, ra, dec), []).append((ra, dec, mag, colour))
+        report["kept at level 0"] += 1
+        report["kept"] += 1
+        report["kept without a colour"] += colour is None
+    for src in gap_sources:
+        report[f"gap fill, {src['name']}: stars kept"] = src["starsKept"]
     # the tiles
     if OUT.exists():
         for old in OUT.rglob("*.bin"):
@@ -338,6 +386,7 @@ def build(raw: Path):
         "objectTypes": {str(k): v for k, v in sorted(by_type.items())},
         "keptByHalfMagnitude": {f"{k:.1f}": v for k, v in sorted(magnitude_counts.items())},
         "droppedAsBrightExamples": dropped_bright_examples,
+        "gapFill": {"level": 0, "stars": sum(g["starsKept"] for g in gap_sources), "sources": gap_sources},
     }
     (OUT / "index.json").write_text(json.dumps(manifest, indent=1) + "\n")
     print(json.dumps({"report": counts, "keptByHalfMagnitude": manifest["keptByHalfMagnitude"]}, indent=1))
@@ -345,10 +394,14 @@ def build(raw: Path):
 
 if __name__ == "__main__":
     action = sys.argv[1] if len(sys.argv) > 1 else ""
-    raw_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_RAW
+    args = [a for a in sys.argv[2:] if not a.startswith("--gap")]
+    gap_arg = next((sys.argv[i + 1] for i, a in enumerate(sys.argv) if a == "--gap" and i + 1 < len(sys.argv)), None)
+    args = [a for a in args if a != gap_arg]
+    raw_dir = Path(args[0]) if args else DEFAULT_RAW
+    gap = DEFAULT_GAP if gap_arg is None else [] if gap_arg == "none" else gap_arg.split(",")
     if action == "download":
         download(raw_dir)
     elif action == "build":
-        build(raw_dir)
+        build(raw_dir, gap)
     else:
         sys.exit(__doc__)
