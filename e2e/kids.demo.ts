@@ -107,17 +107,17 @@ test("the picture is drawn at the size it prints, whatever font draws the words:
           const frame = svg.getBoundingClientRect();
           const box = (svg as SVGSVGElement).viewBox.baseVal;
           const slack = 0.5 / mm;
-          const inside = [...svg.querySelectorAll("text")].every((text) => {
-            const b = text.getBoundingClientRect();
-            return b.left >= frame.left - slack && b.top >= frame.top - slack && b.right <= frame.right + slack && b.bottom <= frame.bottom + slack;
-          });
-          return { scale: Math.min((frame.width * mm) / scaled / box.width, (frame.height * mm) / scaled / box.height), inside };
+          const outside = [...svg.querySelectorAll("text")]
+            .map((text) => ({ text: text.textContent, b: text.getBoundingClientRect() }))
+            .filter(({ b }) => !(b.left >= frame.left - slack && b.top >= frame.top - slack && b.right <= frame.right + slack && b.bottom <= frame.bottom + slack))
+            .map(({ text, b }) => `${text}: left ${((b.left - frame.left) * mm).toFixed(1)}, right ${((frame.right - b.right) * mm).toFixed(1)}, top ${((b.top - frame.top) * mm).toFixed(1)}, bottom ${((frame.bottom - b.bottom) * mm).toFixed(1)} mm`);
+          return { scale: Math.min((frame.width * mm) / scaled / box.width, (frame.height * mm) / scaled / box.height), outside };
         });
       }, MM);
       for (const one of got) {
         expect(one.scale, `${query} ${paper}: the picture's scale`).toBeGreaterThan(0.99);
         expect(one.scale, `${query} ${paper}`).toBeLessThan(1.01);
-        expect(one.inside, `${query} ${paper}: the text is inside the picture`).toBe(true);
+        expect(one.outside, `${query} ${paper}: the text outside the picture`).toEqual([]);
       }
     }
   }
