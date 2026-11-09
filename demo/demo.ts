@@ -4,11 +4,13 @@ import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import "@johnmorrisdotca/kazoku-ui/embed-panel/define";
 import type { EmbedChangeDetail, EmbedPanelElement } from "@johnmorrisdotca/kazoku-ui/embed-panel/element";
 import { WORDS } from "../scripts/page-words.ts";
-import { starByHr, starColour, starDistanceLightYears, stars, type Star } from "../src/index.ts";
+import { starByHr, starColour, starDistance, starDistanceLightYears, stars, type Star } from "../src/index.ts";
+import type { SeenSky, SeenStar } from "../src/sky-from.ts";
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
-import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, fitScale, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
+import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, fitScale, keyOfSeen, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
+import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
 import { attachHands } from "./hands.ts";
 import { nearbyOf, type By } from "./nearby.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
@@ -29,6 +31,8 @@ let magnitude = DEFAULT_MAGNITUDE;
 let layers: Set<Layer> = layersOf(null);
 let picked: string | null = null;
 let by: By = "sky";
+let from: Star | undefined;
+let sky: SeenSky | undefined;
 let nearKeys: string[] = [];
 let hover: string | undefined;
 
@@ -47,6 +51,8 @@ function read(): void {
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
   by = address.get("by") === "space" ? "space" : "sky";
+  from = viewpointOf(address.get("from"));
+  sky = skyOf(from);
   hands.sync();
 }
 
@@ -80,7 +86,7 @@ function clear(): Box[] {
 
 function draw(): void {
   queued = false;
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined });
+  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" ? picked.slice(2) : undefined, sky });
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
   hits = out.hits;
@@ -117,7 +123,8 @@ function pressed(): void {
   const slider = $<HTMLInputElement>("magnitude");
   slider.value = String(magnitude);
   $("magnitude-out").textContent = magnitude.toFixed(1);
-  $("shown").textContent = `${stars({ magnitude }).length.toLocaleString(lang())} ${say("sampleCount")}`;
+  $("shown").textContent = `${(sky === undefined ? stars({ magnitude }).length : sky.filter((star) => star.magnitude <= magnitude).length).toLocaleString(lang())} ${say("sampleCount")}`;
+  fromChoices();
 }
 function words(): void {
   seg("seg-projection", PROJECTIONS.map((kind) => [kind, say(kind)] as const), (kind) => {
@@ -136,6 +143,29 @@ $("magnitude").addEventListener("input", () => {
   magnitude = Number($<HTMLInputElement>("magnitude").value);
   address.set("mag", String(magnitude));
   everything();
+});
+
+// ----- the viewpoint: the sky from the Earth, or from another star -----
+const nameOfStar = (star: Star): string => FAMOUS.find((one) => one.hr === star.hr)?.[lang()] ?? starName(star);
+function fromChoices(): void {
+  const select = $<HTMLSelectElement>("from");
+  const extra = from !== undefined && !FAMOUS.some((one) => one.hr === from!.hr) ? from : picked?.startsWith("S:") ? viewpointOf(`HR${picked.slice(2)}`) : undefined;
+  const items: Array<[string, string]> = [["", say("viewFromEarth")], ...FAMOUS.map((one): [string, string] => [`HR${one.hr}`, one[lang()]])];
+  if (extra !== undefined && !FAMOUS.some((one) => one.hr === extra.hr)) items.push([fromText(extra), extra === from ? starName(extra) : `${starName(extra)} (${say("viewFromPicked")})`]);
+  select.replaceChildren(...items.map(([value, label]) => Object.assign(document.createElement("option"), { value, textContent: label })));
+  select.value = from === undefined ? "" : fromText(from);
+  const note = $("from-note");
+  const distance = from === undefined ? undefined : starDistance(from);
+  note.hidden = distance === undefined;
+  note.textContent = from === undefined || distance === undefined ? "" : `${say("viewFromNote").replace("{name}", nameOfStar(from)).replace("{distance}", (distance.lightYears < 100 ? distance.lightYears.toFixed(1) : Math.round(distance.lightYears).toLocaleString(lang())))} ${say("viewFromLines")}`;
+}
+$("from").addEventListener("change", () => {
+  address.set("from", $<HTMLSelectElement>("from").value || null);
+  from = viewpointOf(address.get("from"));
+  sky = skyOf(from);
+  details();
+  everything();
+  settled();
 });
 
 // ----- turning, zooming and tapping -----
@@ -210,7 +240,7 @@ $("reset").addEventListener("click", () => {
 });
 
 function hovering(at: Touch): void {
-  const found = constellationUnder(view, width, height, at.x, at.y);
+  const found = sky === undefined ? constellationUnder(view, width, height, at.x, at.y) : undefined;
   const next = found?.abbreviation;
   if (next === hover) return;
   hover = next;
@@ -230,7 +260,7 @@ function tap(x: number, y: number): void {
   }
   if (best !== undefined) pick(best.kind === "star" ? `S:${best.key}` : `D:${best.key}`);
   else {
-    const found = constellationUnder(view, width, height, x, y);
+    const found = sky === undefined ? constellationUnder(view, width, height, x, y) : undefined;
     pick(found === undefined ? null : `C:${found.abbreviation}`);
   }
   settled();
@@ -306,6 +336,9 @@ function zoomFor(abbreviation: string): number {
 const fold = (text: string): string =>
   [...text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()].map((ch) => (ch >= "ァ" && ch <= "ヶ" ? String.fromCodePoint(ch.codePointAt(0)! - 0x60) : ch)).join("").trim();
 
+/** A star of the sky seen from another star, by the key a pick has (the HR number or `sun`); `undefined` for the Earth's sky. */
+const seenOf = (id: string): SeenStar | undefined => sky?.find((star) => keyOfSeen(star.id) === id);
+
 const starName = (star: Star): string => (lang() === "ja" ? star.nameJa : undefined) ?? star.name ?? star.designation ?? `HR ${star.hr}`;
 
 interface Found {
@@ -321,6 +354,7 @@ function search(text: string): Found[] {
   if (exact !== undefined) out.push({ label: lang() === "ja" ? exact.japanese : exact.name, kind: say("constellationKind"), key: `C:${exact.abbreviation}` });
   const starts: Found[] = [];
   const contains: Found[] = [];
+  if (sky !== undefined && [fold("Sun"), fold("太陽")].some((name) => name.startsWith(q))) starts.push({ label: say("sun"), kind: say("starKind"), key: "S:sun" });
   for (const star of stars()) {
     if (star.name === undefined) continue;
     const found = { label: starName(star), kind: say("starKind"), key: `S:${star.hr}` };
@@ -342,7 +376,7 @@ function search(text: string): Found[] {
 function placeOf(key: string): Place | undefined {
   const id = key.slice(2);
   if (key.startsWith("S:")) {
-    const star = starByHr(Number(id));
+    const star = seenOf(id) ?? (sky === undefined ? starByHr(Number(id)) : undefined);
     return star && { ra: star.rightAscension, dec: star.declination, zoom: Math.max(view.zoom, 6) };
   }
   if (key.startsWith("D:")) {
@@ -414,17 +448,29 @@ function details(): void {
   list.className = "facts";
   const title = document.createElement("h3");
   host.append(title, list);
-  if (picked.startsWith("S:")) {
+  if (picked === "S:sun") {
+    const sun = seenOf("sun");
+    title.textContent = say("sun");
+    if (sun === undefined) return;
+    const swatch = Object.assign(document.createElement("span"), { className: "swatch" });
+    swatch.style.background = "#fff4e0";
+    fact(list, "starKind", say("sun"));
+    fact(list, "fieldMagnitude", `${sun.magnitude.toFixed(2)} ${say("magnitudeUnit")}`);
+    fact(list, "fieldDistance", `${sun.lightYears.toFixed(2)} ${say("lightYears")}`);
+    fact(list, "fieldClass", "G2");
+  } else if (picked.startsWith("S:")) {
     const star = starByHr(Number(id)) as Star | undefined;
     if (star === undefined) return;
     title.textContent = starName(star);
-    const light = starDistanceLightYears(star);
+    const seen = seenOf(id);
+    const light = seen?.lightYears ?? (sky === undefined ? starDistanceLightYears(star) : undefined);
+    const nothing = from?.hr === star.hr ? say("viewFromHere") : say("unknown");
     const swatch = Object.assign(document.createElement("span"), { className: "swatch" });
     swatch.style.background = starColour(star);
     fact(list, "starKind", `HR ${star.hr}`);
     if (star.designation !== undefined) fact(list, "fieldDesignation", star.designation);
-    fact(list, "fieldMagnitude", `${star.magnitude.toFixed(2)} ${say("magnitudeUnit")}`);
-    fact(list, "fieldDistance", light === undefined ? say("unknown") : `${Math.round(light).toLocaleString(lang())} ${say("lightYears")}`);
+    fact(list, "fieldMagnitude", seen === undefined && sky !== undefined ? nothing : `${(seen?.magnitude ?? star.magnitude).toFixed(2)} ${say("magnitudeUnit")}`);
+    fact(list, "fieldDistance", light === undefined ? nothing : `${(light < 10 ? light.toFixed(2) : Math.round(light).toLocaleString(lang()))} ${say("lightYears")}`);
     const colour = document.createElement("span");
     colour.append(swatch, ` ${starColour(star)}`);
     fact(list, "fieldColour", colour);
@@ -463,7 +509,7 @@ function details(): void {
 function nearbyPanel(): void {
   const host = $("nearby");
   host.replaceChildren();
-  const found = nearbyOf(picked, by);
+  const found = nearbyOf(picked, by, sky);
   nearKeys = found === undefined ? [] : found.rows.map((row) => row.key);
   const title = Object.assign(document.createElement("h3"), { textContent: say("nearbyHeading") });
   host.append(title);
@@ -511,7 +557,7 @@ function nearbyPanel(): void {
     button.type = "button";
     button.className = "fam-button";
     button.dataset.key = row.key;
-    button.append(star !== undefined ? starName(star) : c !== undefined ? nameOf(c) : id);
+    button.append(star !== undefined ? starName(star) : c !== undefined ? nameOf(c) : id === "sun" ? say("sun") : id);
     if (row.value !== undefined) button.append(Object.assign(document.createElement("span"), { className: "value", textContent: inSpace ? `${row.value.toFixed(1)} ${say("lightYears")}` : `${row.value.toFixed(row.value < 10 ? 2 : 1)} ${say("degreesUnit")}` }));
     button.addEventListener("click", () => goTo(row.key));
     item.append(button);
@@ -529,7 +575,7 @@ function nearbyPanel(): void {
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(from === undefined ? {} : { from: fromText(from) }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 panel.generate = ({ kind, size, preview }) => (kind === "iframe" ? frameCode(choice(size), say("chartLabel"), size, preview) : (embedCode(kind, choice(size), size) ?? ""));
 panel.preview = ({ kind, size }) => {
@@ -537,7 +583,7 @@ panel.preview = ({ kind, size }) => {
   const holder = document.createElement("div");
   holder.style.cssText = `width: ${size}px; max-width: 100%; line-height: 0`;
   const c = choice(size);
-  holder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${heightFor(size)}" style="display:block;width:100%;height:auto">${chart({ ...c, width: size, height: heightFor(size), layers: new Set(c.layers.has("lines") ? (["lines"] as const) : []), highlight: undefined, picked: undefined }).svg}</svg>`;
+  holder.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${heightFor(size)}" style="display:block;width:100%;height:auto">${chart({ ...c, width: size, height: heightFor(size), layers: new Set(c.layers.has("lines") ? (["lines"] as const) : []), highlight: undefined, picked: undefined, sky }).svg}</svg>`;
   return holder;
 };
 panel.credits = say("credit");

@@ -40,6 +40,8 @@
         <div class="controls">
           <div class="fam-row"><span class="fam-label" data-say="projection"></span><span class="fam-seg" id="seg-projection" data-testid="projections" role="group" data-say-label="projection"></span></div>
           <div class="fam-row"><span class="fam-label" data-say="layers"></span><span class="fam-seg" id="seg-layers" data-testid="layers" role="group" data-say-label="layers"></span></div>
+          <div class="fam-row"><label class="fam-label" for="from" data-say="viewFrom"></label><select id="from" class="fam-field" data-testid="from"></select></div>
+          <p class="fam-fine" id="from-note" data-testid="from-note" aria-live="polite" hidden></p>
           <div class="fam-row"><label class="fam-label" for="magnitude" data-say="magnitude"></label><input id="magnitude" class="fam-range" data-testid="magnitude" type="range" min="2" max="6" step="0.5" value="5" /><output id="magnitude-out" class="fam-chip" for="magnitude"></output><span class="fam-fine" id="shown" data-testid="shown"></span></div>
         </div>
       </section>

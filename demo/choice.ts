@@ -1,5 +1,6 @@
 // What the demo, the embed page and the code to copy all agree on: a chart as a handful of choices, and how they are written into an address.
 import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "./chart.ts";
+import { fromText, viewpointOf } from "./from.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 
 export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "grid"];
@@ -14,6 +15,8 @@ export interface Choice extends View {
   /** For a page that rings what is near a star, a Messier object or a constellation: its key (`S:2491`, `D:M31`, `C:Ori`), and how nearness is measured (the sky when left out). */
   nearTo?: string | undefined;
   nearBy?: "sky" | "space" | undefined;
+  /** The star the sky is seen from, written `HR5459`; left out for the Earth's sky. */
+  from?: string | undefined;
 }
 
 const number = (text: string | null, fallback: number, low: number, high: number): number => {
@@ -39,6 +42,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
   const named = query.get("layers");
   const highlight = query.get("c") ?? undefined;
   const near = /^[SDC]:[\w.-]+$/.test(query.get("near") ?? "") ? query.get("near")! : undefined;
+  const from = viewpointOf(query.get("from"));
   return {
     projection,
     ra: ((number(query.get("ra"), DEFAULT_VIEW.ra, -1e6, 1e6) % 360) + 360) % 360,
@@ -48,6 +52,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
     layers: layersOf(named === "none" ? "" : named),
     lang: query.get("lang") === "ja" ? "ja" : "en",
     ...(highlight === undefined ? {} : { highlight }),
+    ...(from === undefined ? {} : { from: fromText(from) }),
     ...(near === undefined ? {} : { nearTo: near }),
     ...(near !== undefined && query.get("by") === "space" ? { nearBy: "space" as const } : {}),
   };
@@ -58,6 +63,7 @@ export function frameQuery(choice: Choice): string {
   const q = new URLSearchParams({ proj: choice.projection, ra: choice.ra.toFixed(2), dec: choice.dec.toFixed(2), zoom: String(Math.round(choice.zoom * 100) / 100), mag: String(choice.magnitude), layers: layersText(choice.layers) ?? DEFAULT_LAYERS.join(",") });
   if (choice.lang === "ja") q.set("lang", "ja");
   if (choice.highlight !== undefined) q.set("c", choice.highlight);
+  if (choice.from !== undefined) q.set("from", choice.from);
   if (choice.nearTo !== undefined) q.set("near", choice.nearTo);
   if (choice.nearTo !== undefined && choice.nearBy === "space") q.set("by", "space");
   return q.toString();

@@ -22,10 +22,17 @@ interface Import {
 export function chartLines(choice: Choice, width: number): { imports: Import[]; body: string } {
   const height = heightFor(width);
   const withLines = choice.layers.has("lines");
-  const imports: Import[] = [{ names: "starColour, stars", sub: "" }, ...(withLines ? [{ names: "figures", sub: "/lines" }] : []), { names: "project", sub: "/projection" }];
+  const hr = choice.from === undefined ? undefined : Number(choice.from.slice(2));
+  const imports: Import[] = [
+    hr === undefined ? { names: "starColour, stars", sub: "" } : { names: "blackBodyColour, starByHr, starTemperatureK", sub: "" },
+    ...(hr === undefined ? [] : [{ names: "skyFrom", sub: "/sky-from" }]),
+    ...(withLines ? [{ names: "figures", sub: "/lines" }] : []),
+    { names: "project", sub: "/projection" },
+  ];
   const scale = Math.round(fitScale(choice.projection, width, height) * choice.zoom * 100) / 100;
   const lines = [
     `function skyChart() {`,
+    ...(hr === undefined ? [] : [`  const sky = skyFrom(starByHr(${hr}), { magnitude: ${choice.magnitude} });`, `  const seen = new Map(sky.map((star) => [star.id, star]));`]),
     `  const view = { centre: { rightAscension: ${choice.ra.toFixed(2)}, declination: ${choice.dec.toFixed(2)} }, scale: ${scale} };`,
     `  const place = (point) => {`,
     `    const at = project("${choice.projection}", point, view);`,
@@ -37,18 +44,27 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
           `  let d = "";`,
           `  for (const { segments } of figures()) {`,
           `    for (const [a, b] of segments) {`,
-          `      const from = place(a);`,
-          `      const to = place(b);`,
+          ...(hr === undefined ? [`      const from = place(a);`, `      const to = place(b);`] : [`      const from = seen.has(\`hr-\${a.hr}\`) && place(seen.get(\`hr-\${a.hr}\`));`, `      const to = seen.has(\`hr-\${b.hr}\`) && place(seen.get(\`hr-\${b.hr}\`));`]),
           `      if (from && to && Math.hypot(to[0] - from[0], to[1] - from[1]) < ${width / 2}) d += \`M\${from[0].toFixed(1)} \${from[1].toFixed(1)}L\${to[0].toFixed(1)} \${to[1].toFixed(1)}\`;`,
           `    }`,
           `  }`,
           `  svg += \`<path d="\${d}" fill="none" stroke="#6f93e0" stroke-width="1.2" stroke-opacity=".8"/>\`;`,
         ]
       : []),
-    `  for (const star of stars({ magnitude: ${choice.magnitude} })) {`,
-    `    const at = place(star);`,
-    `    if (at) svg += \`<circle cx="\${at[0].toFixed(1)}" cy="\${at[1].toFixed(1)}" r="\${(Math.max(0.7, (${choice.magnitude} - star.magnitude) * 0.55 + 1.1) * ${growOf(choice.zoom)}).toFixed(1)}" fill="\${starColour(star)}"/>\`;`,
-    `  }`,
+    ...(hr === undefined
+      ? [
+          `  for (const star of stars({ magnitude: ${choice.magnitude} })) {`,
+          `    const at = place(star);`,
+          `    if (at) svg += \`<circle cx="\${at[0].toFixed(1)}" cy="\${at[1].toFixed(1)}" r="\${(Math.max(0.7, (${choice.magnitude} - star.magnitude) * 0.55 + 1.1) * ${growOf(choice.zoom)}).toFixed(1)}" fill="\${starColour(star)}"/>\`;`,
+          `  }`,
+        ]
+      : [
+          `  for (const star of sky) {`,
+          `    const at = place(star);`,
+          `    const colour = star.colourIndex === undefined ? "#ffffff" : blackBodyColour(starTemperatureK(star.colourIndex));`,
+          `    if (at) svg += \`<circle cx="\${at[0].toFixed(1)}" cy="\${at[1].toFixed(1)}" r="\${(Math.max(0.7, (${choice.magnitude} - Math.max(star.magnitude, -2)) * 0.55 + 1.1) * ${growOf(choice.zoom)}).toFixed(1)}" fill="\${colour}"/>\`;`,
+          `  }`,
+        ]),
     `  return svg + "</svg>";`,
     `}`,
   ];

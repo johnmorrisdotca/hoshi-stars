@@ -6,7 +6,8 @@ import { chartLines, embedCode, heightFor } from "../demo/embed-code.ts";
 import type { Choice } from "../demo/choice.ts";
 import { figures } from "../src/lines.ts";
 import { project } from "../src/projection.ts";
-import { starColour, stars } from "../src/stars.ts";
+import { skyFrom } from "../src/sky-from.ts";
+import { blackBodyColour, starByHr, starColour, starTemperatureK, stars } from "../src/stars.ts";
 
 const choice: Choice = { ...DEFAULT_VIEW, magnitude: 4, layers: new Set(["lines"]), lang: "en" };
 
@@ -44,4 +45,26 @@ test("every way a page is made names the package's imports and calls skyChart", 
     assert.ok(code.includes("hoshi-stars"), kind);
   }
   assert.equal(embedCode("nothing", choice, 480), undefined);
+});
+
+test("seen from another star the code moves the stars with skyFrom, and its circles and lines are the chart's", () => {
+  const width = 480;
+  const from: Choice = { ...choice, from: "HR5459" };
+  const { body, imports } = chartLines(from, width);
+  assert.ok(imports.some((one) => one.sub === "/sky-from" && one.names === "skyFrom"));
+  const svg = new Function("skyFrom", "starByHr", "blackBodyColour", "starTemperatureK", "figures", "project", `${body}\nreturn skyChart();`)(skyFrom, starByHr, blackBodyColour, starTemperatureK, figures, project) as string;
+  const sky = skyFrom(starByHr(5459)!, { magnitude: from.magnitude });
+  const theirs = chart({ ...from, width, height: heightFor(width), sky }).svg;
+  const mine = svg.match(/<circle [^>]*\/>/g) ?? [];
+  const drawn = theirs.match(/<circle [^>]*\/>/g) ?? [];
+  assert.ok(drawn.length > 100);
+  const have = new Set(mine);
+  for (const circle of drawn) assert.ok(have.has(circle), `the chart draws ${circle} and the code does not`);
+  const path = (text: string): string => /<path d="([^"]*)" fill="none" stroke="#6f93e0"/.exec(text)?.[1] ?? "";
+  const lines = new Set(path(svg).split("M").filter(Boolean));
+  // the code leaves out a line half a chart long or more, as it does for the Earth's sky
+  const short = path(theirs).split("M").filter(Boolean).filter((piece) => { const [a, b] = piece.split("L").map((point) => point.split(" ").map(Number)); return Math.hypot(b![0]! - a![0]!, b![1]! - a![1]!) < width / 2; });
+  assert.ok(short.length > 5);
+  for (const piece of short) assert.ok(lines.has(piece), `the chart draws ${piece} and the code does not`);
+  assert.notEqual(path(theirs), path(chart({ ...from, width, height: heightFor(width) }).svg));
 });

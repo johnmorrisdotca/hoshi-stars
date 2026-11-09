@@ -1,12 +1,13 @@
 // The sky chart the demo and the embed page draw: stars, constellation lines, boundaries, names, Messier objects and a grid, as one SVG string, in any of the seven projections.
 // It only calls the package: the numbers (positions, colours, outlines, figures) are the package's; the pixels are decided here.
-import { starByHr, starColour, stars, type Star } from "../src/index.ts";
+import { blackBodyColour, starByHr, starColour, starTemperatureK, stars, type Star } from "../src/index.ts";
 import { boundaries, constellationAt } from "../src/boundaries.ts";
 import { constellations, type Constellation } from "../src/constellations.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { figures } from "../src/lines.ts";
 import { milkyWayBands } from "../src/milky-way.ts";
 import { project, unproject, type Projection, type SkyPoint } from "../src/projection.ts";
+import type { SeenSky } from "../src/sky-from.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
 
 export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "grid"] as const;
@@ -33,6 +34,8 @@ export interface ChartOptions extends View {
   picked?: string | undefined;
   /** What is near the picked thing, drawn ringed: keys `S:<HR number>`, `D:<Messier id>` and `C:<abbreviation>`. */
   near?: readonly string[] | undefined;
+  /** The sky seen from another star (`skyFrom`): the stars are drawn where it puts them, with its magnitudes, and the lines join them there. A star it leaves out (no distance) is not drawn, nor a line to it. The boundaries are the Earth's and are not drawn. */
+  sky?: SeenSky | undefined;
   /** Rectangles in chart pixels that no name may cover, such as the page's own buttons laid over the chart. */
   keepClear?: readonly Box[] | undefined;
 }
@@ -174,6 +177,30 @@ function centroidOf(abbreviation: string): SkyPoint | undefined {
     }
   }
   return centroids.get(abbreviation);
+}
+
+/** The middle of each figure as the stars of the sky seen from another star put it, from the figure's stars that sky holds (two at least). */
+function centroidsSeen(sky: SeenSky): Map<string, SkyPoint> {
+  const seen = new Map(sky.map((star) => [star.id, star]));
+  const found = new Map<string, SkyPoint>();
+  for (const figure of figures()) {
+    let x = 0;
+    let y = 0;
+    let z = 0;
+    let count = 0;
+    for (const star of figure.stars) {
+      const at = seen.get(`hr-${star.hr}`);
+      if (at === undefined) continue;
+      const ra = (at.rightAscension * Math.PI) / 180;
+      const dec = (at.declination * Math.PI) / 180;
+      x += Math.cos(dec) * Math.cos(ra);
+      y += Math.cos(dec) * Math.sin(ra);
+      z += Math.sin(dec);
+      count++;
+    }
+    if (count >= 2) found.set(figure.constellation.abbreviation, { rightAscension: wrap360((Math.atan2(y, x) * 180) / Math.PI), declination: (Math.atan2(z, Math.hypot(x, y)) * 180) / Math.PI });
+  }
+  return found;
 }
 
 /** The middle of a constellation's figure (degrees), for flying to it. */
@@ -362,9 +389,10 @@ export function chart(o: ChartOptions): Chart {
     body += `<path d="${d}" fill="none" stroke="${COLOURS.grid}" stroke-width="1"/><path d="${pathOf(view, place, equator)}" fill="none" stroke="${COLOURS.equator}" stroke-width="1"/>`;
   }
 
+  const seen = o.sky === undefined ? undefined : new Map(o.sky.map((star) => [star.id, star]));
   const near = new Set(o.near ?? []);
   const nearConstellations = new Set([...near].filter((key) => key.startsWith("C:")).map((key) => key.slice(2)));
-  if (layers.has("boundaries") || o.highlight !== undefined || nearConstellations.size > 0) {
+  if (seen === undefined && (layers.has("boundaries") || o.highlight !== undefined || nearConstellations.size > 0)) {
     let quiet = "";
     let loud = "";
     let neighbours = "";
@@ -386,7 +414,10 @@ export function chart(o: ChartOptions): Chart {
     for (const figure of figures()) {
       const on = figure.constellation.abbreviation === o.highlight;
       if (!on && !layers.has("lines")) continue;
-      for (const [a, b] of figure.segments) {
+      for (const [star, other] of figure.segments) {
+        const a = seen === undefined ? star : seen.get(`hr-${star.hr}`);
+        const b = seen === undefined ? other : seen.get(`hr-${other.hr}`);
+        if (a === undefined || b === undefined) continue;
         const from = place(a);
         const to = place(b);
         if (from === undefined || to === undefined || crossesSeam(view, a, b)) continue;
@@ -422,31 +453,40 @@ export function chart(o: ChartOptions): Chart {
   let ring = "";
   const starLabels: Label[] = [];
   const depth = depthOf(o.magnitude, o.zoom);
-  const drawn = stars({ magnitude: depth });
-  for (const key of near) {
-    const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;
-    if (extra !== undefined && extra.magnitude > depth) drawn.push(extra);
-  }
-  for (const star of drawn) {
-    const isNear = near.has(`S:${star.hr}`);
-    const at = place(star);
-    if (at === undefined || !inside(at)) continue;
-    const r = Math.max(0.7, (o.magnitude - star.magnitude) * 0.55 + 1.1) * grow;
-    dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${starColour(star)}"/>`;
-    hits.push({ x: at[0], y: at[1], kind: "star", key: String(star.hr) });
+  const plot = (key: string, point: SkyPoint, magnitude: number, colour: () => string, text: string | undefined, designation: string): void => {
+    const isNear = near.has(`S:${key}`);
+    const at = place(point);
+    if (at === undefined || !inside(at)) return;
+    const r = Math.max(0.7, (o.magnitude - Math.max(magnitude, -2)) * 0.55 + 1.1) * grow;
+    dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${colour()}"/>`;
+    hits.push({ x: at[0], y: at[1], kind: "star", key });
     if (r >= 2.6) obstacles.push(around(at[0], at[1], r + 1));
-    if (String(star.hr) === o.picked) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
+    if (key === o.picked) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
     else if (isNear) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 5)}" fill="none" stroke="${COLOURS.near}" stroke-width="1.8"/>`;
-    const text = lang === "ja" ? star.nameJa ?? star.name : star.name;
-    if (isNear && String(star.hr) !== o.picked) starLabels.push({ rank: 900, ...besideMarker(text ?? star.designation ?? `HR ${star.hr}`, 11, at[0], at[1], r + 6, COLOURS.near, 1) });
-    else if (layers.has("names") && text !== undefined && star.magnitude <= namedLimit) starLabels.push({ rank: String(star.hr) === o.picked ? -1 : 1000 + star.magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
+    if (isNear && key !== o.picked) starLabels.push({ rank: 900, ...besideMarker(text ?? designation, 11, at[0], at[1], r + 6, COLOURS.near, 1) });
+    else if (layers.has("names") && text !== undefined && magnitude <= namedLimit) starLabels.push({ rank: key === o.picked ? -1 : 1000 + magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
+  };
+  if (o.sky === undefined) {
+    const drawn = stars({ magnitude: depth });
+    for (const key of near) {
+      const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;
+      if (extra !== undefined && extra.magnitude > depth) drawn.push(extra);
+    }
+    for (const star of drawn) plot(String(star.hr), star, star.magnitude, () => starColour(star), lang === "ja" ? star.nameJa ?? star.name : star.name, star.designation ?? `HR ${star.hr}`);
+  } else {
+    for (const star of o.sky) {
+      if (star.magnitude > depth && !near.has(`S:${keyOfSeen(star.id)}`)) continue;
+      const sun = star.id === "sun";
+      plot(keyOfSeen(star.id), star, star.magnitude, () => (star.colourIndex === undefined ? "#ffffff" : blackBodyColour(starTemperatureK(star.colourIndex))), sun ? (lang === "ja" ? "太陽" : "Sun") : lang === "ja" ? (star.star !== undefined && "nameJa" in star.star ? star.star.nameJa : undefined) ?? star.name : star.name, star.designation ?? `HR ${keyOfSeen(star.id)}`);
+    }
   }
 
   const nameLabels: Label[] = [];
+  const middles = o.sky === undefined ? undefined : centroidsSeen(o.sky);
   if (layers.has("names") && o.zoom >= 0.25) {
     for (const c of constellations()) {
       const abbreviation = c.abbreviation;
-      const middle = centroidOf(abbreviation);
+      const middle = middles === undefined ? centroidOf(abbreviation) : middles.get(abbreviation);
       const at = middle === undefined ? undefined : place(middle);
       if (at === undefined || !inside(at, -8)) continue;
       const on = abbreviation === o.highlight;
@@ -477,6 +517,9 @@ export function chart(o: ChartOptions): Chart {
 
   return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits };
 }
+
+/** The key a seen star has on the chart and in a pick: the HR number as text, or `sun`. */
+export const keyOfSeen = (id: string): string => (id.startsWith("hr-") ? id.slice(3) : id);
 
 /** The constellation under a pixel of the chart, or `undefined` off the sky. */
 export function constellationUnder(view: View, width: number, height: number, x: number, y: number): Constellation | undefined {
