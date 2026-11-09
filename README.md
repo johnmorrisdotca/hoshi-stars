@@ -6,7 +6,7 @@
 
 **[Try the demo](https://johnmorrisdotca.github.io/hoshi-stars/)**: a sky chart you turn, zoom and search, in English and Japanese.
 
-The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, no dependencies, about 100 kB gzipped. Hoshi (星) is the Japanese word for a star.
+The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, about 100 kB gzipped; the data has no dependencies, and the chart element has one, kazoku-ui, for its hands. Hoshi (星) is the Japanese word for a star.
 
 ```sh
 npm install @johnmorrisdotca/hoshi-stars
@@ -221,6 +221,25 @@ console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));      
 | `neighbouringConstellations(text)` | the constellations that share a piece of boundary |
 
 The target is a star, a deep-sky object, a name (`"Mizar"`, `"M31"`), `{ rightAscension, declination }` or, by space, a point `{ x, y, z }` in parsecs. The three-dimensional answers cover only this catalogue: the 2,533 stars of the 5,080 that have a parallax, and the parallaxes are whole milliarcseconds, so `error` is `undefined` and `skipped` counts the stars left out. Pass `among: [...stars(), ...nearbyStars()]` to count the nearby stars too (below). [What is near](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+
+## A chart element
+
+`@johnmorrisdotca/hoshi-stars/chart` is the demo's chart as an import: the `<hoshi-chart>` element, which draws what its attributes say and carries the drag, the pinch, the wheel and the keys itself (at the opening view the plain wheel still scrolls the page), and `chartSvg`, the same chart as a string for a page that runs no element. About 127 kB gzipped; the Milky Way (8 kB), the boundaries (8 kB) and the Messier objects (4 kB) are read only when a layer asks, and the controls (6 kB) only when they are on. The [chart element guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/guides/chart-element.html) has every attribute, a CDN page, Vite, React, Vue, Svelte, Angular and Node.
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/chart.js"></script>
+<hoshi-chart projection="stereographic" ra="84" dec="0" layers="milky-way,lines,names" constellation="Ori"></hoshi-chart>
+```
+
+```ts
+import { chartSvg, loadChartData } from "@johnmorrisdotca/hoshi-stars/chart";
+
+const options = { width: 400, height: 300, layers: ["milky-way", "lines", "names"], lang: "ja" } as const;
+await loadChartData(options);
+console.log(chartSvg(options).includes("オリオン座"));
+```
+
+Attributes: `projection`, `ra`, `dec`, `zoom` (0.1 to 500), `magnitude`, `layers` (`milky-way`, `lines`, `names`, `boundaries`, `deep-sky`, `grid`), `constellation`, `lang` (`en` or `ja`), `theme` (`dark` or `light`), `near` and `by` (what is near a star, a Messier object or a constellation), and `controls="none"` to take the controls off. The hands are [kazoku-ui](https://github.com/johnmorrisdotca/kazoku-ui)'s, the package's one dependency, and only the chart entry reads it.
 
 ## Put a chart in a page
 

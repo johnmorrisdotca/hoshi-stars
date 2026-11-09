@@ -89,6 +89,17 @@ const seesSky = async (page: Page, selector = "svg"): Promise<void> => {
   if (stars < 30 || lines < 8) throw new Error(`the chart has ${stars} stars and ${lines} lines`);
 };
 
+/** A chart element is drawn: the element has its label, and its shadow has stars and lines. */
+const seesChart = async (page: Page, selector = "hoshi-chart"): Promise<void> => {
+  const chart = page.locator(selector).first();
+  await chart.waitFor({ state: "attached", timeout: 20_000 });
+  await page.waitForFunction((css) => document.querySelector(css)?.getAttribute("data-state") === "drawn", selector, { timeout: 20_000 });
+  if (((await chart.getAttribute("aria-label")) ?? "").trim() === "") throw new Error("the chart has no aria-label");
+  const stars = await chart.locator("svg circle").count();
+  const lines = await chart.locator("svg path[stroke-opacity]").count();
+  if (stars < 30 || lines < 1) throw new Error(`the chart has ${stars} stars and ${lines} line paths`);
+};
+
 /** A CDN's answer: a file of the installed package, under the address the page asks for. */
 const cdn = async (page: Page, host: string, base: string): Promise<void> => {
   await page.route(`${host}/**`, (route) => {
@@ -148,14 +159,14 @@ await step("iframe", async () => {
 
 // The bundlers and frameworks: built, then opened.
 const { build: viteBuild } = await import("vite");
-const viteApp = async (name: string, plugins: unknown[] = []): Promise<void> => {
+const viteApp = async (name: string, plugins: unknown[] = [], see: (page: Page) => Promise<void> = seesSky): Promise<void> => {
   const dir = examples(name);
   const out = join(usage, "out", name);
   await viteBuild({ root: dir, plugins: plugins as never[], logLevel: "warn", build: { outDir: out, emptyOutDir: true }, base: "./", configFile: false });
   await opened(browser, async (page) => {
     await serve(page, "https://app.test", out);
     await page.goto("https://app.test/");
-    await seesSky(page);
+    await see(page);
   });
 };
 
@@ -163,6 +174,53 @@ await step("vite", () => viteApp("vite"));
 await step("react", () => viteApp("react"));
 await step("vue", async () => viteApp("vue", [(await import("@vitejs/plugin-vue")).default()]));
 await step("svelte", async () => viteApp("svelte", [(await import("@sveltejs/vite-plugin-svelte")).svelte()]));
+
+// The chart element: from a CDN, in Node, and in each bundler and framework.
+await step("chart-types", () => {
+  const dir = examples("");
+  writeFileSync(join(dir, "tsconfig.chart.json"), JSON.stringify({ compilerOptions: { target: "ES2022", module: "esnext", moduleResolution: "bundler", strict: true, noEmit: true, jsx: "react-jsx", lib: ["es2023", "dom", "dom.iterable"], types: ["node"], skipLibCheck: true, allowImportingTsExtensions: true }, include: ["chart-vite/main.ts", "chart-react/*.tsx"] }));
+  sh(process.execPath, [require.resolve("typescript/bin/tsc"), "-p", join(dir, "tsconfig.chart.json")], usage);
+});
+
+await step("chart-cdn", async () => {
+  await opened(browser, async (page) => {
+    await cdn(page, "https://cdn.jsdelivr.net", "/npm/@johnmorrisdotca/hoshi-stars/");
+    await page.route("https://cdn.jsdelivr.net/npm/@johnmorrisdotca/kazoku-ui/**", (route) => {
+      const file = at("node_modules", "@johnmorrisdotca", "kazoku-ui", new URL(route.request().url()).pathname.slice("/npm/@johnmorrisdotca/kazoku-ui/".length));
+      return existsSync(file) ? route.fulfill({ body: readFileSync(file), contentType: "text/javascript" }) : route.fulfill({ status: 404, body: "" });
+    });
+    await showPage(page, "chart-cdn.html");
+    await seesChart(page);
+    // The hands arrive with the element: a drag turns the sky.
+    const before = await page.locator("hoshi-chart").evaluate((el) => (el as unknown as { view: { ra: number } }).view.ra);
+    const box = (await page.locator("hoshi-chart").boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 120, box.y + box.height / 2, { steps: 6 });
+    await page.mouse.up();
+    const after = await page.locator("hoshi-chart").evaluate((el) => (el as unknown as { view: { ra: number } }).view.ra);
+    if (Math.abs(after - before) < 1) throw new Error("a drag did not turn the chart from the CDN");
+  });
+});
+
+await step("chart-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("chart-node"), "svg.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  if (out !== "hoshi-chart.svg true") throw new Error(`unexpected output: ${out}`);
+});
+
+await step("chart-vite", () =>
+  viteApp("chart-vite", [], async (page) => {
+    await seesChart(page);
+    await page.locator('[data-testid="string"] svg').waitFor({ state: "attached" });
+    await page.getByRole("button", { name: "Orion" }).click();
+    await page.waitForFunction(() => document.querySelector("hoshi-chart")?.shadowRoot?.querySelector('path[stroke="#ffd86b"]') !== null);
+    await page.getByTestId("plain").click();
+    if ((await page.locator("hoshi-chart").getAttribute("controls")) !== "none") throw new Error("controls=none was not set");
+  }),
+);
+await step("chart-react", () => viteApp("chart-react", [], seesChart));
+await step("chart-vue", async () => viteApp("chart-vue", [(await import("@vitejs/plugin-vue")).default({ template: { compilerOptions: { isCustomElement: (tag: string) => tag === "hoshi-chart" } } })], seesChart));
+await step("chart-svelte", async () => viteApp("chart-svelte", [(await import("@sveltejs/vite-plugin-svelte")).svelte()], seesChart));
 
 await step("react-ssr", async () => {
   const script = join(usage, "ssr-react.tsx");
@@ -187,6 +245,19 @@ await step("webpack", async () => {
     await serve(page, "https://app.test", out);
     await page.goto("https://app.test/");
     await seesSky(page, "#sky svg");
+  });
+});
+
+await step("chart-angular", async () => {
+  const dir = examples("chart-angular");
+  const out = join(usage, "out", "chart-angular");
+  writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022", module: "esnext", experimentalDecorators: true, useDefineForClassFields: false } }));
+  await esbuild({ entryPoints: [join(dir, "main.ts")], outdir: out, bundle: true, splitting: true, format: "esm", tsconfig: join(dir, "tsconfig.json"), absWorkingDir: root, logLevel: "silent", minify: true });
+  writeFileSync(join(out, "index.html"), readFileSync(join(dir, "index.html")));
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesChart(page);
   });
 });
 
@@ -222,6 +293,14 @@ const FILES: Record<string, string[]> = {
   "angular/orion.component.ts": ["docs/guides/frameworks.md", "docs/guides/ja/frameworks.md"],
   "typescript/index.ts": ["docs/guides/typescript-and-node.md", "docs/guides/ja/typescript-and-node.md"],
   "node/server.mjs": ["docs/guides/typescript-and-node.md", "docs/guides/ja/typescript-and-node.md"],
+  "chart-cdn.html": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
+  "chart-node/svg.mjs": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
+  "chart-vite/index.html": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
+  "chart-vite/main.ts": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
+  "chart-react/Chart.tsx": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
+  "chart-vue/Chart.vue": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
+  "chart-svelte/Chart.svelte": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
+  "chart-angular/chart.component.ts": ["docs/guides/chart-element.md", "docs/guides/ja/chart-element.md"],
 };
 const normal = (text: string) => text.replace(/\r\n/g, "\n").trim();
 for (const [file, places] of everything ? Object.entries(FILES) : []) {
@@ -231,7 +310,7 @@ for (const [file, places] of everything ? Object.entries(FILES) : []) {
   }
 }
 const unlisted = (folder: string): string[] => readdirSync(at("examples", folder), { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? unlisted(join(folder, entry.name)) : [relative("", join(folder, entry.name)).split("\\").join("/")]));
-const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html"]);
+const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html", "chart-react/index.html", "chart-react/main.tsx", "chart-vue/index.html", "chart-vue/main.ts", "chart-svelte/index.html", "chart-svelte/main.ts", "chart-angular/index.html", "chart-angular/main.ts"]);
 for (const file of everything ? unlisted("") : []) if (!known.has(file)) failures.push(`examples/${file} is not listed in scripts/check-usage.ts: say where the guides show it`);
 
 console.log(failures.length === 0 ? `\nusage ok: ${results.length} ways to use ${NAME}` : `\n${failures.length} failure${failures.length === 1 ? "" : "s"}:\n- ${failures.join("\n- ")}`);

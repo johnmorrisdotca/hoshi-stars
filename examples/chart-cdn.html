@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A sky chart from jsDelivr</title>
+    <script type="importmap">
+      { "imports": { "@johnmorrisdotca/kazoku-ui/view-controls": "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/kazoku-ui/dist/view-controls/index.js" } }
+    </script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/chart.js"></script>
+  </head>
+  <body>
+    <hoshi-chart projection="stereographic" ra="84" dec="0" layers="milky-way,lines,names" style="width: 100%; max-width: 640px"></hoshi-chart>
+  </body>
+</html>

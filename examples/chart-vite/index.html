@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A sky chart with Vite</title>
+  </head>
+  <body>
+    <hoshi-chart id="chart" projection="hammer" ra="84" dec="0" zoom="1" layers="milky-way,lines,names" style="width: 100%; max-width: 640px"></hoshi-chart>
+    <p><button id="orion" type="button">Orion</button> <button id="plain" type="button" data-testid="plain">Without the controls</button></p>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
