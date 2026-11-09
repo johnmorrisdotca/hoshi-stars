@@ -18,7 +18,14 @@ packed 5-bit numbers (base64). Nothing here is a picture of the sky: no image is
 
     python3 -I scripts/make-milky-way-data.py                       # downloads what it needs into a temporary folder (needs the network), writes src/data/milky-way.ts
     python3 -I scripts/make-milky-way-data.py --cache DIR           # keeps the downloads in DIR for the next run
-    python3 scripts/make-milky-way-data.py --preview DIR            # also writes PNG previews to DIR (needs Pillow, which is not otherwise needed)
+    python3 -I scripts/make-milky-way-data.py --preview DIR         # also writes PNG previews to DIR
+    python3 -I scripts/make-milky-way-data.py --no-sao              # the fallback without the SAO star counts: writes data-no-sao/milky-way.ts (MODULES-780)
+    python3 -I scripts/make-milky-way-data.py --no-sao --out src/data/milky-way.ts   # the same, written where the package reads it: this is the one change that swaps it in
+
+The fallback (--no-sao) builds the grid without any star catalogue, from the dust above, our own bulge and disk below, and in place of the star counts COBE DIRBE's
+zodi-subtracted mission average at 1.25 micron (the COBE Team, NASA Goddard; LAMBDA, https://lambda.gsfc.nasa.gov/data/cobe/dirbe/zsma/DIRBE_BAND1A_ZSMA.FITS), which is the
+starlight of the Galaxy itself, seen through the same dust at a wavelength the dust dims less. Its bright single stars are removed (they are spikes one or two pixels wide)
+and what is left stands where the counts stood: it says where the Galaxy's stars are thick (the bulge, the disk's glow) and where near dust hides the stars behind it.
 
 Needs only Python 3 and its standard library. It does not run in the test.
 """
@@ -30,13 +37,18 @@ import struct
 import sys
 import tempfile
 import urllib.request
+import zlib
 from pathlib import Path
 
 SAO_URL = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_sao.tdat.gz"
 SKYVIEW = "https://skyview.gsfc.nasa.gov/cgi-bin/images?Survey={survey}&Position=0,0&Coordinates=Galactic&Projection=Car&Size=360,100&Pixels={w},{h}&Sampler=Clip&Return=FITS"
 IRAS_URL = SKYVIEW.format(survey="IRAS+100", w=1440, h=400)
 DIRBE_URL = SKYVIEW.format(survey="COBE+DIRBE%2FZSMA", w=720, h=200)
-OUT = Path(__file__).resolve().parent.parent / "src" / "data" / "milky-way.ts"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "src" / "data" / "milky-way.ts"
+OUT_NO_SAO = ROOT / "data-no-sao" / "milky-way.ts"
+# The fallback's star light: COBE DIRBE's zodi-subtracted mission average at 1.25 micron (band 1A), a table of 393,216 pixels of the COBE sky cube (NASA LAMBDA).
+DIRBE_NIR_URL = "https://lambda.gsfc.nasa.gov/data/cobe/dirbe/zsma/DIRBE_BAND1A_ZSMA.FITS"
 
 STEP = 0.5  # degrees: the working grid, 720 by 180 for galactic latitudes within 45 degrees
 NL = int(360 / STEP)
@@ -78,7 +90,10 @@ def fetch(url: str, dest: Path) -> Path:
         print(f"fetching {url}", file=sys.stderr)
         request = urllib.request.Request(url, headers={"User-Agent": "hoshi-stars-data/1 (+https://github.com/johnmorrisdotca/hoshi-stars)"})
         with urllib.request.urlopen(request, timeout=900) as r:
-            dest.write_bytes(r.read())
+            body = r.read()
+        if dest.suffix.lower() in (".fits", ".gz") and not (body[:6] == b"SIMPLE" or body[:2] == b"\x1f\x8b"):
+            raise SystemExit(f"{url} did not return a data file (the server said: {body[:200]!r}); try again later")
+        dest.write_bytes(body)
     return dest
 
 
@@ -360,26 +375,190 @@ def encode(cells: list[list[int]]) -> str:
     return base64.b64encode(bytes(out)).decode()
 
 
-def preview(directory: Path, name: str, grid: list[list[float]], low: float, high: float, columns: int = NL) -> None:
-    from PIL import Image  # only for --preview
+# ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# The fallback (--no-sao): the star light from COBE DIRBE's 1.25 micron map instead of the SAO star counts.
+#
+# DIRBE's maps are on the COBE sky cube: six square faces (0 the north ecliptic pole, 1 to 4 round the ecliptic at longitudes 0, 90, 180 and 270 degrees, 5 the south pole) of
+# 256 by 256 pixels, J2000 ecliptic. The pixel's number is its face times 65,536 plus its column and row bits interleaved (column bit k at bit 2k, row bit k at bit 2k + 1). A pixel's
+# place in its face is (x, y) from -1 to 1, and the direction is the face's centre plus xi along the face's x axis and eta along its y axis, with (xi, eta) the polynomial of the cube's
+# projection that takes (x, y) to them: E. W. Greisen and M. R. Calabretta, "Representations of celestial coordinates in FITS" (A&A 395, 1077, 2002), section 5.6.2, whose 28
+# coefficients P_ij are those below (the paper's text was read on 2026-11-09 and the table compared with this one by program) and whose table of faces gives the axes below. The axes
+# were also found without the paper, by laying the cube over SkyView's COBE DIRBE 100 micron map, which is in galactic coordinates, and taking, for each face, the one of the 96 ways
+# of putting it down that agreed best: the same six. The polynomial's cells are within 7 percent of equal in area, as the cube's are meant to be.
+CUBE_FACES = (
+    ((0, 0, 1), (0, 1, 0), (-1, 0, 0)),
+    ((1, 0, 0), (0, 1, 0), (0, 0, 1)),
+    ((0, 1, 0), (-1, 0, 0), (0, 0, 1)),
+    ((-1, 0, 0), (0, -1, 0), (0, 0, 1)),
+    ((0, -1, 0), (1, 0, 0), (0, 0, 1)),
+    ((0, 0, -1), (0, 1, 0), (1, 0, 0)),
+)  # each face: its centre, its x axis, its y axis, as unit vectors in ecliptic coordinates
+CUBE_POLY = {
+    (0, 0): -0.27292696, (1, 0): -0.07629969, (2, 0): -0.22797056, (3, 0): 0.54852384, (4, 0): -0.62930065, (5, 0): 0.25795794, (6, 0): 0.02584375,
+    (0, 1): -0.02819452, (1, 1): -0.01471565, (2, 1): 0.48051509, (3, 1): -1.74114454, (4, 1): 1.71547508, (5, 1): -0.53022337,
+    (0, 2): 0.27058160, (1, 2): -0.56800938, (2, 2): 0.30803317, (3, 2): 0.98938102, (4, 2): -0.83180469,
+    (0, 3): -0.60441560, (1, 3): 1.50880086, (2, 3): -0.93678576, (3, 3): 0.08693841,
+    (0, 4): 0.93412077, (1, 4): -1.41601920, (2, 4): 0.33887446,
+    (0, 5): -0.63915306, (1, 5): 0.52032238,
+    (0, 6): 0.14381585,
+}
+ECLIPTIC_OBLIQUITY = math.radians(23.4392911)  # J2000, IAU 2006
+CUBE_SIDE = 256
+CUBE_ROWS = 6 * CUBE_SIDE * CUBE_SIDE
+# Which of a cell's neighbours the bright single stars are measured against, and how far above them a cell may stand: a star in the 1.25 micron map is a spike a cell or two across
+NIR_WINDOW_L, NIR_WINDOW_B, NIR_SPIKE = 7, 1, 1.3
+NIR_FLOOR_B = 35.0  # degrees: above this latitude the map is the sky's floor (what is not the Galaxy's disk), taken away before the glow is measured
+# The 1.25 micron glow stands where the star count ratio stood (a number near 1 off the plane, higher in it), and goes through the same combining unchanged. Its scale is the one choice: the ratio
+# the disk's glow (|b| under 4, 30 to 330 degrees of longitude) is given; with 2.0 the profile, the bulge and the lanes come out as the counts' did to within a correlation of 0.95 (docs/research/milky-no-sao.md).
+NIR_DISK_RATIO = 2.0
 
+
+def galactic_axes_in_ecliptic() -> tuple[tuple[float, float, float], tuple[float, float, float], tuple[float, float, float]]:
+    """The galactic frame's axes (toward the centre, toward longitude 90, toward the north pole) as unit vectors in J2000 ecliptic coordinates, from the same IAU numbers as `galactic`."""
+
+    def axis(l: float, b: float) -> tuple[float, float, float]:
+        l, b = math.radians(l), math.radians(b)
+        dec = math.asin(math.sin(b) * math.sin(GP_DEC) + math.cos(b) * math.cos(GP_DEC) * math.cos(GP_L - l))
+        ra = GP_RA + math.atan2(math.cos(b) * math.sin(GP_L - l), math.sin(b) * math.cos(GP_DEC) - math.cos(b) * math.sin(GP_DEC) * math.cos(GP_L - l))
+        x, y, z = math.cos(dec) * math.cos(ra), math.cos(dec) * math.sin(ra), math.sin(dec)
+        return x, y * math.cos(ECLIPTIC_OBLIQUITY) + z * math.sin(ECLIPTIC_OBLIQUITY), -y * math.sin(ECLIPTIC_OBLIQUITY) + z * math.cos(ECLIPTIC_OBLIQUITY)
+
+    return axis(0, 0), axis(90, 0), axis(0, 90)
+
+
+def read_dirbe_cube(path: Path) -> list[float]:
+    """The 393,216 mission-average residual intensities (MJy/sr) of a DIRBE ZSMA file, in pixel order; a pixel DIRBE flagged is nan."""
+    data = path.read_bytes()
+    cards, at = {}, 0
+    for _ in range(2):  # the primary header, then the table's
+        while True:
+            block = data[at : at + 2880].decode("ascii", "replace")
+            at += 2880
+            ended = False
+            for k in range(0, 2880, 80):
+                card = block[k : k + 80]
+                if card.startswith("END") and card[3:].strip() == "":
+                    ended = True
+                    break
+                if "=" in card[:10]:
+                    cards[card[:8].strip()] = card[10:].split("/")[0].strip().strip("'").strip()
+            if ended:
+                break
+    if cards.get("PIXRESOL") != "9" or cards.get("NAXIS1") != "17" or cards.get("NAXIS2") != str(CUBE_ROWS) or cards.get("TTYPE2") != "Resid":
+        raise SystemExit(f"{path} is not a DIRBE ZSMA map at resolution 9 ({cards.get('PIXRESOL')}, {cards.get('NAXIS1')}, {cards.get('NAXIS2')})")
+    row = struct.Struct(">ifIBf")  # pixel number, residual, observations, weeks, sigma
+    out = []
+    for n, (pixel, residual, _, _, _) in enumerate(row.iter_unpack(data[at : at + 17 * CUBE_ROWS])):
+        if pixel != n:
+            raise SystemExit(f"{path}: row {n} holds pixel {pixel}; the cube is read in pixel order")
+        out.append(residual if residual > -16375 else math.nan)
+    return out
+
+
+def cube_directions() -> list[tuple[float, float]]:
+    """(xi, eta) of each of the 65,536 pixels of a face, in the order of their numbers inside it."""
+    spread = [sum(((x >> k) & 1) << (2 * k) for k in range(8)) for x in range(CUBE_SIDE)]
+    place = [(0.0, 0.0)] * (CUBE_SIDE * CUBE_SIDE)
+    terms = list(CUBE_POLY.items())
+
+    def chi(xf2: float, yf2: float, xf: float) -> float:
+        return xf + xf * (1 - xf2) * sum(c * xf2**i * yf2**j for (i, j), c in terms)
+
+    for iy in range(CUBE_SIDE):
+        yf = (iy + 0.5) / (CUBE_SIDE / 2) - 1
+        for ix in range(CUBE_SIDE):
+            xf = (ix + 0.5) / (CUBE_SIDE / 2) - 1
+            place[spread[ix] | spread[iy] << 1] = (chi(xf * xf, yf * yf, xf), chi(yf * yf, xf * xf, yf))
+    return place
+
+
+def dirbe_grid(cube: list[float]) -> list[list[float]]:
+    """The DIRBE cube on the working grid (0.5 degree, latitudes within 45 degrees): each pixel shared between the four nearest cells, a cell the mean of what it received."""
+    gx, gy, gz = galactic_axes_in_ecliptic()
+    place = cube_directions()
+    num = [[0.0] * NL for _ in range(NB)]
+    den = [[0.0] * NL for _ in range(NB)]
+    for f, (centre, ax, ay) in enumerate(CUBE_FACES):
+        for p, (xi, eta) in enumerate(place):
+            v = cube[f * CUBE_SIDE * CUBE_SIDE + p]
+            if math.isnan(v):
+                continue
+            d = [centre[k] + xi * ax[k] + eta * ay[k] for k in range(3)]
+            norm = math.sqrt(d[0] ** 2 + d[1] ** 2 + d[2] ** 2)
+            b = math.degrees(math.asin(max(-1.0, min(1.0, (d[0] * gz[0] + d[1] * gz[1] + d[2] * gz[2]) / norm))))
+            if abs(b) >= HALF:
+                continue
+            l = math.degrees(math.atan2(d[0] * gy[0] + d[1] * gy[1] + d[2] * gy[2], d[0] * gx[0] + d[1] * gx[1] + d[2] * gx[2])) % 360
+            fi, fj = (b + HALF) / STEP - 0.5, l / STEP - 0.5
+            i0, j0 = math.floor(fi), math.floor(fj)
+            ti, tj = fi - i0, fj - j0
+            for di, wi in ((0, 1 - ti), (1, ti)):
+                if 0 <= i0 + di < NB:
+                    for dj, wj in ((0, 1 - tj), (1, tj)):
+                        num[i0 + di][(j0 + dj) % NL] += wi * wj * v
+                        den[i0 + di][(j0 + dj) % NL] += wi * wj
+    return [[num[i][j] / den[i][j] if den[i][j] > 0.05 else math.nan for j in range(NL)] for i in range(NB)]
+
+
+def remove_stars(grid: list[list[float]]) -> list[list[float]]:
+    """The grid with each cell that stands more than NIR_SPIKE times above the median of the strip of cells along the plane round it set to that. A single bright star is a spike a cell or
+    two across; the Galaxy's own glow changes slowly along the plane, so the strip's median (some 3.5 degrees long) is the glow without the stars."""
+    out = [row[:] for row in grid]
+    for i in range(NB):
+        rows = [grid[ii] for ii in range(max(0, i - NIR_WINDOW_B), min(NB, i + NIR_WINDOW_B + 1))]
+        for j in range(NL):
+            near = sorted(r[(j + dj) % NL] for r in rows for dj in range(-NIR_WINDOW_L, NIR_WINDOW_L + 1) if not math.isnan(r[(j + dj) % NL]))
+            middle = near[len(near) // 2] if near else math.nan
+            v = grid[i][j]
+            if math.isnan(v) or v > NIR_SPIKE * middle:
+                out[i][j] = NIR_SPIKE * middle if not math.isnan(middle) else 0.0
+    return out
+
+
+def nir_ratio(grid: list[list[float]]) -> list[list[float]]:
+    """The 1.25 micron glow as a ratio like the star counts', 1 for the sky's floor and NIR_DISK_RATIO for the disk's glow, on the working grid."""
+    high = sorted(v for i in range(NB) if abs(-HALF + (i + 0.5) * STEP) > NIR_FLOOR_B for v in grid[i])
+    floor = high[len(high) // 2]
+    excess = [[max(0.0, v - floor) for v in row] for row in grid]
+    disk = sorted(excess[i][j] for i in range(NB) if abs(-HALF + (i + 0.5) * STEP) < 4 for j in range(NL) if 30 <= (j + 0.5) * STEP <= 330)
+    reference = disk[len(disk) // 2]
+    print(f"1.25 micron map: floor {floor:.3f} MJy/sr, the disk's glow {reference:.3f}", file=sys.stderr)
+    return [[1 + (NIR_DISK_RATIO - 1) * v / reference for v in row] for row in excess]
+
+
+def write_png(path: Path, rows: list[list[int]]) -> None:
+    """A grey-scale PNG of rows of 0 to 255 (standard library only)."""
+
+    def chunk(kind: bytes, body: bytes) -> bytes:
+        return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+
+    raw = b"".join(b"\x00" + bytes(r) for r in rows)
+    path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", len(rows[0]), len(rows), 8, 0, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
+
+
+def preview(directory: Path, name: str, grid: list[list[float]], low: float, high: float, columns: int = NL) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     rows = len(grid)
     cols = len(grid[0])
-    img = Image.new("L", (cols, rows))
-    img.putdata([max(0, min(255, int((grid[r][(cols // 2 - c) % cols] - low) / (high - low) * 255))) for r in range(rows - 1, -1, -1) for c in range(cols)])
-    img.resize((cols * 2, rows * 3)).save(directory / f"{name}.png")
+    shown = [[max(0, min(255, int((grid[r][(cols // 2 - c) % cols] - low) / (high - low) * 255))) for c in range(cols) for _ in range(2)] for r in range(rows - 1, -1, -1) for _ in range(3)]
+    write_png(directory / f"{name}.png", shown)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cache", type=Path, default=Path(tempfile.gettempdir()) / "hoshi-milky-way")
     parser.add_argument("--preview", type=Path)
+    parser.add_argument("--no-sao", action="store_true", help="build without the SAO star counts: COBE DIRBE 1.25 micron, the dust and our own bulge and disk; writes data-no-sao/milky-way.ts")
+    parser.add_argument("--out", type=Path, help="where to write the data (default src/data/milky-way.ts, or data-no-sao/milky-way.ts with --no-sao)")
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
-    stars = read_sao(fetch(SAO_URL, args.cache / "heasarc_sao.tdat.gz"))
-    print(f"{len(stars)} SAO stars with a magnitude", file=sys.stderr)
-    ratio = star_ratio(stars)
+    if args.no_sao:
+        nir = remove_stars(dirbe_grid(read_dirbe_cube(fetch(DIRBE_NIR_URL, args.cache / "DIRBE_BAND1A_ZSMA.FITS"))))
+        ratio = smooth(nir_ratio(nir), SIGMA_STARS)
+    else:
+        stars = read_sao(fetch(SAO_URL, args.cache / "heasarc_sao.tdat.gz"))
+        print(f"{len(stars)} SAO stars with a magnitude", file=sys.stderr)
+        ratio = star_ratio(stars)
     iras = read_fits(fetch(IRAS_URL, args.cache / "iras100.fits"), 1440, 400)
     dirbe = read_fits(fetch(DIRBE_URL, args.cache / "dirbe-zsma-100.fits"), 720, 200)
     dust = dust_log(iras, dirbe)
@@ -391,16 +570,22 @@ def main() -> None:
         preview(args.preview, "dust", dust, 0.7, 3.7)
         preview(args.preview, "combined", grid, 0, max(max(r) for r in grid))
         preview(args.preview, "stored", [[float(v) for v in row] for row in cells], 0, LEVELS)
-    OUT.write_text(
-        "// Written by scripts/make-milky-way-data.py: do not edit by hand.\n"
-        "// The Milky Way's brightness in galactic coordinates. SAO star counts (NASA HEASARC), the IRAS 100 micron dust map and COBE DIRBE (NASA), and a bulge of our own; see NOTICE.md.\n"
+    out = args.out if args.out is not None else (OUT_NO_SAO if args.no_sao else OUT)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if args.no_sao:
+        source = "COBE DIRBE 1.25 micron starlight (NASA LAMBDA), the IRAS 100 micron dust map and COBE DIRBE 100 micron (NASA), and a bulge and disk of our own; no star catalogue"
+    else:
+        source = "SAO star counts (NASA HEASARC), the IRAS 100 micron dust map and COBE DIRBE (NASA), and a bulge of our own"
+    out.write_text(
+        "// Written by scripts/make-milky-way-data.py" + (" --no-sao" if args.no_sao else "") + ": do not edit by hand.\n"
+        f"// The Milky Way's brightness in galactic coordinates. {source}; see NOTICE.md.\n"
         f"export const MILKY_WAY_COLUMNS = {int(360 / OUT_L)};\n"
         f"export const MILKY_WAY_ROWS = {int(2 * OUT_HALF / OUT_B)};\n"
         f"export const MILKY_WAY_LATITUDE = {OUT_HALF};\n"
         f"export const MILKY_WAY_LEVELS = {LEVELS};\n"
         f'export const MILKY_WAY_PACKED = "{text}";\n'
     )
-    print(f"wrote {OUT} ({len(text)} characters)", file=sys.stderr)
+    print(f"wrote {out} ({len(text)} characters)", file=sys.stderr)
 
 
 if __name__ == "__main__":
