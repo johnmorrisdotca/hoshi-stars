@@ -2,7 +2,7 @@
 // and the colour of the hot and cool ends. The table is read, never fitted.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { blackBodyColour, starByHr, starByName, starColour, starDistanceLightYears, starPosition, starTemperatureK, stars } from "../src/index.ts";
+import { blackBodyColour, starByHr, starByName, starColour, luminosityClass, starDistance, starDistanceLightYears, starPosition, starTemperatureK, stars } from "../src/index.ts";
 
 function hms(h: number, m: number, s: number): number {
   return (h + m / 60 + s / 3600) * 15;
@@ -92,10 +92,72 @@ test("near a pole the right ascension stays finite and between 0 and 360", () =>
 
 test("distance comes from parallax, and is unknown without one", () => {
   const sirius = starByName("Sirius")!;
-  assert.ok(Math.abs(starDistanceLightYears(sirius)! - 8.7) < 0.2);
+  assert.ok(Math.abs(starDistanceLightYears(sirius)! - 8.55) < 0.02, "the Yale parallax of 381.6 milliarcseconds");
   const rigil = starByName("Rigil Kentaurus")!;
   assert.ok(Math.abs(starDistanceLightYears(rigil)! - 4.3) < 0.1);
   assert.equal(starDistanceLightYears({ ...sirius, parallaxMas: 0 }), undefined);
+});
+
+test("a distance has its uncertainty: Sirius is 8.6 light-years within its error, not 8.7; Betelgeuse's range is wide", () => {
+  const sirius = starDistance(starByName("Sirius")!)!;
+  assert.equal(sirius.lightYears, starDistanceLightYears(starByName("Sirius")!));
+  assert.ok(Math.abs(sirius.lightYears - 8.6) < 2 * sirius.lightYearsError!, "the modern 8.60 is within two standard errors");
+  assert.ok(Math.abs(sirius.lightYears - 8.7) > 2 * sirius.lightYearsError!, "the old 8.7 is not");
+  assert.ok(sirius.lightYearsError! < 0.1 && sirius.lightYearsRange![0] < sirius.lightYears && sirius.lightYears < sirius.lightYearsRange![1]);
+  const betelgeuse = starDistance(starByName("Betelgeuse")!)!;
+  const [near, far] = betelgeuse.lightYearsRange!;
+  assert.ok(near < 250 && far > 600 && far / near > 2.5, `${near} to ${far}`);
+  assert.equal(starDistance({ parallaxMas: 0, parallaxErrorMas: 1 }), undefined);
+  assert.equal(starDistance({ parallaxMas: -3, parallaxErrorMas: undefined }), undefined);
+  assert.deepEqual(starDistance({ parallaxMas: 100, parallaxErrorMas: undefined }), { lightYears: 3261.563777 / 100, lightYearsError: undefined, lightYearsRange: undefined });
+  assert.equal(starDistance({ parallaxMas: 5, parallaxErrorMas: 5 })!.lightYearsRange![1], Number.POSITIVE_INFINITY);
+  assert.equal(starDistance({ parallaxMas: 5, parallaxErrorMas: 9 })!.lightYearsRange![1], Number.POSITIVE_INFINITY);
+});
+
+test("every star has its whole spectral type and a parallax with a source; the error comes with the Yale ones", () => {
+  const all = stars();
+  assert.equal(all.length, 5080);
+  assert.ok(all.every((s) => s.spectralType !== "" && s.spectralType === s.spectralType.trim()));
+  assert.ok(all.every((s) => /^[OBAFGKMCRNS][0-9]?/.test(s.spectralType) ? s.spectralClass === /^[OBAFGKMCRNS][0-9]?/.exec(s.spectralType)![0] : s.spectralClass === ""));
+  assert.ok(all.every((s) => (s.parallaxMas > 0) === (s.parallaxSource !== undefined)));
+  assert.ok(all.every((s) => (s.parallaxErrorMas !== undefined) === (s.parallaxSource === "GCTP") && (s.parallaxErrorMas === undefined || s.parallaxErrorMas > 0)));
+  assert.equal(all.filter((s) => s.parallaxMas > 0).length, 2563);
+  assert.equal(all.filter((s) => s.parallaxSource === "GCTP").length, 2329);
+  assert.equal(all.filter((s) => s.parallaxSource === "dynamical").length, 163);
+  assert.ok(all.filter((s) => s.parallaxSource === "GCTP").some((s) => !Number.isInteger(s.parallaxMas)));
+  assert.equal(all.filter((s) => s.luminosityClass === undefined).length, 265);
+  const alpha = [starByName("α1 Cen")!, starByName("α2 Cen")!];
+  assert.equal(alpha[0]!.parallaxMas, alpha[1]!.parallaxMas, "the two stars of a pair share the parallax of the pair");
+});
+
+test("Sirius, Betelgeuse, Vega and Rigel: the whole spectral type, the luminosity class, the parallax and its error", () => {
+  const sirius = starByName("Sirius")!;
+  assert.deepEqual([sirius.spectralType, sirius.spectralClass, sirius.luminosityClass, sirius.parallaxMas, sirius.parallaxErrorMas, sirius.parallaxSource], ["A1Vm", "A1", "V", 381.6, 2.2, "GCTP"]);
+  const betelgeuse = starByName("Betelgeuse")!;
+  assert.equal(betelgeuse.spectralType, "M1-2Ia-Iab");
+  assert.equal(betelgeuse.spectralClass, "M1");
+  assert.ok(betelgeuse.luminosityClass === "Ia" || betelgeuse.luminosityClass === "Iab");
+  assert.deepEqual([betelgeuse.parallaxMas, betelgeuse.parallaxErrorMas], [9.8, 4.7]);
+  const vega = starByName("Vega")!;
+  assert.ok(vega.spectralType.startsWith("A0"));
+  assert.equal(vega.luminosityClass, "V");
+  assert.equal(starByName("Rigel")!.luminosityClass, "Ia");
+  assert.equal(starByName("Polaris")!.luminosityClass, "Ib");
+  assert.equal(starByName("Arcturus")!.luminosityClass, "III");
+});
+
+test("luminosityClass reads the first class a spectral type names", () => {
+  const cases: [string, string | undefined][] = [
+    ["M1-2Ia-Iab", "Ia"], ["A0Va", "V"], ["A1Vm", "V"], ["F5IV-V", "IV"], ["K1.5IIIFe-0.5", "III"], ["K2.5IIIaCH-3Ba0.5", "III"], ["G8Ib-II", "Ib"], ["B2Iab", "Iab"], ["F2II-III", "II"],
+    ["K5I:", "I"], ["M5.5eV", "V"], ["K2 V", "V"], ["G8   IIIF*4", "III"], ["B2IV-V", "IV"], ["DA2", "D"], ["gK2", "III"], ["dM3e", "V"], ["sdM1", "VI"], ["K2+Iab", "Iab"],
+    ["Am", undefined], ["K0", undefined], ["A0pSi", undefined], ["", undefined], ["C5,5", undefined],
+  ];
+  for (const [type, expected] of cases) assert.equal(luminosityClass(type), expected, type);
+  assert.throws(() => luminosityClass(5 as never), TypeError);
+  const counts = new Map<string | undefined, number>();
+  for (const s of stars()) counts.set(s.luminosityClass, (counts.get(s.luminosityClass) ?? 0) + 1);
+  assert.equal(counts.get("V"), 1520);
+  assert.equal(counts.get("III"), 2228);
 });
 
 test("temperature and colour follow the colour index: hot stars blue-white, the Sun-like warm, cool stars orange", () => {
@@ -120,7 +182,7 @@ test("the table's size stays within its budget", async () => {
   const { gzipSync } = await import("node:zlib");
   const { readFileSync } = await import("node:fs");
   const bytes = gzipSync(readFileSync(new URL("../src/data/stars.ts", import.meta.url))).byteLength;
-  assert.ok(bytes < 110_000, `the star table is ${bytes} bytes gzipped`);
+  assert.ok(bytes < 125_000, `the star table (with every star's whole spectral type and a parallax with its error) is ${bytes} bytes gzipped`);
 });
 
 test("every named star has a katakana name, and only a named star has one", () => {

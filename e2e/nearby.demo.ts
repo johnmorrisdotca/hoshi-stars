@@ -23,8 +23,8 @@ test("In space lists the nearest stars in light-years, says how many have no dis
   await open(page, "?pick=S:2491");
   await page.getByTestId("nearby-by").getByRole("button", { name: "In space" }).click();
   await expect(rows(page).first()).toContainText("Procyon");
-  await expect(rows(page).first()).toContainText("5.1 light-years");
-  await expect(page.getByTestId("nearby-note")).toContainText("2,547 stars have no distance");
+  await expect(rows(page).first()).toContainText("5.2 light-years");
+  await expect(page.getByTestId("nearby-note")).toContainText("2,517 stars have no distance");
   await expect.poll(() => param(page, "by")).toBe("space");
   await page.getByTestId("nearby-by").getByRole("button", { name: "In the sky" }).click();
   await expect(rows(page).first()).toContainText("degrees");

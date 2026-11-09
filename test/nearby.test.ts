@@ -17,6 +17,14 @@ function haversine(a: { rightAscension: number; declination: number }, b: { righ
   return (2 * Math.asin(Math.min(1, Math.sqrt(h)))) / RADIANS;
 }
 
+test("a nearby star has its luminosity class: Proxima Centauri and Barnard's Star are dwarfs", () => {
+  const proxima = nearbyStarByName("Proxima Centauri")!;
+  assert.deepEqual([proxima.spectralType, proxima.luminosityClass], ["M5.5eV", "V"]);
+  assert.equal(nearbyStarByName("Barnard's Star")!.luminosityClass, "V");
+  assert.ok(all.every((s) => s.spectralType !== "" || s.luminosityClass === undefined));
+  assert.ok(all.filter((s) => s.luminosityClass === "V").length > 1000);
+});
+
 test("Proxima Centauri, Barnard's Star and Wolf 359 are there, at 4.2, 6.0 and 7.9 light-years within their errors", () => {
   // The figures are those of the ticket, to a tenth; the Yale parallaxes give 4.24, 5.98 and 7.78. Allow 3 sigma and the tenth's own rounding.
   for (const [name, ly, gctp, gliese] of [["Proxima Centauri", 4.2, "3278", "GJ 551"], ["Barnard's Star", 6.0, "4098", "GJ 699"], ["Wolf 359", 7.9, "2553", "GJ 406"]] as const) {
