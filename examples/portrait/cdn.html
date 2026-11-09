@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A star from jsDelivr</title>
+  </head>
+  <body>
+    <div id="star"></div>
+    <script type="module">
+      import { starByName } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/index.js";
+      import { starProfile } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/profile.js";
+      import { starPortrait } from "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/dist/portrait.js";
+
+      const profile = starProfile(starByName("Arcturus"));
+      document.querySelector("#star").innerHTML = starPortrait(profile, { name: "Arcturus", size: 320 });
+    </script>
+  </body>
+</html>
