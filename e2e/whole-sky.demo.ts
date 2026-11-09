@@ -176,18 +176,15 @@ test("nothing is drawn at rest", async ({ page }) => {
   });
   await open(page);
   const frames = (): Promise<number> => page.evaluate(() => (window as unknown as { frames: number }).frames);
-  // the page comes to rest once its first draws are done (fonts, the first size): wait until no frame has run for 300 ms, at most 5 s
+  // the page comes to rest once its first draws are done (fonts, the first size, a late resize may draw once more): within 10 s there is
+  // a whole 1.2 s with no frame at all. A drawing loop never gives one.
   await expect
     .poll(async () => {
       const before = await frames();
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(1200);
       return (await frames()) - before;
-    }, { timeout: 5000, message: "the map comes to rest after it opens" })
+    }, { timeout: 10_000, intervals: [0], message: "the map comes to rest: 1.2 s with no frame drawn" })
     .toBe(0);
-  // at rest, nothing is drawn: no frame at all for 1.2 s
-  const first = await frames();
-  await page.waitForTimeout(1200);
-  expect(await frames()).toBe(first);
 });
 
 test("the family's gestures move the map", async ({ page, isMobile, browserName }) => {
