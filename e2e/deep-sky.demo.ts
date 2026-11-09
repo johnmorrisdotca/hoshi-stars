@@ -82,7 +82,7 @@ test("the card says what is measured and what is drawn, and credits the picture"
   await expect(card.getByTestId("picture-credit").first()).toContainText(/SDSS|2MASS|WISE/);
   await expect(card.getByTestId("picture-credit").first()).toContainText("Licence:");
   await fly(page, "M42");
-  await expect(card).toContainText("66 × 60 arc-minutes");
+  await expect(card).toContainText("66 arc-minutes across (one diameter)");
   await expect(card).toContainText("not measured");
   await expect(card).toContainText("A circle across the major diameter");
 });

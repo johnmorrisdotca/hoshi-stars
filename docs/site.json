@@ -102,7 +102,7 @@
     },
     "./deep-sky/pictures": {
       "en": "Pictures of deep-sky objects and where each lies on the sky",
-      "ja": "深宇宙天体の写真と、それぞれの空での位置",
+      "ja": "ディープスカイ天体の写真と、それぞれの空での位置",
       "platform": "neutral"
     },
     "./deep-sky/members": {

@@ -598,7 +598,7 @@ $("find").addEventListener("submit", (event) => {
 const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), go: (abbreviation) => goTo(`C:${abbreviation}`), current: pickedConstellation, say });
 
 // ----- what is picked -----
-const SOURCE_WORDS: Record<string, string> = { RC3: "srcRC3", "Messier table": "srcMessier", "NGC 2000.0": "srcNgc2000", Wikidata: "srcWikidata" };
+const SOURCE_WORDS: Record<string, string> = { RC3: "srcRC3", NED: "srcNed", "Catalogue row": "srcRow" };
 const SURVEY_WORDS: Record<string, string> = { "SDSS g, r, i": "pictureSdss", "2MASS J, H, K": "picture2mass", "WISE 3.4, 4.6, 12 micron": "pictureWise", "ESA/Hubble": "pictureHubble" };
 const fill = (text: string, values: Record<string, string>): string => Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
 const arcmin = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n * 10) / 10));
