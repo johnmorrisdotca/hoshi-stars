@@ -46,7 +46,7 @@
 const OWNER = "johnmorrisdotca";
 
 /** The day this file was last changed, in every repository at once. A test records the file's hash beside it. */
-export const FAMILY_TEMPLATE_VERSION = "2026-11-03";
+export const FAMILY_TEMPLATE_VERSION = "2026-11-09";
 
 /** The packages, in the order the footer lists them. `kana` is the name as it is written in Japanese. */
 export const FAMILY = [
@@ -55,6 +55,7 @@ export const FAMILY = [
   { id: "narabe", name: "Narabe", kana: "並べ" },
   { id: "sugoroku", name: "Sugoroku", kana: "双六" },
   { id: "tenka", name: "Tenka", kana: "天下" },
+  { id: "fuda-cards", name: "Fuda Cards", kana: "札" },
   { id: "hitotsu", name: "Hitotsu", kana: "一つ" },
   { id: "jarajara", name: "Jarajara", kana: "ジャラジャラ" },
   { id: "kumimoji", name: "Kumimoji", kana: "組み文字" },
@@ -72,18 +73,21 @@ export const FAMILY = [
   { id: "tane", name: "Tane", kana: "種" },
   { id: "bushu", name: "Bushu", kana: "部首" },
   { id: "hikidashi", name: "Hikidashi", kana: "引き出し" },
+  { id: "jisho", name: "Jisho", kana: "辞書" },
   { id: "kotoba", name: "Kotoba", kana: "言葉" },
-  { id: "address-plus", name: "address-plus", kana: "アドレスプラス", repo: "https://github.com/johnmorrisdotca/address-plus", site: "https://johnmorrisdotca.github.io/address-plus/" },
   { id: "chikyu-earth", name: "Chikyu Earth", kana: "地球" },
+  { id: "hoshi-stars", name: "Hoshi Stars", kana: "星" },
+  { id: "uchusen-rockets", name: "Uchusen Rockets", kana: "宇宙船" },
+  { id: "wakusei-planets", name: "Wakusei Planets", kana: "惑星" },
+  { id: "address-plus", name: "address-plus", kana: "アドレスプラス", repo: "https://github.com/johnmorrisdotca/address-plus", site: "https://johnmorrisdotca.github.io/address-plus/" },
   { id: "chizu", name: "Chizu", kana: "地図" },
   { id: "hako-devices", name: "Hako Devices", kana: "箱" },
   { id: "hata", name: "Hata", kana: "旗" },
-  { id: "hoshi-stars", name: "Hoshi Stars", kana: "星" },
+  { id: "koyomi-calendars", name: "Koyomi Calendars", kana: "暦" },
   { id: "kuni", name: "Kuni", kana: "国" },
-  { id: "uchusen-rockets", name: "Uchusen Rockets", kana: "宇宙船" },
-  { id: "wakusei-planets", name: "Wakusei Planets", kana: "惑星" },
   { id: "dougu-sports", name: "Dougu Sports", kana: "道具" },
   { id: "kyogijo-stadiums", name: "Kyogijo Stadiums", kana: "競技場" },
+  { id: "meigen-sports", name: "Meigen Sports", kana: "名言" },
   { id: "senshu-jerseys", name: "Senshu Jerseys", kana: "選手" },
   { id: "taisen-brackets", name: "Taisen Brackets", kana: "対戦" },
   { id: "rest-in-pieces", name: "REST in Pieces", kana: "レスト・イン・ピーシーズ", repo: "https://github.com/spxis/rest-in-pieces", site: "https://spxis.github.io/rest-in-pieces/" },
@@ -92,12 +96,13 @@ export const FAMILY = [
 /** The kinds, in display order, with members alphabetical within each kind. */
 export const FAMILY_GROUPS = [
   { id: "board", en: "Games — board", ja: "ボードゲーム", members: ["domino", "gunjin", "narabe", "sugoroku", "tenka"] },
-  { id: "cards", en: "Games — cards & tiles", ja: "カードと牌のゲーム", members: ["hitotsu", "jarajara", "kumimoji", "toranpu"] },
+  { id: "cards", en: "Games — cards & tiles", ja: "カードと牌のゲーム", members: ["fuda-cards", "hitotsu", "jarajara", "kumimoji", "toranpu"] },
   { id: "puzzles", en: "Games — puzzles", ja: "パズルゲーム", members: ["houseki", "jirai", "karakuri", "kazu", "kyuubu", "meikyuu", "suido", "tobiishi", "tsunagi"] },
   { id: "random", en: "Games — dice & random", ja: "ダイスと乱数", members: ["korokoro", "tane"] },
-  { id: "language", en: "Language", ja: "ことばと文字", members: ["bushu", "hikidashi", "kotoba"] },
-  { id: "geography", en: "Geography & data", ja: "地理とデータ", members: ["address-plus", "chikyu-earth", "chizu", "hako-devices", "hata", "hoshi-stars", "kuni", "uchusen-rockets", "wakusei-planets"] },
-  { id: "sports", en: "Sports", ja: "スポーツ", members: ["dougu-sports", "kyogijo-stadiums", "senshu-jerseys", "taisen-brackets"] },
+  { id: "language", en: "Language", ja: "ことばと文字", members: ["bushu", "hikidashi", "jisho", "kotoba"] },
+  { id: "space", en: "Space Program X", ja: "Space Program X", members: ["chikyu-earth", "hoshi-stars", "uchusen-rockets", "wakusei-planets"] },
+  { id: "geography", en: "Geography & data", ja: "地理とデータ", members: ["address-plus", "chizu", "hako-devices", "hata", "koyomi-calendars", "kuni"] },
+  { id: "sports", en: "Sports", ja: "スポーツ", members: ["dougu-sports", "kyogijo-stadiums", "meigen-sports", "senshu-jerseys", "taisen-brackets"] },
   { id: "developer", en: "Developer tools", ja: "開発ツール", members: ["rest-in-pieces"] },
 ];
 
@@ -150,6 +155,10 @@ export const FAMILY_PITCH = {
   "taisen-brackets": "a sport-agnostic tournament bracket, drawn as SVG, from a list of ties",
   "dougu-sports": "sports emblems as SVG: trophies, medals, crests, and the ball and gear of every sport, with optional 3D turning",
   "senshu-jerseys": "sports jerseys, sweaters, kits, caps, helmets and retired-number banners as SVG, front and back, with optional 2.5D turning",
+  "fuda-cards": "collectible card frames with a true thickness, foil, stacks, wear and a binder, as two web components",
+  jisho: "words of Japanese looked up by reading or written form, and the grades, JLPT levels, readings and look-alike pairs of 2,999 kanji",
+  "meigen-sports": "sports quotations and on-this-day history",
+  "koyomi-calendars": "calendar-page icons and whole months as SVG, in light and dark, with page-turning from one day to the next",
 };
 
 /** Japanese pitches for the new geography and developer members; awaiting native review. */
@@ -162,6 +171,8 @@ export const FAMILY_PITCH_JA = {
   "uchusen-rockets": "出典つきの寸法からロケットを描きます。線画と3Dで、分解して回して見られ、ロケットが本当に組み合わさるかも確かめられます",
   "wakusei-planets": "太陽・惑星・衛星を、線画・陰影つきの絵・表面の地図で描きます。実際の大きさ・傾き・自転つき",
   "rest-in-pieces": "フロントエンド開発向けの、シード値で固定できるテストデータとREST API（遅延・エラーの再現つき）",
+  "fuda-cards": "コレクション用のカード枠。本物の厚み、箔、山、傷み、バインダーを、2つのWebコンポーネントで",
+  jisho: "日本語の単語を読みや表記から引け、2,999字の漢字の学年、JLPTレベル、読み、形の似た漢字の組も収録",
 };
 
 /**

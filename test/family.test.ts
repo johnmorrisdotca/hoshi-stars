@@ -27,8 +27,8 @@ const sha = (path: string) => createHash("sha256").update(readFileSync(path)).di
 const pkg = JSON.parse(read("package.json")) as { name: string };
 const id = pkg.name.replace(/^@[^/]+\//, "");
 
-const TEMPLATE = { version: "2026-11-03", sha256: "8b3bee21ab6cc13b54230507150d04b7c78b28217064995dc5dbfaae9290b8f1" };
-const WRITER_SHA = "00e7e3f59bc71ae9d2c3c68379731e1976382ddcb44132a1158d2c9a4fb245d7";
+const TEMPLATE = { version: "2026-11-09", sha256: "75ca7e7da99092f360e5a539e34b109b14c92e9c04e7ad98f9e4b1e715c9240e" };
+const WRITER_SHA = "dfd4c27b70fe5d7d5f82724180cc739812f0dd13d209c41c053dbdc61bf90188";
 const CSS_SHA = "31df0a58f422070ca4023d5498566b26bc55a5f9a0751f1520d36c61bbb562c9";
 
 test("the family template, the README writer and family.css are the recorded files, byte for byte", () => {
@@ -39,7 +39,7 @@ test("the family template, the README writer and family.css are the recorded fil
 });
 
 test("it lists every package of the family, in order, each with its Japanese name and a line on it", () => {
-  assert.equal(template.FAMILY.length, 37);
+  assert.equal(template.FAMILY.length, 41);
   assert.deepEqual(
     template.FAMILY_GROUPS.flatMap((group) => group.members),
     template.FAMILY.map((one) => one.id),
