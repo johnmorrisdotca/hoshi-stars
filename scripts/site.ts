@@ -1,9 +1,10 @@
 // Builds the static demo for GitHub Pages into ./site: the page, the embed page, their styles and scripts. Every address in it is relative, so it works at the Pages address
 // (https://johnmorrisdotca.github.io/hoshi-stars/) and anywhere else. `pnpm site` builds the package first.
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { build } from "esbuild";
+import { build, type Plugin } from "esbuild";
+import { MILKY_SWAPPED, noSao } from "./milky-source.mjs";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
 import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderSpace } from "./page.ts";
 import { writeThumbnails } from "./thumbnail-files.ts";
@@ -29,6 +30,13 @@ writeThumbnails(join(site, "thumbnails"));
 cpSync(join(root, "faint-tiles"), join(site, "faint-tiles"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 for (const file of ["embed.html", "embed-3d.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
+/** The fallback Milky Way grid (scripts/milky-source.mjs): the bundle's import of src/data/milky-way.ts is answered with data-no-sao/milky-way.ts. Nothing when the shipped grid is in. */
+const fallbackMilky: Plugin = {
+  name: "hoshi-fallback-milky-way",
+  setup(esbuild) {
+    esbuild.onResolve({ filter: /\/data\/milky-way\.ts$/ }, (args) => (resolve(args.resolveDir, args.path) === MILKY_SWAPPED.shippedPath ? { path: MILKY_SWAPPED.fallbackPath } : undefined));
+  },
+};
 await build({
   entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts") },
   outdir: join(site, "js"),
@@ -38,6 +46,7 @@ await build({
   minify: true,
   legalComments: "none",
   define: { __HOSHI_VERSION__: JSON.stringify(pkg.version) },
+  plugins: noSao() ? [fallbackMilky] : [],
   logLevel: "warning",
 });
 writeFileSync(join(site, "kazoku-parts.src.js"), `import "@johnmorrisdotca/kazoku-ui/language-picker/define";\nimport "@johnmorrisdotca/kazoku-ui/theme-switch/define";\n`);

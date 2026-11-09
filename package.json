@@ -237,7 +237,7 @@
     "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p tsconfig.json",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.check.json && tsc -p tsconfig.tools.json && tsc -p tsconfig.demo.json",
-    "test": "node --test test/*.test.ts",
+    "test": "node --import ./scripts/milky-source-hook.mjs --test test/*.test.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build && pnpm thumbnails && node scripts/check-package.ts",
     "test:package": "pnpm build && pnpm thumbnails && node scripts/check-package.ts",
     "prepublishOnly": "pnpm check",
