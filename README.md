@@ -206,7 +206,7 @@ import { nearest, neighbouringConstellations, within } from "@johnmorrisdotca/ho
 
 const alcor = nearest("Mizar", { count: 3 }).find((n) => n.thing.name === "Alcor")!;
 console.log(alcor.angle.toFixed(2));                                                          // 0.20
-console.log(within("Alcyone", 1, { minMagnitude: 5 }).length);                                // 5
+console.log(within("Alcyone", 1, { magnitude: 5 }).length);                                // 5
 const close = nearest("Sirius", { by: "space", count: 2 });
 console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(1)}`));                    // [ 'Procyon 5.1', 'Ran 8.0' ]
 console.log(close.skipped);                                                                   // 2547
@@ -216,7 +216,7 @@ console.log(neighbouringConstellations("Ori").map((c) => c.abbreviation));      
 
 | Function | Gives |
 |---|---|
-| `nearest(target, { count?, within?, by?, kind?, date?, minMagnitude?, among? })` | the nearest first, each `{ thing, angle }` (degrees) or, with `by: "space"`, `{ thing, distance, parsecs, error }` (light-years) |
+| `nearest(target, { count?, within?, by?, kind?, date?, magnitude?, among? })` | the nearest first, each `{ thing, angle }` (degrees) or, with `by: "space"`, `{ thing, distance, parsecs, error }` (light-years) |
 | `within(target, radius, options?)` | all of them within a radius (degrees, or light-years by space) |
 | `neighbouringConstellations(text)` | the constellations that share a piece of boundary |
 

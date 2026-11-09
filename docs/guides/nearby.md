@@ -18,7 +18,7 @@ import { nearest, within } from "@johnmorrisdotca/hoshi-stars/nearest";
 
 const pair = nearest("Mizar", { count: 3 });
 console.log(pair.map((n) => `${n.thing.name ?? n.thing.hr} ${n.angle.toFixed(2)}`));
-console.log(within("Alcyone", 1, { minMagnitude: 5 }).map((n) => n.thing.name));
+console.log(within("Alcyone", 1, { magnitude: 5 }).map((n) => n.thing.name));
 // [ '5055 0.00', 'Alcor 0.20', '5109 1.52' ]
 // [ 'Merope', 'Atlas', 'Maia', 'Electra', 'Taygeta' ]
 ```
@@ -30,7 +30,7 @@ Mizar is a double star: the nearest thing is its companion (HR 5055), and Alcor 
 | `count` | how many (10 for `nearest`; `within` gives all) |
 | `within` | only answers this near: degrees by sky, light-years by space |
 | `kind` | `"star"` (default) or `"deep-sky"` (the Messier objects) |
-| `minMagnitude` | only things at least this bright (magnitude this number or smaller) |
+| `magnitude` | the faintest to include, as in `stars({ magnitude })` (a thing of exactly that magnitude is in) |
 | `date` | carry the stars to this moment by proper motion first. Precession turns every object the same way, so it does not change an angle |
 | `among` | look through your own list, for example `deepSky()` from `/deep-sky/ngc-ic` |
 | `by` | `"sky"` (default) or `"space"` |

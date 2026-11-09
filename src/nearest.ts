@@ -95,7 +95,7 @@ export type NearestList<T> = T[] & { skipped: number };
  * ```ts
  * import { nearest, type NearestOptions } from "@johnmorrisdotca/hoshi-stars/nearest";
  *
- * const options: NearestOptions = { count: 5, minMagnitude: 3 };
+ * const options: NearestOptions = { count: 5, magnitude: 3 };
  * console.log(nearest("Sirius", options).map((found) => found.thing.name));
  * ```
  */
@@ -110,8 +110,8 @@ export interface NearestOptions {
   by?: "sky" | "space";
   /** A moment: the stars are carried to it by their proper motion before the angles are measured. Precession turns every object the same way, so it does not change an angle. J2000 when left out. */
   date?: When;
-  /** Only things at least this bright: magnitude this number or smaller. A thing with no magnitude is left out. */
-  minMagnitude?: number;
+  /** The faintest to include, as in `stars({ magnitude })`: a thing of exactly that magnitude is in. A thing with no magnitude is left out. */
+  magnitude?: number;
   /** Look through this list instead of the table that `kind` names, for example `deepSky()` from `/deep-sky/ngc-ic`. */
   among?: readonly NearestThing[];
 }
@@ -164,13 +164,13 @@ function number(name: string, value: unknown, least: number): number {
 }
 
 function run(target: NearestTarget, options: NearestOptions, defaultCount: number): NearestList<NearestInSky<NearestThing> | NearestInSpace> {
-  const { by = "sky", kind = "star", date, minMagnitude, among } = options ?? {};
+  const { by = "sky", kind = "star", date, magnitude, among } = options ?? {};
   if (by !== "sky" && by !== "space") throw new RangeError(`by must be "sky" or "space", got ${String(by)}`);
   if (kind !== "star" && kind !== "deep-sky") throw new RangeError(`kind must be "star" or "deep-sky", got ${String(kind)}`);
   const count = options?.count === undefined ? defaultCount : number("count", options.count, 0);
   if (!Number.isInteger(count) && count !== Number.POSITIVE_INFINITY) throw new RangeError(`count must be a whole number or Infinity, got ${count}`);
   const limit = options?.within === undefined ? Number.POSITIVE_INFINITY : number("within", options.within, 0);
-  const faintest = minMagnitude === undefined ? Number.POSITIVE_INFINITY : number("minMagnitude", minMagnitude, Number.NEGATIVE_INFINITY);
+  const faintest = magnitude === undefined ? Number.POSITIVE_INFINITY : number("magnitude", magnitude, Number.NEGATIVE_INFINITY);
   const when = date === undefined ? undefined : moment(date, "date");
   const from = resolve(target);
   const cartesian = "x" in from ? (from as Point3) : undefined;
@@ -231,7 +231,7 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
  * Every candidate is looked at (no index); one query over all the stars takes about a millisecond.
  *
  * @param target - A star, a deep-sky object, a name (`"Mizar"`, `"M31"`) or `{ rightAscension, declination }` in degrees (with `lightYears` for a query by space).
- * @param options - `count` (default 10), `within` (degrees by sky, light-years by space), `kind` (`"star"` or `"deep-sky"`), `by`, `date`, `minMagnitude` (only things at least this bright) and `among`.
+ * @param options - `count` (default 10), `within` (degrees by sky, light-years by space), `kind` (`"star"` or `"deep-sky"`), `by`, `date`, `magnitude` (the faintest to include) and `among`.
  * @returns A new list of `{ thing, angle }` or `{ thing, distance, parsecs, error }` with a `skipped` count.
  * @throws TypeError or RangeError, naming the argument, if the target, the name or an option is not valid, or the target has no distance for `by: "space"`.
  *
@@ -267,7 +267,7 @@ export function nearest(target: NearestTarget, options: NearestOptions = {}): Ne
  * ```ts
  * import { within } from "@johnmorrisdotca/hoshi-stars/nearest";
  *
- * console.log(within("Alcyone", 2, { minMagnitude: 5 }).length);
+ * console.log(within("Alcyone", 2, { magnitude: 5 }).length);
  * ```
  */
 export function within(target: NearestTarget, radius: number, options: SkyOptions & { kind: "deep-sky"; among?: undefined }): NearestList<NearestInSky<DeepSkyObject>>;

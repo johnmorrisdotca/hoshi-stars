@@ -123,13 +123,13 @@ test("a point works as a target, near the poles, across 0 and 360 degrees, and a
   assert.ok(Math.abs(nearest({ rightAscension: 0, declination: 0 }, { among: [{ ...sirius, rightAscension: 360, declination: 0 }] })[0]!.angle) < 1e-9);
 });
 
-test("within, count, the limits and minMagnitude narrow the list, nearest first", () => {
+test("within, count, the limits and magnitude narrow the list, nearest first", () => {
   const all = within("Sirius", 10);
   assert.ok(all.length > 20 && all.every((answer) => answer.angle <= 10));
   assert.deepEqual(within("Sirius", 10, { count: 3 }).map((a) => a.thing), all.slice(0, 3).map((a) => a.thing));
   assert.equal(nearest("Sirius", { count: 0 }).length, 0);
   assert.equal(nearest("Sirius").length, 10);
-  const bright = nearest("Sirius", { count: 50, minMagnitude: 3 });
+  const bright = nearest("Sirius", { count: 50, magnitude: 3 });
   assert.ok(bright.every((answer) => answer.thing.magnitude! <= 3));
   assert.equal(bright.length, 50);
   assert.equal(within("Sirius", 0).length, 0);

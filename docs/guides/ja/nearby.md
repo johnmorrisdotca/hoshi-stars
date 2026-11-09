@@ -18,7 +18,7 @@ import { nearest, within } from "@johnmorrisdotca/hoshi-stars/nearest";
 
 const pair = nearest("Mizar", { count: 3 });
 console.log(pair.map((n) => `${n.thing.name ?? n.thing.hr} ${n.angle.toFixed(2)}`));
-console.log(within("Alcyone", 1, { minMagnitude: 5 }).map((n) => n.thing.name));
+console.log(within("Alcyone", 1, { magnitude: 5 }).map((n) => n.thing.name));
 // [ '5055 0.00', 'Alcor 0.20', '5109 1.52' ]
 // [ 'Merope', 'Atlas', 'Maia', 'Electra', 'Taygeta' ]
 ```
@@ -30,7 +30,7 @@ console.log(within("Alcyone", 1, { minMagnitude: 5 }).map((n) => n.thing.name));
 | `count` | 何個返すか(`nearest`は10、`within`はすべて) |
 | `within` | この範囲の中だけ。空なら度、宇宙なら光年 |
 | `kind` | `"star"`(初期値)か`"deep-sky"`(メシエ天体) |
-| `minMagnitude` | この明るさ以上のものだけ(等級がこの数以下) |
+| `magnitude` | 入れる中でいちばん暗いもの。`stars({ magnitude })`と同じです(ちょうどその等級も入ります) |
 | `date` | その日時まで固有運動で星を動かしてから測ります。歳差はすべての天体を同じ向きに回すので、角度は変わりません |
 | `among` | 自分のリストから探します(たとえば`/deep-sky/ngc-ic`の`deepSky()`) |
 | `by` | `"sky"`(初期値)か`"space"` |
