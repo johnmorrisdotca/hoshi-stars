@@ -49,6 +49,7 @@
 .controls { display: grid; gap: 10px; margin-top: 14px; }
 .controls .fam-label { min-width: 5.5rem; }
 .fam-fine { color: var(--muted); font-size: .8rem; margin: 0; }
+.faint-note { min-height: 2.4em; }
 .fam-button, .fam-chip, .fam-field { min-height: 48px; }
 select.fam-field { height: 48px; max-width: 100%; }
 .fam-seg button { min-height: 48px; min-width: 48px; }
