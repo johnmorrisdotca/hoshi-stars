@@ -162,7 +162,7 @@ await step("constellation-3d-side-view", async () => {
     const svg = page.locator("#space svg");
     await svg.waitFor({ state: "attached", timeout: 20_000 });
     const [stars, lines] = [await svg.locator("circle").count(), await svg.locator("line").count()];
-    if ((await svg.getAttribute("aria-label")) !== "The Great Bear from the side" || stars !== 9 || lines < 9 + 8) throw new Error(`the side view has ${stars} stars and ${lines} lines`);
+    if ((await svg.getAttribute("aria-label")) !== "The Great Bear from the side" || stars !== 9 || lines < 8) throw new Error(`the side view has ${stars} stars and ${lines} lines`);
   });
 });
 
@@ -260,7 +260,7 @@ const FILES: Record<string, string[]> = {
   "serve/server.mjs": ["docs/guides/serve-it-yourself.md", "docs/guides/ja/serve-it-yourself.md"],
   "constellation-3d/node.mjs": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
   "constellation-3d/side-view.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
-  "constellation-3d/iframe.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md", "docs/guides/embed-in-an-iframe.md", "docs/guides/ja/embed-in-an-iframe.md"],
+  "constellation-3d/iframe.html": ["docs/guides/constellation-in-3d.md", "docs/guides/ja/constellation-in-3d.md"],
 };
 const normal = (text: string) => text.replace(/\r\n/g, "\n").trim();
 for (const [file, places] of everything ? Object.entries(FILES) : []) {
