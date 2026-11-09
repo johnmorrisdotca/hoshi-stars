@@ -20,7 +20,7 @@ try {
   const files = pack[0]!.files.map((f) => f.path);
   if (files.some((f) => /^faint-tiles\//.test(f))) throw new Error("The faint tiles entered the npm package: they are served from the Pages site (see NOTICE.md and the Faint stars guide)");
   if (files.some((f) => /^(demo|docs|scripts|test|e2e|site|src)\//.test(f))) throw new Error("Source, tests or the demo entered the npm package");
-  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/milky-way.js", "dist/milky-way.d.ts", "dist/all-sky.js", "dist/all-sky.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/lines.js", "dist/lines.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts", "dist/nearest.js", "dist/nearest.d.ts", "dist/nearby.js", "dist/nearby.d.ts", "dist/sky-from.js", "dist/sky-from.d.ts", "dist/sky-from-nearby.js", "dist/sky-from-nearby.d.ts", "dist/culture.js", "dist/culture.d.ts", "dist/cultures/western.js", "dist/cultures/western.d.ts", "dist/cultures/japanese.js", "dist/cultures/japanese.d.ts", "dist/cultures/chinese.js", "dist/cultures/chinese.d.ts", "dist/thumbnails.js", "dist/thumbnails.d.ts", "dist/constellation-facts.js", "dist/constellation-facts.d.ts", "dist/profile.js", "dist/profile.d.ts", "dist/portrait.js", "dist/portrait.d.ts", "thumbnails/svg/dark/Ori.svg", "thumbnails/svg/light/UMa.svg", "thumbnails/png/160/dark/Ori.png", "thumbnails/png/160/light/UMa.png", "dist/black-holes.js", "dist/black-holes.d.ts", "dist/faint.js", "dist/faint.d.ts", "dist/faint-core.js", "dist/faint-load.js", "dist/constellation-3d.js", "dist/constellation-3d.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
+  for (const need of ["LICENSE", "NOTICE.md", "README.md", "dist/index.js", "dist/index.d.ts", "dist/constellations.js", "dist/constellations.d.ts", "dist/projection.js", "dist/projection.d.ts", "dist/sky.js", "dist/sky.d.ts", "dist/milky-way.js", "dist/milky-way.d.ts", "dist/all-sky.js", "dist/all-sky.d.ts", "dist/boundaries.js", "dist/boundaries.d.ts", "dist/lines.js", "dist/lines.d.ts", "dist/deep-sky.js", "dist/deep-sky.d.ts", "dist/deep-sky-ngc-ic.js", "dist/deep-sky-ngc-ic.d.ts", "dist/deep-sky-shape.js", "dist/deep-sky-shape.d.ts", "dist/deep-sky-shape-ngc-ic.js", "dist/deep-sky-shape-ngc-ic.d.ts", "dist/deep-sky-pictures.js", "dist/deep-sky-pictures.d.ts", "dist/deep-sky-members.js", "dist/deep-sky-members.d.ts", "pictures/M31.webp", "pictures/M42.webp", "dist/nearest.js", "dist/nearest.d.ts", "dist/nearby.js", "dist/nearby.d.ts", "dist/sky-from.js", "dist/sky-from.d.ts", "dist/sky-from-nearby.js", "dist/sky-from-nearby.d.ts", "dist/culture.js", "dist/culture.d.ts", "dist/cultures/western.js", "dist/cultures/western.d.ts", "dist/cultures/japanese.js", "dist/cultures/japanese.d.ts", "dist/cultures/chinese.js", "dist/cultures/chinese.d.ts", "dist/thumbnails.js", "dist/thumbnails.d.ts", "dist/constellation-facts.js", "dist/constellation-facts.d.ts", "dist/profile.js", "dist/profile.d.ts", "dist/portrait.js", "dist/portrait.d.ts", "thumbnails/svg/dark/Ori.svg", "thumbnails/svg/light/UMa.svg", "thumbnails/png/160/dark/Ori.png", "thumbnails/png/160/light/UMa.png", "dist/black-holes.js", "dist/black-holes.d.ts", "dist/faint.js", "dist/faint.d.ts", "dist/faint-core.js", "dist/faint-load.js", "dist/constellation-3d.js", "dist/constellation-3d.d.ts"]) if (!files.includes(need)) throw new Error(`${need} is missing from the npm package`);
   run("npm", ["install", "--ignore-scripts", "--no-audit", "--no-fund", join(scratch, pack[0]!.filename)], scratch);
   writeFileSync(
     join(scratch, "check.mjs"),
@@ -59,6 +59,17 @@ const holes = await import(${JSON.stringify(pkg.name + "/black-holes")});
 assert.equal(holes.blackHoles().length, 301);
 assert.equal(holes.blackHole("Cygnus X-1").massSuns.value, 21.2);
 assert.equal(holes.blackHole("Sgr A*").kind, "supermassive");
+const shape = await import(${JSON.stringify(pkg.name + "/deep-sky/shape")});
+const m31 = deep.deepSkyObject("M31");
+assert.equal(shape.deepSkyShape(m31).positionAngle, 35);
+assert.equal(shape.deepSkyOutline(m31, shape.deepSkyShape(m31), 8).length, 9);
+const shapeAll = await import(${JSON.stringify(pkg.name + "/deep-sky/ngc-ic-shape")});
+assert.equal(shapeAll.deepSkyShape(deepAll.deepSkyObject("NGC 253")).source, "RC3");
+const pictures = await import(${JSON.stringify(pkg.name + "/deep-sky/pictures")});
+assert.equal(pictures.deepSkyPicture("M31").file, "pictures/M31.webp");
+assert.equal(pictures.pictureCorners(pictures.deepSkyPicture("M31")).length, 4);
+const members = await import(${JSON.stringify(pkg.name + "/deep-sky/members")});
+assert.ok(members.starsInside(deep.deepSkyObject("M45"), shape.deepSkyShape(deep.deepSkyObject("M45"))).some((s) => s.name === "Alcyone"));
 const projection = await import(${JSON.stringify(pkg.name + "/projection")});
 assert.deepEqual(projection.project("orthographic", { rightAscension: 0, declination: 0 }, { centre: { rightAscension: 0, declination: 0 } }), { x: 0, y: 0 });
 const milkyWay = await import(${JSON.stringify(pkg.name + "/milky-way")});
