@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { blackBodyColour, starByHr, starByName, starColour, luminosityClass, starDistance, starDistanceLightYears, starPosition, starTemperatureK, stars } from "../src/index.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 function hms(h: number, m: number, s: number): number {
   return (h + m / 60 + s / 3600) * 15;
@@ -90,7 +91,7 @@ test("near a pole the right ascension stays finite and between 0 and 360", () =>
   assert.ok(far.declination <= 90);
 });
 
-test("distance comes from parallax, and is unknown without one", () => {
+test("distance comes from parallax, and is unknown without one", onlyWithGctp, () => {
   const sirius = starByName("Sirius")!;
   assert.ok(Math.abs(starDistanceLightYears(sirius)! - 8.55) < 0.02, "the Yale parallax of 381.6 milliarcseconds");
   const rigil = starByName("Rigil Kentaurus")!;
@@ -98,7 +99,7 @@ test("distance comes from parallax, and is unknown without one", () => {
   assert.equal(starDistanceLightYears({ ...sirius, parallaxMas: 0 }), undefined);
 });
 
-test("a distance has its uncertainty: Sirius is 8.6 light-years within its error, not 8.7; Betelgeuse's range is wide", () => {
+test("a distance has its uncertainty: Sirius is 8.6 light-years within its error, not 8.7; Betelgeuse's range is wide", onlyWithGctp, () => {
   const sirius = starDistance(starByName("Sirius")!)!;
   assert.equal(sirius.lightYears, starDistanceLightYears(starByName("Sirius")!));
   assert.ok(Math.abs(sirius.lightYears - 8.6) < 2 * sirius.lightYearsError!, "the modern 8.60 is within two standard errors");
@@ -114,7 +115,7 @@ test("a distance has its uncertainty: Sirius is 8.6 light-years within its error
   assert.equal(starDistance({ parallaxMas: 5, parallaxErrorMas: 9 })!.lightYearsRange![1], Number.POSITIVE_INFINITY);
 });
 
-test("every star has its whole spectral type and a parallax with a source; the error comes with the Yale ones", () => {
+test("every star has its whole spectral type and a parallax with a source; the error comes with the Yale ones", onlyWithGctp, () => {
   const all = stars();
   assert.equal(all.length, 5080);
   assert.ok(all.every((s) => s.spectralType !== "" && s.spectralType === s.spectralType.trim()));
@@ -130,7 +131,7 @@ test("every star has its whole spectral type and a parallax with a source; the e
   assert.equal(alpha[0]!.parallaxMas, alpha[1]!.parallaxMas, "the two stars of a pair share the parallax of the pair");
 });
 
-test("Sirius, Betelgeuse, Vega and Rigel: the whole spectral type, the luminosity class, the parallax and its error", () => {
+test("Sirius, Betelgeuse, Vega and Rigel: the whole spectral type, the luminosity class, the parallax and its error", onlyWithGctp, () => {
   const sirius = starByName("Sirius")!;
   assert.deepEqual([sirius.spectralType, sirius.spectralClass, sirius.luminosityClass, sirius.parallaxMas, sirius.parallaxErrorMas, sirius.parallaxSource], ["A1Vm", "A1", "V", 381.6, 2.2, "GCTP"]);
   const betelgeuse = starByName("Betelgeuse")!;

@@ -6,6 +6,7 @@ import { nearbyStarByName, nearbyStars } from "../src/nearby.ts";
 import { skyFrom, type SeenStar } from "../src/sky-from.ts";
 import { skyFromWithNearby } from "../src/sky-from-nearby.ts";
 import { starByName, starDistance, stars } from "../src/stars.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const RADIANS = Math.PI / 180;
 const angleBetween = (a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number => {
@@ -47,7 +48,7 @@ test("from Alpha Centauri the Sun is a star of magnitude about 0.5 in Cassiopeia
   assert.equal(sunOf(skyFrom(starByName("Rigil Kentaurus")!)).magnitude, sun.magnitude);
 });
 
-test("a near star shifts a lot and a far one barely; brightness follows distance", () => {
+test("a near star shifts a lot and a far one barely; brightness follows distance", onlyWithGctp, () => {
   const sky = skyFrom("Rigil Kentaurus");
   const byName = (name: string): SeenStar => sky.find((star) => star.name === name)!;
   const shift = (name: string): number => angleBetween(byName(name), starByName(name)!);
@@ -93,13 +94,13 @@ test("the faintest magnitude limits the list, and the stars without a distance a
   assert.equal(all.skipped, stars().filter((star) => starDistance(star) === undefined).length);
 });
 
-test("a companion nearer than the error of the viewpoint's distance is left out and counted", () => {
+test("a companion nearer than the error of the viewpoint's distance is left out and counted", onlyWithGctp, () => {
   const sky = skyFrom("Rigil Kentaurus");
   assert.equal(sky.some((star) => star.name === "Toliman"), false);
   assert.equal(sky.skipped, stars().filter((star) => starDistance(star) === undefined).length + 1);
 });
 
-test("the nearby stars are moved by their own entry, Proxima Centauri is a viewpoint, and the Sun is 4.2 light-years from it", () => {
+test("the nearby stars are moved by their own entry, Proxima Centauri is a viewpoint, and the Sun is 4.2 light-years from it", onlyWithGctp, () => {
   const sky = skyFromWithNearby("Proxima Centauri");
   const sun = sunOf(sky);
   assert.ok(Math.abs(sun.lightYears - 4.24) < 0.05, String(sun.lightYears));

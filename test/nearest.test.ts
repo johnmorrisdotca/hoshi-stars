@@ -7,6 +7,7 @@ import { constellations } from "../src/constellations.ts";
 import { deepSkyObject, messier } from "../src/deep-sky.ts";
 import { neighbouringConstellations, nearest, within } from "../src/nearest.ts";
 import { starByName, starDistanceLightYears, starPosition, stars } from "../src/stars.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const RADIANS = Math.PI / 180;
 type Point = { rightAscension: number; declination: number };
@@ -66,7 +67,7 @@ test("by space it matches a brute-force law of cosines over the stars with a par
   }
 });
 
-test("by space the error of a bright star is worked out from the two parallax errors: Sirius to Procyon is 5.22 light-years, give or take 0.06", () => {
+test("by space the error of a bright star is worked out from the two parallax errors: Sirius to Procyon is 5.22 light-years, give or take 0.06", onlyWithGctp, () => {
   const [procyon, ran] = nearest("Sirius", { by: "space", count: 2 });
   assert.equal(procyon!.thing.name, "Procyon");
   assert.ok(Math.abs(procyon!.error! - 0.061) < 0.005, String(procyon!.error));

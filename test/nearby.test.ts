@@ -5,6 +5,7 @@ import { test } from "node:test";
 import { nearbyStarByName, nearbyStars, type NearbyStar } from "../src/nearby.ts";
 import { nearest } from "../src/nearest.ts";
 import { starByName, stars } from "../src/stars.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const RADIANS = Math.PI / 180;
 const all = nearbyStars();
@@ -17,7 +18,7 @@ function haversine(a: { rightAscension: number; declination: number }, b: { righ
   return (2 * Math.asin(Math.min(1, Math.sqrt(h)))) / RADIANS;
 }
 
-test("a nearby star has its luminosity class: Proxima Centauri and Barnard's Star are dwarfs", () => {
+test("a nearby star has its luminosity class: Proxima Centauri and Barnard's Star are dwarfs", onlyWithGctp, () => {
   const proxima = nearbyStarByName("Proxima Centauri")!;
   assert.deepEqual([proxima.spectralType, proxima.luminosityClass], ["M5.5eV", "V"]);
   assert.equal(nearbyStarByName("Barnard's Star")!.luminosityClass, "V");
@@ -25,7 +26,7 @@ test("a nearby star has its luminosity class: Proxima Centauri and Barnard's Sta
   assert.ok(all.filter((s) => s.luminosityClass === "V").length > 1000);
 });
 
-test("Proxima Centauri, Barnard's Star and Wolf 359 are there, at 4.2, 6.0 and 7.9 light-years within their errors", () => {
+test("Proxima Centauri, Barnard's Star and Wolf 359 are there, at 4.2, 6.0 and 7.9 light-years within their errors", onlyWithGctp, () => {
   // The figures are those of the ticket, to a tenth; the Yale parallaxes give 4.24, 5.98 and 7.78. Allow 3 sigma and the tenth's own rounding.
   for (const [name, ly, gctp, gliese] of [["Proxima Centauri", 4.2, "3278", "GJ 551"], ["Barnard's Star", 6.0, "4098", "GJ 699"], ["Wolf 359", 7.9, "2553", "GJ 406"]] as const) {
     const star = nearbyStarByName(name)!;
@@ -48,7 +49,7 @@ test("Proxima Centauri, Barnard's Star and Wolf 359 are there, at 4.2, 6.0 and 7
   assert.equal(nearbyStarByName("no such star"), undefined);
 });
 
-test("the table's counts: 5,565 stars, none twice, and the bright stars are not among them", () => {
+test("the table's counts: 5,565 stars, none twice, and the bright stars are not among them", onlyWithGctp, () => {
   assert.equal(all.length, 5565);
   assert.equal(new Set(all.map((s) => s.id)).size, all.length);
   assert.equal(new Set(all.map((s) => s.gctp)).size, all.length);
@@ -67,7 +68,7 @@ test("the table's counts: 5,565 stars, none twice, and the bright stars are not 
   assert.deepEqual(near.map(([s, b]) => `${s.gctp} ${b}`), []);
 });
 
-test("the grades of distance: under 5%, 5 to 20% and over 20%, and the stars with none", () => {
+test("the grades of distance: under 5%, 5 to 20% and over 20%, and the stars with none", onlyWithGctp, () => {
   const under = all.filter((s) => s.relativeError !== undefined && s.relativeError < 0.05);
   const fair = all.filter((s) => s.relativeError !== undefined && s.relativeError >= 0.05 && s.relativeError <= 0.2);
   const rough = all.filter((s) => s.relativeError !== undefined && s.relativeError > 0.2);
@@ -135,7 +136,7 @@ function precess(ra: number, dec: number): { rightAscension: number; declination
   return { rightAscension: (((Math.atan2(A, B) + z) / RADIANS) % 360 + 360) % 360, declination: Math.asin(C) / RADIANS };
 }
 
-test("a 2MASS position lies on the track of the Yale catalogue's own row: its position carried along its proper motion for up to 140 years", () => {
+test("a 2MASS position lies on the track of the Yale catalogue's own row: its position carried along its proper motion for up to 140 years", onlyWithGctp, () => {
   let checked = 0;
   for (const [gctp, [h, m, s], [sign, d, dm, ds], pm, pa] of GCTP) {
     const star = nearbyStarByName(`GCTP ${gctp}`)!;
@@ -164,7 +165,7 @@ test("a 2MASS position lies on the track of the Yale catalogue's own row: its po
   assert.ok(offsets[offsets.length - 1]! <= 400);
 });
 
-test("the Yale position stays for a star with no unique 2MASS source, flagged coarse with a larger error", () => {
+test("the Yale position stays for a star with no unique 2MASS source, flagged coarse with a larger error", onlyWithGctp, () => {
   const coarse = all.filter((s) => s.flags.coarsePosition);
   assert.ok(coarse.length > 0);
   const median = (list: NearbyStar[]): number => list.map((s) => s.positionErrorArcsec).sort((a, b) => a - b)[Math.floor(list.length / 2)]!;
@@ -172,7 +173,7 @@ test("the Yale position stays for a star with no unique 2MASS source, flagged co
   assert.ok(all.filter((s) => !s.flags.coarsePosition).every((s) => s.positionErrorArcsec < 60));
 });
 
-test("nearest by space from the Sun, with the nearby stars in the list, finds Proxima first, then Alpha Centauri", () => {
+test("nearest by space from the Sun, with the nearby stars in the list, finds Proxima first, then Alpha Centauri", onlyWithGctp, () => {
   const among = [...stars(), ...nearbyStars()];
   const found = nearest({ x: 0, y: 0, z: 0 }, { by: "space", among, count: 6 });
   assert.equal((found[0]!.thing as NearbyStar).name, "Proxima Centauri");
@@ -186,7 +187,7 @@ test("nearest by space from the Sun, with the nearby stars in the list, finds Pr
   assert.ok(["Rigil Kentaurus", "Toliman"].includes((nearest({ x: 0, y: 0, z: 0 }, { by: "space", count: 1 })[0]!.thing as { name?: string }).name!));
 });
 
-test("with a nearby star as the target and the nearby stars to look through, the error is worked out, with a bright star too", () => {
+test("with a nearby star as the target and the nearby stars to look through, the error is worked out, with a bright star too", onlyWithGctp, () => {
   const barnard = nearbyStarByName("Barnard's Star")!;
   const near = nearest(barnard, { by: "space", among: nearbyStars(), count: 3 });
   assert.ok(near.every((n) => n.error! > 0 && n.error! < 2));

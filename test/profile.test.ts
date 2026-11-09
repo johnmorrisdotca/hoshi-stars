@@ -5,6 +5,7 @@ import { test } from "node:test";
 import { starByHr, starByName, stars } from "../src/index.ts";
 import { starProfile, starShape, type Estimate, type StarProfile } from "../src/profile.ts";
 import { CHARA_DWARFS, MEASURED_DIAMETERS } from "./profile-references.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const between = (value: number, range: readonly [number, number]): boolean => value >= range[0] && value <= range[1];
 const widened = (e: Estimate, sigmas: number): readonly [number, number] => [e.value - sigmas * (e.value - e.range[0]), e.value + sigmas * (e.range[1] - e.value)];
@@ -39,7 +40,7 @@ test("starProfile: 43 CHARA-resolved stars, the angular diameter from the magnit
   assert.ok(wide <= 6, `${wide} stars beyond three sigma`);
 });
 
-test("starProfile: the same stars' radii, from the catalogue's own parallax, where it fixes a distance", () => {
+test("starProfile: the same stars' radii, from the catalogue's own parallax, where it fixes a distance", onlyWithGctp, () => {
   let tried = 0;
   let inside = 0;
   for (const [hr, , , radius] of CHARA_DWARFS) {

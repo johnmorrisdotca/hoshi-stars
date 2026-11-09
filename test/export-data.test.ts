@@ -7,9 +7,10 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { stars } from "../src/stars.ts";
 import { nearbyStars } from "../src/nearby.ts";
+import { onlyWithGctp } from "./gctp.ts";
 
 const names = ["stars", "nearby-stars", "constellations", "constellation-facts", "constellation-lines", "boundaries", "messier", "ngc-ic", "star-names"];
-test("the data export has matching schemas, counts and checksums", () => {
+test("the data export has matching schemas, counts and checksums", onlyWithGctp, () => {
   const dir = mkdtempSync(join(tmpdir(), "hoshi-export-"));
   try {
     execFileSync(process.execPath, ["scripts/export-data.ts", dir], { cwd: process.cwd() });
