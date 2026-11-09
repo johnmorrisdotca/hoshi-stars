@@ -173,6 +173,16 @@
       "import": "./dist/sky-from-nearby.js",
       "default": "./dist/sky-from-nearby.js"
     },
+    "./profile": {
+      "types": "./dist/profile.d.ts",
+      "import": "./dist/profile.js",
+      "default": "./dist/profile.js"
+    },
+    "./portrait": {
+      "types": "./dist/portrait.d.ts",
+      "import": "./dist/portrait.js",
+      "default": "./dist/portrait.js"
+    },
     "./thumbnails": {
       "types": "./dist/thumbnails.d.ts",
       "import": "./dist/thumbnails.js",

@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Write src/data/profile-tables.ts: the small published tables that `starProfile` reads (temperature, bolometric correction, typical radius and limb darkening by spectral type and luminosity class).
+
+Sources (numbers from published tables only; NOTICE.md names each with its terms and the day it was read)
+- Dwarfs: E. Mamajek, "A Modern Mean Dwarf Stellar Color and Effective Temperature Sequence" (version 2022.04.16), the table behind Table 5 of Pecaut and Mamajek (2013, ApJS 208, 9):
+  https://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt. Columns read: spectral type, Teff, BCv, R_Rsun, B-V. Types O3V to M9.5V.
+- Red supergiants: E. M. Levesque, P. Massey et al. (2005), ApJ 628, 973 (arXiv:astro-ph/0504337), Table 5 (Teff and BC_V by spectral type, K1-1.5 to M5) and Table 6 (MARCS BC_V against Teff, 3200 to 4300 K).
+  These are typed in below from the paper, since a PDF is not a data file.
+- Limb darkening: A. Claret and S. Bloemen (2011), A&A 529, A75, VizieR J/A+A/529/A75 table "tableu" (the linear coefficient u), ATLAS models, least-squares method, filter V, solar metallicity, microturbulence 2 km/s,
+  from the Harvard mirror of VizieR (https://vizier.cfa.harvard.edu/). One column for each of four surface gravities (log g 1.0, 2.5, 3.5, 4.5), at the temperatures the models give.
+- Giants (G0 to M8): the fits of van Belle et al. (2021), ApJ 922, 163 (arXiv:2107.09205), Tables 8 and 14, are written into src/profile.ts as constants, not read here.
+
+    python3 -I scripts/make-profile-data.py          # fetches into .cache/profile (git-ignored); needs the network
+    python3 -I scripts/make-profile-data.py --offline
+
+Never runs in the test.
+"""
+import re
+import sys
+import urllib.request
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+CACHE = ROOT / ".cache" / "profile"
+OFFLINE = "--offline" in sys.argv
+EEM = "https://www.pas.rochester.edu/~emamajek/EEM_dwarf_UBVIJHK_colors_Teff.txt"
+CLARET = "https://vizier.cfa.harvard.edu/viz-bin/asu-tsv?-source=J/A%2bA/529/A75/tableu&Z=0&Met=L&Mod=A&Filt==V&-out.max=20000&-out=logg,Teff,Z,xi,u,Filt,Met,Mod"
+
+
+def fetch(url: str, name: str) -> str:
+    CACHE.mkdir(parents=True, exist_ok=True)
+    path = CACHE / name
+    if not path.exists():
+        if OFFLINE:
+            sys.exit(f"{name} is not cached")
+        with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "hoshi-stars-data/1.0"}), timeout=120) as response:
+            path.write_bytes(response.read())
+    return path.read_text(encoding="utf-8")
+
+
+LETTERS = "OBAFGKM"
+
+
+def index_of(spt: str) -> float:
+    m = re.match(r"^([OBAFGKM])(\d+(?:\.\d+)?)V$", spt)
+    return LETTERS.index(m.group(1)) * 10 + float(m.group(2))
+
+
+def number(text: str):
+    return None if text.startswith("...") or text.startswith("....") else float(text)
+
+
+# 1. Mamajek's dwarf sequence.
+rows = []
+for line in fetch(EEM, "eem.txt").splitlines():
+    if line.startswith("#") or not line.strip():
+        continue
+    p = line.split()
+    if not re.match(r"^[OBAFGKM]\d+(\.\d+)?V$", p[0]) or not re.match(r"^\d+$", p[1]):
+        continue
+    rows.append((index_of(p[0]), float(p[1]), number(p[3]), number(p[6]), number(p[8])))  # index, Teff, BCv, R, B-V
+dwarf = [r for r in rows if r[2] is not None and r[3] is not None]
+
+# 2. Levesque et al. (2005): Table 5 (K1-1.5 .. M5) and Table 6.
+# Type index on the same scale as the dwarfs (K0 is 50, K5 55, M0 60); a range such as K2-3 or M4-4.5 is its middle.
+SUPERGIANT = [(51.25, 4100, -0.79), (52.5, 4015, -0.90), (57.5, 3840, -1.16), (60, 3790, -1.25), (61, 3745, -1.35), (61.5, 3710, -1.43), (62, 3660, -1.57), (62.5, 3615, -1.70), (63, 3605, -1.74), (63.5, 3550, -1.96), (64.25, 3535, -2.03), (65, 3450, -2.49)]
+MARCS = [(3200, -4.58), (3300, -3.66), (3400, -2.81), (3500, -2.18), (3600, -1.75), (3700, -1.45), (3800, -1.23), (3900, -1.06), (4000, -0.92), (4100, -0.79), (4200, -0.70), (4300, -0.61)]
+
+# 3. Claret and Bloemen (2011): the linear coefficient u, V band.
+GRAVITIES = [1.0, 2.5, 3.5, 4.5]
+grid: dict = {}
+for line in fetch(CLARET, "claret-u.tsv").splitlines():
+    if line.startswith("#") or not line.strip():
+        continue
+    p = [x.strip() for x in line.split("\t")]
+    try:
+        logg, teff, z, xi, u = float(p[0]), float(p[1]), float(p[2]), float(p[3]), float(p[4])
+    except ValueError:
+        continue
+    if p[5] == "V" and z == 0.0 and xi == 2.0:
+        grid.setdefault(teff, {})[logg] = u
+temps = sorted(t for t in grid if t <= 40000)
+assert temps and temps[0] <= 3500 and temps[-1] >= 40000, temps[:3] + temps[-3:]
+# A hot star has no models at low gravity (they are past the Eddington limit): a gravity the grid lacks takes the nearest it has at that temperature.
+for t in temps:
+    for g in GRAVITIES:
+        grid[t][g] = grid[t][min(grid[t], key=lambda have: abs(have - g))] if g not in grid[t] else grid[t][g]
+
+out = []
+out.append("// GENERATED by scripts/make-profile-data.py. Do not edit by hand.")
+out.append("// The published tables `starProfile` reads. Sources and terms: NOTICE.md, \"Stellar profiles\".")
+out.append("")
+out.append("/** Mamajek's dwarf sequence (Pecaut and Mamajek 2013, Table 5; Mamajek's table of 2022-04-16), one row a spectral type from O3V to M9.5V: type index (O0, B10, A20, F30, G40, K50, M60 plus the subtype) | Teff in K | BC_V | radius in solar radii | B-V (blank where the table has none). */")
+out.append("export const DWARF_ROWS = `" + "\n".join(f"{r[0]:g}|{r[1]:g}|{r[2]:g}|{r[3]:g}|{'' if r[4] is None else format(r[4], 'g')}" for r in dwarf) + "`;")
+out.append("")
+out.append("/** Levesque et al. (2005, Table 5), red supergiants K1-1.5 to M5: type index (as `DWARF_ROWS`: K5 is 55, M0 is 60) | Teff in K | BC_V. */")
+out.append("export const SUPERGIANT_ROWS = `" + "\n".join(f"{r[0]:g}|{r[1]:g}|{r[2]:g}" for r in SUPERGIANT) + "`;")
+out.append("")
+out.append("/** Levesque et al. (2005, Table 6), MARCS bolometric corrections of cool giants (log g 0): Teff in K | BC_V. */")
+out.append("export const COOL_BC_ROWS = `" + "\n".join(f"{t}|{b:g}" for t, b in MARCS) + "`;")
+out.append("")
+out.append("/** Claret and Bloemen (2011), linear limb-darkening coefficient u in V (solar metallicity), one row a temperature: Teff in K | u at log g 1.0, 2.5, 3.5 and 4.5. */")
+out.append("export const LIMB_ROWS = `" + "\n".join(f"{t:g}|" + "|".join(f"{grid[t][g]:g}" for g in GRAVITIES) for t in temps) + "`;")
+(ROOT / "src" / "data" / "profile-tables.ts").write_text("\n".join(out) + "\n", encoding="utf-8")
+print(f"{len(dwarf)} dwarf types, {len(SUPERGIANT)} supergiant types, {len(temps)} limb-darkening temperatures")
