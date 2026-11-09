@@ -80,6 +80,11 @@
       "ja": "星図の図法",
       "platform": "neutral"
     },
+    "./all-sky": {
+      "en": "The whole sky on one wide 2:1 map: galactic or equatorial, Mollweide, Hammer or plate carrée, with lines cut cleanly at the seam",
+      "ja": "全天を1枚の横長 (2対1) の地図に (銀河座標か赤道座標、モルワイデ・ハンマー・正距円筒図法。継ぎ目で線をきれいに切る)",
+      "platform": "neutral"
+    },
     "./milky-way": {
       "en": "The Milky Way: a brightness map and soft bands to draw",
       "ja": "天の川 (明るさの地図と、描くための帯)",

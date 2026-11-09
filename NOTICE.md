@@ -51,6 +51,8 @@ Hoshi Stars is original work by John Morris, under the MIT licence in `LICENSE`.
 
 - **Projections (`@johnmorrisdotca/hoshi-stars/projection`)**: stereographic, orthographic, gnomonic, azimuthal equidistant, equirectangular, Mollweide and Hammer, written from the formulas in J. P. Snyder, "Map Projections: A Working Manual", U.S. Geological Survey Professional Paper 1395 (1987), a U.S. Government work in the public domain. The formulas are mathematics; no library's code is copied.
 
+- **The whole-sky map (`@johnmorrisdotca/hoshi-stars/all-sky`)**: the same Mollweide, Hammer and plate carrée formulas (Snyder), fitted to a 2:1 box, with the IAU's galactic frame (below) as one of its two orientations. It adds no data: the demo's whole-sky page draws the boundaries, figures, stars and Milky Way brightness this package already carries, with the credits given for each of them in this file.
+
 ## The Milky Way
 
 - **Milky Way brightness (`@johnmorrisdotca/hoshi-stars/milky-way`)**: a grid of 360 by 120 numbers of 0 to 31 (1 degree of galactic longitude by 0.5 degree of latitude, within 30 degrees of the plane) in `src/data/milky-way.ts`, written by `scripts/make-milky-way-data.py` from three sources. No image of the sky is read, copied or traced.

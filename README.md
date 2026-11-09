@@ -65,6 +65,19 @@ const svg = constellationThumbnail("Ori", { theme: "light", size: 160 });
 console.log(svg.startsWith("<svg"), allConstellationFacts().filter((f) => f.meteorShowers.length > 0).length); // true 11
 ```
 
+## The whole sky on one map
+
+`@johnmorrisdotca/hoshi-stars/all-sky` fits the whole sky into a box twice as wide as it is tall, in Mollweide, Hammer or plate carrée, galactic (the Galaxy's centre in the middle, the Milky Way along it) or equatorial, and cuts a line at the seam so that it ends on the edge at both sides. The demo's `whole-sky.html` draws all 88 constellations on it with names in English and Japanese, zooms with the family's controls, opens a constellation on the sky map when you tap it, and prints as a page or a poster. See [The whole sky on one map](docs/guides/whole-sky.md).
+
+```ts
+import { allSkyLine, allSkyProject } from "@johnmorrisdotca/hoshi-stars/all-sky";
+import { boundaryOf } from "@johnmorrisdotca/hoshi-stars/boundaries";
+
+const centre = allSkyProject({ rightAscension: 266.4168, declination: -29.0078 }, { width: 1000 });
+console.log(Math.round(centre.x), Math.round(centre.y));                                  // 500 250
+console.log(allSkyLine(boundaryOf("Aur").outlines[0]!, { width: 1000 }).length >= 1);     // true
+```
+
 ## Which constellation, and the boundaries
 
 `@johnmorrisdotca/hoshi-stars/boundaries` is its own import. `constellationAt` says which of the 88 constellations a position is in; `boundaryOf` and `boundaries` give the boundary lines to draw. The boundaries are the IAU's (Delporte 1930) as N. G. Roman (1987) tabulated them on the equinox of B1875.0 (VizieR VI/42); a position is precessed to B1875.0 first, with the IAU 1976 angles from Meeus.

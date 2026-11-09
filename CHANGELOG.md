@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The whole sky on one page** (MODULES-738). New entry point `@johnmorrisdotca/hoshi-stars/all-sky`: `allSkyProject` and `allSkyUnproject` put the sky on a 2:1 box in Mollweide, Hammer or plate carrée, in galactic orientation (the Galaxy's centre in the middle, the Milky Way along it) or equatorial (12 hours in the middle), east to the left or `mirror`ed; `allSkyLine` cuts a line at the seam so that it ends on the edge on both sides instead of running across the map; `allSkyOutline` and `allSkyGrid` give the edge and the grid of the picture's own frame. The demo has a new page, `whole-sky.html` (linked from the header): all 88 constellations at once with figures, boundaries and names in English and Japanese (the choice of sky culture follows the main map's), the Milky Way across the middle, zoom and pan with kazoku-ui's view controls, hover, Tab and tap to open a constellation on the sky map (`?go=Ori`), a strip and a search to find one, and a print as a page or a 60 x 30 cm poster in kazoku-ui's print layout. kazoku-ui is now 0.23 in the demo. Guide in English and Japanese.
+
 ## [0.11.0] - 2026-11-09
 
 - **The demo's map controls sit right under the map** (MODULES-740, 717). The side panel scrolls beside the map instead of pushing the Map, Show, Sky culture, View from and Faintest star controls down; on a phone the order is map, controls, panel. A zoom readout sits between Zoom in and Zoom out, and the shared Wide toggle from kazoku-ui 0.23.0 gives the map the page's full width with the panel below it (`?wide=on`, the T key).
