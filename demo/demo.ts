@@ -26,6 +26,7 @@ import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 import { distanceText, foundKey, kindKey, massText, papersOf, placeText } from "./holes.ts";
 import { mountPicker } from "./picker.ts";
+import { faintFor } from "./faint.ts";
 import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileView } from "./profile-panel.ts";
 import { starProfile } from "../src/profile.ts";
 import { starComparison, starPortrait } from "../src/portrait.ts";
@@ -118,10 +119,24 @@ function clear(): Box[] {
 function draw(): void {
   queued = false;
   $("zoom-readout").textContent = zoomText(view.zoom / opening());
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky });
+  const faint = sky === undefined ? faintFor(view, width, height, magnitude, layers, schedule) : undefined;
+  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint });
+  faintNote(out.faint, faint?.state);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = out.svg;
   hits = out.hits;
+}
+/** The line under the chart about the faint stars: the depth reached here, or what is missing. */
+function faintNote(drawn: { drawn: number; depth: number } | undefined, state: "ready" | "loading" | "failed" | undefined): void {
+  const note = $("faint-note");
+  let text = "";
+  if (layers.has("faint") && sky === undefined) {
+    if (state === undefined || drawn === undefined) text = say("faintHint");
+    else if (state === "loading") text = say("faintLoading");
+    else if (state === "failed") text = say("faintFailed");
+    else text = say("faintDepth").replace("{depth}", drawn.depth.toFixed(1)).replace("{count}", drawn.drawn.toLocaleString(lang()));
+  }
+  if (note.textContent !== text) note.textContent = text;
 }
 function schedule(): void {
   if (queued) return;

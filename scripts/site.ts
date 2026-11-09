@@ -24,6 +24,8 @@ writeFileSync(join(site, "constellation.html"), renderConstellationPage("constel
 writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.html", "ws_title", "ws_description", "whole-sky"));
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
 writeThumbnails(join(site, "thumbnails"));
+// The faint stars (UCAC4, to magnitude 12) in their tiles: the demo reads them from here, and so does anyone who leaves `faintSky`'s default address (scripts/make-faint-data.py makes them).
+cpSync(join(root, "faint-tiles"), join(site, "faint-tiles"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 for (const file of ["embed.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
