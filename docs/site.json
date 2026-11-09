@@ -85,6 +85,11 @@
       "ja": "NGC・IC天体も含む",
       "platform": "neutral"
     },
+    "./black-holes": {
+      "en": "Black holes: 301 with a place, a mass and distance with ranges, how each was found and the paper behind each fact",
+      "ja": "ブラックホール (位置・質量と距離(範囲つき)・見つけた方法・出典の論文つきの301個)",
+      "platform": "neutral"
+    },
     "./projection": {
       "en": "Map projections for sky charts",
       "ja": "星図の図法",
