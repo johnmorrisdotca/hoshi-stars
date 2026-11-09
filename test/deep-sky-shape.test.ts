@@ -1,0 +1,109 @@
+// The shapes of deep-sky objects: sizes, axis ratios and angles from RC3, the Messier table and NGC 2000.0 (NASA's HEASARC; the numbers below were read from those tables on 2026-11-09 and are fixed here, so
+// the test never calls the network), the outline on the sky, and what is measured.
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { gzipSync } from "node:zlib";
+import { readFileSync } from "node:fs";
+import { deepSky, deepSkyObject } from "../src/deep-sky-ngc-ic.ts";
+import { messier } from "../src/deep-sky.ts";
+import { deepSkyOutline, deepSkyShape, measuredParts, offsetOnSky } from "../src/deep-sky-shape.ts";
+import { deepSkyShape as deepSkyShapeAll } from "../src/deep-sky-shape-ngc-ic.ts";
+import { shapeTable } from "../src/deep-sky-shape-core.ts";
+
+const separation = (a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number => {
+  const [r1, d1, r2, d2] = [a.rightAscension, a.declination, b.rightAscension, b.declination].map((x) => (x * Math.PI) / 180) as [number, number, number, number];
+  return (Math.acos(Math.min(1, Math.sin(d1) * Math.sin(d2) + Math.cos(d1) * Math.cos(d2) * Math.cos(r1 - r2))) * 180) / Math.PI;
+};
+
+test("deepSkyShape gives Andromeda RC3's major axis, axis ratio and angle", () => {
+  const shape = deepSkyShape(deepSkyObject("M31")!);
+  assert.equal(shape.source, "RC3");
+  assert.ok(Math.abs(shape.majorArcmin! - 190.5) < 0.1, "10^3.28 tenths of an arc-minute");
+  assert.ok(Math.abs(shape.majorArcmin! / shape.minorArcmin! - 3.09) < 0.05, "log R25 0.49");
+  assert.equal(shape.positionAngle, 35);
+  assert.deepEqual(measuredParts(shape), { size: true, ratio: true, angle: true, oval: true });
+});
+
+test("a Messier nebula has the Sky Catalog's two diameters and no angle: nothing is invented", () => {
+  const m42 = deepSkyShape(deepSkyObject("M42")!);
+  assert.deepEqual([m42.majorArcmin, m42.minorArcmin, m42.positionAngle, m42.source], [66, 60, undefined, "Messier table"]);
+  assert.deepEqual(measuredParts(m42), { size: true, ratio: true, angle: false, oval: false });
+  const m13 = deepSkyShape(deepSkyObject("M13")!);
+  assert.deepEqual([m13.majorArcmin, m13.minorArcmin, m13.positionAngle], [17, undefined, undefined]);
+});
+
+test("M51, M101 and M104 are RC3 galaxies, M101 round enough to have no angle", () => {
+  const m51 = deepSkyShape(deepSkyObject("M51")!);
+  assert.deepEqual([m51.source, m51.positionAngle], ["RC3", 163]);
+  assert.equal(deepSkyShape(deepSkyObject("M101")!).positionAngle, undefined);
+  assert.equal(deepSkyShape(deepSkyObject("M104")!).positionAngle, 90);
+});
+
+test("M45 has Wikidata's 110 arc-minutes where the Messier table has none, and M40 has no size at all", () => {
+  assert.equal(deepSkyShape(deepSkyObject("M45")!).majorArcmin, 110);
+  const m40 = deepSkyShape(deepSkyObject("M40")!);
+  assert.deepEqual([m40.majorArcmin, m40.source], [undefined, undefined]);
+  assert.deepEqual(measuredParts(m40), { size: false, ratio: false, angle: false, oval: false });
+});
+
+test("the large table covers 8,329 of the 11,898 objects, and an NGC galaxy is RC3's", () => {
+  const all = deepSky();
+  const sized = all.filter((o) => deepSkyShapeAll(o).majorArcmin !== undefined).length;
+  assert.equal(sized, 8329);
+  const ngc253 = deepSkyShapeAll(deepSkyObject("NGC 253")!);
+  assert.equal(ngc253.source, "RC3");
+  assert.ok(ngc253.majorArcmin! > 25 && ngc253.majorArcmin! < 35, "NGC 253 is about 30 arc-minutes long at D25");
+  assert.ok(ngc253.positionAngle !== undefined && ngc253.minorArcmin! < ngc253.majorArcmin! / 3);
+  assert.equal(all.filter((o) => deepSkyShapeAll(o).positionAngle !== undefined && o.type !== "galaxy").length, 0, "only galaxies have an angle");
+  assert.ok(all.every((o) => Object.isFrozen(deepSkyShapeAll(o))));
+});
+
+test("the Messier table alone holds the Messier objects' shapes, and a later object gets only its Wikidata size", () => {
+  const small = deepSkyShape(deepSkyObject("NGC 253")!);
+  assert.equal(small.majorArcmin, undefined);
+  assert.equal(messier().filter((o) => deepSkyShape(o).majorArcmin !== undefined).length, 109);
+});
+
+test("shapeTable reads a row of the data", () => {
+  const table = shapeTable(["M31|1905|617|35|r"]);
+  assert.deepEqual({ ...table.shapeOf(deepSkyObject("M31")!) }, { majorArcmin: 190.5, minorArcmin: 61.7, positionAngle: 35, source: "RC3" });
+});
+
+test("offsetOnSky moves a given distance on the sky: north 60 arc-minutes is one degree, and east is shortened by the cosine of the declination", () => {
+  const centre = { rightAscension: 10.68, declination: 60 };
+  const north = offsetOnSky(centre, 0, 60);
+  assert.ok(Math.abs(north.declination - 61) < 0.002 && Math.abs(north.rightAscension - 10.68) < 1e-9);
+  const east = offsetOnSky(centre, 60, 0);
+  assert.ok(Math.abs(separation(centre, east) - 1) < 0.002, "one degree away");
+  assert.ok(east.rightAscension > centre.rightAscension + 1.9 && east.rightAscension < centre.rightAscension + 2.1, "two degrees of right ascension at declination 60");
+  const wrapped = offsetOnSky({ rightAscension: 359.9, declination: 0 }, 30, 0);
+  assert.ok(wrapped.rightAscension > 0 && wrapped.rightAscension < 1, "right ascension wraps");
+});
+
+test("deepSkyOutline is an ellipse of the right size round the centre, the major axis at the position angle", () => {
+  const m31 = deepSkyObject("M31")!;
+  const shape = deepSkyShape(m31);
+  const ring = deepSkyOutline(m31, shape, 48)!;
+  assert.equal(ring.length, 49);
+  assert.deepEqual(ring[0], ring[48]);
+  const distances = ring.slice(0, 48).map((p) => separation(m31, p) * 60);
+  assert.ok(Math.abs(Math.max(...distances) - 95.25) < 0.3, "half the major axis");
+  assert.ok(Math.abs(Math.min(...distances) - 30.85) < 0.3, "half the minor axis");
+  const tip = ring[0]!;
+  assert.ok(tip.rightAscension > m31.rightAscension && tip.declination > m31.declination, "the major axis points north-east at 35 degrees");
+  const bearing = (Math.atan2((tip.rightAscension - m31.rightAscension) * Math.cos((m31.declination * Math.PI) / 180), tip.declination - m31.declination) * 180) / Math.PI;
+  assert.ok(Math.abs(bearing - 35) < 1, `bearing ${bearing}`);
+});
+
+test("without a measured ratio and angle the outline is a circle of the major diameter", () => {
+  const m42 = deepSkyObject("M42")!;
+  const ring = deepSkyOutline(m42, deepSkyShape(m42), 16)!;
+  for (const p of ring.slice(0, 16)) assert.ok(Math.abs(separation(m42, p) * 60 - 33) < 0.05);
+  assert.equal(deepSkyOutline(m42, deepSkyShape(deepSkyObject("M40")!)), undefined);
+  assert.throws(() => deepSkyOutline(m42, deepSkyShape(m42), 4), RangeError);
+});
+
+test("the shape tables are small", () => {
+  assert.ok(gzipSync(readFileSync(new URL("../src/data/deep-sky-shapes-messier.ts", import.meta.url))).length < 2000);
+  assert.ok(gzipSync(readFileSync(new URL("../src/data/deep-sky-shapes-ngc-ic.ts", import.meta.url))).length < 50_000);
+});
