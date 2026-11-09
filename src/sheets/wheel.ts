@@ -60,7 +60,7 @@ function discMarkup(p: Plan, lang: Lang): string {
   const id = `wheel-clip-${p.north ? "n" : "s"}`;
   const parts: string[] = [`<clipPath id="${id}"><circle cx="${n(p.cx)}" cy="${n(p.cy)}" r="${n(p.inner)}"/></clipPath>`, `<g clip-path="url(#${id})">`];
   // the equator and the ecliptic
-  parts.push(`<circle cx="${n(p.cx)}" cy="${n(p.cy)}" r="${n(p.k)}" fill="none" stroke="#000" stroke-width="${n(t.lineMm * 0.25)}" stroke-dasharray="${n(t.lineMm * 1.5)} ${n(t.lineMm * 1.5)}"/>`);
+  parts.push(`<circle cx="${n(p.cx)}" cy="${n(p.cy)}" r="${n(p.k)}" fill="none" stroke="#000" stroke-width="${n(t.lineMm * 0.25)}" stroke-dasharray="${n(t.lineMm * 1.5)} ${n(t.lineMm * 1.5)}" data-equator=""/>`);
   const ecliptic: [number, number][] = [];
   for (let lambda = 0; lambda <= 360; lambda += 3) {
     const dec = Math.atan(Math.tan(23.439 * RAD) * Math.sin(lambda * RAD)) / RAD;
@@ -77,7 +77,7 @@ function discMarkup(p: Plan, lang: Lang): string {
   for (const s of allStars()) {
     if (s.magnitude > limit) continue;
     const [x, y] = place(s);
-    parts.push(`<circle cx="${n(x)}" cy="${n(y)}" r="${n(starSize(s.magnitude, p.type))}" fill="#000"/>`);
+    parts.push(`<circle cx="${n(x)}" cy="${n(y)}" r="${n(starSize(s.magnitude, p.type))}" fill="#000" data-hr="${s.hr}"/>`);
   }
   // the names of the best known constellations
   const names = skyForLatitude(p.north ? p.latitude : -p.latitude).slice(0, p.type === "kid" ? 14 : 40);
@@ -105,7 +105,7 @@ function discMarkup(p: Plan, lang: Lang): string {
       const long = day === 1;
       const [x1, y1] = at(p, p.inner, alpha);
       const [x2, y2] = at(p, p.inner + (long ? (p.radius - p.inner) * 0.9 : (p.radius - p.inner) * 0.3), alpha);
-      parts.push(`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="#000" stroke-width="${n(long ? t.lineMm * 0.3 : t.lineMm * 0.15)}"/>`);
+      parts.push(`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="#000" stroke-width="${n(long ? t.lineMm * 0.3 : t.lineMm * 0.15)}" data-date="${month}-${day}"/>`);
     }
     const mid = sunRightAscension(month, 15);
     const [lx, ly] = at(p, p.inner + (p.radius - p.inner) * 0.28, mid);
@@ -135,7 +135,7 @@ function plateMarkup(p: Plan, lang: Lang): string {
     const alpha = -15 * (hour - 12);
     const [x1, y1] = at(p, p.inner, alpha);
     const [x2, y2] = at(p, p.inner + (p.radius - p.inner) * (hour % step === 0 ? 0.35 : 0.2), alpha);
-    parts.push(`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="#000" stroke-width="${n(t.lineMm * 0.2)}"/>`);
+    parts.push(`<line x1="${n(x1)}" y1="${n(y1)}" x2="${n(x2)}" y2="${n(y2)}" stroke="#000" stroke-width="${n(t.lineMm * 0.2)}" data-hour-tick="${hour}"/>`);
     if (hour % step === 0) {
       const [lx, ly] = at(p, p.inner + (p.radius - p.inner) * 0.78, alpha);
       parts.push(`<text x="${n(lx)}" y="${n(ly + t.smallMm * 0.4)}" font-size="${n(t.smallMm * (p.type === "kid" ? 1.1 : 0.9))}" font-weight="700" text-anchor="middle" fill="#000" data-hour="${hour}">${hour}</text>`);

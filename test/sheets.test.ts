@@ -2,6 +2,8 @@
 // every page's text fits the room it is drawn for, on every paper.
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { horizontal, localSiderealTime } from "../src/sky.ts";
+import { starByName } from "../src/stars.ts";
 import { PAGE_NAMES, TYPE_PRESETS, printableSize } from "@johnmorrisdotca/kazoku-ui/print";
 import { constellations } from "../src/constellations.ts";
 import { figureOf } from "../src/lines.ts";
@@ -237,6 +239,54 @@ test("every page's text fits its room on every paper, in both languages and both
           }
         }
       }
+    }
+  }
+});
+
+/** Turn the printed wheel as a hand would: the disc's date tick onto the plate's hour tick, then read where each star lands on the plate. */
+function turned(latitude: number, month: number, day: number, hour: number, names: string[]): { name: string; hourAngle: number; declination: number }[] {
+  const room = { widthMm: 184.6, heightMm: 195 };
+  const disc = starWheelDisc(latitude, { ...room, lang: "en" });
+  const plate = starWheelPlate(latitude, { ...room, lang: "en" });
+  const pin = circles(disc, 'data-pin=""')[0]!;
+  const north = latitude >= 0;
+  const angle = (x: number, y: number): number => (Math.atan2(x - pin.cx, -(y - pin.cy)) * 180) / Math.PI;
+  const date = new RegExp(`<line x1="[\\d.-]+" y1="[\\d.-]+" x2="([\\d.-]+)" y2="([\\d.-]+)"[^>]*data-date="${month}-${day}"`).exec(disc)!;
+  const tick = new RegExp(`<line x1="[\\d.-]+" y1="[\\d.-]+" x2="([\\d.-]+)" y2="([\\d.-]+)"[^>]*data-hour-tick="${hour}"`).exec(plate)!;
+  const turn = angle(Number(tick[1]), Number(tick[2])) - angle(Number(date[1]), Number(date[2]));
+  const k = circles(disc, 'data-equator=""')[0]!.r;
+  return names.map((name) => {
+    const star = starByName(name)!;
+    const found = new RegExp(`<circle cx="([\\d.-]+)" cy="([\\d.-]+)" r="[\\d.]+" fill="#000" data-hr="${star.hr}"`).exec(disc)!;
+    const x = Number(found[1]);
+    const y = Number(found[2]);
+    const onPlate = angle(x, y) + turn;
+    const r = Math.hypot(x - pin.cx, y - pin.cy);
+    const p = (2 * Math.atan(r / k) * 180) / Math.PI;
+    const wrap = (v: number): number => ((((v + 180) % 360) + 360) % 360) - 180;
+    return { name, hourAngle: wrap(north ? -onPlate : onPlate), declination: north ? 90 - p : p - 90 };
+  });
+}
+
+test("the turned wheel matches the real sky: for Toronto and for Sydney on a January evening the stars' hour angles and declinations read off the plate are the sky's, within the mean Sun's error", () => {
+  const names = ["Sirius", "Betelgeuse", "Vega", "Arcturus", "Capella", "Rigel", "Altair"];
+  for (const [latitude, longitude, label] of [[43.7, -79.4, "Toronto"], [-33.9, 151.2, "Sydney"]] as const) {
+    // 21:00 by the mean Sun on 10 January (the date tick the wheel has), as UTC for that longitude
+    const when = Date.UTC(2026, 0, 10, 21) - (longitude / 15) * 3_600_000;
+    const lst = localSiderealTime(when, longitude);
+    for (const read of turned(latitude, 1, 10, 21, names)) {
+      const star = starByName(read.name)!;
+      const real = ((((lst - star.rightAscension + 180) % 360) + 360) % 360) - 180;
+      assert.ok(Math.abs(read.declination - star.declination) < 1, `${label} ${read.name}: declination ${read.declination.toFixed(1)} vs ${star.declination.toFixed(1)}`);
+      assert.ok(Math.abs(read.hourAngle - real) < 5, `${label} ${read.name}: hour angle ${read.hourAngle.toFixed(1)} on the wheel, ${real.toFixed(1)} in the sky`);
+      // so it is on the right side of the meridian, and as high as the sky has it, within a few degrees
+      const sky = horizontal({ rightAscension: star.rightAscension, declination: star.declination }, { latitude, longitude }, when);
+      const h = (read.hourAngle * Math.PI) / 180;
+      const phi = (latitude * Math.PI) / 180;
+      const d = (read.declination * Math.PI) / 180;
+      const altitude = (Math.asin(Math.sin(phi) * Math.sin(d) + Math.cos(phi) * Math.cos(d) * Math.cos(h)) * 180) / Math.PI;
+      assert.ok(Math.abs(altitude - sky.altitude) < 5, `${label} ${read.name}: altitude ${altitude.toFixed(1)} vs ${sky.altitude.toFixed(1)}`);
+      assert.equal(read.hourAngle < 0, Math.sin((sky.azimuth * Math.PI) / 180) > 0, `${label} ${read.name}: east or west of the meridian`);
     }
   }
 });
