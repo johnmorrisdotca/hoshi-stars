@@ -58,10 +58,23 @@ test("by space it matches a brute-force law of cosines over the stars with a par
     found.forEach((answer, index) => {
       assert.ok(Math.abs(answer.distance - reference[index]!.distance) < 1e-6, `${name} no. ${index}: ${answer.distance} against ${reference[index]!.distance}`);
       assert.ok(Math.abs(answer.parsecs * 3.261563777 - answer.distance) < 1e-9);
-      assert.equal(answer.error, undefined);
+      // the error is there when the star and the target both have a parallax error
+      assert.equal(answer.error === undefined, target.parallaxErrorMas === undefined || answer.thing.parallaxErrorMas === undefined, `${name} no. ${index}`);
+      if (answer.error !== undefined) assert.ok(answer.error > 0 && answer.error < answer.distance);
     });
     assert.equal(found.skipped, stars().length - 1 - (withDistance.length - 1));
   }
+});
+
+test("by space the error of a bright star is worked out from the two parallax errors: Sirius to Procyon is 5.22 light-years, give or take 0.06", () => {
+  const [procyon, ran] = nearest("Sirius", { by: "space", count: 2 });
+  assert.equal(procyon!.thing.name, "Procyon");
+  assert.ok(Math.abs(procyon!.error! - 0.061) < 0.005, String(procyon!.error));
+  assert.ok(Math.abs(ran!.error! - 0.048) < 0.005, String(ran!.error));
+  // a bright star with only the Bright Star Catalogue's parallax has none
+  const rough = stars().find((star) => star.parallaxMas > 0 && star.parallaxErrorMas === undefined)!;
+  assert.equal(nearest("Sirius", { by: "space", among: [rough], count: 1 })[0]!.error, undefined);
+  assert.equal(nearest(rough, { by: "space", among: [sirius], count: 1 })[0]!.error, undefined);
 });
 
 test("Mizar and Alcor are about 0.2 degrees apart, and Mizar's own companion is nearer still", () => {

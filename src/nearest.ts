@@ -4,7 +4,7 @@ import { BOUNDARY_RINGS } from "./data/boundaries.ts";
 import { constellation, constellations, type Constellation } from "./constellations.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "./deep-sky.ts";
 import type { NearbyStar } from "./nearby.ts";
-import { starByName, starDistanceLightYears, starPosition, stars, type Star } from "./stars.ts";
+import { starByName, starDistance, starDistanceLightYears, starPosition, stars, type Star } from "./stars.ts";
 import { moment, type When } from "./when.ts";
 
 const RADIANS = Math.PI / 180;
@@ -72,7 +72,7 @@ export interface NearestInSpace<T extends Star | NearbyStar = Star> {
   distance: number;
   /** The same distance in parsecs. */
   parsecs: number;
-  /** The uncertainty of `distance` in light-years, or `undefined`: `nearest` does not yet use the parallax errors of the bright stars (`parallaxErrorMas`), so none is worked out for them. It is worked out when the star and the target are nearby stars (or the target is a point), from their parallax errors. */
+  /** The uncertainty of `distance` in light-years, or `undefined` where the star or the target has no parallax error (`parallaxErrorMas`): the 2,329 bright stars with a measured parallax have one, the Bright Star Catalogue's own parallaxes do not. A target that is a point is taken as exact. */
   error: number | undefined;
 }
 
@@ -191,7 +191,7 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
   if (by === "space" && cartesian !== undefined) hereLightYears = 1;
   else if (by === "space") {
     const known = typeof (from as { lightYears?: unknown }).lightYears === "number" ? (from as { lightYears: number }).lightYears : isStar(from as NearestThing) ? starDistanceLightYears(from as Star) : undefined;
-    if (isStar(from as NearestThing)) hereError = undefined;
+    if (isStar(from as NearestThing)) hereError = starDistance(from as Star)?.lightYearsError;
     else if (isNearby(from as NearestThing)) hereError = (from as NearbyStar).lightYearsError;
     if (known === undefined || !(known > 0)) throw new RangeError("the target has no distance: a star with a parallax, a point with lightYears or a point { x, y, z } is needed for by: \"space\"");
     hereLightYears = known;
@@ -220,7 +220,7 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
       const distance = Math.hypot(there[0] * lightYears - here[0] * hereLightYears, there[1] * lightYears - here[1] * hereLightYears, there[2] * lightYears - here[2] * hereLightYears);
       if (distance > limit) continue;
       // Each distance's error moves the answer only along the line between the two stars: the part of it that points along the line of sight.
-      const thereError = isNearby(thing) ? thing.lightYearsError : undefined;
+      const thereError = isNearby(thing) ? thing.lightYearsError : isStar(thing) ? starDistance(thing)?.lightYearsError : undefined;
       let error: number | undefined;
       if (hereError !== undefined && thereError !== undefined) {
         const along = (a: Vector) => (distance === 0 ? 1 : Math.abs(((there[0] * lightYears - here[0] * hereLightYears) * a[0] + (there[1] * lightYears - here[1] * hereLightYears) * a[1] + (there[2] * lightYears - here[2] * hereLightYears) * a[2]) / distance));
@@ -240,8 +240,8 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
  * light-years and in parsecs; it needs a target with a distance and leaves out every candidate without one, counting them in `skipped`. The target itself is never in its own answer.
  *
  * By default the three-dimensional answers cover only the bright stars: the 2,563 of the 5,080 Yale stars that have a positive parallax, so the neighbours are bright stars, not the nearest ones. Their parallaxes are
- * good to a tenth of a milliarcsecond at best, so a distance is good to a few per cent for a star within 100 light-years and not at all for a faint, far one; `error` is `undefined` for them. To include the stars of `/nearby` (Proxima
- * Centauri, Barnard's Star, the red dwarfs, with a parallax error each) pass `among: [...stars(), ...nearbyStars()]`; `error` is then worked out for a nearby star from a target that is a point or a nearby star.
+ * good to a tenth of a milliarcsecond at best, so a distance is good to a few per cent for a star within 100 light-years and not at all for a faint, far one; `error` is `undefined` for the ones whose parallax has no error. To include the stars of `/nearby` (Proxima
+ * Centauri, Barnard's Star, the red dwarfs, with a parallax error each) pass `among: [...stars(), ...nearbyStars()]`; `error` is then worked out whenever both ends have a parallax error.
  *
  * Every candidate is looked at (no index); one query over all the stars takes about a millisecond.
  *

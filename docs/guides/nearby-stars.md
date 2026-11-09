@@ -39,7 +39,7 @@ console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(2)}`).join(",
 console.log(close[0].error.toFixed(2)); // 0.03
 ```
 
-`{ x: 0, y: 0, z: 0 }` is the Sun. Proxima Centauri is first, then the two bright stars of Alpha Centauri, then Barnard's Star. The answer's `error` (light-years) is worked out when both ends are nearby stars (or the target is a point), from the parallax errors; it is `undefined` against a bright star, whose parallax has no error in the bright table. A nearby star with a parallax of 0 or less has no distance and is counted in `skipped`. Nearby stars can be a target too: `nearest(nearbyStarByName("Barnard's Star"), { by: "space", among: nearbyStars() })`.
+`{ x: 0, y: 0, z: 0 }` is the Sun. Proxima Centauri is first, then the two bright stars of Alpha Centauri, then Barnard's Star. The answer's `error` (light-years) is worked out from the two parallax errors whenever both ends have one: two nearby stars, a nearby star and a point, or a bright star with a measured parallax error (2,329 of the 2,563 that have a distance); it is `undefined` against a bright star that has only the Bright Star Catalogue's parallax. A nearby star with a parallax of 0 or less has no distance and is counted in `skipped`. Nearby stars can be a target too: `nearest(nearbyStarByName("Barnard's Star"), { by: "space", among: nearbyStars() })`.
 
 ## How good is a distance
 

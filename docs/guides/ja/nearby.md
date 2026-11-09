@@ -46,14 +46,14 @@ import { nearest } from "@johnmorrisdotca/hoshi-stars/nearest";
 
 const close = nearest("Sirius", { by: "space", count: 2 });
 console.log(close.map((n) => `${n.thing.name} ${n.distance.toFixed(1)}`));
-console.log(close.skipped, close[0].error);
+console.log(close.skipped, close[0].error.toFixed(2));
 // [ 'Procyon 5.2', 'Ran 8.0' ]
-// 2517 undefined
+// 2517 0.06
 ```
 
 - **この表の星だけです。** 答えは、5,080個のうち年周視差がある2,563個が対象です。この表に入っていない、もっと暗くて近い星もあります。`among: [...stars(), ...nearbyStars()]`を渡すと、[近くの星](nearby-stars.md)の5,565個(プロキシマ・ケンタウリ、バーナード星、赤色矮星)も数えます。
 - **`skipped`**は、使える距離がなくて外した個数です(視差が0以下の星と、メシエ天体など)。
-- **`error`**は明るい星では`undefined`です。`nearest`は明るい星の`parallaxErrorMas`をまだ使っていないので、誤差を計算しません(`starDistance`は誤差を返します)。距離は100光年以内で数パーセント程度の精度で、暗くて遠い星ではあてになりません。
+- **`error`**は`distance`の誤差(光年)で、2つの視差の誤差から計算します(星ひとつの誤差は`starDistance`が返します)。星かターゲットに`parallaxErrorMas`がないときは`undefined`です。距離のある明るい星2,563個のうち2,329個には誤差があり、残りはブライトスター星表の視差だけです。距離は100光年以内で数パーセント程度の精度で、暗くて遠い星ではあてになりません。
 - `target`には距離が必要です。視差がある星、`{ rightAscension, declination, lightYears }`、または太陽を原点にしたJ2000赤道座標軸のパーセクの点`{ x, y, z }`です。
 
 ## となり合う星座

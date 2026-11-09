@@ -179,20 +179,22 @@ test("nearest by space from the Sun, with the nearby stars in the list, finds Pr
   assert.ok(found[0]!.error! > 0 && found[0]!.error! < 0.1);
   assert.deepEqual([found[1]!.thing, found[2]!.thing].map((thing) => (thing as { name?: string }).name).sort(), ["Rigil Kentaurus", "Toliman"]);
   assert.equal((found[3]!.thing as NearbyStar).name, "Barnard's Star");
-  assert.equal(found[1]!.error, undefined);
+  assert.ok(found[1]!.error! > 0 && found[1]!.error! < 0.1);
   assert.ok(found.skipped >= FLAGS.excluded);
   assert.equal((nearest({ x: 0, y: 0, z: 0 }, { by: "space", among, count: 9 }).find((f) => (f.thing as NearbyStar).name === "Wolf 359")!.thing as NearbyStar).gctp, "2553");
   // Without them it is as it was: the bright stars only.
   assert.ok(["Rigil Kentaurus", "Toliman"].includes((nearest({ x: 0, y: 0, z: 0 }, { by: "space", count: 1 })[0]!.thing as { name?: string }).name!));
 });
 
-test("with a nearby star as the target and the nearby stars to look through, the error is worked out; with a bright star it is not", () => {
+test("with a nearby star as the target and the nearby stars to look through, the error is worked out, with a bright star too", () => {
   const barnard = nearbyStarByName("Barnard's Star")!;
   const near = nearest(barnard, { by: "space", among: nearbyStars(), count: 3 });
   assert.ok(near.every((n) => n.error! > 0 && n.error! < 2));
   assert.ok(near.every((n) => (n.thing as NearbyStar).gctp !== "4098"));
   const fromBright = nearest(starByName("Sirius")!, { by: "space", among: nearbyStars(), count: 1 });
-  assert.equal(fromBright[0]!.error, undefined);
+  assert.ok(fromBright[0]!.error! > 0 && fromBright[0]!.error! < 2);
+  const noError = stars().find((star) => star.parallaxMas > 0 && star.parallaxErrorMas === undefined)!;
+  assert.equal(nearest(noError, { by: "space", among: nearbyStars(), count: 1 })[0]!.error, undefined);
   // by angle, with a date: the stars are carried by their Yale proper motion
   const moved = nearest({ rightAscension: barnard.rightAscension, declination: barnard.declination }, { among: [barnard], date: Date.UTC(2100, 0, 1), count: 1 })[0]!;
   assert.ok(moved.angle > 0.25 && moved.angle < 0.32, String(moved.angle));
