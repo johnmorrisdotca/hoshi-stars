@@ -16,6 +16,11 @@
 .culture-row button:hover { border-color: var(--accent); }
 .culture-row button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .culture-row button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* on a figure's own page the three choices are links, each to the figure of that sky that stands for this one */
+.culture-row a { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 96px; padding: 0 14px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font-size: .85rem; font-weight: 600; text-decoration: none; }
+.culture-row a:hover { border-color: var(--accent); }
+.culture-row a[aria-current="page"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.culture-row a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
 .pick-tile { flex: 0 0 auto; width: 132px; display: grid; grid-template-rows: auto auto auto; align-content: start; justify-items: center; gap: 3px; padding: 6px 4px 6px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; cursor: pointer; scroll-snap-align: start; }
 .pick-tile[hidden] { display: none; }
@@ -65,6 +70,14 @@
 .cp-links { display: flex; flex-wrap: wrap; gap: 6px; }
 .cp-links a, .cp-files a { display: inline-flex; align-items: center; min-height: 48px; text-decoration: none; color: var(--ink); }
 .cp-turn { margin-top: 20px; justify-content: space-between; }
+/* the same stars in the other two skies, side by side on a desk and one under the other on a phone */
+.cp-compare { display: grid; gap: 14px 24px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 900px) { .cp-compare { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cp-column { min-width: 0; }
+.cp-column h3 { margin: 0 0 4px; font-size: .95rem; }
+.cp-column .fam-fine { margin: 0 0 8px; }
+.cp-column .pick-grid { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+.cp-limits { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
 
 /* the list */
 /* the filter bar: a chip for each filter on a desk (a menu of its choices under it), one Filters button and a sheet on a phone */
