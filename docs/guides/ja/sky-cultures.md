@@ -122,6 +122,34 @@ console.log(figureOf("the w", mine).stars.map((star) => star.name).join(", "));
 // Caph, Schedar, Navi, Ruchbah, Segin
 ```
 
+## 図の絵
+
+デモでは、どの文化も絵のカードで見られます。カードには、図の小さな絵、その文化の文字での名前、読み(中国の図はピンイン、日本の図はひらがな)、データに英語名があればその英語名、そしてカタログにない暗い星があるときはその数(`暗い星3個以上は描いていません`)が出ます。星空の地図の上の帯、ギャラリー(`constellations.html?culture=chinese`)、一覧表(`constellation-list.html?culture=chinese`)は、どれも「星座の文化」に合わせて変わり、選んだ文化はアドレスに残ります。
+
+| 空 | カード |
+|---|---|
+| 西洋 | 88枚(88星座)。 |
+| 日本 | 106枚。昔からの18の図(昴、北斗七星、鼓星、織姫、彦星など)が先で、そのあとに日本語の名前の88星座。 |
+| 中国 | 238枚。まず二十八宿の28枚、そのあとに三垣と二十八宿のそのほかの星官210枚。 |
+
+カードをタップすると、その文化のままで、地図にその図が開きます(`?culture=chinese&pick=C:bei3-dou3`)。検索は、中国語の名前(繁体字でも簡体字でも)、声調記号やスペースのあるなしを問わないピンイン、日本語、かな(カタカナもひらがなも同じ)、ローマ字、英語で見つかります。ギャラリーの題と数は、どの空を見せているかを示します(`中国の空: 238の図`、`宿28と星官210`)。
+
+絵は、88星座の絵と同じ描き方で、このパッケージの星と、私たちが星をつないだ線から描きます。その図の星は大きく、まわりの星はうすく描き、図の線を引きます。図には境界線がないので、境界線は描きません。境界線のない図は、`thumbnailSvg`の`frame`(枠に入れる星の位置)で絵の範囲を決めます。範囲の幅は最低4度です。
+
+```js
+import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+import { thumbnailSvg } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+
+const dipper = figureOf("北斗", chinese);
+const mine = new Set(dipper.stars.map((star) => star.hr));
+const svg = thumbnailSvg({ title: "北斗", outlines: [], frame: dipper.stars, segments: dipper.segments, owns: (star) => mine.has(star.hr) }, { theme: "dark" });
+console.log(svg.startsWith("<svg"), svg.includes("data-hr"));
+// true true
+```
+
+中国と日本の図の絵は、Pagesのサイトだけにあるファイルです(`thumbnails/chinese/png/<size>/<look>/<id>.png`、160と480ピクセル、明るい見た目と暗い見た目。256の図、PNG 1,024枚、合わせて4.6 MB)。`pnpm site`で作ります。npmのパッケージには入れません。npmに入るのは、これまでどおり88星座の絵です。何も表示していないときは何も取りに行きません。カードの絵は、そのカードが画面に入ったときにだけ読みこまれます。
+
 ## デモでは
 
 デモの「星座の文化」(西洋・日本・中国)は、アドレスに`culture=`として残ります(西洋のときは何もつきません)。例: `?culture=chinese`。選ぶと、同じ星の上に、その文化の図と名前が描き直されます。図をタップするか、どれかの名前で検索すると、カードが出ます。名前と読み、どんなものか、空の方角、あるいは星座、明るい星、そしてカタログにない星があるときは「手元の星だけを描いています」という注意です。埋めこみページも同じ`culture=`を使います。

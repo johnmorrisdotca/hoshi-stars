@@ -122,6 +122,34 @@ console.log(figureOf("the w", mine).stars.map((star) => star.name).join(", "));
 // Caph, Schedar, Navi, Ruchbah, Segin
 ```
 
+## Pictures of the figures
+
+Each culture is also a set of picture cards in the demo. A card is a small picture of the figure with its name in the culture's own writing, its reading (pinyin for a Chinese figure, hiragana for a Japanese one) and its English name where the data has one, and, where stars are fainter than the catalogue goes, how many are missing (`3+ fainter stars not shown`). The strip above the sky map, the gallery (`constellations.html?culture=chinese`) and the list (`constellation-list.html?culture=chinese`) all follow the Sky culture and keep it in the address:
+
+| Sky | The cards |
+|---|---|
+| Western | The 88 constellations. |
+| Japanese | 106: the 18 traditional figures first (昴, 北斗七星, 鼓星, 織姫, 彦星 and the rest), then the 88 under their Japanese names. |
+| Chinese | 238: the 28 mansions first, then the 210 other asterisms of the Three Enclosures and the Mansions. |
+
+A tap on a card opens that figure on the map in its culture (`?culture=chinese&pick=C:bei3-dou3`). Search finds a figure by its Chinese name in either writing, pinyin with or without tone marks and spaces, Japanese, kana (katakana against hiragana), romaji or English. The gallery's title and count say which sky it shows (`The Chinese sky: 238 figures`, `28 mansions and 210 asterisms`).
+
+The pictures are drawn by the same renderer as the 88's, from this package's own stars and our own joins of them: the figure's stars full, the other stars near it faint, the figure's lines, and no boundary, because a figure has none. A figure with no boundary is framed with `thumbnailSvg`'s `frame`, the positions to frame, with a least width of 4 degrees:
+
+```js
+import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+import { thumbnailSvg } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+
+const dipper = figureOf("北斗", chinese);
+const mine = new Set(dipper.stars.map((star) => star.hr));
+const svg = thumbnailSvg({ title: "北斗", outlines: [], frame: dipper.stars, segments: dipper.segments, owns: (star) => mine.has(star.hr) }, { theme: "dark" });
+console.log(svg.startsWith("<svg"), svg.includes("data-hr"));
+// true true
+```
+
+The pictures of the Chinese and Japanese figures are files of the Pages site only (`thumbnails/chinese/png/<size>/<look>/<id>.png`, 160 and 480 pixels, light and dark: 256 figures, 1,024 PNGs, 4.6 MB in all), made by `pnpm site`. The npm package does not ship them; it still ships the 88's. Nothing is fetched at rest: a card's picture is loaded only when the card comes into view.
+
 ## In the demo
 
 The demo's Sky culture choice (Western, Japanese, Chinese) is kept in the address as `culture=` (nothing for the Western sky): `?culture=chinese`. Picking one redraws the figures and the names on the same stars. Tap a figure, or search for it by any of its names, for its card: its names and reading, what it is, the quarter of the sky, the constellations it lies in, its bright stars, and, where stars are fainter than the catalogue goes, a note that only the stars we have are drawn. The embed page takes the same `culture=`.
