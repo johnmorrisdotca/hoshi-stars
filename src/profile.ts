@@ -4,6 +4,7 @@
 import { blackBodyColour, starTemperatureK } from "./colour.ts";
 import type { LuminosityClass } from "./spectral.ts";
 import { COOL_BC_ROWS, DWARF_ROWS, LIMB_ROWS, SUPERGIANT_ROWS } from "./data/profile-tables.ts";
+import { ROTATION_ROWS } from "./data/rotation.ts";
 import type { Star } from "./stars.ts";
 
 /**
@@ -104,6 +105,26 @@ export interface StarShape {
 }
 
 /**
+ * How fast a star spins, as the Bright Star Catalogue gives it: the projected speed of its equator, v sin i. The true speed is that or more (the tilt of the axis is not known from it).
+ *
+ * @example
+ * ```ts
+ * import { starRotation, type StarRotation } from "@johnmorrisdotca/hoshi-stars/profile";
+ *
+ * const phecda: StarRotation | undefined = starRotation(4554);
+ * console.log(phecda?.vSinIKmS, phecda?.upperLimit);
+ * ```
+ */
+export interface StarRotation {
+  /** v sin i in kilometres a second. */
+  vSinIKmS: number;
+  /** The catalogue gives it as an upper limit (`<`): the star spins at most this fast across the line of sight. */
+  upperLimit: boolean;
+  /** The catalogue marks it uncertain (`:`). */
+  uncertain: boolean;
+}
+
+/**
  * What the catalogue and the published tables say about one star's body.
  *
  * @example
@@ -135,6 +156,8 @@ export interface StarProfile {
   limbDarkening: number | undefined;
   /** Published shape measurements, for the few stars that have them. */
   shape: StarShape | undefined;
+  /** The catalogue's projected rotation speed, for the stars it gives one (about 2,800 of the 5,080). */
+  rotation: StarRotation | undefined;
   /** The luminosity class the figures assumed, which may differ from the catalogue's where it states none. */
   luminosityClass: LuminosityClass | undefined;
   /** The spectral type was a pair (`K0III+A0V`): the brightness is of both and the figures are the primary's, rough. */
@@ -370,6 +393,32 @@ export function starShape(hr: number): StarShape | undefined {
   return SHAPES[hr];
 }
 
+let rotations: Map<number, StarRotation> | undefined;
+
+/**
+ * The Bright Star Catalogue's projected rotation speed (v sin i) of a star, if it gives one.
+ *
+ * @param hr - The Bright Star Catalogue number.
+ * @returns The speed with the catalogue's flags, or `undefined`.
+ *
+ * @example
+ * ```ts
+ * import { starRotation } from "@johnmorrisdotca/hoshi-stars/profile";
+ *
+ * console.log(starRotation(7557)?.vSinIKmS, starRotation(2061));
+ * ```
+ */
+export function starRotation(hr: number): StarRotation | undefined {
+  if (rotations === undefined) {
+    rotations = new Map();
+    for (const row of ROTATION_ROWS.split("\n")) {
+      const [id, speed, flag] = row.split("|");
+      rotations.set(Number(id), { vSinIKmS: Number(speed), upperLimit: flag === "<", uncertain: flag === ":" });
+    }
+  }
+  return rotations.get(hr);
+}
+
 // ----- the profile -----
 const ln = Math.log;
 
@@ -406,7 +455,7 @@ export function starProfile(star: ProfileInput): StarProfile {
   const cls = star.luminosityClass ?? (/^D[A-Z]/.test(star.spectralType) ? "D" : undefined);
   const unknown: StarProfile["unknown"] = {};
   const shape = star.hr === undefined ? undefined : SHAPES[star.hr];
-  const base = { hr: star.hr, shape, luminosityClass: cls, composite: parsed.composite, unknown };
+  const base = { hr: star.hr, shape, rotation: star.hr === undefined ? undefined : starRotation(star.hr), luminosityClass: cls, composite: parsed.composite, unknown };
   const none = (why: Unknown): StarProfile => {
     unknown.temperature = why;
     unknown.luminosity = why;

@@ -101,6 +101,18 @@ console.log(altair.source);
 // Monnier et al. 2007, Science 317, 342 (CHARA)
 ```
 
+## How fast a star spins
+
+The Bright Star Catalogue gives a projected rotation speed for about 2,800 of the 5,080 stars: v sin i, the speed of the equator times the sine of the angle between the spin axis and the line of sight. The true speed is that or more, as the tilt of the axis is not known from it. `starRotation` gives it with the catalogue's marks (`upperLimit` where it gives only a limit, `uncertain` where it marks the value uncertain), and `starProfile` carries it in `rotation`. A star with no figure returns `undefined`.
+
+```js
+import { starRotation } from "@johnmorrisdotca/hoshi-stars/profile";
+
+const phecda = starRotation(4554);
+console.log(phecda.vSinIKmS, phecda.upperLimit, starRotation(2061));
+// 168 false undefined
+```
+
 ## In your page
 
 On a server, in Node:

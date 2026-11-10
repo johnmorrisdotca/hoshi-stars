@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { starByHr, starByName, stars } from "../src/index.ts";
-import { starProfile, starShape, type Estimate, type StarProfile } from "../src/profile.ts";
+import { starProfile, starRotation, starShape, type Estimate, type StarProfile } from "../src/profile.ts";
 import { CHARA_DWARFS, MEASURED_DIAMETERS } from "./profile-references.ts";
 
 const between = (value: number, range: readonly [number, number]): boolean => value >= range[0] && value <= range[1];
@@ -141,4 +141,20 @@ test("starShape: Altair and Regulus are flattened, Vega is seen over its pole, o
   assert.equal(starShape(2491), undefined);
   assert.equal(starProfile(starByName("Altair")!).shape, altair);
   for (const shape of [altair, starShape(3982)!, starShape(7001)!]) assert.ok(shape.source.length > 10);
+});
+
+test("starRotation: the catalogue's v sin i, its upper limits and uncertain marks, for stars in the table only", () => {
+  // Hoffleit and Warren 1991, the rotvel column: Phecda 168, Altair 242, Regulus 329, Vega 15, Sirius 13 km/s; Betelgeuse has none.
+  assert.deepEqual(starRotation(4554), { vSinIKmS: 168, upperLimit: false, uncertain: false });
+  assert.equal(starRotation(7557)?.vSinIKmS, 242);
+  assert.equal(starRotation(3982)?.vSinIKmS, 329);
+  assert.equal(starRotation(7001)?.vSinIKmS, 15);
+  assert.equal(starRotation(2491)?.vSinIKmS, 13);
+  assert.equal(starRotation(2061), undefined);
+  assert.equal(starProfile(starByName("Phecda")!).rotation, starRotation(4554));
+  const known = stars().filter((star) => starRotation(star.hr) !== undefined);
+  assert.ok(known.length > 2500 && known.length < stars().length, String(known.length));
+  assert.ok(known.some((star) => starRotation(star.hr)!.upperLimit));
+  assert.ok(known.some((star) => starRotation(star.hr)!.uncertain));
+  for (const star of known) assert.ok(starRotation(star.hr)!.vSinIKmS >= 0 && starRotation(star.hr)!.vSinIKmS < 600, `HR ${star.hr}`);
 });

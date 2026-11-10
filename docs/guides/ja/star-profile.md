@@ -101,6 +101,18 @@ console.log(altair.source);
 // Monnier et al. 2007, Science 317, 342 (CHARA)
 ```
 
+## 星の自転の速さ
+
+輝星星表には、5,080 個のうち約 2,800 個の星について、見かけの自転の速さ v sin i があります。赤道の速さに、自転軸と視線のあいだの角度のサインをかけたものです。軸のかたむきはここからはわからないので、本当の速さはこの値か、それより速くなります。`starRotation` は、この値と星表の印（上限だけのときは `upperLimit`、不確かなときは `uncertain`）を返します。`starProfile` は同じものを `rotation` に入れます。値のない星では `undefined` です。
+
+```js
+import { starRotation } from "@johnmorrisdotca/hoshi-stars/profile";
+
+const phecda = starRotation(4554);
+console.log(phecda.vSinIKmS, phecda.upperLimit, starRotation(2061));
+// 168 false undefined
+```
+
 ## ページに入れる
 
 サーバー（Node）では：
