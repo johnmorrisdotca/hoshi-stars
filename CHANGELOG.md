@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-11-10
+
 - **The 3D star shows that it turns, and turns by hand** (MODULES-880). A faint grid of latitude and longitude and the spin axis turn with the star, on at first for the smooth stars and the measured shapes and a **Grid and axis** switch for every star; a line says they are a guide, not on the star. A line under it says how fast the star spins: the published period where there is one (Vega, Regulus) and how many times faster it is shown, else the catalogue's v sin i, or that none is measured. The family's view controls are under it and turn it as a globe turns: their Auto-turn is its spin (it replaces the Pause button), a drag turns it and the spin goes on from there, Ctrl and the wheel or a pinch zooms, a double-click or Fit brings it back. New `starRotation(hr)` and `profile.rotation` in `/profile`: the Bright Star Catalogue's v sin i for 2,799 stars, with its upper-limit and uncertain marks (about 11 kB gzipped more for `/profile`).
 
 ## [0.22.0] - 2026-11-10
