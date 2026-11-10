@@ -39,8 +39,10 @@ export type ThumbnailTheme = "light" | "dark";
 export interface ThumbnailInput {
   /** The name for the picture's `<title>` and `aria-label`. */
   title: string;
-  /** The closed outlines of the region to frame (degrees, J2000), each with its first point repeated as the last. Their extent decides the frame; they are drawn with a faint wash inside. */
+  /** The closed outlines of the region to frame (degrees, J2000), each with its first point repeated as the last. Their extent decides the frame; they are drawn with a faint wash inside. Leave empty, and give `frame`, for a figure that has no boundary (a Chinese asterism). */
   outlines: ReadonlyArray<ReadonlyArray<SkyPoint>>;
+  /** Positions to frame when the figure has no outline: the picture is framed round them (with the same room, and a least width of 4 degrees) and no boundary or wash is drawn. Ignored where `outlines` has points. */
+  frame?: ReadonlyArray<SkyPoint>;
   /** The outlines of the neighbouring regions, drawn faint round the frame; leave out for none. */
   neighbourOutlines?: ReadonlyArray<ReadonlyArray<SkyPoint>>;
   /** The lines of the figure, each between two positions on the sky (the stars it joins). */
@@ -84,6 +86,8 @@ export const THUMBNAIL_UNITS = 400;
 const RAD = Math.PI / 180;
 // The frame is never narrower than this, so a small constellation still shows its neighbours; and has this much room (a fraction of the larger side) round the boundary.
 const MIN_SPAN_DEGREES = 13;
+// A figure with no boundary (a few stars) is framed closer: the Pleiades are two degrees across.
+const MIN_FIGURE_SPAN_DEGREES = 4;
 const ROOM = 0.12;
 // A line is only followed while it is within this many units of the frame: the 2-degree pieces of a boundary are never longer than that, so none that crosses the frame is lost.
 const PEN_ROOM = 140;
@@ -139,7 +143,7 @@ interface Frame {
 }
 
 /** The centre and size of the square that holds the outlines: start at their mean direction, then re-centre on the middle of what lands on the chart, a few times. */
-function frameOf(outlines: ReadonlyArray<ReadonlyArray<SkyPoint>>): Frame {
+function frameOf(outlines: ReadonlyArray<ReadonlyArray<SkyPoint>>, leastDegrees: number): Frame {
   const all = outlines.flat();
   let centre = middleOf(all);
   let side = 0;
@@ -162,7 +166,7 @@ function frameOf(outlines: ReadonlyArray<ReadonlyArray<SkyPoint>>): Frame {
       centre = unproject("stereographic", middle, { centre, scale: SCALE }) ?? centre;
     }
   }
-  const least = SCALE * 2 * Math.tan((MIN_SPAN_DEGREES * RAD) / 2);
+  const least = SCALE * 2 * Math.tan((leastDegrees * RAD) / 2);
   return { centre, side: Math.max(side * (1 + 2 * ROOM), least) };
 }
 
@@ -174,7 +178,7 @@ function frameOf(outlines: ReadonlyArray<ReadonlyArray<SkyPoint>>): Frame {
  * @param input - What to draw.
  * @param options - The look, the size and whether the neighbours are drawn.
  * @returns A standalone SVG document as a string, a square of `THUMBNAIL_UNITS` units.
- * @throws RangeError if the outlines are empty or `size` is not above 0.
+ * @throws RangeError if the outlines and `frame` are both empty, or `size` is not above 0.
  *
  * @example
  * ```ts
@@ -191,8 +195,9 @@ export function thumbnailSvg(input: ThumbnailInput, options: ThumbnailOptions = 
   const look = LOOKS[options.theme === "light" ? "light" : "dark"];
   const size = options.size;
   if (size !== undefined && !(size > 0)) throw new RangeError(`size must be above 0 pixels, got ${String(size)}`);
-  if (input.outlines.length === 0 || input.outlines.every((outline) => outline.length === 0)) throw new RangeError("outlines must hold at least one point");
-  const frame = frameOf(input.outlines);
+  const bounded = input.outlines.some((outline) => outline.length > 0);
+  if (!bounded && (input.frame === undefined || input.frame.length === 0)) throw new RangeError("outlines must hold at least one point (or give `frame` some)");
+  const frame = bounded ? frameOf(input.outlines, MIN_SPAN_DEGREES) : frameOf([input.frame!], MIN_FIGURE_SPAN_DEGREES);
   const k = THUMBNAIL_UNITS / frame.side;
   // A wide frame holds thousands of stars: the faint neighbours are left out as it widens, so a picture stays light to send and clear to read. The figure's own stars are always drawn.
   const spanDegrees = (2 * Math.atan(frame.side / SCALE / 2)) / RAD;
@@ -238,8 +243,7 @@ export function thumbnailSvg(input: ThumbnailInput, options: ThumbnailOptions = 
   if (options.neighbours !== false && input.neighbourOutlines !== undefined) {
     parts.push(`<path d="${pathOf(input.neighbourOutlines, false)}" fill="none" stroke="${look.neighbourLine}" stroke-width="1" stroke-linejoin="round"/>`);
   }
-  const own = pathOf(input.outlines, true);
-  parts.push(`<path d="${own}" fill="${look.wash}" fill-opacity="${look.washOpacity}" stroke="${look.edge}" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="5 3"/>`);
+  if (bounded) parts.push(`<path d="${pathOf(input.outlines, true)}" fill="${look.wash}" fill-opacity="${look.washOpacity}" stroke="${look.edge}" stroke-width="1.6" stroke-linejoin="round" stroke-dasharray="5 3"/>`);
 
   const lines: string[] = [];
   for (const [a, b] of input.segments) {

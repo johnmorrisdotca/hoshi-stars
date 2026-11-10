@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
 import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderSpace } from "./page.ts";
-import { writeThumbnails } from "./thumbnail-files.ts";
+import { chinese } from "../src/cultures/chinese.ts";
+import { japanese } from "../src/cultures/japanese.ts";
+import { writeCultureThumbnails, writeThumbnails } from "./thumbnail-files.ts";
 
 /** What the family's card shows (scripts/images.ts makes it): the words of og:image:alt and of the README's top picture. */
 const ALT = "Hoshi Stars: a sky chart of Orion with its constellation lines, on the soft band of the Milky Way.";
@@ -25,6 +27,9 @@ writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.h
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
 writeFileSync(join(site, "constellation-3d.html"), renderSpace());
 writeThumbnails(join(site, "thumbnails"));
+// The pictures of the Chinese asterisms and the traditional Japanese figures: Pages only, never in the npm package (which ships the 88).
+writeCultureThumbnails(join(site, "thumbnails"), chinese);
+writeCultureThumbnails(join(site, "thumbnails"), japanese);
 // The faint stars (UCAC4, to magnitude 12) in their tiles: the demo reads them from here, and so does anyone who leaves `faintSky`'s default address (scripts/make-faint-data.py makes them).
 cpSync(join(root, "faint-tiles"), join(site, "faint-tiles"), { recursive: true });
 cpSync(join(root, "pictures"), join(site, "pictures"), { recursive: true });
