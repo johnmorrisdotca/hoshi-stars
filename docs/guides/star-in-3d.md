@@ -17,7 +17,17 @@ The demo's star panel has three pictures of a picked star: its portrait, the sta
 - **The cells** on a cool star are a generic look of its kind (a few huge cells on a supergiant, finer ones on a star like the Sun), not this star's surface. The page says so under the picture. A hot star has no cells we know of, so it is drawn smooth.
 - **The size**: under the star a line is as wide as the drawn star, and where the Sun would show at the same scale it is a dot beside it. The radius is written with its range.
 
-The star turns once in 40 seconds, a pace to watch, not its own spin. It turns only while it is on screen; Pause holds it, and a reader who asks for reduced motion gets it still, with Play ready. It is drawn with WebGL through the page's one shared renderer, and where WebGL is not available the flat portrait is shown instead, with a line that says so.
+The star turns once in 40 seconds, a pace to watch, not its own spin. It turns only while it is on screen; the Play button of the view controls under it stops and starts it, and a reader who asks for reduced motion gets it still, with Play ready. It is drawn with WebGL through the page's one shared renderer, and where WebGL is not available the flat portrait is shown instead, with a line that says so.
+
+## Seeing that it turns
+
+A smooth star has nothing on its face that moves, so a guide turns with it: a faint grid of latitude and longitude every 30 degrees and the spin axis through its poles. The guide is on at first for the smooth stars and the measured shapes; **Grid and axis** turns it on or off for any star, and a line under the picture says the grid and the axis are not on the star.
+
+Under the picture a line says how fast the star spins: the period where a paper gives one (Vega, Regulus) and how many times faster the picture turns, else the Bright Star Catalogue's v sin i (`profile.rotation`, see [A star's size, temperature and portrait](star-profile.md)), or that no speed is measured.
+
+## Turning it by hand
+
+The family's view controls are under the star, and they turn it as a globe turns: their angle is the turn about the star's own axis and their Auto-turn is its spin. A drag turns it (it keeps spinning from where you let go) and tips it, Ctrl and the wheel or a pinch zooms in up to four times, the arrow keys turn and tip it, and a double-click, Home or **Fit** brings it back to the front.
 
 ## The numbers it is drawn from
 
@@ -52,7 +62,7 @@ The demo's star embed page draws the turning star from its address: the star's B
       src="https://johnmorrisdotca.github.io/hoshi-stars/star.html?star=7557&view=3d"
       title="Altair in 3D"
       width="360"
-      height="522"
+      height="780"
       loading="lazy"
       style="border: 0"
     ></iframe>

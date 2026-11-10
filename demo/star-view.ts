@@ -1,10 +1,13 @@
-// One star in 3D as a part a page can mount: the turning star on the page's shared renderer, a Pause button, the line that says what is drawn from numbers and what is generic, and the Sun at the same scale. Where 3D is not
-// available the flat portrait from `/portrait` stands in, and says so. Reduced motion opens it still, with Play ready.
+// One star in 3D as a part a page can mount: the turning star on the page's shared renderer, a Pause button, the guide that shows it turns, the family's view controls (a drag turns it, Ctrl and the wheel or a
+// pinch zooms, a double-click or Fit brings it back), the line that says what is drawn from numbers and what is generic, how fast it spins, and the Sun at the same scale. Where 3D is not available the flat
+// portrait from `/portrait` stands in, and says so. Reduced motion opens it still, with Play ready.
 import type { View } from "@johnmorrisdotca/kazoku-ui/renderer";
+import "@johnmorrisdotca/kazoku-ui/view-controls/define";
+import type { ViewChangeDetail, ViewControlsElement } from "@johnmorrisdotca/kazoku-ui/view-controls/element";
 import { portraitLook, starPortrait } from "../src/portrait.ts";
 import type { StarProfile } from "../src/profile.ts";
 import { pageRenderer } from "./page-renderer.ts";
-import { starItem, starLook } from "./star-scene.ts";
+import { FRONT, starItem, starLook, TURN_SECONDS, TURN_SPEED, type StarPose } from "./star-scene.ts";
 
 export interface Star3DContext {
   say: (key: string) => string;
@@ -22,7 +25,6 @@ export interface Star3DMount {
 /** How far the camera sees past the equator: the disc is this much narrower than the view. */
 const MARGIN = 1.12;
 
-const reducedMotion = (): boolean => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fill = (text: string, values: Record<string, string>): string => text.replace(/\{(\w+)\}/g, (whole, key: string) => values[key] ?? whole);
 
 /** Put the star in `art`. `undefined` where the profile has no temperature to draw; the page then says so. */
@@ -31,42 +33,74 @@ export function mountStar3D(art: HTMLElement, profile: StarProfile, hr: number, 
   const look = starLook(profile, lookName);
   if (look === undefined) return undefined;
   const { say } = context;
-  let paused = reducedMotion();
   let live = false;
   let disposed = false;
   let view: View | undefined;
+  // The guide is on by default where the surface shows nothing that would turn.
+  let guide = look.cells === undefined;
+  let pose: StarPose = { ...FRONT };
 
   const stage = document.createElement("div");
   stage.className = "star3d-stage";
   stage.dataset.testid = "star-3d";
   stage.setAttribute("role", "img");
+  stage.tabIndex = 0;
   stage.setAttribute("aria-label", fill(say("star3dLabel"), { name }));
-  const pause = document.createElement("button");
-  pause.type = "button";
-  pause.className = "fam-button star3d-pause";
-  pause.dataset.testid = "star-3d-pause";
-  const showPause = (): void => {
-    pause.textContent = say(paused ? "star3dPlay" : "star3dPause");
-    pause.setAttribute("aria-pressed", String(paused));
+  const guideButton = document.createElement("button");
+  guideButton.type = "button";
+  guideButton.className = "fam-button star3d-guide";
+  guideButton.dataset.testid = "star-3d-guide";
+  guideButton.textContent = say("star3dGuide");
+  const showGuide = (): void => {
+    guideButton.setAttribute("aria-pressed", String(guide));
+    stage.dataset.guide = String(guide);
+    guideNote.hidden = !guide;
   };
-  showPause();
-  pause.addEventListener("click", () => {
-    paused = !paused;
-    showPause();
-    stage.dataset.paused = String(paused);
+  guideButton.addEventListener("click", () => {
+    guide = !guide;
+    showGuide();
     view?.invalidate();
   });
-  stage.dataset.paused = String(paused);
+  const controls = document.createElement("kazoku-view-controls") as ViewControlsElement;
+  controls.dataset.testid = "star-3d-controls";
+  controls.setAttribute("controls", "basic");
+  controls.setAttribute("layout", "compact");
+  controls.setAttribute("lang", context.lang());
+  controls.setAttribute("tilt-max", "90");
+  controls.setAttribute("zoom-min", "1");
+  controls.setAttribute("zoom-max", "4");
+  controls.setAttribute("grab-radius", "fit");
+  // Its Auto-turn is the star's spin: it opens turning (still for a reader who asks for reduced motion, with Play ready), at the pace of one turn in TURN_SECONDS.
+  controls.setAttribute("speed", String(TURN_SPEED));
+  controls.setAttribute("autoplay", "");
+  controls.addEventListener("kazoku-viewchange", (event) => {
+    const d = (event as CustomEvent<ViewChangeDetail>).detail;
+    pose = { yaw: d.yaw, tilt: d.tilt, roll: d.roll ?? 0, zoom: d.zoom, panX: d.panX, panY: d.panY };
+    view?.invalidate();
+  });
+  const tools = document.createElement("div");
+  tools.className = "star3d-tools";
+  tools.append(guideButton);
   const caption = document.createElement("p");
   caption.className = "fam-fine star3d-caption";
   caption.dataset.testid = "star-3d-caption";
   caption.textContent = say(profile.shape !== undefined ? "star3dMeasured" : look.cells === undefined ? "star3dSmooth" : "star3dCells");
+  const guideNote = document.createElement("p");
+  guideNote.className = "fam-fine";
+  guideNote.dataset.testid = "star-3d-guide-note";
+  guideNote.textContent = say("star3dGuideNote");
+  showGuide();
+  const spin = document.createElement("p");
+  spin.className = "fam-fine star3d-spin";
+  spin.dataset.testid = "star-3d-spin";
+  spin.textContent = spinLine(profile, context);
   const scale = scaleLine(profile, context);
-  art.replaceChildren(stage, pause, caption, ...(scale === undefined ? [] : [scale]));
+  art.replaceChildren(stage, controls, tools, caption, guideNote, spin, ...(scale === undefined ? [] : [scale]));
+  controls.view = stage;
 
   const renderer = pageRenderer();
   Object.defineProperty(stage, "stats", { get: () => renderer.stats, configurable: true });
-  const made = starItem({ key: `star:${hr}`, look, seed: hr, still: () => paused || reducedMotion() });
+  const made = starItem({ key: `star:${hr}`, look, seed: hr, guide: () => guide, pose: () => pose });
   view = renderer.view(stage, made, { still: null });
   void view.focus().then((ok) => {
     if (disposed) return;
@@ -100,6 +134,18 @@ export function mountStar3D(art: HTMLElement, profile: StarProfile, hr: number, 
       view = undefined;
     },
   };
+}
+
+/** How fast the star spins, from the published period where there is one, else the catalogue's v sin i, and how fast the picture turns. */
+function spinLine(profile: StarProfile, context: Star3DContext): string {
+  const { say, figure } = context;
+  const s = String(TURN_SECONDS);
+  const days = profile.shape?.rotationPeriodDays;
+  if (days !== undefined && profile.shape !== undefined) return fill(say("star3dSpinPeriod"), { days: figure(days), source: profile.shape.source, times: figure((days * 86_400) / TURN_SECONDS) });
+  const rotation = profile.rotation;
+  if (rotation === undefined) return fill(say("star3dSpinNone"), { s });
+  const line = fill(say(rotation.upperLimit ? "star3dSpinUnder" : "star3dSpinAtLeast"), { v: String(rotation.vSinIKmS), s });
+  return rotation.uncertain ? `${line} ${say("star3dSpinUncertain")}` : line;
 }
 
 /** The Sun at the same scale as the drawn star, as a dot beside a line as wide as the star, and the radius in words with its range. The dot is left out where the Sun would not fit under the star. */

@@ -16,8 +16,8 @@ export interface StarChoice {
   lang: "en" | "ja";
 }
 
-/** The shape of the drawn picture for a width: a portrait with its captions is 1.2 times as tall as wide, the 3D star with its button, caption and scale 1.45, a comparison 0.86. */
-export const starHeightFor = (view: StarChoice["view"], width: number): number => Math.round(width * (view === "portrait" ? 1.2 : view === "3d" ? 1.45 : 0.86));
+/** The shape of the drawn picture for a width: a portrait with its captions is 1.2 times as tall as wide, a comparison 0.86, and the 3D star a square with 420 pixels of view controls, guide button, captions and scale under it. */
+export const starHeightFor = (view: StarChoice["view"], width: number): number => (view === "3d" ? Math.round(width) + 420 : Math.round(width * (view === "portrait" ? 1.2 : 0.86)));
 
 /** The lines that make the picture's SVG text, for `choice` at `width` pixels. */
 export function starLines(choice: StarChoice, width: number): { imports: Array<{ names: string; sub: string }>; body: string } {

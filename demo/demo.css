@@ -85,6 +85,8 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .star-art.three { display: grid; gap: 6px; justify-items: center; line-height: 1.4; }
 .star3d-stage { width: 100%; max-width: 260px; aspect-ratio: 1; position: relative; border-radius: var(--radius); background: #05070f; overflow: hidden; }
 .star-art.three p { padding: 0; font-size: 0.8rem; text-align: center; color: var(--muted); }
+.star3d-tools { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; max-width: 260px; }
+.star3d-stage { touch-action: none; cursor: grab; }
 .star3d-scale { width: 100%; max-width: 260px; }
 .star3d-scale svg { display: block; width: 100%; height: auto; }
 .star3d-rule { stroke: currentColor; stroke-width: 0.4; opacity: 0.7; }

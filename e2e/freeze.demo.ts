@@ -170,7 +170,7 @@ test.describe("the star in 3D", () => {
   test.describe("turning", () => {
     test.use({ reducedMotion: "no-preference" });
 
-    test("it turns at most 30 frames a second, one frame asked for at a time, and Pause rests it", async ({ page }) => {
+    test("it turns at most 30 frames a second, one frame asked for at a time, and stopping its Auto-turn rests it", async ({ page }) => {
       await openStar(page, 2061);
       const turning = await starWindow(page, 3000);
       expect(turning.frames, "it turns on its own").toBeGreaterThan(5);
@@ -178,7 +178,7 @@ test.describe("the star in 3D", () => {
       expect(turning.draws, "GL draw calls for each frame drawn").toBeLessThanOrEqual(Math.max(1, turning.frames) * 4);
       expect(turning.requests).toBeLessThanOrEqual(turning.callbacks + 3);
       expect(turning.outstanding, "one request waiting at a time").toBeLessThanOrEqual(3);
-      await page.getByTestId("star-3d-pause").click();
+      await page.getByTestId("star-3d-controls").locator('[data-b="play"]').click();
       await page.waitForTimeout(500);
       const rest = await starWindow(page, 2000);
       expect(rest.draws).toBe(0);

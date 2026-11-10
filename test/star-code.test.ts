@@ -50,6 +50,6 @@ test("starFrameCode: the iframe names the embed page and its address, relative i
   assert.ok(starFrameCode(betelgeuse, "x", 320, true).includes('src="star.html?star=2061"'));
   assert.equal(starHeightFor("portrait", 320), 384);
   assert.equal(starHeightFor("compare", 400), 344);
-  assert.equal(starHeightFor("3d", 320), 464);
+  assert.equal(starHeightFor("3d", 320), 740);
   assert.ok(starFrameCode({ ...betelgeuse, view: "3d" }, "x", 320, true).includes("star.html?star=2061&amp;view=3d") || starFrameCode({ ...betelgeuse, view: "3d" }, "x", 320, true).includes("star.html?star=2061&view=3d"));
 });
