@@ -261,7 +261,7 @@ export const WORDS = {
     galaxiesNearest: "Nearest",
     galaxiesFarthest: "Farthest",
     galaxiesPrompt: "Choose nearest or farthest to list ten.",
-    galaxiesLoading: "Loading the galaxies...",
+    galaxiesLoading: "Loading the galaxies…",
     galaxiesNote: "Distances are compiled from Wikidata (CC0), method not stated. {n} of the {total} galaxies have one, and the values disagree for {d} of them.",
     unknown: "not known",
     arcminutes: "arc-minutes",
