@@ -219,21 +219,24 @@ test("the Bright Star Catalogue's stars are painted at the closest zoom, where t
   });
   // Orion's belt: three stars, one of them under the name "Orion's Belt"
   expect(at.length).toBeGreaterThanOrEqual(3);
+  const boxWidth = (await page.getByTestId("ws-box").boundingBox())!.width;
   const png = (await page.getByTestId("ws-box").screenshot()).toString("base64");
   const blank = await page.context().newPage();
   await blank.goto("about:blank");
-  const painted = await blank.evaluate(async ([data, points]) => {
+  const painted = await blank.evaluate(async ([data, points, width]) => {
     const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${data}`)).blob());
     const canvas = new OffscreenCanvas(image.width, image.height);
     const context = canvas.getContext("2d")!;
     context.drawImage(image, 0, 0);
+    // a screen of twice the pixels (WebKit's) gives a picture twice as wide as the box
+    const scale = image.width / (width as number);
     return (points as Array<{ x: number; y: number }>).map((p) => {
-      const pixels = context.getImageData(Math.round(p.x) - 3, Math.round(p.y) - 3, 7, 7).data;
+      const pixels = context.getImageData(Math.round(p.x * scale) - 3, Math.round(p.y * scale) - 3, 7, 7).data;
       let white = 0;
       for (let i = 0; i < pixels.length; i += 4) if (pixels[i]! > 200 && pixels[i + 1]! > 200 && pixels[i + 2]! > 200) white++;
       return white;
     });
-  }, [png, at] as const);
+  }, [png, at, boxWidth] as const);
   await blank.close();
   expect(painted.filter((n) => n >= 2).length, `near-white pixels round each bright star: ${painted.join(",")}`).toBeGreaterThanOrEqual(2);
 });
