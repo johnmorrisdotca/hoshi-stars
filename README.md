@@ -6,24 +6,34 @@
 
 **[Open the demo](https://johnmorrisdotca.github.io/hoshi-stars/)**: a sky chart you turn, zoom and search, in English and Japanese. It runs in the browser of a phone, a tablet or a computer: nothing to install, no account, and it is free.
 
+**The same stars, seen three ways:** the 88 Western constellations, the traditional Japanese names and figures, and the Chinese Three Enclosures and Twenty-Eight Mansions (三垣二十八宿), with names in English, Japanese and Chinese. It is a way to learn and to compare, not an authority on any tradition.
+
 <p align="center"><img alt="The demo on a desk: the constellation Orion on the sky chart, its lines and boundary drawn over the Milky Way, with the search box and Orion's card beside it" src="docs/images/chart-desk.webp" width="620"> <img alt="The same chart on a phone: Orion with its bright stars named, and the zoom buttons under it" src="docs/images/chart-phone.webp" width="200"></p>
+
+<p align="center"><img alt="The same patch of sky, side by side: on the left Orion with its Western figure, on the right the same stars under the Chinese mansion 參宿 (Shēn, the Three Stars) and its neighbours" src="docs/images/sky-cultures.webp" width="820"></p>
+
+The limits of that picture, in plain words: the lines of the Chinese figures are our own joins, not the traditional drawings; a figure with stars fainter than magnitude 6.0 is drawn short, and its card says how many stars are missing; and the Chinese asterisms are read from Wikidata. More in [Sky cultures](#sky-cultures) and [Limits](#limits).
 
 ## Who it is for
 
-- **A teacher** who wants a class to look at the real sky: a chart that turns and zooms in any browser, and sheets to print, in English and Japanese: connect-the-dots constellations, a star wheel to cut out, a sky map for each month and the constellations that suit where you live.
-- **A family or a stargazer** who wants to know what that bright star is, which constellations to look for this month, and what the sky would look like from another star.
-- **A site owner** who wants a sky chart on a page: the demo's "Put it in your page" panel writes the `<iframe>`, with no build step and no script of your own.
-- **A developer** who wants the stars as data: the 5,080 stars you can see without a telescope, the 88 constellations, the Messier objects and seven map projections, typed, with no dependencies and one import for each.
+- **Teachers and students:** a chart that turns and zooms in any browser, and [sheets to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html) in English and Japanese: connect-the-dots constellations, a star wheel to cut out, a sky map for each month and the constellations for where you live.
+- **Stargazers and space enthusiasts:** [the constellations for your latitude this month](https://johnmorrisdotca.github.io/hoshi-stars/kids.html?kind=guide&lat=45), [the Andromeda Galaxy](https://johnmorrisdotca.github.io/hoshi-stars/?pick=D:M31&layers=milky,lines,names,deep) among the deep-sky objects, [Cygnus X-1](https://johnmorrisdotca.github.io/hoshi-stars/?pick=B:Cygnus%20X-1&layers=milky,lines,names,holes) among the black holes, and [the sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/?from=HR5459).
+- **Researchers and outreach staff:** distances come with their error, a star's size and temperature with their uncertainty, and every source is named in [NOTICE.md](NOTICE.md). The tables download as CSV and Parquet ([data files](docs/guides/data-files.md)). Read [Limits](#limits) first, and see [How to cite](#how-to-cite).
+- **People who come through the zodiac:** the twelve zodiac constellations are real star patterns along the Sun's path, and that path also crosses a thirteenth, Ophiuchus, so the dates the Sun is in each one no longer match the traditional sign dates. See [Ophiuchus](https://johnmorrisdotca.github.io/hoshi-stars/constellation.html?c=Oph), or [all 88](https://johnmorrisdotca.github.io/hoshi-stars/constellations.html), with their stars and their names in three cultures.
+- **People learning or teaching Japanese or Chinese, and readers in Japan and China:** every constellation named in English, Japanese (with its hiragana reading) and Chinese (Traditional, Simplified and pinyin), and [the Japanese sky](https://johnmorrisdotca.github.io/hoshi-stars/?culture=japanese&go=Ori) and [the Chinese sky](https://johnmorrisdotca.github.io/hoshi-stars/?culture=chinese&ra=83.97&dec=-1.69&zoom=6.7) under the names you know.
+- **Site owners and developers:** the demo's "Put it in your page" panel writes the `<iframe>` for a chart, with no build step; and the stars, constellations, Messier objects and seven projections are typed data with no dependencies, one import for each. The install and the API are below.
 
 ## Try it now, nothing to install
 
-**[Your sky from a place](https://johnmorrisdotca.github.io/hoshi-stars/kids.html?kind=guide&lat=45)** (a sheet of the constellations for your latitude this month: pick your country, or tap Use my location) · **[The 88 constellations, a picture of each](https://johnmorrisdotca.github.io/hoshi-stars/constellations.html)** · **[Sheets to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html)** · **[The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/?from=HR5459)** (Alpha Centauri) · **[日本語](https://johnmorrisdotca.github.io/hoshi-stars/?lang=ja)** · **[English](https://johnmorrisdotca.github.io/hoshi-stars/?lang=en)**
+**Learn:** **[Sheets to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html)** · **[Your sky from a place](https://johnmorrisdotca.github.io/hoshi-stars/kids.html?kind=guide&lat=45)** (a sheet of the constellations for your latitude this month: pick your country, or tap Use my location) · **[The 88 constellations, a picture of each](https://johnmorrisdotca.github.io/hoshi-stars/constellations.html)**
+
+**Look:** **[Orion on the sky chart](https://johnmorrisdotca.github.io/hoshi-stars/?go=Ori)** · **[The Andromeda Galaxy](https://johnmorrisdotca.github.io/hoshi-stars/?pick=D:M31&layers=milky,lines,names,deep)** · **[Cygnus X-1](https://johnmorrisdotca.github.io/hoshi-stars/?pick=B:Cygnus%20X-1&layers=milky,lines,names,holes)** · **[The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/?from=HR5459)** (Alpha Centauri)
+
+**Three skies:** **[Western](https://johnmorrisdotca.github.io/hoshi-stars/?go=Ori)** · **[Japanese](https://johnmorrisdotca.github.io/hoshi-stars/?culture=japanese&go=Ori)** · **[Chinese](https://johnmorrisdotca.github.io/hoshi-stars/?culture=chinese&ra=83.97&dec=-1.69&zoom=6.7)** · **[日本語](https://johnmorrisdotca.github.io/hoshi-stars/?lang=ja)** · **[English](https://johnmorrisdotca.github.io/hoshi-stars/?lang=en)**
 
 ## For teachers and families
 
 Hoshi Stars works on a phone or a tablet as well as on a computer, in the browser, and it is free: the code is MIT-licensed, and nothing is installed or signed up for. [The sheets guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/guides/printable-sheets.html) says what each printable sheet is, and [the sky-charts guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/guides/sky-charts.html) shows how to put a chart on your own page. Every source is credited in [NOTICE.md](NOTICE.md) and at the foot of each demo page.
-
-The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, no dependencies, about 100 kB gzipped; 2.5 million fainter ones are a separate, tiled import. Hoshi (星) is the Japanese word for a star.
 
 ```sh
 npm install @johnmorrisdotca/hoshi-stars
@@ -143,6 +153,31 @@ console.log(figures().length);               // 88
 
 - Project each star with `/projection` and draw each pair as a line. On a wide projection (equirectangular, Mollweide, Hammer) skip a line whose two ends land more than half the chart apart: it crosses the edge.
 - A figure with one star and no lines is allowed where a figure makes no sense; every constellation at this version has lines.
+
+## Sky cultures
+
+The same stars under other figures and names. `constellations`, `constellation`, `starsIn`, `figures` and `figureOf` take a culture as an extra argument, and leave out they give the 88 constellations of the IAU, as before. Each culture is its own import: `/cultures/western` (the 88 with their names in Latin, English, Japanese and Chinese, Simplified and Traditional, with pinyin, and 17 asterisms such as the Big Dipper and the Summer Triangle), `/cultures/japanese` (the 88 under their Japanese names and 18 traditional names and figures: 昴 Subaru, 北斗七星, 鼓星, 織姫 and 彦星, with readings) and `/cultures/chinese` (三垣二十八宿, the Three Enclosures and the Twenty-Eight Mansions: 238 asterisms with Traditional and Simplified names and pinyin).
+
+```ts
+import { constellation, starsIn } from "@johnmorrisdotca/hoshi-stars/constellations";
+import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
+
+console.log(constellation("北斗", chinese)!.readings.zh, starsIn("beidou", chinese).length);   // běi dǒu 7
+console.log(figureOf("すばる", japanese).asterism.names.en, figureOf("羽林軍", chinese).asterism.missing); // Subaru 32
+```
+
+| Name | Gives |
+|---|---|
+| `western`, `japanese`, `chinese` | a `Culture`: `id`, `names`, `asterisms()` and `find(text)` |
+| `Asterism` | one figure: `id`, `name`, `names` (by `NameLanguage`: `la`, `en`, `ja`, `zh-Hans`, `zh-Hant`), `readings` (`ja` in hiragana, `zh` in pinyin), `aka`, `about`, `kind` (an `AsterismKind`: `constellation`, `asterism` or `mansion`), `group`, `missing` and `chains` of HR numbers |
+| `CultureFigure` (`/lines`) | an `Asterism` with its `stars` and `segments`: only the stars of the figure that the catalogue holds |
+| `defineCulture(id, names, make)` (`/culture`) | a culture of your own |
+
+A Chinese asterism with stars fainter than magnitude 6.0 draws only the stars we have, and `missing` says at least how many it lacks. The lines of the Chinese figures are our own joins, not the traditional drawing. The Chinese asterisms are read from Wikidata (CC0); Stellarium's sky-culture files (GPL, CC BY-SA) are not used (`NOTICE.md`). The demo has a **Sky culture** choice, kept in the address as `culture=chinese`, and picking a figure shows its card. [Sky cultures](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+
+Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
 
 ## Map projections
 
@@ -435,31 +470,6 @@ console.log(orion.counts); // { good: 0, fair: 0, rough: 7, none: 1 }
 
 The demo has a page for it (`constellation-3d.html`, also from "See it in 3D" on each constellation's page): pick a constellation, see it as from the Earth, then drag or press **Turn 90°** to see each star at its distance in light-years with its error bar, or **View from** another star. It is drawn with kazoku-ui's shared renderer (one WebGL context, drawn only when something moves, at most 30 frames a second) and has an embed page, `embed-3d.html`, and code for every way a page is made. A page with no WebGL can draw the figure from the side as SVG from the same numbers. [A constellation in 3D](docs/guides/constellation-in-3d.md) has the details.
 
-## Sky cultures
-
-The same stars under other figures and names. `constellations`, `constellation`, `starsIn`, `figures` and `figureOf` take a culture as an extra argument, and leave out they give the 88 constellations of the IAU, as before. Each culture is its own import: `/cultures/western` (the 88 with their names in Latin, English, Japanese and Chinese, Simplified and Traditional, with pinyin, and 17 asterisms such as the Big Dipper and the Summer Triangle), `/cultures/japanese` (the 88 under their Japanese names and 18 traditional names and figures: 昴 Subaru, 北斗七星, 鼓星, 織姫 and 彦星, with readings) and `/cultures/chinese` (三垣二十八宿, the Three Enclosures and the Twenty-Eight Mansions: 238 asterisms with Traditional and Simplified names and pinyin).
-
-```ts
-import { constellation, starsIn } from "@johnmorrisdotca/hoshi-stars/constellations";
-import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
-import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
-import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
-
-console.log(constellation("北斗", chinese)!.readings.zh, starsIn("beidou", chinese).length);   // běi dǒu 7
-console.log(figureOf("すばる", japanese).asterism.names.en, figureOf("羽林軍", chinese).asterism.missing); // Subaru 32
-```
-
-| Name | Gives |
-|---|---|
-| `western`, `japanese`, `chinese` | a `Culture`: `id`, `names`, `asterisms()` and `find(text)` |
-| `Asterism` | one figure: `id`, `name`, `names` (by `NameLanguage`: `la`, `en`, `ja`, `zh-Hans`, `zh-Hant`), `readings` (`ja` in hiragana, `zh` in pinyin), `aka`, `about`, `kind` (an `AsterismKind`: `constellation`, `asterism` or `mansion`), `group`, `missing` and `chains` of HR numbers |
-| `CultureFigure` (`/lines`) | an `Asterism` with its `stars` and `segments`: only the stars of the figure that the catalogue holds |
-| `defineCulture(id, names, make)` (`/culture`) | a culture of your own |
-
-A Chinese asterism with stars fainter than magnitude 6.0 draws only the stars we have, and `missing` says at least how many it lacks. The lines of the Chinese figures are our own joins, not the traditional drawing. The Chinese asterisms are read from Wikidata (CC0); Stellarium's sky-culture files (GPL, CC BY-SA) are not used (`NOTICE.md`). The demo has a **Sky culture** choice, kept in the address as `culture=chinese`, and picking a figure shows its card. [Sky cultures](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
-
-Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
-
 ## Faint stars
 
 `@johnmorrisdotca/hoshi-stars/faint` adds 2,462,539 more stars, to magnitude 12, from UCAC4 (the U.S. Naval Observatory's CCD astrograph catalogue), as sky tiles of a few thousand stars that a page loads for the part of the sky it shows: nothing is added to the main import. Only the rows UCAC4 measured itself are in it, never the ones it copied from Hipparcos or Tycho; the magnitude is APASS V where UCAC4 has one, else UCAC4's own (between V and R); the colour is APASS B-V. It is thin brighter than about magnitude 9 (3,138 stars between 6.5 and 8), and its magnitudes of stars brighter than about 9.5 run 0.4 to 1.2 too faint; fills for the gap are built and on file, not merged yet (the guide). The tiles are on the demo's Pages site (12.6 MB gzipped in all, not in the npm package) and `faintSky()` loads them:
@@ -475,6 +485,22 @@ The demo's map has a **Faint stars** layer: zoom into Orion and more stars appea
 ## The data in other languages
 
 Every release attaches the data as CSV and Parquet files with a schema, checksums and a note on which credit each table needs, so Python, R or Rust can load it without this package: [data files](docs/guides/data-files.md). To answer queries from your own server, see [serve it yourself](docs/guides/serve-it-yourself.md); we host nothing.
+
+## Limits
+
+Hoshi Stars is made for learning, teaching, comparing and drawing charts. It is not made for pointing a telescope, for navigation or for any work that needs positions better than an arc-minute, and it says where each number stops:
+
+- **Bright stars only, by default.** The main import holds the 5,080 stars of the Yale Bright Star Catalogue to visual magnitude 6.0. Fainter stars, to magnitude 12 from UCAC4, are a separate tiled import.
+- **Positions.** `/sky` gives a star's altitude and azimuth to about an arc-minute; nutation, aberration and parallax are left out, and a star's own proper motion is added only if you ask (`starPosition(star, when)`).
+- **Distances and sizes.** A distance is worked out from the parallax and comes with its error; for many far stars the error is as large as the parallax. A star's size, temperature and luminosity are estimates with their uncertainty, and the one-standard-error range holds the measured disc for 33 of 43 stars the CHARA Array resolved, so about one in four is off (the [star profile guide](docs/guides/star-profile.md) says which).
+- **Sky cultures.** The lines of the Chinese figures are our own joins, not the traditional drawings; a figure with stars fainter than magnitude 6.0 is drawn short, and `missing` says how many are lacking; the Chinese asterisms are read from Wikidata. They are for learning and comparing, not an authority on any tradition.
+- **Data terms.** [NOTICE.md](NOTICE.md) gives the terms of every source. A few state no licence; NOTICE.md says which, that John Morris wrote to their owners on 2026-11-10 to confirm the terms, and what is used until they answer.
+
+## How to cite
+
+> Morris, J. (2026). *Hoshi Stars* (version 0.20.0) [Computer software]. https://github.com/johnmorrisdotca/hoshi-stars
+
+GitHub's "Cite this repository" button reads [CITATION.cff](CITATION.cff) and gives BibTeX and APA. Cite the version you used (`npm ls @johnmorrisdotca/hoshi-stars`), and credit the catalogues behind the numbers: [NOTICE.md](NOTICE.md) says who made each one and under what terms.
 
 ## Where the data comes from
 

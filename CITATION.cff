@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use Hoshi Stars in your work, please cite it as below, and credit the catalogues it draws on (NOTICE.md)."
+title: "Hoshi Stars"
+type: software
+version: 0.20.0
+date-released: "2026-11-09"
+authors:
+  - family-names: Morris
+    given-names: John
+repository-code: "https://github.com/johnmorrisdotca/hoshi-stars"
+repository-artifact: "https://www.npmjs.com/package/@johnmorrisdotca/hoshi-stars"
+url: "https://johnmorrisdotca.github.io/hoshi-stars/"
+license: MIT
+abstract: "The stars you can see without a telescope, the 88 constellations with their lines and boundaries, the Messier objects and seven map projections, as typed data and sky charts, with the Western, Japanese and Chinese sky cultures. Every data source is credited in NOTICE.md."
+keywords:
+  - stars
+  - constellations
+  - star charts
+  - sky cultures
+  - astronomy education
