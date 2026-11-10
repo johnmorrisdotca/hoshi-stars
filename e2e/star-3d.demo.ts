@@ -17,6 +17,19 @@ const turnOf = (page: Page) => page.getByTestId("star-3d").evaluate((el) => (Ref
 test.describe("turning", () => {
   test.use({ reducedMotion: "no-preference" });
 
+  test("it opens visibly turning: with nothing touched the picture changes within two seconds, for a smooth star and a star with cells", async ({ page }) => {
+    for (const hr of [4554, 2061]) {
+      await open(page, `?pick=S:${hr}&pview=3d`);
+      const stage = page.getByTestId("star-3d");
+      await expect(stage).toHaveAttribute("data-live", "true", { timeout: 60_000 });
+      await expect(play(page)).toHaveAttribute("aria-pressed", "true");
+      const first = await stage.screenshot();
+      const began = Date.now();
+      await expect.poll(async () => !(await stage.screenshot()).equals(first), { timeout: 2000, intervals: [250] }).toBe(true);
+      expect(Date.now() - began).toBeLessThanOrEqual(2500);
+    }
+  });
+
   test("3D shows the picked star live and turning, says the cells are generic, puts the Sun beside it to scale, and keeps the choice in the address", async ({ page }) => {
     await open(page, "?pick=S:2061");
     await page.getByTestId("star-view-3d").click();
