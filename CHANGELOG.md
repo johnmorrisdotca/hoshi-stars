@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-11-10
+
 - **Galaxy distances from Wikidata (CC0)** (MODULES-838). New `galaxyDistance(object)` in `/deep-sky` (the 40 Messier galaxies, 2 kB more) and `/deep-sky/ngc-ic` (all galaxies, about 70 kB gzipped more): the median of Wikidata's "distance from Earth" statements in light-years and parsecs, the error where a statement gives bounds (else `null`), the method (always `"compiled, method not stated"`), the sources (Wikidata items, licence, how many values), the lowest and highest value, and `disagree` where the highest is more than 1.2 times the lowest. 6,202 of the 10,282 galaxies have one and 22 disagree; deprecated statements and any under 20 kiloparsecs (star clusters the table calls galaxies) are not used. NED-D, Cosmicflows and HyperLEDA stay out until their terms are clear. The demo's galaxy card shows the distance with its range and source line, and a new "Nearest and farthest galaxies" list ranks them. Guide, README, English and Japanese.
 
 ## [0.21.0] - 2026-11-10
