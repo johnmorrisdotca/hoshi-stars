@@ -567,7 +567,7 @@ export const WORDS = {
     distanceSource: "Wikidata (CC0) から集めた値です。測定方法は書かれていません。",
     distanceRange: "{n}個の値があり、{low}から{high}光年までです。",
     distanceDisagree: "値が食い違っています。最大値が最小値の1.2倍を超えています。",
-    galaxiesHeading: "いちばん近い銀河と遠い銀河",
+    galaxiesHeading: "近い銀河と遠い銀河",
     galaxiesNearest: "近い順",
     galaxiesFarthest: "遠い順",
     galaxiesPrompt: "近い順か遠い順を選ぶと、10個の銀河が表示されます。",
