@@ -17,6 +17,8 @@ test("starLines: the module's lines draw the same portrait and the same comparis
   const profile = starProfile(starByHr(2061)!);
   assert.equal(run(betelgeuse, 320), starPortrait(profile, { name: "Betelgeuse", size: 320 }));
   assert.equal(run({ ...betelgeuse, view: "compare", lang: "ja" }, 400), starComparison(profile, { name: "Betelgeuse", size: 400, lang: "ja" }));
+  // the 3D star's code draws its portrait, the still the live view stands on
+  assert.equal(run({ ...betelgeuse, view: "3d" }, 320), starPortrait(profile, { name: "Betelgeuse", size: 320 }));
 });
 
 test("starCode: every way a page is made imports the package, calls starPicture and puts the picture on the page", () => {
@@ -35,6 +37,8 @@ test("starQuery and starChoiceOf: a choice is written into an address and read b
   const name = (hr: number): string | undefined => starByHr(hr)?.name;
   assert.deepEqual(starChoiceOf(new URLSearchParams("star=2061&view=compare&lang=ja"), name), { hr: 2061, name: "Betelgeuse", view: "compare", lang: "ja" });
   assert.deepEqual(starChoiceOf(new URLSearchParams("star=2061&view=nonsense&lang=fr"), name), betelgeuse);
+  assert.equal(starQuery({ ...betelgeuse, view: "3d" }), "star=2061&view=3d");
+  assert.equal(starChoiceOf(new URLSearchParams("star=2061&view=3d"), name)?.view, "3d");
   assert.equal(starChoiceOf(new URLSearchParams("star=abc"), name), undefined);
   assert.equal(starChoiceOf(new URLSearchParams("star=99999999"), name), undefined);
   assert.equal(starChoiceOf(new URLSearchParams(""), name), undefined);
@@ -46,4 +50,6 @@ test("starFrameCode: the iframe names the embed page and its address, relative i
   assert.ok(starFrameCode(betelgeuse, "x", 320, true).includes('src="star.html?star=2061"'));
   assert.equal(starHeightFor("portrait", 320), 384);
   assert.equal(starHeightFor("compare", 400), 344);
+  assert.equal(starHeightFor("3d", 320), 464);
+  assert.ok(starFrameCode({ ...betelgeuse, view: "3d" }, "x", 320, true).includes("star.html?star=2061&amp;view=3d") || starFrameCode({ ...betelgeuse, view: "3d" }, "x", 320, true).includes("star.html?star=2061&view=3d"));
 });

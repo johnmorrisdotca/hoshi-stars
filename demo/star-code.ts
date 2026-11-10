@@ -1,4 +1,5 @@
-// The text that puts one star's portrait, or the star next to the Sun, in a page, for each way a page is made; the embed page's address; and the iframe. The tests run the module's lines against the package.
+// The text that puts one star's portrait, or the star next to the Sun, in a page, for each way a page is made; the embed page's address; and the iframe. The package gives numbers and SVG, not a 3D engine, so for the 3D
+// star the code to copy draws its portrait (the still the 3D view stands on) and the live, turning star is the demo's, in an iframe (`star.html?view=3d`). The tests run the module's lines against the package.
 import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
 
 declare const __HOSHI_VERSION__: string | undefined;
@@ -11,16 +12,16 @@ const cdn = (): string => `https://cdn.jsdelivr.net/npm/${PACKAGE}@${typeof __HO
 export interface StarChoice {
   hr: number;
   name: string;
-  view: "portrait" | "compare";
+  view: "portrait" | "3d" | "compare";
   lang: "en" | "ja";
 }
 
-/** The shape of the drawn picture for a width: a portrait with its captions is 1.2 times as tall as wide, a comparison 0.86. */
-export const starHeightFor = (view: StarChoice["view"], width: number): number => Math.round(width * (view === "portrait" ? 1.2 : 0.86));
+/** The shape of the drawn picture for a width: a portrait with its captions is 1.2 times as tall as wide, the 3D star with its button, caption and scale 1.45, a comparison 0.86. */
+export const starHeightFor = (view: StarChoice["view"], width: number): number => Math.round(width * (view === "portrait" ? 1.2 : view === "3d" ? 1.45 : 0.86));
 
 /** The lines that make the picture's SVG text, for `choice` at `width` pixels. */
 export function starLines(choice: StarChoice, width: number): { imports: Array<{ names: string; sub: string }>; body: string } {
-  const call = choice.view === "portrait" ? "starPortrait" : "starComparison";
+  const call = choice.view === "compare" ? "starComparison" : "starPortrait";
   const options = `{ name: ${JSON.stringify(choice.name)}, size: ${width}${choice.lang === "ja" ? ', lang: "ja"' : ""} }`;
   return {
     imports: [{ names: "starByHr", sub: "" }, { names: "starProfile", sub: "/profile" }, { names: call, sub: "/portrait" }],
@@ -52,10 +53,10 @@ export function starCode(kind: string, choice: StarChoice, width: number): strin
   }
 }
 
-/** The query of the star embed page for a choice: `star=2061&view=compare&lang=ja` (the default portrait and English are left out). */
+/** The query of the star embed page for a choice: `star=2061&view=3d&lang=ja` (the default portrait and English are left out). */
 export function starQuery(choice: StarChoice): string {
   const query = new URLSearchParams({ star: String(choice.hr) });
-  if (choice.view === "compare") query.set("view", "compare");
+  if (choice.view !== "portrait") query.set("view", choice.view);
   if (choice.lang === "ja") query.set("lang", "ja");
   return query.toString();
 }
@@ -65,7 +66,8 @@ export function starChoiceOf(query: URLSearchParams, nameOf: (hr: number) => str
   const hr = Number(query.get("star"));
   const name = Number.isInteger(hr) && hr > 0 ? nameOf(hr) : undefined;
   if (name === undefined) return undefined;
-  return { hr, name, view: query.get("view") === "compare" ? "compare" : "portrait", lang: query.get("lang") === "ja" ? "ja" : "en" };
+  const view = query.get("view");
+  return { hr, name, view: view === "compare" || view === "3d" ? view : "portrait", lang: query.get("lang") === "ja" ? "ja" : "en" };
 }
 
 /** The `iframe` way: the star embed page at the size chosen. `preview` makes the address relative so the demo's own picture works; the copied code names the published demo. */

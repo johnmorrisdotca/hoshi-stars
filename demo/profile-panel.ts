@@ -2,6 +2,7 @@
 // `/profile` and `/portrait`; this file only lays them out, in the page's language. A figure that could not be worked out says why, in words.
 import { starPortrait, starComparison } from "../src/portrait.ts";
 import type { Estimate, ProfileInput, StarProfile } from "../src/profile.ts";
+import { mountStar3D, type Star3DMount } from "./star-view.ts";
 
 /** What the panel needs from the page. */
 export interface ProfileContext {
@@ -9,8 +10,11 @@ export interface ProfileContext {
   lang: () => "en" | "ja";
 }
 
-/** The two pictures the panel offers. */
-export type ProfileView = "portrait" | "compare";
+/** The three pictures the panel offers. */
+export type ProfileView = "portrait" | "3d" | "compare";
+
+/** The 3D star on show, put away when the panel draws again. */
+let shown3D: Star3DMount | undefined;
 
 /** A number with about three significant figures and the page's digit grouping: 0.71, 2.63, 47, 336, 1,930. */
 export function figure(value: number, lang: "en" | "ja"): string {
@@ -23,9 +27,11 @@ export function figure(value: number, lang: "en" | "ja"): string {
 const range = (e: Estimate, lang: "en" | "ja", say: (key: string) => string): string => (Number.isFinite(e.range[1]) ? `${figure(e.range[0], lang)} ${say("rangeTo")} ${figure(e.range[1], lang)}` : `${figure(e.range[0], lang)} ${say("rangeOrMore")}`);
 const fill = (text: string, values: Record<string, string>): string => text.replace(/\{(\w+)\}/g, (whole, key: string) => values[key] ?? whole);
 
-/** The picture and the buttons that switch it, as a node to put under the star's name. `onView` is called when a button is pressed. */
-export function profileTop(profile: StarProfile, name: string, view: ProfileView, context: ProfileContext, onView: (next: ProfileView) => void): HTMLElement {
+/** The picture and the buttons that switch it, as a node to put under the star's name. `onView` is called when a button is pressed. `hr` places the 3D star's generic cells. */
+export function profileTop(profile: StarProfile, name: string, view: ProfileView, context: ProfileContext, onView: (next: ProfileView) => void, hr = 0): HTMLElement {
   const lang = context.lang();
+  shown3D?.dispose();
+  shown3D = undefined;
   const top = document.createElement("div");
   top.className = "star-profile";
   top.dataset.testid = "star-profile";
@@ -35,7 +41,7 @@ export function profileTop(profile: StarProfile, name: string, view: ProfileView
   tabs.setAttribute("aria-label", context.say("viewLabel"));
   tabs.dataset.testid = "star-view";
   const compare = starComparison(profile, { lang, name });
-  for (const [value, text] of [["portrait", context.say("viewPortrait")], ["compare", context.say("viewCompare")]] as const) {
+  for (const [value, text] of [["portrait", context.say("viewPortrait")], ["3d", context.say("view3d")], ["compare", context.say("viewCompare")]] as const) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "fam-button";
@@ -50,6 +56,14 @@ export function profileTop(profile: StarProfile, name: string, view: ProfileView
   const art = document.createElement("div");
   art.className = view === "compare" ? "star-art compare" : "star-art";
   art.dataset.testid = view === "compare" ? "star-compare" : "star-portrait";
+  if (view === "3d") {
+    art.className = "star-art three";
+    art.dataset.testid = "star-3d-art";
+    shown3D = mountStar3D(art, profile, hr, name, { say: context.say, lang: context.lang, figure: (value) => figure(value, lang) });
+    if (shown3D === undefined) art.append(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: context.say("noPortrait") }));
+    top.append(tabs, art);
+    return top;
+  }
   const svg = view === "compare" ? compare : starPortrait(profile, { lang, name });
   if (svg !== undefined) art.innerHTML = svg;
   else art.append(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: context.say(view === "compare" ? "noComparison" : "noPortrait") }));

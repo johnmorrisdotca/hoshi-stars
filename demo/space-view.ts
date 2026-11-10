@@ -1,6 +1,7 @@
 // The constellation in 3D as a part a page can mount: the canvas (kazoku-ui's shared renderer, one WebGL context for the page), the labels over it, and the calls that choose a constellation, a viewpoint and a pose. The page owns
 // the hands (the shared view controls, or a plain controller in an embed) and tells this part where the view is with `pose`.
-import { createSharedRenderer, type SharedRenderer, type View } from "@johnmorrisdotca/kazoku-ui/renderer";
+import type { SharedRenderer, View } from "@johnmorrisdotca/kazoku-ui/renderer";
+import { pageRenderer } from "./page-renderer.ts";
 import { constellationIn3D, type Constellation3D, type StarIn3D } from "../src/constellation-3d.ts";
 import { starByHr } from "../src/stars.ts";
 import { placeLabels, type LabelRequest, type Rect } from "./space-labels.ts";
@@ -38,13 +39,6 @@ export interface SpaceMount {
   readonly renderer: SharedRenderer<Three>;
   readonly live: boolean;
   dispose(): void;
-}
-
-let shared: SharedRenderer<Three> | undefined;
-/** The page's one renderer, made on first use: three.js is loaded when the first view goes live. */
-export function pageRenderer(): SharedRenderer<Three> {
-  shared ??= createSharedRenderer<Three>({ load: () => import("./three-subset.ts"), stillSize: 320, antialias: true });
-  return shared;
 }
 
 interface Entry {

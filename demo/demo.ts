@@ -78,7 +78,8 @@ function read(): void {
   const named = address.get("layers");
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
-  profileView = address.get("pview") === "compare" ? "compare" : "portrait";
+  const pview = address.get("pview");
+  profileView = pview === "compare" || pview === "3d" ? pview : "portrait";
   embedWhat = address.get("ew") === "star" ? "star" : "chart";
   by = address.get("by") === "space" ? "space" : "sky";
   from = viewpointOf(address.get("from"));
@@ -660,10 +661,10 @@ function profileOf(host: HTMLElement, title: HTMLElement, list: HTMLElement, inp
   title.after(
     profileTop(profile, name, profileView, context, (next) => {
       profileView = next;
-      address.set("pview", next === "compare" ? "compare" : null);
+      address.set("pview", next === "portrait" ? null : next);
       details();
       codes();
-    }),
+    }, input.hr ?? 0),
   );
   // The figures worked out for the star come first: they are what the picture is made from.
   const figures = document.createElement("dl");
