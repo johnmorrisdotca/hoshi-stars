@@ -203,3 +203,37 @@ test("panning the zoomed-in map asks for each tile once, only for what is in vie
     }, { timeout: 10_000, intervals: [0], message: "the map comes to rest: 1.2 s with no frame drawn and no tile asked for" })
     .toBe(0);
 });
+
+test("the Bright Star Catalogue's stars are painted at the closest zoom, where the faint ones come in around them", async ({ page }) => {
+  await open(page);
+  await zoomInto(page, "Ori", 24);
+  await expect.poll(() => dots(page)).toBeGreaterThan(20);
+  // the bright stars on the screen, where they are in the page
+  const at = await page.evaluate(() => {
+    const path = document.querySelector("#ws-sky path.bright")!;
+    const matrix = (path as SVGGeometryElement).getScreenCTM()!;
+    const box = document.getElementById("ws-box")!.getBoundingClientRect();
+    return [...(path.getAttribute("d") ?? "").matchAll(/M(-?[\d.]+) (-?[\d.]+)/g)]
+      .map((m) => { const p = new DOMPoint(Number(m[1]), Number(m[2])).matrixTransform(matrix); return { x: p.x - box.x, y: p.y - box.y }; })
+      .filter((p) => p.x > 8 && p.x < box.width - 8 && p.y > 8 && p.y < box.height - 8);
+  });
+  // Orion's belt: three stars, one of them under the name "Orion's Belt"
+  expect(at.length).toBeGreaterThanOrEqual(3);
+  const png = (await page.getByTestId("ws-box").screenshot()).toString("base64");
+  const blank = await page.context().newPage();
+  await blank.goto("about:blank");
+  const painted = await blank.evaluate(async ([data, points]) => {
+    const image = await createImageBitmap(await (await fetch(`data:image/png;base64,${data}`)).blob());
+    const canvas = new OffscreenCanvas(image.width, image.height);
+    const context = canvas.getContext("2d")!;
+    context.drawImage(image, 0, 0);
+    return (points as Array<{ x: number; y: number }>).map((p) => {
+      const pixels = context.getImageData(Math.round(p.x) - 3, Math.round(p.y) - 3, 7, 7).data;
+      let white = 0;
+      for (let i = 0; i < pixels.length; i += 4) if (pixels[i]! > 200 && pixels[i + 1]! > 200 && pixels[i + 2]! > 200) white++;
+      return white;
+    });
+  }, [png, at] as const);
+  await blank.close();
+  expect(painted.filter((n) => n >= 2).length, `near-white pixels round each bright star: ${painted.join(",")}`).toBeGreaterThanOrEqual(2);
+});
