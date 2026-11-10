@@ -171,6 +171,7 @@ export interface MapSvgOptions {
  * bins sit on a ring of the ground's colour, which lets a line stop short of the dot; the sizes are the zoom's (`sizeStars` in `whole-sky.ts` changes them as the map zooms).
  */
 export function starsSvg(o: Pick<MapSvgOptions, "geometry" | "look" | "px" | "screen" | "zoom">): string {
+  // built for the whole sky; on the screen `sizeStars` sets the sizes for the zoom and the map's width
   const c = PALETTE[o.look];
   const g = o.geometry;
   const ve = o.screen ? ' vector-effect="non-scaling-stroke"' : "";
@@ -303,7 +304,7 @@ export function layoutLabels(o: LayoutOptions): Label[] {
   const look = o.look ?? "night";
   const dots: Box[] = [];
   for (const star of g.starPoints) {
-    const half = binWidth(star.bin, o.zoom, look) / 2;
+    const half = binWidth(star.bin, o.zoom, look, width) / 2;
     if (half * 2 < CLEAR_FROM) continue;
     const x = toX(star.x);
     const y = toY(star.y);

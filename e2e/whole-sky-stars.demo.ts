@@ -3,6 +3,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { allSkyProject } from "../src/all-sky.ts";
 import { starByHr } from "../src/index.ts";
+import { starWidth } from "../demo/whole-sky-stars.ts";
 
 const PAGE = "/hoshi-stars/whole-sky.html";
 /** Alnitak, Alnilam and Mintaka: Orion's belt, by Harvard Revised number. */
@@ -167,12 +168,15 @@ test("the stars grow as the map zooms in: a magnitude-2 star is the biggest mark
   expect([w["0"], w["1"], w["2"], w["3"], w["6"], w["7"], w["9"]]).toEqual([3.6, 3.6, 3.6, 2.2, 2.2, 1.2, 1.2]);
   const line = await page.evaluate(() => Number(document.querySelector("#ws-sky path.fg")!.getAttribute("stroke-width")));
   let before = 3.6;
+  const boxWidth = (await page.getByTestId("ws-box").boundingBox())!.width;
   for (const zoom of [4, 10, 24]) {
     await zoomInto(page, "Ori", zoom);
     w = await widths();
-    expect(w["2"], `a magnitude-2 star at ${zoom}x`).toBeGreaterThanOrEqual(8);
-    expect(w["2"]!, `against the line's ${line}`).toBeGreaterThan(line * 4);
+    // the size follows the pixels to the degree (the zoom and the map's width): the sky map's rule, read for this width
+    expect(Math.abs(w["2"]! - starWidth(2, zoom, 3.6, boxWidth)), `a magnitude-2 star at ${zoom}x`).toBeLessThan(0.15);
+    expect(w["2"]!, `against the line's ${line}`).toBeGreaterThan(line * 3);
     expect(w["2"]!).toBeGreaterThanOrEqual(before);
+    if (zoom * boxWidth >= 3 * 1100) expect(w["2"], `a magnitude-2 star at ${zoom}x is at least 8 px across`).toBeGreaterThanOrEqual(8);
     expect(w["2"]!, "bigger than a star of magnitude 4").toBeGreaterThan(w["6"]!);
     for (let bin = 1; bin < 10; bin++) expect(w[String(bin - 1)]!, `bin ${bin - 1} against ${bin} at ${zoom}x`).toBeGreaterThanOrEqual(w[String(bin)]!);
     before = w["2"]!;
@@ -226,3 +230,38 @@ test("no name covers a belt star, at 4x, 10x and 24x, in English and Japanese", 
     }
   }
 });
+
+for (const ratio of [1, 3]) {
+  test.describe(`at ${ratio} device pixels to the CSS pixel`, () => {
+    test.use({ deviceScaleFactor: ratio });
+
+    test("at the same pixels to the degree a star is the same size in CSS pixels on a phone's map and a desk's, and never bigger at the same zoom", async ({ page }) => {
+      const across = (): Promise<{ width: number; stars: number[] }> =>
+        page.evaluate(() => ({ width: document.getElementById("ws-box")!.getBoundingClientRect().width, stars: [...document.querySelectorAll<SVGPathElement>("#ws-stars path:not(.halo)")].map((p) => Number(p.getAttribute("stroke-width"))) }));
+      const setZoom = async (zoom: number): Promise<void> => {
+        await page.evaluate((to) => (document.getElementById("ws-bar") as unknown as { set(next: object): void }).set({ zoom: to, panX: 0, panY: 0 }), zoom);
+        await frames(page);
+      };
+      await page.setViewportSize({ width: 1440, height: 900 });
+      await open(page);
+      const desk: Record<number, { width: number; stars: number[] }> = {};
+      for (const zoom of [1, 2, 4, 6]) {
+        await setZoom(zoom);
+        desk[zoom] = await across();
+      }
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect.poll(async () => (await across()).width).toBeLessThan(400);
+      for (const zoom of [1, 2, 4, 6]) {
+        // the same zoom on the narrower map has fewer pixels to the degree: its stars are no bigger
+        await setZoom(zoom);
+        const phone = await across();
+        phone.stars.forEach((size, bin) => expect(size, `bin ${bin} at ${zoom}x`).toBeLessThanOrEqual(desk[zoom]!.stars[bin]!));
+        // and at the zoom that gives it the desk's pixels to the degree they are the same
+        const same = (zoom * desk[zoom]!.width) / phone.width;
+        await setZoom(same);
+        const alike = await across();
+        alike.stars.forEach((size, bin) => expect(Math.abs(size - desk[zoom]!.stars[bin]!), `bin ${bin}: ${same.toFixed(1)}x on ${Math.round(phone.width)} px against ${zoom}x on ${Math.round(desk[zoom]!.width)} px`).toBeLessThan(0.15));
+      }
+    });
+  });
+}

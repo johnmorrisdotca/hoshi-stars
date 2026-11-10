@@ -33,6 +33,9 @@ export const STAR_BASE = {
   paper: { bright: 3.2, mid: 1.9, faint: 1.1 },
 } as const;
 
+/** The width of the map, in CSS pixels, that the zoom is read at: a desk's map box. The sky map's rule grows a star with its pixels to the degree, so a narrower map (a phone's) is read as less zoomed in: at 4x a map of 390 px has 0.35 of the pixels to the degree of one of 1100, and its stars are as big as the desk's at 1.4x. */
+export const STAR_REF_WIDTH = 1100;
+
 /** The zoom where the growth is complete: between 1 and here the size slides from the page's own to the sky chart's. */
 export const STAR_GROWN_AT = 3;
 /** The thin ring of the sky's colour round a bright star, in pixels, once grown: where a line meets a star, the line stops short of the dot. */
@@ -46,22 +49,26 @@ export function binOf(magnitude: number): number {
   return i < 0 ? STAR_BINS.length - 1 : i;
 }
 
-/** How far the growth has gone at a zoom: 0 at the whole sky (nothing changes), 1 from `STAR_GROWN_AT` on. */
+/** The zoom of a map `width` CSS pixels wide as a map of the reference width would have it for the same pixels to the degree. */
+export const readZoom = (zoom: number, width: number): number => (zoom * width) / STAR_REF_WIDTH;
+
+/** How far the growth has gone at a zoom (read at the reference width): 0 at the whole sky (nothing changes), 1 from `STAR_GROWN_AT` on. */
 export const growthAt = (zoom: number): number => Math.min(1, Math.max(0, (zoom - 1) / (STAR_GROWN_AT - 1)));
 
 /**
- * The width of a dot of magnitude `rep` at a zoom, in pixels. At zoom 1 it is `base`; zoomed in it slides to the sky chart's size for that magnitude at the same pixels to the degree
- * (`2 x (limit - magnitude) x 0.55 + 1.1`, times `growOf`), never less than `base`.
+ * The width of a dot of magnitude `rep` at a zoom of a map `width` CSS pixels wide, in CSS pixels. At the whole sky it is `base`; zoomed in it slides to the sky chart's size for that magnitude at the same pixels to the degree
+ * (`2 x (limit - magnitude) x 0.55 + 1.1`, times `growOf`), never less than `base`. It follows the pixels to the degree (the zoom times the width), never the device's pixels: at the same pixels to the degree a dot is as wide on a phone as on a desk.
  */
-export function starWidth(rep: number, zoom: number, base: number): number {
-  const t = growthAt(zoom);
+export function starWidth(rep: number, zoom: number, base: number, width: number = STAR_REF_WIDTH): number {
+  const read = readZoom(zoom, width);
+  const t = growthAt(read);
   if (t === 0) return base;
-  const chart = 2 * Math.max(0.7, (WHOLE_SKY_MAGNITUDE - Math.max(rep, -2)) * 0.55 + 1.1) * growOf(chartZoomOf(zoom));
+  const chart = 2 * Math.max(0.7, (WHOLE_SKY_MAGNITUDE - Math.max(rep, -2)) * 0.55 + 1.1) * growOf(chartZoomOf(read));
   return Math.round((base + (Math.max(base, chart) - base) * t) * 100) / 100;
 }
 
-/** The width of a bin's dots at a zoom, for the night map or for paper. */
-export const binWidth = (bin: number, zoom: number, look: "night" | "paper"): number => starWidth(STAR_BINS[bin]!.rep, zoom, STAR_BASE[look][STAR_BINS[bin]!.cls]);
+/** The width of a bin's dots at a zoom of a map `width` CSS pixels wide, for the night map or for paper. */
+export const binWidth = (bin: number, zoom: number, look: "night" | "paper", width: number = STAR_REF_WIDTH): number => starWidth(STAR_BINS[bin]!.rep, zoom, STAR_BASE[look][STAR_BINS[bin]!.cls], width);
 
-/** The width of the ring round a bin's dots at a zoom (0 at the whole sky and for the bins that have none). */
-export const ringWidth = (bin: number, zoom: number): number => (bin < RING_BINS ? Math.round(2 * STAR_RING * growthAt(zoom) * 100) / 100 : 0);
+/** The width of the ring round a bin's dots at a zoom of a map `width` pixels wide (0 at the whole sky and for the bins that have none). */
+export const ringWidth = (bin: number, zoom: number, width: number = STAR_REF_WIDTH): number => (bin < RING_BINS ? Math.round(2 * STAR_RING * growthAt(readZoom(zoom, width)) * 100) / 100 : 0);

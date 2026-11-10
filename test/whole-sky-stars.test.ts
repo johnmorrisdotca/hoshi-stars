@@ -9,7 +9,7 @@ import { CLEAR_FROM, geometryOf, layoutLabels, UNIT_H, UNIT_W } from "../demo/wh
 import { textSize } from "../demo/labels.ts";
 import { western } from "../src/cultures/western.ts";
 import { chartZoomOf, WHOLE_SKY_ZOOM_MAX } from "../demo/whole-sky-field.ts";
-import { binOf, binWidth, ringWidth, STAR_BASE, STAR_BINS, starWidth } from "../demo/whole-sky-stars.ts";
+import { binOf, binWidth, readZoom, ringWidth, STAR_BASE, STAR_BINS, STAR_REF_WIDTH, starWidth } from "../demo/whole-sky-stars.ts";
 
 const ZOOMS = [1, 1.02, 1.5, 2, 3, 4, 6.5, 10, 16, 24];
 const FAINT_LAYER_WIDEST = 2 * 0.95 * 0.6;
@@ -72,7 +72,7 @@ function viewOf(frame: "equatorial" | "galactic", projection: "mollweide" | "ham
   const panX = -(p.x - UNIT_W / 2) * k;
   const panY = -(p.y - UNIT_H / 2) * k;
   const labels = layoutLabels({ geometry, culture: western, lang: "en", width, zoom, panX, panY, fontSize: 11 });
-  const dots = geometry.starPoints.map((s) => ({ x: width / 2 + panX + (s.x - UNIT_W / 2) * k, y: width / 4 + panY + (s.y - UNIT_H / 2) * k, d: binWidth(s.bin, zoom, "night") }));
+  const dots = geometry.starPoints.map((s) => ({ x: width / 2 + panX + (s.x - UNIT_W / 2) * k, y: width / 4 + panY + (s.y - UNIT_H / 2) * k, d: binWidth(s.bin, zoom, "night", width) }));
   return { labels, dots, width };
 }
 
@@ -113,4 +113,23 @@ test("Orion's Belt is named beside the belt at 24x, not on Alnilam, and still ha
     assert.ok(middle.d >= 8, `the star in the middle is a big dot (${middle.d})`);
     assert.ok(Math.hypot(belt.x - middle.x, belt.y - middle.y) > middle.d / 2 + 5, "the name is off the star");
   }
+});
+
+test("a dot is as wide on a phone's map as on a desk's at the same pixels to the degree, and never wider at the same zoom", () => {
+  // the pixels to the degree of a map are its width over 360 times its zoom: a map of 390 px at 4x has 0.35 of those of one of 1100 at 4x
+  for (const desk of [940, 1100, 1440]) {
+    for (const phone of [320, 390, 430]) {
+      for (const zoom of [1, 2, 4, 10, 24]) {
+        for (let bin = 0; bin < STAR_BINS.length; bin++) {
+          assert.ok(binWidth(bin, zoom, "night", phone) <= binWidth(bin, zoom, "night", desk), `bin ${bin} at ${zoom}x: a phone of ${phone} against a desk of ${desk}`);
+          // the same pixels to the degree: the phone's zoom is the desk's times the ratio of the widths
+          const same = (zoom * desk) / phone;
+          if (same <= WHOLE_SKY_ZOOM_MAX) assert.equal(binWidth(bin, same, "night", phone), binWidth(bin, zoom, "night", desk), `bin ${bin}: ${phone} wide at ${same}x against ${desk} wide at ${zoom}x`);
+        }
+      }
+    }
+  }
+  // what it was on a phone before: the same at 4x as a desk's, which is a snowfall; now it is the desk's at 1.4x
+  assert.ok(binWidth(binOf(2), 4, "night", 390) < 5);
+  assert.equal(readZoom(4, 390), (4 * 390) / STAR_REF_WIDTH);
 });

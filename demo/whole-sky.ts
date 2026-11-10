@@ -69,7 +69,7 @@ let built = "";
 let world: SVGGElement | undefined;
 let starWorld: SVGGElement | undefined;
 let starPaths: SVGPathElement[] = [];
-let starsAt = Number.NaN;
+let starsAt = "";
 let queued = false;
 
 const mapHref = (abbreviation: string): string => {
@@ -98,20 +98,21 @@ function build(): void {
   starLayer.innerHTML = `<g id="ws-star-world">${starsSvg({ geometry, look: "night", px: 1, screen: true })}</g>`;
   starWorld = starLayer.querySelector<SVGGElement>("#ws-star-world")!;
   starPaths = Array.from(starLayer.querySelectorAll<SVGPathElement>("path"));
-  starsAt = Number.NaN;
+  starsAt = "";
   built = key;
   hover = null;
   paintOn();
 }
 
-/** The stars' sizes for the zoom: the Bright Star Catalogue's dots grow as the map zooms in (`whole-sky-stars.ts`), a bright one is drawn over a ring of the ground's colour, and the width changes only when the zoom does. */
+/** The stars' sizes for the zoom: the Bright Star Catalogue's dots grow as the map zooms in (`whole-sky-stars.ts`), a bright one is drawn over a ring of the ground's colour, and the width changes only when the zoom or the map's width does; they follow the pixels to the degree, so a phone's map at the same pixels to the degree has the same dots as a desk's. */
 function sizeStars(): void {
-  if (view.zoom === starsAt) return;
-  starsAt = view.zoom;
+  const at = `${view.zoom}|${width}`;
+  if (at === starsAt) return;
+  starsAt = at;
   for (const path of starPaths) {
     const bin = Number(path.dataset.bin);
-    const width = binWidth(bin, view.zoom, "night");
-    path.setAttribute("stroke-width", String(path.classList.contains("halo") ? (ringWidth(bin, view.zoom) === 0 ? 0 : width + ringWidth(bin, view.zoom)) : width));
+    const across = binWidth(bin, view.zoom, "night", width);
+    path.setAttribute("stroke-width", String(path.classList.contains("halo") ? (ringWidth(bin, view.zoom, width) === 0 ? 0 : across + ringWidth(bin, view.zoom, width)) : across));
   }
 }
 
