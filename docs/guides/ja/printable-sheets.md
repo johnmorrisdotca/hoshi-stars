@@ -39,7 +39,7 @@ console.log(starWheelPlate(-34, { ...room, lang: "ja" }).includes('data-cut="win
 
 ## 絵のまわりのページ
 
-絵はシートの本文です。ヘッダー (ブランド、パッケージ名、タイトル、「なまえ:」のらん)、地域・旗・緯度の帯の箱、フッター (クレジット、バージョン、日付、デモへの QR コード) は、[kazoku-ui の印刷パート](https://github.com/johnmorrisdotca/kazoku-ui/blob/main/docs/guides/print.md)のものです。このパッケージはそれに依存せず、デモが作ります。文字は `kid` (名前28 pt、本文18 pt、線3 mm) か `normal` です。ページの本文の本当の広さをはかって、`widthMm` と `heightMm` にわたします。
+絵はシートの本文です。ヘッダー (ブランド、パッケージ名、タイトル、「なまえ:」のらん)、地域・旗・緯度の帯の箱、フッター (クレジット、バージョン、日付、デモへの QR コード) は、[kazoku-ui の印刷パート](https://github.com/johnmorrisdotca/kazoku-ui/blob/main/docs/guides/print.md)のものです。このパッケージはそれに依存せず、デモが作ります。文字は `kid` (名前28 pt、本文18 pt、線1.2 mm) か `normal` です。ページの本文の本当の広さをはかって、`widthMm` と `heightMm` にわたします。
 
 ```ts no-run
 import { buildSheet, printCss, printSheet } from "@johnmorrisdotca/kazoku-ui/print";

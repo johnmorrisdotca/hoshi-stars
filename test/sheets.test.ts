@@ -84,11 +84,11 @@ test("the dots are inside the page, sized by brightness, and their numbers are i
   }
 });
 
-test("an answer page has the lines 3 mm thick and a puzzle page has none", () => {
+test("an answer page has the lines 1.2 mm thick and a puzzle page has none", () => {
   const puzzle = dotsSvg("Cas", { level: "medium", widthMm: 184.6, heightMm: 170, lang: "en" });
   const answer = dotsSvg("Cas", { level: "medium", widthMm: 184.6, heightMm: 170, lang: "en", answer: true });
   assert.ok(!puzzle.includes("data-line"));
-  assert.ok(numbers(answer, "stroke-width").includes(3));
+  assert.ok(numbers(answer, "stroke-width").includes(1.2));
   assert.ok(answer.includes("Here is Cassiopeia"));
   assert.ok(dotsSvg("Cas", { level: "hard", widthMm: 184.6, heightMm: 170, lang: "ja" }).includes("ほしを みつけて"));
 });

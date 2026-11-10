@@ -2,6 +2,7 @@
 // each other or leave the view at a desk's width, a laptop's and a phone's; a viewpoint star, Japanese, light and dark, the picker and the address work; and the embed page draws what its address says. WebGL, in software.
 import { constellationIn3D, DISTANCE_QUALITIES } from "../src/constellation-3d.ts";
 import { constellations } from "../src/constellations.ts";
+import { drainGpu } from "@johnmorrisdotca/kazoku-ui/testing";
 import { expect, test, type Page } from "@playwright/test";
 
 const PAGE = "/hoshi-stars/constellation-3d.html";
@@ -107,6 +108,7 @@ test("a drag turns it, and the turn is kept in the address", async ({ page, isMo
   await page.mouse.up();
   await expect.poll(() => across(page)).toBeGreaterThan(0.5);
   await expect.poll(() => param(page, "yaw")).not.toBeNull();
+  await drainGpu(page);
 });
 
 for (const abbreviation of ["Ori", "UMa", "Hya", "Cru"]) {

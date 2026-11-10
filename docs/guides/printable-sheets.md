@@ -39,7 +39,7 @@ console.log(starWheelPlate(-34, { ...room, lang: "en" }).includes('data-cut="win
 
 ## The page around a picture
 
-The pictures are the sheet's body. The header (the brand, the package and the title, and a "Name:" box), the optional box with the region, flag and latitude band, and the footer (credits, version, date and a QR code back to the demo) are [kazoku-ui's print part](https://github.com/johnmorrisdotca/kazoku-ui/blob/main/docs/guides/print.md), which this package does not depend on: the demo builds them, in the `kid` type (names 28 pt, body 18 pt, lines 3 mm) or `normal`. Measure the room the page's body really has and give it to the function as `widthMm` and `heightMm`:
+The pictures are the sheet's body. The header (the brand, the package and the title, and a "Name:" underline), the optional box with the region, flag and latitude band, and the footer (credits, version, date and a QR code back to the demo) are [kazoku-ui's print part](https://github.com/johnmorrisdotca/kazoku-ui/blob/main/docs/guides/print.md), which this package does not depend on: the demo builds them, in the `kid` type (names 28 pt, body 18 pt, lines 1.2 mm) or `normal`. Measure the room the page's body really has and give it to the function as `widthMm` and `heightMm`:
 
 ```ts no-run
 import { buildSheet, printCss, printSheet } from "@johnmorrisdotca/kazoku-ui/print";

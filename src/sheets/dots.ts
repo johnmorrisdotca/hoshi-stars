@@ -234,7 +234,7 @@ function words(figure: DotsFigure, lang: Lang, answer: boolean): string {
 export const dotsSubtitle = (c: Constellation, lang: Lang): string => (lang === "ja" ? `${c.reading}` : `${c.name}: the ${c.english}`);
 
 /**
- * One page of a connect-the-dots sheet as an SVG string measured in millimetres: the dots (and the numbers, unless the level is `hard`), the words that say what to do, and on an answer page the lines too, 3 mm thick for the `kid` type.
+ * One page of a connect-the-dots sheet as an SVG string measured in millimetres: the dots (and the numbers, unless the level is `hard`), the words that say what to do, and on an answer page the lines too, 1.2 mm thick for the `kid` type.
  * @param text - The constellation.
  * @param options - `level`, `widthMm` and `heightMm` (the room the page's body has), `lang`, `answer` (draw the lines) and `type`.
  * @returns The `<svg>` markup.

@@ -1,7 +1,7 @@
 // The constellation in 3D must never ask a lot of the machine (the family's rule: no 3D release without a freeze test). Played in headless Chromium, drawing in software, these fail on: more than one animation frame asked for
 // at a time, a draw when nothing moves or the view is out of sight or the tab is hidden, more than 30 frames drawn a second while it turns, live WebGL objects that grow over a run of constellations, viewpoints and looks,
 // more than one WebGL context, and a canvas past 6 million pixels or 4096 a side on a 5K screen at a pixel ratio of 2. `pnpm test:freeze` runs it; CI and the release run it.
-import { canvasSize, COUNT_SCRIPT, gpuObjects, readCounts, withinPixelBudget } from "@johnmorrisdotca/kazoku-ui/testing";
+import { canvasSize, COUNT_SCRIPT, drainGpu, drawCounts, gpuObjects, readCounts, untilStill, withinPixelBudget } from "@johnmorrisdotca/kazoku-ui/testing";
 import { expect, test, type Page } from "@playwright/test";
 
 test.beforeEach(({ browserName }, info) => {
@@ -63,6 +63,8 @@ test.describe("turning", () => {
     expect(turning.draws, "GL draw calls for each frame drawn").toBeLessThanOrEqual(Math.max(1, turning.frames) * 12);
     expect(turning.requests, "no more frames asked for than the page ran").toBeLessThanOrEqual(turning.callbacks + 3);
     expect(turning.outstanding, "one request waiting at a time").toBeLessThanOrEqual(3);
+    // software drawing is slower than 30 frames a second: the backlog is this test's, not the next one's
+    await drainGpu(page);
   });
 
   test("Turn 90° eases over a few frames at most 30 a second, then rests: nothing is drawn after it settles", async ({ page }) => {
@@ -70,7 +72,7 @@ test.describe("turning", () => {
     const turned = await bounded(page, 1500, () => page.getByTestId("sp-turn").click());
     expect(turned.frames).toBeGreaterThan(2);
     expect(turned.frames).toBeLessThanOrEqual(turned.seconds * 30 + 4);
-    await page.waitForTimeout(500);
+    await untilStill(page, drawCounts);
     const rest = await bounded(page, 2000);
     expect(rest.draws).toBe(0);
     expect(rest.frames).toBe(0);
