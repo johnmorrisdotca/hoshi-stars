@@ -246,11 +246,19 @@ test("each picture is drawn on its object: its middle is within a twentieth of i
     const zoom = Math.round(400 / (fov * 0.000073 * Math.min(box.width, box.height)));
     await page.goto(`/hoshi-stars/?pick=D:${id}&ra=${picture.centre.rightAscension}&dec=${picture.centre.declination}&zoom=${zoom}`);
     await expect(page.locator(`#chart image[data-pic='${id}']`), id).toHaveCount(1, { timeout: 20_000 });
-    const shown = await middleOf(page, `#chart image[data-pic='${id}']`);
-    const mark = await middleOf(page, `#chart [data-deep="${id}"]`);
-    // a photograph is framed by the person who took it, not about the catalogue's centre (the Pleiades' photograph is cut about the bright stars): the object's middle is on it, within 0.3 of its width of the picture's
+    // a photograph is framed by the person who took it, not about the catalogue's centre (the Pleiades' photograph is cut about the bright stars): the object's middle is on it, within 0.3 of its width of the picture's.
+    // The map is laid out a frame after it is drawn and may settle again (WebKit reads the picture's box mid-move): the two middles are read together until they agree.
     const photograph = ["NSF NOIRLab", "ESO"].includes(picture.source.name);
-    expect(Math.hypot(shown.x - mark.x, shown.y - mark.y), id).toBeLessThan(shown.width * (photograph ? 0.3 : 0.05) + 6);
+    await expect
+      .poll(
+        async () => {
+          const shown = await middleOf(page, `#chart image[data-pic='${id}']`);
+          const mark = await middleOf(page, `#chart [data-deep="${id}"]`);
+          return Math.hypot(shown.x - mark.x, shown.y - mark.y) < shown.width * (photograph ? 0.3 : 0.05) + 6;
+        },
+        { message: id, timeout: 10_000 },
+      )
+      .toBe(true);
   }
 });
 
