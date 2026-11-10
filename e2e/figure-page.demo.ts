@@ -106,6 +106,7 @@ test("the same sky in the other two cultures is side by side, each card a link t
   await expect(japanese.first()).toHaveAttribute("title", /7 of the same stars/);
   await expect(japanese.nth(1)).toHaveAttribute("href", "constellation.html?c=UMa&culture=japanese");
   await expect(japanese.first().locator("span").first()).toHaveText("北斗七星");
+  await japanese.first().scrollIntoViewIfNeeded();
   await loaded(page, "#cp-compare .cp-column:nth-child(2) img");
   // a desk puts the two columns beside each other, a phone one under the other
   const [one, two] = await Promise.all([columns.nth(0).boundingBox(), columns.nth(1).boundingBox()]);
