@@ -93,6 +93,8 @@ test("panning the zoomed-in map stays within a frame budget, and the faint stars
   await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
   await page.waitForTimeout(800);
   await page.evaluate(() => { (window as unknown as { drawMs: number[] }).drawMs = []; });
+  // the picture cards above the map are a few pixels taller or shorter from time to time: bring the map to the middle of the screen so the drag is on it
+  await page.locator("#chart-box").scrollIntoViewIfNeeded();
   const box = (await page.locator("#chart-box").boundingBox())!;
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;

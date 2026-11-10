@@ -40,6 +40,8 @@ test.describe("turning", () => {
     await expect(page.getByTestId("star-3d-scale")).toContainText("The dot is the Sun at the same scale.");
     await expect(page.getByTestId("star-3d-scale")).toContainText(" to ");
     await expect(page.getByTestId("star-3d-sun")).toHaveCount(1);
+    // the star only turns while it is on the screen: bring it there, whatever the cards above the map weigh
+    await stage.scrollIntoViewIfNeeded();
     const before = await turnOf(page);
     await expect.poll(() => turnOf(page), { timeout: 20_000 }).toBeGreaterThan(before + 2);
     await expect.poll(() => param(page, "pview")).toBe("3d");
