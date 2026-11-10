@@ -14,9 +14,10 @@ import { faintAt } from "./faint.ts";
 import { faintDepthOf, faintMarks } from "./faint-layer.ts";
 import { mountPicker } from "./picker.ts";
 import { langNow, nameIn, type Lang } from "./thumbs.ts";
-import { geometryOf, LAYERS, layoutLabels, labelsSvg, mapSvg, paperSvg, UNIT_H, UNIT_W, type Geometry, type Layer } from "./whole-sky-draw.ts";
+import { geometryOf, LAYERS, layoutLabels, labelsSvg, mapSvg, paperSvg, starsSvg, UNIT_H, UNIT_W, type Geometry, type Layer } from "./whole-sky-draw.ts";
 import { chartZoomOf, skyFieldOf, visibleBox, WHOLE_SKY_MAGNITUDE, WHOLE_SKY_ZOOM_MAX } from "./whole-sky-field.ts";
 import { milkyPicture } from "./whole-sky-milky.ts";
+import { binWidth, ringWidth } from "./whole-sky-stars.ts";
 import { say } from "./words.ts";
 
 declare const __HOSHI_VERSION__: string;
@@ -59,12 +60,16 @@ function read(): void {
 const box = $<HTMLElement>("ws-box");
 const sky = $<SVGSVGElement>("ws-sky");
 const faintLayer = $<SVGSVGElement>("ws-faint");
+const starLayer = $<SVGSVGElement>("ws-stars");
 const labelLayer = $<SVGSVGElement>("ws-labels");
 const bar = $<ViewControlsElement>("ws-bar");
 let width = Math.max(200, Math.round(box.clientWidth));
 let geometry: Geometry = geometryOf(frame, projection);
 let built = "";
 let world: SVGGElement | undefined;
+let starWorld: SVGGElement | undefined;
+let starPaths: SVGPathElement[] = [];
+let starsAt = Number.NaN;
 let queued = false;
 
 const mapHref = (abbreviation: string): string => {
@@ -87,11 +92,27 @@ function build(): void {
   if (key === built && world !== undefined) return;
   geometry = geometryOf(frame, projection);
   const milky = layers.has("milky") ? milkyPicture(frame, projection, "night", 720) : undefined;
-  sky.innerHTML = `<g id="ws-world">${mapSvg({ geometry, culture, layers, look: "night", milky, px: 1, screen: true, nameOf, hrefOf: mapHref })}</g>`;
+  sky.innerHTML = `<g id="ws-world">${mapSvg({ geometry, culture, layers, look: "night", milky, px: 1, screen: true, apart: true, nameOf, hrefOf: mapHref })}</g>`;
   world = sky.querySelector<SVGGElement>("#ws-world")!;
+  // the catalogue's stars are a layer of their own, over the faint stars and under the names
+  starLayer.innerHTML = `<g id="ws-star-world">${starsSvg({ geometry, look: "night", px: 1, screen: true })}</g>`;
+  starWorld = starLayer.querySelector<SVGGElement>("#ws-star-world")!;
+  starPaths = Array.from(starLayer.querySelectorAll<SVGPathElement>("path"));
+  starsAt = Number.NaN;
   built = key;
   hover = null;
   paintOn();
+}
+
+/** The stars' sizes for the zoom: the Bright Star Catalogue's dots grow as the map zooms in (`whole-sky-stars.ts`), a bright one is drawn over a ring of the ground's colour, and the width changes only when the zoom does. */
+function sizeStars(): void {
+  if (view.zoom === starsAt) return;
+  starsAt = view.zoom;
+  for (const path of starPaths) {
+    const bin = Number(path.dataset.bin);
+    const width = binWidth(bin, view.zoom, "night");
+    path.setAttribute("stroke-width", String(path.classList.contains("halo") ? (ringWidth(bin, view.zoom) === 0 ? 0 : width + ringWidth(bin, view.zoom)) : width));
+  }
 }
 
 function size(): void {
@@ -99,6 +120,7 @@ function size(): void {
   sky.setAttribute("viewBox", `0 0 ${width} ${width / 2}`);
   labelLayer.setAttribute("viewBox", `0 0 ${width} ${width / 2}`);
   faintLayer.setAttribute("viewBox", `0 0 ${width} ${width / 2}`);
+  starLayer.setAttribute("viewBox", `0 0 ${width} ${width / 2}`);
 }
 
 function draw(): void {
@@ -106,7 +128,10 @@ function draw(): void {
   build();
   const height = width / 2;
   const k = (width / UNIT_W) * view.zoom;
-  world!.setAttribute("transform", `translate(${(width / 2 + view.panX).toFixed(2)} ${(height / 2 + view.panY).toFixed(2)}) scale(${k.toFixed(5)}) translate(${-UNIT_W / 2} ${-UNIT_H / 2})`);
+  sizeStars();
+  const place = `translate(${(width / 2 + view.panX).toFixed(2)} ${(height / 2 + view.panY).toFixed(2)}) scale(${k.toFixed(5)}) translate(${-UNIT_W / 2} ${-UNIT_H / 2})`;
+  world!.setAttribute("transform", place);
+  starWorld!.setAttribute("transform", place);
   box.dataset.zoom = view.zoom < 1.6 ? "low" : "high";
   box.dataset.zoomed = String(view.zoom > 1.02);
   const labels = layers.has("names") ? layoutLabels({ geometry, culture, lang: langNow(), width, zoom: view.zoom, panX: view.panX, panY: view.panY, fontSize: langNow() === "ja" ? FONT + 1 : FONT }) : [];

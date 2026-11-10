@@ -9,6 +9,7 @@ import { figures } from "../src/lines.ts";
 import type { SkyPoint } from "../src/projection.ts";
 import { BOUNDARY_DASH, labelOf } from "./chart.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
+import { binOf, binWidth, RING_BINS, ringWidth, STAR_BINS } from "./whole-sky-stars.ts";
 
 export const UNIT_W = 1000;
 export const UNIT_H = 500;
@@ -84,8 +85,10 @@ export interface Geometry {
   grid: string;
   plane: string;
   regions: Region[];
-  /** Field stars as `M x y h0` path data: the brightest, the middle and the faint ones. */
-  stars: { bright: string; middle: string; faint: string };
+  /** Field stars as `M x y h0` path data, one string for each of the magnitude bins (`STAR_BINS`), brightest first. */
+  stars: string[];
+  /** The stars to magnitude 4.5, in the unit box, with the bin each is drawn in: what the names keep clear of. */
+  starPoints: Array<{ x: number; y: number; bin: number }>;
   figuresOf(culture: Culture): Figure[];
 }
 
@@ -106,10 +109,13 @@ export function geometryOf(frame: AllSkyFrame, projection: AllSkyProjection): Ge
     const at = allSkyProject(middle, options);
     return { abbreviation: c.abbreviation, d: pathOf(outlines.flatMap((outline) => allSkyLine(outline, options))), reach, x: at.x, y: at.y };
   });
-  const classes: { bright: string[]; middle: string[]; faint: string[] } = { bright: [], middle: [], faint: [] };
+  const bins: string[] = STAR_BINS.map(() => "");
+  const starPoints: Geometry["starPoints"] = [];
   for (const star of stars()) {
     const at = allSkyProject(star, options);
-    classes[star.magnitude <= 2.5 ? "bright" : star.magnitude <= 4.5 ? "middle" : "faint"].push(`M${round(at.x)} ${round(at.y)}h0`);
+    const bin = binOf(star.magnitude);
+    bins[bin] += `M${round(at.x)} ${round(at.y)}h0`;
+    if (star.magnitude <= 4.5) starPoints.push({ x: at.x, y: at.y, bin });
   }
   const figureCache = new WeakMap<Culture, Figure[]>();
   const geometry: Geometry = {
@@ -118,7 +124,8 @@ export function geometryOf(frame: AllSkyFrame, projection: AllSkyProjection): Ge
     grid: pathOf(grid.filter((line) => !(line.kind === "parallel" && line.degrees === 0)).flatMap((line) => line.runs)),
     plane: pathOf(grid.filter((line) => line.kind === "parallel" && line.degrees === 0).flatMap((line) => line.runs)),
     regions,
-    stars: { bright: classes.bright.join(""), middle: classes.middle.join(""), faint: classes.faint.join("") },
+    stars: bins,
+    starPoints,
     figuresOf(culture) {
       let list = figureCache.get(culture);
       if (list === undefined) {
@@ -149,10 +156,35 @@ export interface MapSvgOptions {
   px: number;
   /** True on the screen, where the strokes keep their width as the map zooms. */
   screen: boolean;
+  /** The zoom the stars are sized for (1 when left out): on the screen `sizeStars` takes them from there as the map zooms. */
+  zoom?: number;
+  /** True when the stars are left out of the map to be drawn by `starsSvg` on a layer of their own, above the faint stars (the screen's page). */
+  apart?: boolean;
   /** The words for a link's accessible name, by IAU abbreviation (screen only). */
   nameOf?: (abbreviation: string) => string;
   /** Where a constellation is opened (screen only). */
   hrefOf?: (abbreviation: string) => string;
+}
+
+/**
+ * The Bright Star Catalogue's stars as the inside of an SVG whose viewBox is the unit box (or a group of the map): from the faintest bin to the brightest, so a brighter star is drawn over a fainter one. On the screen the brighter
+ * bins sit on a ring of the ground's colour, which lets a line stop short of the dot; the sizes are the zoom's (`sizeStars` in `whole-sky.ts` changes them as the map zooms).
+ */
+export function starsSvg(o: Pick<MapSvgOptions, "geometry" | "look" | "px" | "screen" | "zoom">): string {
+  const c = PALETTE[o.look];
+  const g = o.geometry;
+  const ve = o.screen ? ' vector-effect="non-scaling-stroke"' : "";
+  const w = (n: number): string => String(Math.max(0.01, Math.round(n * o.px * 100) / 100));
+  const zoom = o.zoom ?? 1;
+  let svg = `<g data-layer="stars">`;
+  for (let bin = STAR_BINS.length - 1; bin >= 0; bin -= 1) {
+    if (g.stars[bin] === "") continue;
+    const width = binWidth(bin, zoom, o.look === "paper" ? "paper" : "night");
+    const rep = STAR_BINS[bin]!;
+    if (o.screen && bin < RING_BINS) svg += `<path class="halo" data-bin="${bin}" d="${g.stars[bin]}" stroke="${c.ground}" stroke-width="${ringWidth(bin, zoom) === 0 ? 0 : width + ringWidth(bin, zoom)}" stroke-opacity=".85" stroke-linecap="round" fill="none"${ve}/>`;
+    svg += `<path class="${rep.cls}" data-bin="${bin}" d="${g.stars[bin]}" stroke="${c.star}" stroke-width="${w(width)}" stroke-linecap="round" fill="none"${ve}/>`;
+  }
+  return `${svg}</g>`;
 }
 
 /** The map as the inside of an SVG whose viewBox is the unit box: ground, the Milky Way, the grid, boundaries, figures and stars. */
@@ -188,8 +220,7 @@ export function mapSvg(o: MapSvgOptions): string {
     }
     svg += "</g>";
   }
-  const dot = (d: string, size: number, cls: string): string => `<path class="${cls}" d="${d}" stroke="${c.star}" stroke-width="${w(size)}" stroke-linecap="round" fill="none"${ve}/>`;
-  svg += `<g data-layer="stars">${dot(g.stars.faint, o.look === "paper" ? 1.1 : 1.2, "faint")}${dot(g.stars.middle, o.look === "paper" ? 1.9 : 2.2, "mid")}${dot(g.stars.bright, o.look === "paper" ? 3.2 : 3.6, "bright")}</g>`;
+  if (!o.apart) svg += starsSvg(o);
   svg += "</g>";
   svg += `<path d="${g.outline}" fill="none" stroke="${c.rim}" stroke-width="${w(1.5)}"${ve}/>`;
   return svg;
@@ -218,9 +249,19 @@ export interface LayoutOptions {
   panX: number;
   panY: number;
   fontSize: number;
+  /** The map's look (the night one when left out): the size of the dots the names keep clear of. */
+  look?: Look;
 }
 
-/** Where the names go at this zoom: the largest regions first, each in the fullest form that fits its region and touches no name already placed, else its abbreviation, else left out. */
+/** A dot this wide or wider is a mark a name must not cover: wider than the page's own at the whole sky (3.6 px), so at the whole sky the names are as they were, and from a little way in, a star the zoom has grown to this size. */
+export const CLEAR_FROM = 4;
+/** The room kept round a dot beyond its edge, in pixels. */
+const CLEAR_GAP = 1.5;
+
+/**
+ * Where the names go at this zoom: the largest regions first, each in the fullest form that fits its region and touches no name already placed and no bright star's dot (`CLEAR_FROM`), else its abbreviation,
+ * else left out. A name is first put on the middle of its figure, and when a star is there (an asterism is centred on its middle star) it moves beside it.
+ */
 export function layoutLabels(o: LayoutOptions): Label[] {
   const { geometry: g, width } = o;
   const height = width / 2;
@@ -258,35 +299,56 @@ export function layoutLabels(o: LayoutOptions): Label[] {
     list.push({ id: f.id, texts, x, y, room: 2 * reach * degree, priority: (f.kind === "mansion" ? 1000 : f.kind === "asterism" && o.culture.id !== "chinese" ? -1000 : 0) + reach, abbreviation: f.abbreviation, asterism: f.kind === "asterism" && o.culture.id !== "chinese" });
   }
   list.sort((a, b) => b.priority - a.priority);
+  // The dots of the bright stars on the screen, and the room a name keeps from them.
+  const look = o.look ?? "night";
+  const dots: Box[] = [];
+  for (const star of g.starPoints) {
+    const half = binWidth(star.bin, o.zoom, look) / 2;
+    if (half * 2 < CLEAR_FROM) continue;
+    const x = toX(star.x);
+    const y = toY(star.y);
+    if (x < -half || x > width + half || y < -half || y > height + half) continue;
+    const r = half + CLEAR_GAP;
+    dots.push({ x0: x - r, x1: x + r, y0: y - r, y1: y + r });
+  }
   const boxes: Box[][] = [];
-  const meta: Array<{ candidate: Candidate; text: string; short: boolean; offsets: Array<[number, number]> }> = [];
+  const meta: Array<{ candidate: Candidate; how: Array<{ text: string; short: boolean; dx: number; dy: number }> }> = [];
   const pad = 2;
   for (const candidate of list) {
-    const variants: Array<{ text: string; short: boolean }> = [];
+    const places: Box[] = [];
+    const how: Array<{ text: string; short: boolean; dx: number; dy: number }> = [];
+    // the fullest form first, then the abbreviation: each offers its places in order of liking, and the first free one is taken. With no dot to keep clear of (the whole sky) only the first form that fits is offered, as it always was.
     for (let i = 0; i < candidate.texts.length; i += 1) {
-      const size = textSize(candidate.texts[i]!, o.fontSize);
+      if (dots.length === 0 && places.length > 0) break;
+      const text = candidate.texts[i]!;
+      const short = i > 0;
       // A name may spill a little over its region; an abbreviation needs a font that can be read.
-      if (size.w <= candidate.room * 1.15 + 4) variants.push({ text: candidate.texts[i]!, short: i > 0 });
-    }
-    for (const variant of variants) {
-      const size = textSize(variant.text, variant.short ? Math.max(8, o.fontSize - 2) : o.fontSize);
-      const spots: Array<[number, number]> = [[0, 0], [0, size.h], [0, -size.h], [size.w * 0.75, 0], [-size.w * 0.75, 0], [size.w * 0.6, size.h], [-size.w * 0.6, size.h], [size.w * 0.6, -size.h], [-size.w * 0.6, -size.h]];
-      const place = spots.map(([dx, dy]) => ({ x0: candidate.x + dx - size.w / 2 - pad, x1: candidate.x + dx + size.w / 2 + pad, y0: candidate.y + dy - size.h / 2 - pad / 2, y1: candidate.y + dy + size.h / 2 + pad / 2 }));
-      const inside = place.filter((b) => b.x0 >= 2 && b.x1 <= width - 2 && b.y0 >= 2 && b.y1 <= height - 2);
-      if (inside.length > 0) {
-        boxes.push(inside);
-        meta.push({ candidate, text: variant.text, short: variant.short, offsets: inside.map((b): [number, number] => [(b.x0 + b.x1) / 2 - candidate.x, (b.y0 + b.y1) / 2 - candidate.y]) });
-        break;
+      if (textSize(text, o.fontSize).w > candidate.room * 1.15 + 4) continue;
+      const size = textSize(text, short ? Math.max(8, o.fontSize - 2) : o.fontSize);
+      const spots: Array<[number, number]> = [
+        [0, 0], [0, size.h], [0, -size.h], [size.w * 0.75, 0], [-size.w * 0.75, 0], [size.w * 0.6, size.h], [-size.w * 0.6, size.h], [size.w * 0.6, -size.h], [-size.w * 0.6, -size.h],
+        // further out, for where a bright star's dot is in the way of all of the above
+        [0, size.h * 1.8], [0, -size.h * 1.8], [size.w * 0.95, 0], [-size.w * 0.95, 0], [size.w * 0.95, size.h], [-size.w * 0.95, size.h], [size.w * 0.95, -size.h], [-size.w * 0.95, -size.h],
+      ];
+      for (const [dx, dy] of dots.length === 0 ? spots.slice(0, 9) : spots) {
+        const box = { x0: candidate.x + dx - size.w / 2 - pad, x1: candidate.x + dx + size.w / 2 + pad, y0: candidate.y + dy - size.h / 2 - pad / 2, y1: candidate.y + dy + size.h / 2 + pad / 2 };
+        if (box.x0 < 2 || box.x1 > width - 2 || box.y0 < 2 || box.y1 > height - 2) continue;
+        places.push(box);
+        how.push({ text, short, dx, dy });
       }
     }
+    if (places.length > 0) {
+      boxes.push(places);
+      meta.push({ candidate, how });
+    }
   }
-  // Each candidate offers the places of its fullest form that fits the picture; `placeLabels` takes the first free one.
-  const chosen = placeLabels(boxes, []);
+  const chosen = placeLabels(boxes, dots);
   const out: Label[] = [];
   chosen.forEach((at, i) => {
     if (at === undefined) return;
     const m = meta[i]!;
-    out.push({ id: m.candidate.id, text: m.text, x: m.candidate.x + m.offsets[at]![0], y: m.candidate.y + m.offsets[at]![1], size: m.short ? Math.max(8, o.fontSize - 2) : o.fontSize, short: m.short, asterism: m.candidate.asterism });
+    const how = m.how[at]!;
+    out.push({ id: m.candidate.id, text: how.text, x: m.candidate.x + how.dx, y: m.candidate.y + how.dy, size: how.short ? Math.max(8, o.fontSize - 2) : o.fontSize, short: how.short, asterism: m.candidate.asterism });
   });
   return out;
 }
@@ -302,7 +364,7 @@ export function labelsSvg(labels: readonly Label[], look: Look): string {
 /** A whole map for paper, self-contained: `px` wide, with the names in place, white ground and dark ink. */
 export function paperSvg(o: { geometry: Geometry; culture: Culture; lang: Language; layers: ReadonlySet<Layer>; milky: string | undefined; px: number; widthMm: number; heightMm: number }): string {
   const scale = o.px / UNIT_W;
-  const labels = o.layers.has("names") ? layoutLabels({ geometry: o.geometry, culture: o.culture, lang: o.lang, width: o.px, zoom: 1, panX: 0, panY: 0, fontSize: 13 }) : [];
+  const labels = o.layers.has("names") ? layoutLabels({ geometry: o.geometry, culture: o.culture, lang: o.lang, width: o.px, zoom: 1, panX: 0, panY: 0, fontSize: 13, look: "paper" }) : [];
   const body = mapSvg({ geometry: o.geometry, culture: o.culture, layers: o.layers, look: "paper", milky: o.milky, px: UNIT_W / o.px, screen: false });
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${o.px} ${o.px / 2}" width="${o.widthMm}mm" height="${o.heightMm}mm" style="display:block"><g transform="scale(${scale})">${body}</g>${labelsSvg(labels, "paper")}</svg>`;
 }

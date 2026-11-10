@@ -210,10 +210,10 @@ test("the Bright Star Catalogue's stars are painted at the closest zoom, where t
   await expect.poll(() => dots(page)).toBeGreaterThan(20);
   // the bright stars on the screen, where they are in the page
   const at = await page.evaluate(() => {
-    const path = document.querySelector("#ws-sky path.bright")!;
-    const matrix = (path as SVGGeometryElement).getScreenCTM()!;
+    const matrix = (document.getElementById("ws-star-world") as unknown as SVGGElement).getScreenCTM()!;
     const box = document.getElementById("ws-box")!.getBoundingClientRect();
-    return [...(path.getAttribute("d") ?? "").matchAll(/M(-?[\d.]+) (-?[\d.]+)/g)]
+    return [...document.querySelectorAll("#ws-stars path.bright:not(.halo)")]
+      .flatMap((path) => [...(path.getAttribute("d") ?? "").matchAll(/M(-?[\d.]+) (-?[\d.]+)/g)])
       .map((m) => { const p = new DOMPoint(Number(m[1]), Number(m[2])).matrixTransform(matrix); return { x: p.x - box.x, y: p.y - box.y }; })
       .filter((p) => p.x > 8 && p.x < box.width - 8 && p.y > 8 && p.y < box.height - 8);
   });

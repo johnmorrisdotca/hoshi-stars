@@ -7,8 +7,8 @@
 .ws-box:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
 .ws-box[data-zoomed="true"] { cursor: grab; }
 .ws-box[data-over="true"] { cursor: pointer; }
-.ws-sky, .ws-faint, .ws-labels { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.ws-faint { pointer-events: none; }
+.ws-sky, .ws-faint, .ws-stars, .ws-labels { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ws-faint, .ws-stars { pointer-events: none; }
 .ws-labels { pointer-events: none; font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
 .ws-sky a.c { outline: none; pointer-events: none; }
 .ws-sky a.c .bd { transition: none; }
