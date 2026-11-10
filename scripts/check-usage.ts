@@ -260,6 +260,17 @@ await step("portrait-iframe", async () => {
   });
 });
 
+await step("star-3d-iframe", async () => {
+  await opened(browser, async (page) => {
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    await page.route("https://page.test/**", (route) => route.fulfill({ body: pageOf(join(examples("portrait"), "iframe-3d.html")), contentType: "text/html" }));
+    await page.goto("https://page.test/");
+    const frame = page.frameLocator("iframe");
+    await frame.locator('[data-testid="star-3d"][data-live="true"]').waitFor({ timeout: 60_000 });
+    if (!/measured/.test((await frame.locator('[data-testid="star-3d-caption"]').textContent()) ?? "")) throw new Error("the 3D star of Altair does not say its shape is measured");
+  });
+});
+
 await step("portrait-react-ssr", async () => {
   const script = join(usage, "ssr-star.tsx");
   writeFileSync(script, `import { renderToString } from "react-dom/server";\nimport { Star } from "./examples/portrait/Star";\nconst html = renderToString(<Star />);\nif (!html.includes("<svg")) throw new Error("no drawing in " + html);\nconsole.log(html);\n`);
@@ -348,6 +359,7 @@ const FILES: Record<string, string[]> = {
   "portrait/node.mjs": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/cdn.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/iframe.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "portrait/iframe-3d.html": ["docs/guides/star-in-3d.md", "docs/guides/ja/star-in-3d.md"],
   "portrait/Star.tsx": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
