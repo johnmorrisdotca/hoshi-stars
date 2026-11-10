@@ -640,7 +640,7 @@ function deepCard(object: DeepSkyObject, title: HTMLElement, list: HTMLElement, 
       host.append(p);
     };
     if (away.error !== null) line("distance-error", fill(say("distanceError"), { e: compact(away.error.lightYears, lang()) }));
-    if (away.count > 1) line("distance-range", fill(say("distanceRange"), { n: String(away.count), low: compact(away.spread.low.lightYears, lang()), high: compact(away.spread.high.lightYears, lang()) }));
+    if (away.count > 1 && compact(away.spread.low.lightYears, lang()) !== compact(away.spread.high.lightYears, lang())) line("distance-range", fill(say("distanceRange"), { n: String(away.count), low: compact(away.spread.low.lightYears, lang()), high: compact(away.spread.high.lightYears, lang()) }));
     if (away.disagree) line("distance-disagree", say("distanceDisagree"));
     line("distance-source", say("distanceSource"));
   }

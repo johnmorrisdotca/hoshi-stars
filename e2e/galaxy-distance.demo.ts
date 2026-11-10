@@ -6,15 +6,15 @@ async function fly(page: Page, text: string): Promise<void> {
   await page.locator("#results button").first().click();
 }
 
-test("a galaxy's card shows its distance, its range where there are several values, and its source line", async ({ page }) => {
+test("a galaxy's card shows its distance and its source line, and its range where the values differ", async ({ page }) => {
   await page.goto("/hoshi-stars/");
   await fly(page, "M87");
   const card = page.locator("#picked");
   await expect(card.locator("h3")).toContainText("M87");
   await expect(card.locator("dt", { hasText: "Distance" })).toHaveCount(1);
-  await expect(card).toContainText("54 million light-years (16.5 Mpc)");
-  await expect(card.getByTestId("distance-range")).toContainText("2 values");
+  await expect(card).toContainText("53.9 million light-years (16.5 Mpc)");
   await expect(card.getByTestId("distance-source")).toHaveText("Compiled from Wikidata (CC0), method not stated.");
+  await expect(card.getByTestId("distance-range")).toHaveCount(0);
   await expect(card.getByTestId("distance-disagree")).toHaveCount(0);
   await fly(page, "M42");
   await expect(card.locator("dt", { hasText: "Distance" })).toHaveCount(0);
@@ -24,11 +24,15 @@ test("a galaxy's card shows its distance, its range where there are several valu
 test("a galaxy whose sources disagree says so", async ({ page }) => {
   await page.goto("/hoshi-stars/");
   await fly(page, "M74");
-  await expect(page.locator("#picked").getByTestId("distance-disagree")).toContainText("The values disagree");
+  const card = page.locator("#picked");
+  await expect(card.getByTestId("distance-disagree")).toContainText("The values disagree");
+  await expect(card.getByTestId("distance-range")).toContainText("2 values, from 23.5 million to 35 million light-years");
 });
 
 test("the card is in Japanese when the page is", async ({ page }) => {
-  await page.goto("/hoshi-stars/?lang=ja");
+  await page.goto("/hoshi-stars/");
+  await page.evaluate(() => document.documentElement.setAttribute("lang", "ja"));
+  await page.evaluate(() => document.dispatchEvent(new CustomEvent("hoshi-language")));
   await fly(page, "M87");
   await expect(page.locator("#picked").getByTestId("distance-source")).toContainText("Wikidata (CC0)");
   await expect(page.locator("#picked")).toContainText("光年");
@@ -46,7 +50,7 @@ test("nearest and farthest galaxies are ten rows each, fetched on the first clic
   await panel.locator('button[data-value="far"]').click();
   const farthest = panel.getByTestId("galaxies-list").locator("li");
   await expect(farthest).toHaveCount(10);
-  await expect(farthest.first()).toContainText("million light-years");
+  await expect(farthest.first()).toContainText("billion light-years");
   await farthest.first().locator("button").click();
   await expect(page.locator("#picked").getByTestId("distance-source")).toBeVisible();
   expect(new URL(page.url()).searchParams.get("gal")).toBe("far");
