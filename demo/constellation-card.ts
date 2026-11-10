@@ -1,7 +1,7 @@
 // The picture card, built in one place: the picker's strip above the map (the Western, Japanese or Chinese sky), the Neighbours of a constellation's own page and the Nearby panel's neighbouring constellations all show this card, a thumbnail with the name under it.
-// A figure of the Japanese or Chinese sky adds its reading and English under the name, and how many of its stars are fainter than the catalogue goes.
+// Every card is one block, a name and one small line, whichever sky it is from; the stars a figure is missing are in its title.
 import type { Constellation } from "../src/constellations.ts";
-import { faceOf, pictureOf, type FigureCard } from "./culture-cards.ts";
+import { faceOf, pictureOf, westernFace, type FigureCard } from "./culture-cards.ts";
 import { thumbSrc, type Lang, type Look } from "./thumbs.ts";
 
 export type Card = HTMLButtonElement | HTMLAnchorElement;
@@ -16,31 +16,23 @@ export function makeCard(abbreviation: string, href?: string): Card {
   image.height = 80;
   image.loading = "lazy";
   image.alt = "";
-  const sub = Object.assign(document.createElement("span"), { className: "pick-sub", hidden: true });
-  const missing = Object.assign(document.createElement("span"), { className: "pick-missing", hidden: true });
-  card.append(image, document.createElement("span"), sub, missing);
+  card.append(image, document.createElement("span"), Object.assign(document.createElement("span"), { className: "pick-sub" }));
   return card;
 }
 
-/** Set a card's name and picture for the page's language and look (the picture's source is only touched when it changed). A constellation shows its name; a figure of the Japanese or Chinese sky its name, reading, English and missing stars. */
+/**
+ * Set a card's name, the one small line under it and its picture for the page's language and look (the picture's source is only touched when it changed). Every card is the same block: the name,
+ * then one line, so the strip is one height in all three skies. The stars a figure holds fewer of than it should (`3+ fainter stars not shown`) are in the card's title and its name for a screen reader.
+ */
 export function paintCard(card: Card, subject: Constellation | FigureCard, lang: Lang, look: Look): void {
-  const [name, sub, missing] = Array.from(card.querySelectorAll("span"));
+  const [name, sub] = Array.from(card.querySelectorAll("span"));
   const image = card.querySelector("img")!;
-  card.classList.toggle("pick-own", !("abbreviation" in subject) && subject.asterism !== undefined);
-  let src: string;
-  if ("abbreviation" in subject) {
-    name!.textContent = lang === "ja" ? subject.japanese : subject.name;
-    card.setAttribute("aria-label", name!.textContent);
-    src = thumbSrc(subject.abbreviation, 160, look);
-  } else {
-    const face = faceOf(subject, lang);
-    name!.textContent = face.name;
-    sub!.textContent = [face.reading, face.english].filter((part) => part !== "").join(" · ");
-    sub!.hidden = sub!.textContent === "";
-    missing!.textContent = face.missingText;
-    missing!.hidden = face.missingText === "";
-    card.setAttribute("aria-label", face.label);
-    src = pictureOf(subject, 160, look);
-  }
+  const western = "abbreviation" in subject;
+  const face = western ? westernFace(subject, lang) : faceOf(subject, lang);
+  name!.textContent = face.name;
+  sub!.textContent = face.sub;
+  card.setAttribute("aria-label", face.label);
+  card.title = face.label;
+  const src = western ? thumbSrc(subject.abbreviation, 160, look) : pictureOf(subject, 160, look);
   if (image.getAttribute("src") !== src) image.setAttribute("src", src);
 }

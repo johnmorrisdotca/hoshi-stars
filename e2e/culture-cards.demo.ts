@@ -100,7 +100,8 @@ test("a card's name for a screen reader is the name, reading, English and the mi
   await open(page, "?culture=chinese");
   await expect(strip(page).first()).toHaveAccessibleName("角宿, jiǎo xiù, Horn");
   await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAccessibleName("氐宿, dī xiù, Root, 3+ fainter stars not shown");
-  await expect(page.locator("button[data-abbr='di1-xiu4'] .pick-missing")).toHaveText("3+ fainter stars not shown");
+  await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAttribute("title", "氐宿, dī xiù, Root, 3+ fainter stars not shown");
+  await expect(page.locator("button[data-abbr='di1-xiu4'] .pick-sub")).toHaveText("dī xiù · Root");
   await open(page, "?culture=chinese&lang=ja");
   await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAccessibleName("氐宿、dī xiù、Root、暗い星3個以上は描いていません");
   await strip(page).nth(1).focus();
@@ -222,4 +223,56 @@ test("nothing overflows at 390 wide: the strip, the gallery and the list in ever
     await expect(page.getByTestId("list-table").locator("tbody tr").first()).toBeVisible();
     expect(await noOverflow(page), `the list ${culture}`).toBe(true);
   }
+});
+
+/** The height of every element in a list, and how many of them (rounded, so a sub-pixel difference is not a difference). */
+const heights = (items: ReturnType<Page["locator"]>) => items.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().height)));
+
+test("every card is one height in all three skies: the strip, the gallery and the list, with the name and one small line and nothing taller", async ({ page }) => {
+  test.setTimeout(120_000);
+  const seen = new Map<string, number>();
+  for (const culture of ["western", "japanese", "chinese"]) {
+    const query = culture === "western" ? "" : `?culture=${culture}`;
+    await open(page, query);
+    await expect(page.getByTestId("picker-strip").locator("button").first()).toBeVisible();
+    const strips = await heights(page.getByTestId("picker-strip").locator("button:not([hidden])"));
+    expect(new Set(strips).size, `${culture}: the strip's cards are one height (${[...new Set(strips)].join(", ")})`).toBe(1);
+    seen.set(`strip ${culture}`, strips[0]!);
+    // the name and the line never run to a third line: nothing in the card is cut but the line under the name, whose whole text is its title
+    const cut = await page.getByTestId("picker-strip").locator("button:not([hidden])").evaluateAll((cards) =>
+      cards.filter((card) => {
+        const name = card.querySelector("span:first-of-type") as HTMLElement;
+        return name.scrollHeight > name.clientHeight + 1;
+      }).map((card) => card.getAttribute("data-abbr")),
+    );
+    expect(cut, `${culture}: a name that needs a third line`).toEqual([]);
+    await page.goto(`${HOME}constellations.html${query}`);
+    await expect(page.locator(".gl-tile").first()).toBeVisible();
+    const tiles = await heights(page.locator(".gl-tile"));
+    expect(new Set(tiles).size, `${culture}: the gallery's tiles are one height (${[...new Set(tiles)].join(", ")})`).toBe(1);
+    seen.set(`gallery ${culture}`, tiles[0]!);
+    const lines = await page.locator(".gl-tile").evaluateAll((all) => all.map((tile) => ({ name: (tile.querySelector(".gl-name") as HTMLElement).scrollHeight > (tile.querySelector(".gl-name") as HTMLElement).clientHeight + 1, children: tile.children.length })));
+    expect(lines.filter((line) => line.name || line.children !== 3)).toEqual([]);
+    await page.goto(`${HOME}constellation-list.html${query}`);
+    await expect(page.locator(".ls-table tbody tr").first()).toBeVisible();
+    const rows = await heights(page.locator(".ls-table tbody tr"));
+    expect(new Set(rows).size, `${culture}: the list's rows are one height (${[...new Set(rows)].join(", ")})`).toBe(1);
+    seen.set(`list ${culture}`, rows[0]!);
+  }
+  for (const place of ["strip", "gallery", "list"]) {
+    const three = ["western", "japanese", "chinese"].map((culture) => seen.get(`${place} ${culture}`)!);
+    expect(new Set(three).size, `${place}: the three skies' cards are one height (${three.join(", ")})`).toBe(1);
+  }
+});
+
+test("a single named star's card draws its constellation's figure, not a lone dot", async ({ page }) => {
+  await open(page, "?culture=japanese");
+  const card = page.locator("button[data-abbr='genji-boshi']");
+  await expect(card.locator("img")).toHaveAttribute("src", /thumbnails\/japanese\/png\/160\/(light|dark)\/genji-boshi\.png$/);
+  await card.locator("img").scrollIntoViewIfNeeded();
+  await expect.poll(() => loaded(card.locator("img"))).toBe(160);
+  const response = await page.request.get(await card.locator("img").evaluate((img: HTMLImageElement) => img.src));
+  expect(response.ok()).toBe(true);
+  // the picture is more than one dot: a PNG of a constellation's card is many times the size of a lone star's
+  expect((await response.body()).length).toBeGreaterThan(6_000);
 });

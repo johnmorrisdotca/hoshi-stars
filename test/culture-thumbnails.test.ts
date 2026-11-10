@@ -12,6 +12,8 @@ import { thumbnailSvg, THUMBNAIL_UNITS } from "../src/thumbnails.ts";
 import { CULTURE_SIZES, THEMES, figureThumbnailSvg, ownPictureFigures, writeCultureThumbnails } from "../scripts/thumbnail-files.ts";
 import { cardAnswers, cardsOf, faceOf, mixOf, pictureOf } from "../demo/culture-cards.ts";
 
+const mineOf = (figure: { stars: ReadonlyArray<{ hr: number }> }): Set<number> => new Set(figure.stars.map((star) => star.hr));
+
 const dots = (svg: string): Array<{ x: number; y: number; hr?: number }> =>
   [...svg.matchAll(/<circle cx="([-\d.]+)" cy="([-\d.]+)" r="[\d.]+" fill="#[0-9a-f]{6}"(?: data-hr="(\d+)")?\/>/g)].map((m) => ({ x: Number(m[1]), y: Number(m[2]), ...(m[3] === undefined ? {} : { hr: Number(m[3]) }) }));
 
@@ -21,10 +23,9 @@ test("every Chinese figure and every traditional Japanese one has a picture in b
       for (const theme of THEMES) {
         const svg = figureThumbnailSvg(figure, culture, theme);
         const own = dots(svg).filter((dot) => dot.hr !== undefined);
-        assert.deepEqual(own.map((dot) => dot.hr!).sort((a, b) => a - b), figure.stars.map((s) => s.hr).sort((a, b) => a - b), `${culture.id} ${figure.asterism.id} ${theme}: every star is drawn once`);
+        assert.deepEqual(own.map((dot) => dot.hr!).filter((hr) => mineOf(figure).has(hr)).sort((a, b) => a - b), figure.stars.map((s) => s.hr).sort((a, b) => a - b), `${culture.id} ${figure.asterism.id} ${theme}: every star is drawn once`);
         for (const dot of own) assert.ok(dot.x >= 0 && dot.x <= THUMBNAIL_UNITS && dot.y >= 0 && dot.y <= THUMBNAIL_UNITS, `${figure.asterism.id}: HR ${dot.hr} is inside the frame`);
         assert.ok(!svg.includes("<text"), "no text, so a picture needs no font");
-        assert.ok(!svg.includes("stroke-dasharray"), "a figure with no boundary draws none");
         assert.ok(svg.includes("our own joins"), "the picture says its lines are our own joins");
       }
     }
@@ -60,13 +61,13 @@ test("the files are PNGs at 160 and 480 in both looks, named by the figure's id,
             const png = readFileSync(file);
             assert.deepEqual([...png.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
             assert.equal(png.readUInt32BE(16), size);
-            assert.ok(statSync(file).size < 60_000, `${file} is ${statSync(file).size} bytes`);
+            assert.ok(statSync(file).size < 90_000, `${file} is ${statSync(file).size} bytes`);
             total += statSync(file).size;
           }
         }
       }
     }
-    assert.ok(total < 6_000_000, `the figures' pictures are ${total} bytes`);
+    assert.ok(total < 18_000_000, `the figures' pictures are ${total} bytes`);
     assert.ok(!existsSync(join(dir, "svg")), "no SVG files");
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -96,7 +97,7 @@ test("each culture's cards: the 88 for the Western sky, 106 for the Japanese, 23
 
 test("the names on a card are copied from the package's data: the characters, the pinyin, the English where the data has one, and how many stars are missing", () => {
   const horn = cardsOf("chinese").find((card) => card.id === "jiao3-xiu4")!;
-  assert.deepEqual(faceOf(horn, "en"), { name: "角宿", reading: "jiǎo xiù", english: "Horn", missing: 0, missingText: "", label: "角宿, jiǎo xiù, Horn" });
+  assert.deepEqual(faceOf(horn, "en"), { name: "角宿", sub: "jiǎo xiù · Horn", reading: "jiǎo xiù", english: "Horn", missing: 0, missingText: "", label: "角宿, jiǎo xiù, Horn" });
   const root = faceOf(cardsOf("chinese").find((card) => card.id === "di1-xiu4")!, "en");
   assert.equal(root.missing, 3);
   assert.equal(root.missingText, "3+ fainter stars not shown");

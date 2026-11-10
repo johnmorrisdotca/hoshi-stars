@@ -27,13 +27,10 @@ function tile(card: FigureCard, lang: "en" | "ja", look: "light" | "dark"): HTML
   image.loading = "lazy";
   image.alt = "";
   const name = Object.assign(document.createElement("span"), { className: "gl-name", textContent: face.name });
-  const sub = Object.assign(document.createElement("span"), {
-    className: "gl-sub",
-    textContent: card.culture === "western" ? `${card.id} · ${lang === "ja" ? card.constellation!.name : card.constellation!.japanese}` : [face.reading, face.english].filter((part) => part !== "").join(" · "),
-  });
+  const sub = Object.assign(document.createElement("span"), { className: "gl-sub", textContent: face.sub });
   link.append(image, name, sub);
-  if (face.missingText !== "") link.append(Object.assign(document.createElement("span"), { className: "gl-sub", textContent: face.missingText }));
   link.setAttribute("aria-label", face.label);
+  link.title = face.label;
   item.append(link);
   return item;
 }

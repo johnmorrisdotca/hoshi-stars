@@ -17,26 +17,21 @@
 .culture-row button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .culture-row button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
-.pick-tile { flex: 0 0 auto; width: 132px; display: grid; justify-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; cursor: pointer; scroll-snap-align: start; }
+.pick-tile { flex: 0 0 auto; width: 132px; display: grid; grid-template-rows: auto auto auto; align-content: start; justify-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; cursor: pointer; scroll-snap-align: start; }
 .pick-tile[hidden] { display: none; }
 .pick-tile img { display: block; width: 120px; height: 120px; border-radius: 6px; background: var(--rule); }
-.pick-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pick-tile span[hidden] { display: none; }
-/* a figure of the Japanese or Chinese sky: its reading and English under the name, smaller, and what is missing, wrapped */
-.pick-tile.pick-own { align-content: start; }
-.pick-tile.pick-own span:first-of-type { font-size: 1rem; font-weight: 600; }
-.pick-tile .pick-sub, .pick-tile .pick-missing { font-size: .72rem; color: var(--muted); white-space: normal; text-align: center; overflow-wrap: anywhere; line-height: 1.2; }
+/* every card, in every sky, is the same block: the picture, the name (room for two lines, centred in it) and one small line (one line, cut with an ellipsis, the whole of it in the card's title), so no card is taller than another */
+.pick-tile span { max-width: 100%; text-align: center; overflow: hidden; }
+.pick-tile span:first-of-type { display: flex; align-items: center; justify-content: center; box-sizing: content-box; height: 2.5em; font-size: .9rem; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
+.pick-tile .pick-sub { font-size: .72rem; color: var(--muted); line-height: 1.2; height: 1.2em; white-space: nowrap; text-overflow: ellipsis; }
 .pick-tile:hover { border-color: var(--accent); }
-.pick-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; }
+.pick-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .pick-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 /* the same cards in a grid, for a list of constellations in a column (the Neighbours of a constellation, the Nearby panel): as many to a row as fit, the pictures as wide as the cell */
 .pick-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
 .pick-grid > li { display: grid; min-width: 0; }
 .pick-grid .pick-tile { width: auto; min-width: 0; text-decoration: none; }
-.pick-grid .pick-tile { align-content: start; }
 .pick-grid .pick-tile img { width: 100%; height: auto; aspect-ratio: 1; }
-/* a long name (Canes Venatici, いっかくじゅう座) wraps under its picture instead of being cut short */
-.pick-grid .pick-tile span { white-space: normal; text-align: center; overflow-wrap: anywhere; line-height: 1.25; }
 
 /* the gallery */
 .gl-title { margin: 0 0 4px; font-size: 1.4rem; }
@@ -52,8 +47,9 @@
 .gl-tile:hover { border-color: var(--accent); }
 .gl-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .gl-tile img { display: block; width: 100%; height: auto; aspect-ratio: 1; border-radius: 6px; background: var(--rule); }
-.gl-name { font-weight: 600; margin-top: 4px; }
-.gl-sub { color: var(--muted); font-size: .8rem; }
+/* the same block as the strip's card: the name (room for two lines, centred in it) and one small line */
+.gl-name { display: flex; align-items: center; justify-content: center; text-align: center; height: 2.5em; margin-top: 4px; font-weight: 600; line-height: 1.25; overflow: hidden; overflow-wrap: anywhere; }
+.gl-sub { display: block; text-align: center; color: var(--muted); font-size: .8rem; line-height: 1.2; height: 1.2em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .gl-mix { margin: 4px 0 0; }
 .gl-pager { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
 .gl-pager .fam-button[aria-current="page"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 700; }
@@ -116,6 +112,8 @@
 .ls-scroll:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .ls-table { border-collapse: collapse; width: 100%; min-width: 64rem; font-size: .85rem; }
 .ls-table th, .ls-table td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+/* a row is one height in every sky: its cells do not wrap (the table scrolls sideways instead) */
+.ls-table td { white-space: nowrap; }
 .ls-table th { position: sticky; top: 0; background: var(--surface); color: var(--muted); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; }
 .ls-table img { display: block; width: 72px; height: 72px; border-radius: 6px; background: var(--rule); }
 .ls-name a { font-weight: 600; color: var(--ink); }

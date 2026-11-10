@@ -9,7 +9,7 @@ import { Resvg } from "@resvg/resvg-js";
 import { constellations } from "../src/constellations.ts";
 import type { Culture } from "../src/culture.ts";
 import { figures, type CultureFigure } from "../src/lines.ts";
-import { constellationThumbnail, thumbnailSvg, type ThumbnailTheme } from "../src/thumbnails.ts";
+import { constellationThumbnail, figureThumbnail, type ThumbnailTheme } from "../src/thumbnails.ts";
 
 export const THEMES: readonly ThumbnailTheme[] = ["light", "dark"];
 /** The PNG sizes: a picker tile, a card, and a print or share picture. */
@@ -42,19 +42,12 @@ export const CULTURE_SIZES = [160, 480] as const;
 /** The figures of a culture that have a picture of their own: all of the Chinese figures, and the Japanese ones that are not one of the 88 (those use the constellation's picture). Nothing for the Western sky. */
 export const ownPictureFigures = (culture: Culture): CultureFigure[] => (culture.id === "western" ? [] : figures(culture).filter((figure) => figure.asterism.kind !== "constellation"));
 
-/** The picture of one figure of a sky culture: its stars full and every other star near it faint, no boundary, and the lines our own joins of its stars. */
+/** The picture of one figure of a sky culture, drawn the way a constellation's is: a soft outline round its stars (inside its own constellation's picture, ringed, where it is a single star), the neighbours faint, and the lines our own joins of its stars. */
 export function figureThumbnailSvg(figure: CultureFigure, culture: Culture, theme: ThumbnailTheme): string {
   const a = figure.asterism;
-  const mine = new Set(figure.stars.map((star) => star.hr));
   const reading = a.readings.zh ?? a.readings.ja;
-  return thumbnailSvg(
-    {
-      title: `${a.name}${reading === undefined ? "" : ` (${reading})`}, a figure of the ${culture.names.en.split(" (")[0]} sky, with our own joins of its stars`,
-      outlines: [],
-      frame: figure.stars,
-      segments: figure.segments,
-      owns: (star) => mine.has(star.hr),
-    },
+  return figureThumbnail(
+    { title: `${a.name}${reading === undefined ? "" : ` (${reading})`}, a figure of the ${culture.names.en.split(" (")[0]} sky, with our own joins of its stars`, stars: figure.stars, segments: figure.segments },
     { theme, size: SVG_SIZE },
   );
 }

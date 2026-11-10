@@ -80,7 +80,8 @@ test("an unknown constellation says so; the Japanese page is in Japanese; next a
 test("the Neighbours of Andromeda are six picture cards that open the right constellation, and nothing overflows", async ({ page }) => {
   await page.goto(`${SITE}constellation.html?c=And`);
   const cards = page.getByTestId("cp-neighbours").locator("a.pick-tile");
-  await expect(cards).toHaveText(["Cassiopeia", "Lacerta", "Pegasus", "Perseus", "Pisces", "Triangulum"]);
+  await expect(cards.locator("span:first-of-type")).toHaveText(["Cassiopeia", "Lacerta", "Pegasus", "Perseus", "Pisces", "Triangulum"]);
+  await expect(cards.locator(".pick-sub")).toHaveText(["Cas · カシオペヤ座", "Lac · とかげ座", "Peg · ペガスス座", "Per · ペルセウス座", "Psc · うお座", "Tri · さんかく座"]);
   for (const abbreviation of ["Cas", "Lac", "Peg", "Per", "Psc", "Tri"]) {
     const image = page.getByTestId("cp-neighbours").locator(`a[data-abbr='${abbreviation}'] img`);
     await expect(image).toHaveAttribute("src", new RegExp(`thumbnails/png/160/(light|dark)/${abbreviation}\\.png$`));

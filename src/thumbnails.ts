@@ -49,6 +49,12 @@ export interface ThumbnailInput {
   segments: ReadonlyArray<readonly [SkyPoint, SkyPoint]>;
   /** True for a star that belongs to the figure: it is drawn in full and carries its `data-hr`. Every other star in the frame is drawn faint. */
   owns: (star: Star) => boolean;
+  /** The least width of the picture in degrees where it has outlines (default 13, so a small constellation still shows its neighbours). */
+  leastSpan?: number;
+  /** True to widen the picture, a little at a time and no further than a constellation's 13 degrees, until a neighbouring boundary crosses it, so the faint boundary lines show in every picture (default false). */
+  seeNeighbours?: boolean;
+  /** Bright Star Catalogue (HR) numbers of stars to draw with a ring round them in the accent colour: a single named star inside its constellation's figure. */
+  ringed?: ReadonlyArray<number>;
 }
 
 /**
@@ -88,6 +94,8 @@ const RAD = Math.PI / 180;
 const MIN_SPAN_DEGREES = 13;
 // A figure with no boundary (a few stars) is framed closer: the Pleiades are two degrees across.
 const MIN_FIGURE_SPAN_DEGREES = 4;
+// The widest a figure's picture is widened to, to show a neighbouring boundary line (see `FIGURE_LEAST_SPAN_DEGREES`).
+const WIDEST_FIGURE_SPAN_DEGREES = 24;
 const ROOM = 0.12;
 // A line is only followed while it is within this many units of the frame: the 2-degree pieces of a boundary are never longer than that, so none that crosses the frame is lost.
 const PEN_ROOM = 140;
@@ -95,8 +103,8 @@ const SCALE = 100;
 const FRAME_ITERATIONS = 3;
 
 const LOOKS = {
-  dark: { ground: "#0b1020", neighbourLine: "#2b3a66", edge: "#7d9fe8", wash: "#6f93e0", washOpacity: 0.1, figure: "#9bb6f2", neighbourStars: 0.5, ink: "" },
-  light: { ground: "#f7f5ef", neighbourLine: "#cdd1de", edge: "#3b5bb5", wash: "#3b5bb5", washOpacity: 0.07, figure: "#3b5bb5", neighbourStars: 0.42, ink: "#161d36" },
+  dark: { ground: "#0b1020", neighbourLine: "#2b3a66", edge: "#7d9fe8", wash: "#6f93e0", washOpacity: 0.1, figure: "#9bb6f2", neighbourStars: 0.5, ink: "", ring: "#e0674a" },
+  light: { ground: "#f7f5ef", neighbourLine: "#cdd1de", edge: "#3b5bb5", wash: "#3b5bb5", washOpacity: 0.07, figure: "#3b5bb5", neighbourStars: 0.42, ink: "#161d36", ring: "#b5452c" },
 } as const;
 
 const fixed = (value: number): string => (Math.round(value * 10) / 10).toString();
@@ -170,6 +178,28 @@ function frameOf(outlines: ReadonlyArray<ReadonlyArray<SkyPoint>>, leastDegrees:
   return { centre, side: Math.max(side * (1 + 2 * ROOM), least) };
 }
 
+/** The frame widened by a sixth at a time, to no more than the widest a figure's picture is allowed (24 degrees), until a line of `rings` runs through it: some point or middle of a 2-degree piece of a boundary is inside the square. */
+function widenToSeeLines(start: Frame, rings: ReadonlyArray<ReadonlyArray<SkyPoint>>): Frame {
+  const widest = SCALE * 2 * Math.tan((WIDEST_FIGURE_SPAN_DEGREES * RAD) / 2);
+  const crossed = (side: number): boolean => {
+    const k = THUMBNAIL_UNITS / side;
+    const within = (x: number, y: number): boolean => x >= 0 && x <= THUMBNAIL_UNITS && y >= 0 && y <= THUMBNAIL_UNITS;
+    for (const ring of rings) {
+      let last: [number, number] | undefined;
+      for (const point of ring) {
+        const at = project("stereographic", point, { centre: start.centre, scale: SCALE });
+        const here: [number, number] | undefined = at === undefined ? undefined : [THUMBNAIL_UNITS / 2 + at.x * k, THUMBNAIL_UNITS / 2 - at.y * k];
+        if (here !== undefined && (within(here[0], here[1]) || (last !== undefined && within((here[0] + last[0]) / 2, (here[1] + last[1]) / 2)))) return true;
+        last = here;
+      }
+    }
+    return false;
+  };
+  let side = start.side;
+  while (side < widest && !crossed(side)) side = Math.min(widest, side * 1.17);
+  return { centre: start.centre, side };
+}
+
 /**
  * One picture, drawn from outlines, lines and stars you supply: the outlines are framed in a square with room round them, the stars that belong to the figure are drawn in full and every other star
  * in the frame faint, with the faint boundaries of the neighbours behind them. North is up and east is to the left, as the sky looks, and the stereographic projection keeps shapes. Each star of
@@ -197,7 +227,8 @@ export function thumbnailSvg(input: ThumbnailInput, options: ThumbnailOptions = 
   if (size !== undefined && !(size > 0)) throw new RangeError(`size must be above 0 pixels, got ${String(size)}`);
   const bounded = input.outlines.some((outline) => outline.length > 0);
   if (!bounded && (input.frame === undefined || input.frame.length === 0)) throw new RangeError("outlines must hold at least one point (or give `frame` some)");
-  const frame = bounded ? frameOf(input.outlines, MIN_SPAN_DEGREES) : frameOf([input.frame!], MIN_FIGURE_SPAN_DEGREES);
+  let frame = bounded ? frameOf(input.outlines, input.leastSpan ?? MIN_SPAN_DEGREES) : frameOf([input.frame!], MIN_FIGURE_SPAN_DEGREES);
+  if (input.seeNeighbours === true && options.neighbours !== false && input.neighbourOutlines !== undefined) frame = widenToSeeLines(frame, input.neighbourOutlines);
   const k = THUMBNAIL_UNITS / frame.side;
   // A wide frame holds thousands of stars: the faint neighbours are left out as it widens, so a picture stays light to send and clear to read. The figure's own stars are always drawn.
   const spanDegrees = (2 * Math.atan(frame.side / SCALE / 2)) / RAD;
@@ -255,6 +286,8 @@ export function thumbnailSvg(input: ThumbnailInput, options: ThumbnailOptions = 
 
   const faint: string[] = [];
   const full: string[] = [];
+  const rings: string[] = [];
+  const ringed = new Set(input.ringed ?? []);
   const everyStar = stars();
   for (let index = everyStar.length - 1; index >= 0; index--) {
     const star = everyStar[index]!;
@@ -266,10 +299,13 @@ export function thumbnailSvg(input: ThumbnailInput, options: ThumbnailOptions = 
     const colour = look.ink === "" ? starColour(star) : onPaper(starColour(star), look.ink);
     const disc = `<circle cx="${fixed(at[0])}" cy="${fixed(at[1])}" r="${fixed(radiusOf(star.magnitude))}" fill="${colour}"${mine ? ` data-hr="${star.hr}"` : ""}/>`;
     (mine ? full : faint).push(disc);
+    if (mine && ringed.has(star.hr)) rings.push(`<circle cx="${fixed(at[0])}" cy="${fixed(at[1])}" r="${fixed(radiusOf(star.magnitude) + 6)}"/>`);
   }
   // Brightest last, so a big star is never hidden under a small one: the catalogue is brightest first, and it was walked from the faint end.
   if (faint.length > 0) parts.push(`<g opacity="${look.neighbourStars}">${faint.join("")}</g>`);
-  parts.push(`<g>${full.join("")}</g>`, "</svg>");
+  parts.push(`<g>${full.join("")}</g>`);
+  if (rings.length > 0) parts.push(`<g fill="none" stroke="${look.ring}" stroke-width="2.6" data-ring="">${rings.join("")}</g>`);
+  parts.push("</svg>");
   return parts.join("");
 }
 
@@ -278,6 +314,19 @@ function outlinesOf(): Map<string, Array<Array<SkyPoint>>> {
   if (neighbours === undefined) neighbours = new Map(boundaries({ step: 2 }).map((b) => [b.constellation.abbreviation, b.outlines]));
   return neighbours;
 }
+
+/** The input for one IAU constellation's picture; the neighbours' outlines are added by the caller. */
+function constellationInput(found: Constellation): ThumbnailInput {
+  return {
+    title: `${found.name} (${found.abbreviation}), the constellation, with its neighbours`,
+    outlines: outlinesOf().get(found.abbreviation)!,
+    segments: figureOf(found.abbreviation).segments,
+    owns: (star) => star.constellation === found.abbreviation,
+  };
+}
+
+/** The boundaries of every constellation except `leaveOut`, as the faint lines round a picture. */
+const neighbourRings = (leaveOut?: string): Array<Array<SkyPoint>> => [...outlinesOf()].filter(([abbreviation]) => abbreviation !== leaveOut).flatMap(([, rings]) => rings);
 
 /**
  * The picture of one IAU constellation: its boundary (dashed, with a faint wash), its stick figure, its bright stars, and the neighbouring constellations' boundaries and stars faint round it. Every
@@ -300,14 +349,137 @@ function outlinesOf(): Map<string, Array<Array<SkyPoint>>> {
 export function constellationThumbnail(text: string, options: ThumbnailOptions = {}): string {
   const found: Constellation | undefined = constellation(text);
   if (found === undefined) throw new RangeError(`"${text}" is not one of the 88 constellations (use the IAU abbreviation such as "Ori")`);
-  const all = outlinesOf();
-  const mine = all.get(found.abbreviation)!;
-  const input: ThumbnailInput = {
-    title: `${found.name} (${found.abbreviation}), the constellation, with its neighbours`,
-    outlines: mine,
-    segments: figureOf(found.abbreviation).segments,
-    owns: (star) => star.constellation === found.abbreviation,
-  };
-  if (options.neighbours !== false) input.neighbourOutlines = [...all].filter(([abbreviation]) => abbreviation !== found.abbreviation).flatMap(([, rings]) => rings);
+  const input = constellationInput(found);
+  if (options.neighbours !== false) input.neighbourOutlines = neighbourRings(found.abbreviation);
   return thumbnailSvg(input, options);
+}
+
+type Plane = [number, number];
+
+/** The convex hull of some points on a plane (Andrew's monotone chain), counter-clockwise, without the first point repeated. */
+function hullOf(points: readonly Plane[]): Plane[] {
+  const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (sorted.length < 3) return sorted;
+  const cross = (o: Plane, a: Plane, b: Plane): number => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const chain = (list: readonly Plane[]): Plane[] => {
+    const out: Plane[] = [];
+    for (const point of list) {
+      while (out.length >= 2 && cross(out[out.length - 2]!, out[out.length - 1]!, point) <= 0) out.pop();
+      out.push(point);
+    }
+    out.pop();
+    return out;
+  };
+  return [...chain(sorted), ...chain([...sorted].reverse())];
+}
+
+// A padded outline is the stars' hull grown by this many degrees at least, or this fraction of the figure's width, whichever is more; its corners are rounded in this many steps.
+const PAD_LEAST_DEGREES = 0.8;
+const PAD_FRACTION = 0.08;
+const PAD_STEPS = 20;
+// A figure's picture is never narrower than this (a constellation's is 13), so the Pleiades are not a dot. It is widened from there, only until a neighbouring boundary line crosses it and never past the second number, so every picture has its faint lines: a figure deep inside a big constellation (Virgo, Bootes) needs the room.
+const FIGURE_LEAST_SPAN_DEGREES = 5;
+
+/**
+ * A soft outline round some stars: their convex hull grown by a margin with rounded corners, as a closed ring of positions. It is what a figure with no official boundary is drawn with, in the same
+ * dashed line and wash as the boundary of a constellation. Only the 88 constellations have official boundaries; this outline is a drawing aid, not a border.
+ *
+ * @param points - The positions of the stars (degrees, J2000). At least one.
+ * @param padDegrees - How far the outline stands off the stars. Left out, 0.8 degree or 8 per cent of the figure's width, whichever is more.
+ * @returns One closed ring (the first position repeated as the last), ready for `ThumbnailInput.outlines`.
+ * @throws RangeError if `points` is empty, or `padDegrees` is not above 0.
+ *
+ * @example
+ * ```ts
+ * import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+ * import { paddedOutline } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+ * import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+ *
+ * const ring = paddedOutline(figureOf("北斗", chinese).stars);
+ * console.log(ring.length > 8, ring[0]!.rightAscension === ring[ring.length - 1]!.rightAscension);
+ * ```
+ */
+export function paddedOutline(points: readonly SkyPoint[], padDegrees?: number): SkyPoint[] {
+  if (points.length === 0) throw new RangeError("points must hold at least one position");
+  if (padDegrees !== undefined && !(padDegrees > 0)) throw new RangeError(`padDegrees must be above 0, got ${String(padDegrees)}`);
+  const centre = middleOf(points);
+  const flat: Plane[] = [];
+  for (const point of points) {
+    const at = project("stereographic", point, { centre, scale: SCALE });
+    if (at !== undefined) flat.push([at.x, at.y]);
+  }
+  const width = (list: readonly Plane[], axis: 0 | 1): number => Math.max(...list.map((p) => p[axis])) - Math.min(...list.map((p) => p[axis]));
+  const across = flat.length === 0 ? 0 : Math.max(width(flat, 0), width(flat, 1));
+  const toUnits = (degrees: number): number => SCALE * 2 * Math.tan((degrees * RAD) / 2);
+  const pad = padDegrees === undefined ? Math.max(toUnits(PAD_LEAST_DEGREES), across * PAD_FRACTION) : toUnits(padDegrees);
+  const grown: Plane[] = [];
+  for (const [x, y] of hullOf(flat)) {
+    for (let step = 0; step < PAD_STEPS; step++) {
+      const angle = (2 * Math.PI * step) / PAD_STEPS;
+      grown.push([x + pad * Math.cos(angle), y + pad * Math.sin(angle)]);
+    }
+  }
+  const ring = hullOf(grown).map(([x, y]) => unproject("stereographic", { x, y }, { centre, scale: SCALE }) ?? centre);
+  return [...ring, ring[0]!];
+}
+
+/**
+ * What to draw for a figure of a sky culture: its name for the picture's `<title>`, the stars it joins and the lines between them.
+ *
+ * @example
+ * ```ts
+ * import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+ * import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
+ * import { type FigureThumbnailInput } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+ *
+ * const subaru = figureOf("昴", japanese);
+ * const input: FigureThumbnailInput = { title: "昴", stars: subaru.stars, segments: subaru.segments };
+ * console.log(input.stars.length);
+ * ```
+ */
+export interface FigureThumbnailInput {
+  /** The name for the picture's `<title>` and `aria-label`. */
+  title: string;
+  /** The stars of the figure. One star is drawn ringed inside the constellation it lies in; two or more are drawn inside a soft outline round them. */
+  stars: ReadonlyArray<Star>;
+  /** The lines of the figure, each a pair of its stars. */
+  segments: ReadonlyArray<readonly [Star, Star]>;
+}
+
+/**
+ * The picture of a figure of a sky culture (a Chinese asterism, a traditional Japanese figure), drawn the way a constellation's is, so every sky makes one set: the same square, the same room round the
+ * figure, the neighbouring constellations' boundaries and stars faint behind it, the same line and star sizes. A figure of two stars or more stands in a soft dashed outline with a faint wash (it has
+ * no official boundary: only the 88 constellations do, and the outline is a drawing aid), its stars in full. A figure of one star (Rigel as 源氏星, Sirius as 天狼) is drawn inside its own constellation's
+ * picture with the star ringed in the accent colour, never as a lone dot.
+ *
+ * @param input - The title, the stars and the lines.
+ * @param options - The look, the size and whether the neighbours are drawn.
+ * @returns A standalone SVG document as a string, a square of `THUMBNAIL_UNITS` units.
+ * @throws RangeError if there are no stars, or `size` is not above 0.
+ *
+ * @example
+ * ```ts
+ * import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
+ * import { figureThumbnail } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+ * import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+ *
+ * const dipper = figureOf("北斗", chinese);
+ * const svg = figureThumbnail({ title: "北斗", stars: dipper.stars, segments: dipper.segments }, { theme: "dark" });
+ * const sirius = figureOf("天狼", chinese);
+ * console.log(svg.includes("stroke-dasharray"), figureThumbnail({ title: "天狼", stars: sirius.stars, segments: [] }).includes("data-ring"));
+ * ```
+ */
+export function figureThumbnail(input: FigureThumbnailInput, options: ThumbnailOptions = {}): string {
+  if (input.stars.length === 0) throw new RangeError("stars must hold at least one star");
+  if (input.stars.length === 1) {
+    const star = input.stars[0]!;
+    const home = constellation(star.constellation)!;
+    const drawing: ThumbnailInput = { ...constellationInput(home), title: input.title, ringed: [star.hr] };
+    if (options.neighbours !== false) drawing.neighbourOutlines = neighbourRings(home.abbreviation);
+    return thumbnailSvg(drawing, options);
+  }
+  const mine = new Set(input.stars.map((star) => star.hr));
+  const drawing: ThumbnailInput = { title: input.title, outlines: [paddedOutline(input.stars)], segments: input.segments, owns: (star) => mine.has(star.hr), leastSpan: FIGURE_LEAST_SPAN_DEGREES, seeNeighbours: true };
+  if (options.neighbours !== false) drawing.neighbourOutlines = neighbourRings();
+  return thumbnailSvg(drawing, options);
 }

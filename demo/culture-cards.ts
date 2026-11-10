@@ -21,9 +21,11 @@ export interface FigureCard {
   words: readonly string[];
 }
 
-/** What a card says: the name, then the reading and the English, then how many stars are missing. */
+/** What a card says: the name, then one small line (the reading and English for a Japanese or Chinese figure, the abbreviation and the other language's name for a Western one), and in its title how many stars are missing. */
 export interface Face {
   name: string;
+  /** The one small line under the name; the same for a card in the strip, the gallery and the list. Never more than one line: the missing stars go in `label`, the card's title. */
+  sub: string;
   /** The reading (pinyin, hiragana), or the English name of a Western constellation's other name; empty for a Western card. */
   reading: string;
   english: string;
@@ -31,7 +33,7 @@ export interface Face {
   missing: number;
   /** The words for the missing stars (`3+ fainter stars not shown`), or an empty string where none are. */
   missingText: string;
-  /** One text for a screen reader. */
+  /** One text for a screen reader and for the card's title (the tooltip): the name, the line under it and the missing stars. */
   label: string;
 }
 
@@ -79,20 +81,24 @@ export function cardAnswers(card: FigureCard, text: string): boolean {
   return q === "" || card.words.some((word) => word.includes(q));
 }
 
+/** What a Western constellation's card says in the page's language: its name, then its abbreviation and its name in the other language, which is what its line has always been in the gallery. */
+export function westernFace(c: Constellation, lang: Lang): Face {
+  const name = nameIn(c, lang);
+  const sub = `${c.abbreviation} · ${lang === "ja" ? c.name : c.japanese}`;
+  return { name, sub, reading: "", english: "", missing: 0, missingText: "", label: name };
+}
+
 /** What a card says in the page's language. */
 export function faceOf(card: FigureCard, lang: Lang): Face {
   const a = card.asterism;
-  if (a === undefined) {
-    const name = nameIn(card.constellation!, lang);
-    return { name, reading: "", english: "", missing: 0, missingText: "", label: name };
-  }
+  if (a === undefined) return westernFace(card.constellation!, lang);
   // the name stays in the culture's own writing in either language; a constellation of the Japanese sky is by its Japanese name, with its Latin name as the English
   const name = a.kind === "constellation" ? (a.names.ja ?? a.name) : a.name;
   const reading = (card.culture === "chinese" ? a.readings.zh : a.readings.ja) ?? "";
   const english = a.kind === "constellation" ? (a.names.la ?? "") : card.culture === "japanese" ? a.about : (a.names.en ?? "");
   const missing = a.missing;
   const missingText = missing > 0 ? MISSING_WORD[lang](missing) : "";
-  return { name, reading, english, missing, missingText, label: [name, reading, english, missingText].filter((part) => part !== "").join(lang === "ja" ? "、" : ", ") };
+  return { name, sub: [reading, english].filter((part) => part !== "").join(" · "), reading, english, missing, missingText, label: [name, reading, english, missingText].filter((part) => part !== "").join(lang === "ja" ? "、" : ", ") };
 }
 
 /** The picture of a card: a constellation's own, else the figure's (Pages only). */
