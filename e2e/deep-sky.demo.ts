@@ -89,7 +89,14 @@ test("the card says what is measured and what is drawn, and credits the picture"
   await expect(card).toContainText("35° east of north");
   await expect(card).toContainText("RC3");
   await expect(card).toContainText("An ellipse at the measured size, axis ratio and angle.");
-  await expect(card.getByTestId("picture-credit").first()).toContainText(/SDSS|2MASS|WISE/);
+  // Andromeda's widest picture is a photograph in true colour (NOIRLab's), credited with its own words and licence
+  await expect(card.getByTestId("picture-credit").first()).toContainText("NSF NOIRLab");
+  await expect(card.getByTestId("picture-credit").first()).toContainText("A photograph in true colour");
+  await expect(card.getByTestId("picture-credit").first()).toContainText("Credit: Local Group Survey Team and T.A. Rector");
+  await expect(card.getByTestId("picture-credit").first()).toContainText("Licence: CC BY 4.0");
+  await expect(card.getByTestId("picture-credit").first()).not.toContainText(/WISE|false colour/);
+  await fly(page, "M51");
+  await expect(card.getByTestId("picture-credit").first()).toContainText(/SDSS/);
   await expect(card.getByTestId("picture-credit").first()).toContainText("Licence:");
   await fly(page, "M42");
   await expect(card).toContainText("66 arc-minutes across (one diameter)");
@@ -241,7 +248,9 @@ test("each picture is drawn on its object: its middle is within a twentieth of i
     await expect(page.locator(`#chart image[data-pic='${id}']`), id).toHaveCount(1, { timeout: 20_000 });
     const shown = await middleOf(page, `#chart image[data-pic='${id}']`);
     const mark = await middleOf(page, `#chart [data-deep="${id}"]`);
-    expect(Math.hypot(shown.x - mark.x, shown.y - mark.y), id).toBeLessThan(shown.width * 0.05 + 6);
+    // a photograph is framed by the person who took it, not about the catalogue's centre (the Pleiades' photograph is cut about the bright stars): the object's middle is on it, within 0.3 of its width of the picture's
+    const photograph = ["NSF NOIRLab", "ESO"].includes(picture.source.name);
+    expect(Math.hypot(shown.x - mark.x, shown.y - mark.y), id).toBeLessThan(shown.width * (photograph ? 0.3 : 0.05) + 6);
   }
 });
 

@@ -1,0 +1,805 @@
+{
+ "M101-heic0602a": {
+  "address": "https://esahubble.org/images/heic0602a/",
+  "agree": {
+   "inside": 0,
+   "medianPixels": null,
+   "near": 0
+  },
+  "arcsecPerPixel": 1.26,
+  "avmRotation": 3.5400000000000014,
+  "avmScale": 0.6186777393910353,
+  "avmShiftArcsec": 0.0,
+  "bytes": 106448,
+  "catalogue": 1,
+  "centre": [
+   210.79869,
+   54.35044
+  ],
+  "credit": "Image: European Space Agency & NASA Acknowledgements: Project Investigators for the original Hubble data: K.D. Kuntz (GSFC), F. Bresolin (University of Hawaii), J. Trauger (JPL), J. Mould (NOAO), and Y.-H. Chu (University of Illinois, Urbana) Image processing: Davide De Martin (ESA/Hubble) CFHT image: Canada-France-Hawaii Telescope/J.-C. Cuillandre/Coelum NOAO image: George Jacoby, Bruce Bohannan, Mark Hanna/NOAO/AURA/NSF (ESA/Hubble)",
+  "detected": 500,
+  "fitRotation": 3.5400000000000014,
+  "fitScale": 0.6186777393910353,
+  "galaxy": {
+   "brightShare": 0.112,
+   "catalogueDec": 54.3488,
+   "cataloguePositionAngle": null,
+   "catalogueRa": 210.8024,
+   "centreOffsetArcmin": 0.13,
+   "measuredDec": 54.34747,
+   "measuredPositionAngle": 48.5,
+   "measuredRa": 210.80545
+  },
+  "height": 493,
+  "image": "heic0602a",
+  "matched": 0,
+  "placement": "avm",
+  "quality": 65,
+  "rotation": 3.5,
+  "site": "hubble",
+  "wcsCorners": [
+   [
+    210.996362,
+    54.42955
+   ],
+   [
+    210.61884,
+    54.442861
+   ],
+   [
+    210.601789,
+    54.271011
+   ],
+   [
+    210.977742,
+    54.257754
+   ]
+  ],
+  "width": 630
+ },
+ "M110": {
+  "address": "https://noirlab.edu/public/images/noao-m110/",
+  "agree": {
+   "inside": 11,
+   "medianPixels": 0.6302835285777735,
+   "near": 10
+  },
+  "arcsecPerPixel": 1.94,
+  "avmRotation": 359.8654883121,
+  "avmScale": 0.90365625,
+  "avmShiftArcsec": 0.43680606295911883,
+  "bytes": 78398,
+  "catalogue": 19,
+  "centre": [
+   10.09316,
+   41.68745
+  ],
+  "credit": "NOIRLab/NSF/AURA",
+  "detected": 500,
+  "fitRotation": 359.8654883121,
+  "fitScale": 0.9036562499999999,
+  "height": 700,
+  "image": "noao-m110",
+  "matched": 6,
+  "placement": "shift",
+  "quality": 65,
+  "rmsArcsec": 0.3492786691743966,
+  "rmsPixels": 0.38651718413323277,
+  "rotation": 359.8,
+  "site": "noirlab",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    10.308224,
+    41.876686
+   ],
+   [
+    9.876714,
+    41.875802
+   ],
+   [
+    9.879366,
+    41.497811
+   ],
+   [
+    10.308346,
+    41.498689
+   ]
+  ],
+  "width": 595
+ },
+ "M16": {
+  "address": "https://www.eso.org/public/images/eso0926a/",
+  "agree": {
+   "inside": 67,
+   "medianPixels": 0.23723667069920668,
+   "near": 44
+  },
+  "arcsecPerPixel": 3.44,
+  "avmRotation": 359.99456698621,
+  "avmScale": 1.5035400274500001,
+  "avmShiftArcsec": 0.3691884530999703,
+  "bytes": 109450,
+  "catalogue": 106,
+  "centre": [
+   274.70578,
+   -13.76389
+  ],
+  "credit": "ESO",
+  "detected": 500,
+  "fitRotation": 0.0031644389907512505,
+  "fitScale": 1.5034912051749763,
+  "height": 560,
+  "image": "eso0926a",
+  "matched": 36,
+  "placement": "fit",
+  "quality": 58,
+  "rmsArcsec": 0.3433021020106641,
+  "rmsPixels": 0.22833662134439328,
+  "rotation": 0.0,
+  "site": "eso",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    274.980662,
+    -13.496468
+   ],
+   [
+    274.430918,
+    -13.496451
+   ],
+   [
+    274.43027,
+    -14.031015
+   ],
+   [
+    274.981277,
+    -14.031032
+   ]
+  ],
+  "width": 560
+ },
+ "M17": {
+  "address": "https://www.eso.org/public/images/eso1119a/",
+  "agree": {
+   "inside": 174,
+   "medianPixels": 0.2358639891620787,
+   "near": 144
+  },
+  "arcsecPerPixel": 6.46,
+  "avmRotation": 0.14000000000000454,
+  "avmScale": 2.5033356152919968,
+  "avmShiftArcsec": 3.511212411876136,
+  "bytes": 106008,
+  "catalogue": 329,
+  "centre": [
+   275.24494,
+   -16.14856
+  ],
+  "credit": "ESO/INAF-VST/OmegaCAM. Acknowledgement: OmegaCen/Astro-WISE/Kapteyn Institute",
+  "detected": 500,
+  "fitRotation": 0.12505851478965724,
+  "fitScale": 2.501983389303137,
+  "height": 496,
+  "image": "eso1119a",
+  "matched": 120,
+  "placement": "fit",
+  "quality": 50,
+  "rmsArcsec": 0.5747675466792146,
+  "rmsPixels": 0.22972476521488872,
+  "rotation": 0.1,
+  "site": "eso",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    275.707964,
+    -15.70425
+   ],
+   [
+    274.783928,
+    -15.702315
+   ],
+   [
+    274.779827,
+    -16.591856
+   ],
+   [
+    275.708027,
+    -16.5938
+   ]
+  ],
+  "width": 496
+ },
+ "M20": {
+  "address": "https://www.eso.org/public/images/eso0930a/",
+  "agree": {
+   "inside": 22,
+   "medianPixels": 1.1064256413780797,
+   "near": 14
+  },
+  "arcsecPerPixel": 1.71,
+  "avmRotation": 359.8434608703364,
+  "avmScale": 0.6504218945181323,
+  "avmShiftArcsec": 3.111657224027396,
+  "bytes": 98198,
+  "catalogue": 55,
+  "centre": [
+   270.57748,
+   -22.94261
+  ],
+  "credit": "ESO",
+  "detected": 500,
+  "fitRotation": 359.8434608703364,
+  "fitScale": 0.6504218945181323,
+  "height": 800,
+  "image": "eso0930a",
+  "matched": 7,
+  "placement": "shift",
+  "quality": 65,
+  "rmsArcsec": 0.4293945407020554,
+  "rmsPixels": 0.6601784846436852,
+  "rotation": 359.9,
+  "site": "eso",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    270.702443,
+    -22.751981
+   ],
+   [
+    270.451672,
+    -22.75246
+   ],
+   [
+    270.452174,
+    -23.133132
+   ],
+   [
+    270.703652,
+    -23.132654
+   ]
+  ],
+  "width": 486
+ },
+ "M27": {
+  "address": "https://noirlab.edu/public/images/noao-m27/",
+  "agree": {
+   "inside": 2,
+   "medianPixels": null,
+   "near": 0
+  },
+  "arcsecPerPixel": 0.83,
+  "avmRotation": 357.94,
+  "avmScale": 0.4173773406892032,
+  "avmShiftArcsec": 0.0,
+  "bytes": 69410,
+  "catalogue": 3,
+  "centre": [
+   299.90378,
+   22.72132
+  ],
+  "credit": "REU program/NOIRLab/NSF/AURA",
+  "detected": 500,
+  "fitRotation": 357.94,
+  "fitScale": 0.4173773406892032,
+  "height": 548,
+  "image": "noao-m27",
+  "matched": 0,
+  "placement": "avm",
+  "quality": 65,
+  "rotation": 357.9,
+  "site": "noirlab",
+  "wcsCorners": [
+   [
+    299.98173,
+    22.787464
+   ],
+   [
+    299.820873,
+    22.782127
+   ],
+   [
+    299.825899,
+    22.655143
+   ],
+   [
+    299.986607,
+    22.660475
+   ]
+  ],
+  "width": 640
+ },
+ "M31": {
+  "address": "https://noirlab.edu/public/images/noao-m31lgs_ubvIha/",
+  "agree": {
+   "inside": 243,
+   "medianPixels": 0.17383524402828593,
+   "near": 148
+  },
+  "arcsecPerPixel": 7.25,
+  "avmRotation": 125.82000000000001,
+  "avmScale": 3.2642342921736582,
+  "avmShiftArcsec": 5.17005975928034,
+  "bytes": 104228,
+  "catalogue": 884,
+  "centre": [
+   10.7054,
+   41.2091
+  ],
+  "credit": "Local Group Survey Team and T.A. Rector (University of Alaska Anchorage)",
+  "detected": 500,
+  "fitRotation": 125.81959233681297,
+  "fitScale": 3.2620854988525845,
+  "galaxy": {
+   "brightShare": 0.065,
+   "catalogueDec": 41.2688,
+   "cataloguePositionAngle": 35,
+   "catalogueRa": 10.6847,
+   "centreOffsetArcmin": 1.48,
+   "measuredDec": 41.27605,
+   "measuredPositionAngle": 38.5,
+   "measuredRa": 10.71595
+  },
+  "height": 454,
+  "image": "noao-m31lgs_ubvIha",
+  "matched": 125,
+  "placement": "fit",
+  "quality": 65,
+  "rmsArcsec": 0.6005229268086599,
+  "rmsPixels": 0.18409171893866352,
+  "rotation": 125.8,
+  "site": "noirlab",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    9.812045,
+    39.469208
+   ],
+   [
+    12.642751,
+    42.39459
+   ],
+   [
+    11.647479,
+    42.941709
+   ],
+   [
+    8.8379,
+    39.992305
+   ]
+  ],
+  "width": 1800
+ },
+ "M33": {
+  "address": "https://www.eso.org/public/images/eso1424a/",
+  "agree": {
+   "inside": 46,
+   "medianPixels": 0.19184170651148716,
+   "near": 45
+  },
+  "arcsecPerPixel": 7.28,
+  "avmRotation": 269.9999999999998,
+  "avmScale": 3.1880164591225664,
+  "avmShiftArcsec": 2.674787924528566,
+  "bytes": 102848,
+  "catalogue": 80,
+  "centre": [
+   23.46749,
+   30.67316
+  ],
+  "credit": "ESO",
+  "detected": 500,
+  "fitRotation": 270.0020497712929,
+  "fitScale": 3.185006807423238,
+  "galaxy": {
+   "brightShare": 0.103,
+   "catalogueDec": 30.6602,
+   "cataloguePositionAngle": 23,
+   "catalogueRa": 23.4621,
+   "centreOffsetArcmin": 0.46,
+   "measuredDec": 30.6621,
+   "measuredPositionAngle": 23.5,
+   "measuredRa": 23.47067
+  },
+  "height": 470,
+  "image": "eso1424a",
+  "matched": 38,
+  "placement": "fit",
+  "quality": 65,
+  "rmsArcsec": 0.671118508579941,
+  "rmsPixels": 0.21071179722937394,
+  "rotation": 270.0,
+  "site": "eso",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    22.911751,
+    31.238192
+   ],
+   [
+    22.918177,
+    30.105835
+   ],
+   [
+    24.016757,
+    30.105798
+   ],
+   [
+    24.023285,
+    31.238155
+   ]
+  ],
+  "width": 560
+ },
+ "M42": {
+  "address": "https://www.eso.org/public/images/eso1723a/",
+  "agree": {
+   "inside": 78,
+   "medianPixels": 0.201298768148537,
+   "near": 71
+  },
+  "arcsecPerPixel": 4.0,
+  "avmRotation": 359.82,
+  "avmScale": 2.8103239590835445,
+  "avmShiftArcsec": 4.2269163982385365,
+  "bytes": 108080,
+  "catalogue": 128,
+  "centre": [
+   83.78489,
+   -5.47975
+  ],
+  "credit": "ESO/G. Beccari",
+  "detected": 500,
+  "fitRotation": 359.83244954215525,
+  "fitScale": 2.8114819412083927,
+  "height": 699,
+  "image": "eso1723a",
+  "matched": 60,
+  "placement": "fit",
+  "quality": 65,
+  "rmsArcsec": 0.6311584286345471,
+  "rmsPixels": 0.22449314697119171,
+  "rotation": 359.8,
+  "site": "eso",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    84.285517,
+    -5.089912
+   ],
+   [
+    83.281972,
+    -5.092834
+   ],
+   [
+    83.283601,
+    -5.869176
+   ],
+   [
+    84.288451,
+    -5.86625
+   ]
+  ],
+  "width": 900
+ },
+ "M45": {
+  "address": "https://noirlab.edu/public/images/noao-m45/",
+  "agree": {
+   "inside": 83,
+   "medianPixels": 0.4173398058511798,
+   "near": 79
+  },
+  "arcsecPerPixel": 4.58,
+  "avmRotation": 90.69909386,
+  "avmScale": 3.2191874999999994,
+  "avmShiftArcsec": 1.030086705927134,
+  "bytes": 105018,
+  "catalogue": 149,
+  "centre": [
+   56.58104,
+   24.10036
+  ],
+  "credit": "NOIRLab/NSF/AURA/T.A. Rector (University of Alaska Anchorage), R. Cool (University of Arizona) and WIYN",
+  "detected": 500,
+  "fitRotation": 90.69702201336165,
+  "fitScale": 3.2192810083921644,
+  "height": 657,
+  "image": "noao-m45",
+  "matched": 65,
+  "placement": "fit",
+  "quality": 58,
+  "rmsArcsec": 1.2805814250172884,
+  "rmsPixels": 0.39778491584891534,
+  "rotation": 90.7,
+  "site": "noirlab",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    57.028915,
+    23.522308
+   ],
+   [
+    57.048497,
+    24.666729
+   ],
+   [
+    56.129104,
+    24.677103
+   ],
+   [
+    56.117702,
+    23.532582
+   ]
+  ],
+  "width": 900
+ },
+ "M8": {
+  "address": "https://www.eso.org/public/images/eso0936a/",
+  "agree": {
+   "inside": 299,
+   "medianPixels": 0.26318179949969445,
+   "near": 226
+  },
+  "arcsecPerPixel": 8.91,
+  "avmRotation": 359.99552615775,
+  "avmScale": 4.3824751974,
+  "avmShiftArcsec": 2.0674931287571026,
+  "bytes": 108912,
+  "catalogue": 588,
+  "centre": [
+   270.95123,
+   -24.13774
+  ],
+  "credit": "ESO",
+  "detected": 500,
+  "fitRotation": 0.0061508439277133675,
+  "fitScale": 4.383110824954297,
+  "height": 422,
+  "image": "eso0936a",
+  "matched": 187,
+  "placement": "fit",
+  "quality": 50,
+  "rmsArcsec": 1.1477630342293452,
+  "rmsPixels": 0.2618603727048843,
+  "rotation": 360.0,
+  "site": "eso",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    271.801386,
+    -23.613343
+   ],
+   [
+    270.100781,
+    -23.613688
+   ],
+   [
+    270.094009,
+    -24.657442
+   ],
+   [
+    271.808689,
+    -24.657073
+   ]
+  ],
+  "width": 630
+ },
+ "M81": {
+  "address": "https://noirlab.edu/public/images/noao-m81/",
+  "agree": {
+   "inside": 8,
+   "medianPixels": 0.8719815902357125,
+   "near": 7
+  },
+  "arcsecPerPixel": 1.72,
+  "avmRotation": 359.6597497464,
+  "avmScale": 1.0870453125,
+  "avmShiftArcsec": 0.0,
+  "bytes": 87882,
+  "catalogue": 17,
+  "centre": [
+   148.88824,
+   69.0653
+  ],
+  "credit": "N.A.Sharp/NOIRLab/NSF/AURA",
+  "detected": 500,
+  "fitRotation": 359.6597497464,
+  "fitScale": 1.0870453125,
+  "galaxy": {
+   "brightShare": 0.036,
+   "catalogueDec": 69.0653,
+   "cataloguePositionAngle": 157,
+   "catalogueRa": 148.8882,
+   "centreOffsetArcmin": 0.1,
+   "measuredDec": 69.06442,
+   "measuredPositionAngle": 153.0,
+   "measuredRa": 148.89205
+  },
+  "height": 800,
+  "image": "noao-m81",
+  "matched": 4,
+  "placement": "avm",
+  "quality": 65,
+  "rotation": 359.8,
+  "site": "noirlab",
+  "wcsCorners": [
+   [
+    149.374293,
+    69.256008
+   ],
+   [
+    148.398202,
+    69.254713
+   ],
+   [
+    148.410587,
+    68.873236
+   ],
+   [
+    149.369852,
+    68.874511
+   ]
+  ],
+  "width": 725
+ },
+ "NGC 1316": {
+  "address": "https://www.eso.org/public/images/eso0024a/",
+  "agree": {
+   "inside": 1,
+   "medianPixels": null,
+   "near": 0
+  },
+  "arcsecPerPixel": 0.61,
+  "avmRotation": 0.0682818894999991,
+  "avmScale": 0.30348223812864,
+  "avmShiftArcsec": 0.0,
+  "bytes": 64168,
+  "catalogue": 1,
+  "centre": [
+   50.67588,
+   -37.20336
+  ],
+  "credit": "ESO",
+  "detected": 500,
+  "fitRotation": 0.0682818894999991,
+  "fitScale": 0.30348223812864,
+  "height": 640,
+  "image": "eso0024a",
+  "matched": 0,
+  "placement": "avm",
+  "quality": 80,
+  "rotation": 0.1,
+  "site": "eso",
+  "wcsCorners": [
+   [
+    50.743654,
+    -37.149367
+   ],
+   [
+    50.608276,
+    -37.149234
+   ],
+   [
+    50.608012,
+    -37.257307
+   ],
+   [
+    50.743583,
+    -37.257441
+   ]
+  ],
+  "width": 639
+ },
+ "NGC 2403": {
+  "address": "https://noirlab.edu/public/images/iotw2221a/",
+  "agree": {
+   "inside": 9,
+   "medianPixels": 0.6321064782472985,
+   "near": 9
+  },
+  "arcsecPerPixel": 2.17,
+  "avmRotation": 359.72,
+  "avmScale": 1.35455353215179,
+  "avmShiftArcsec": 0.7373360620098599,
+  "bytes": 102970,
+  "catalogue": 17,
+  "centre": [
+   114.21077,
+   65.59129
+  ],
+  "credit": "KPNO/NOIRLab/NSF/AURA/M. T. Patterson (New Mexico State University) Image processing: T.A. Rector (University of Alaska Anchorage/NSF NOIRLab), M. Zamani & D. de Martin (NSF NOIRLab)",
+  "detected": 500,
+  "fitRotation": 359.72,
+  "fitScale": 1.3545535321517899,
+  "galaxy": {
+   "brightShare": 0.078,
+   "catalogueDec": 65.6025,
+   "cataloguePositionAngle": 127,
+   "catalogueRa": 114.2142,
+   "centreOffsetArcmin": 0.05,
+   "measuredDec": 65.60174,
+   "measuredPositionAngle": 123.0,
+   "measuredRa": 114.21338
+  },
+  "height": 562,
+  "image": "iotw2221a",
+  "matched": 6,
+  "placement": "shift",
+  "quality": 65,
+  "rmsArcsec": 0.7775124712035038,
+  "rmsPixels": 0.573999072571446,
+  "rotation": 359.7,
+  "site": "noirlab",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    114.795301,
+    65.760516
+   ],
+   [
+    113.622261,
+    65.758143
+   ],
+   [
+    113.633851,
+    65.419843
+   ],
+   [
+    114.791727,
+    65.422186
+   ]
+  ],
+  "width": 800
+ },
+ "NGC 5139": {
+  "address": "https://www.eso.org/public/images/eso1119b/",
+  "agree": {
+   "inside": 353,
+   "medianPixels": 0.21509119123370452,
+   "near": 131
+  },
+  "arcsecPerPixel": 6.94,
+  "avmRotation": 359.99948826939,
+  "avmScale": 2.3848234560000003,
+  "avmShiftArcsec": 1.9720178014408984,
+  "bytes": 96210,
+  "catalogue": 426,
+  "centre": [
+   201.69007,
+   -47.46754
+  ],
+  "credit": "ESO/INAF-VST/OmegaCAM. Acknowledgement: A. Grado, L. Limatola/INAF-Capodimonte Observatory",
+  "detected": 500,
+  "fitRotation": 0.0010447774888291406,
+  "fitScale": 2.385276841467472,
+  "height": 440,
+  "image": "eso1119b",
+  "matched": 109,
+  "placement": "fit",
+  "quality": 65,
+  "rmsArcsec": 0.5309046263422753,
+  "rmsPixels": 0.2225756847643948,
+  "rotation": 0.0,
+  "site": "eso",
+  "turnSign": 1,
+  "wcsCorners": [
+   [
+    202.312381,
+    -47.041857
+   ],
+   [
+    201.067903,
+    -47.041768
+   ],
+   [
+    201.057647,
+    -47.889799
+   ],
+   [
+    202.32237,
+    -47.889891
+   ]
+  ],
+  "width": 440
+ }
+}

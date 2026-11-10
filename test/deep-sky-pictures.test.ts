@@ -7,6 +7,18 @@ import { deepSkyPicture, deepSkyPictures, deepSkyPicturesOf, pictureCorners, pic
 import { deepSkyOutline, deepSkyShape } from "../src/deep-sky-shape-ngc-ic.ts";
 
 const root = new URL("../", import.meta.url);
+/** The sources of photographs in true colour: an observatory's own, placed by a fit to this package's stars (scripts/make-natural-pictures.py), not cut by a survey about the object. */
+const NATURAL = new Set(["NSF NOIRLab", "ESO"]);
+const natural = JSON.parse(readFileSync(new URL("scripts/natural-pictures.json", root), "utf8")) as Record<string, NaturalEntry>;
+interface NaturalEntry {
+  placement: "fit" | "shift" | "avm";
+  matched?: number;
+  rmsArcsec?: number;
+  agree: { inside: number; near: number; medianPixels: number | null };
+  avmShiftArcsec: number;
+  wcsCorners: Array<[number, number]>;
+  galaxy?: { centreOffsetArcmin: number; measuredPositionAngle: number | null; cataloguePositionAngle: number | null };
+}
 const notice = readFileSync(new URL("NOTICE.md", root), "utf8");
 const separation = (a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number => {
   const [r1, d1, r2, d2] = [a.rightAscension, a.declination, b.rightAscension, b.declination].map((x) => (x * Math.PI) / 180) as [number, number, number, number];
@@ -35,7 +47,7 @@ test("each survey picture is at its object's place, in a field that holds the wh
     const object = deepSkyObject(picture.object);
     assert.ok(object !== undefined, `${picture.object} is a deep-sky object`);
     assert.equal(picture.file, `pictures/${picture.id.replace(" ", "-")}.webp`);
-    if (picture.id !== picture.object) continue;
+    if (picture.id !== picture.object || NATURAL.has(picture.source.name)) continue;
     assert.ok(separation(object, picture.centre) * 60 < 0.5, `${picture.id}'s picture is centred within half an arc-minute of the object`);
     assert.equal(picture.rotation, 0);
     const half = (Math.min(picture.width, picture.height) * picture.arcsecPerPixel) / 120;
@@ -92,7 +104,7 @@ test("pictureUrl joins a base and the file with one slash", () => {
   assert.equal(pictureUrl(picture, "./"), "./pictures/M31.webp");
 });
 
-test("every picture file is here, is a WebP within 90 kB, and the folder holds nothing else", () => {
+test("every picture file is here, is a WebP within 90 kB (110 kB for a photograph in true colour), and the folder holds nothing else", () => {
   const files = readdirSync(new URL("pictures/", root)).sort();
   assert.deepEqual(files, deepSkyPictures().map((p) => p.file.replace("pictures/", "")).sort());
   assert.equal(new Set(deepSkyPictures().map((p) => p.id)).size, deepSkyPictures().length, "ids are unique");
@@ -103,7 +115,7 @@ test("every picture file is here, is a WebP within 90 kB, and the folder holds n
     const bytes = readFileSync(path);
     assert.equal(bytes.subarray(0, 4).toString("latin1"), "RIFF");
     assert.equal(bytes.subarray(8, 12).toString("latin1"), "WEBP");
-    assert.ok(statSync(path).size <= 90_000, `${picture.file} is ${statSync(path).size} bytes`);
+    assert.ok(statSync(path).size <= (natural[picture.id] !== undefined ? 110_000 : 90_000), `${picture.file} is ${statSync(path).size} bytes`);
     total += statSync(path).size;
   }
   assert.ok(total < 12_000_000, `all the pictures are ${total} bytes`);
@@ -121,10 +133,11 @@ test("NOTICE.md records every picture file with its survey, address, credit, lic
 
 test("the sources are all ones whose terms allow it, and none is one the package refuses", () => {
   const sources = new Set(deepSkyPictures().map((p) => p.source.name));
-  for (const name of sources) assert.ok(["SDSS g, r, i", "2MASS J, H, K", "WISE 3.4, 4.6, 12 micron", "ESA/Hubble"].includes(name), `${name} is a listed source`);
+  for (const name of sources) assert.ok(["SDSS g, r, i", "2MASS J, H, K", "WISE 3.4, 4.6, 12 micron", "ESA/Hubble", "NSF NOIRLab", "ESO"].includes(name), `${name} is a listed source`);
   for (const picture of deepSkyPictures()) {
     assert.match(picture.source.licence, /CC BY|government work|public domain/i);
-    assert.ok(picture.credit.length > 10, `${picture.id} has a credit line`);
+    assert.doesNotMatch(picture.source.licence, /\bSA\b|ShareAlike|\bNC\b|NonCommercial|non-commercial|all rights reserved/i, `${picture.id}: only licences an MIT package can pass on`);
+    assert.ok(picture.credit.length >= 3, `${picture.id} has a credit line`);
     assert.doesNotMatch(`${picture.source.name} ${picture.address}`, /\bDSS\b|stellarium|digitized/i);
   }
 });
@@ -155,7 +168,87 @@ test("the demo leaves out the pictures that look broken, and draws no finer pict
   const all = deepSkyPictures();
   for (const id of Object.keys(LEFT_OUT)) assert.ok(all.some((p) => p.id === id), `${id} is a picture`);
   const drawn = drawnPictures();
-  assert.equal(drawn.length, 117);
+  assert.equal(drawn.length, all.length - Object.keys(LEFT_OUT).length - 1, "all but the ones left out and the lone Hubble tile of NGC 2070");
+  assert.ok(!drawn.some((p) => p.id === "NGC 2070-heic1105a"));
   for (const id of Object.keys(LEFT_OUT)) assert.ok(!drawn.some((p) => p.id === id));
-  for (const finer of drawn.filter((p) => p.id !== p.object)) assert.ok(drawn.some((p) => p.id === finer.object) || finer.id === "M16-heic1501a", `${finer.id} has its wide picture`);
+  for (const finer of drawn.filter((p) => p.id !== p.object)) assert.ok(drawn.some((p) => p.id === finer.object), `${finer.id} has its wide picture`);
+});
+
+const NATURAL_IDS = Object.keys(natural);
+const arcsecBetween = (a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number => separation(a, b) * 3600;
+
+test("the natural-colour pictures are an observatory's own, under CC BY, each recorded with its credit, and replace the false-colour picture of the object where they are its widest", () => {
+  assert.ok(NATURAL_IDS.length >= 15, `${NATURAL_IDS.length} natural pictures`);
+  for (const id of NATURAL_IDS) {
+    const picture = deepSkyPictures().find((p) => p.id === id);
+    assert.ok(picture !== undefined, `${id} is in the index`);
+    assert.ok(["NSF NOIRLab", "ESO", "ESA/Hubble"].includes(picture.source.name));
+    assert.match(picture.source.licence, /CC BY 4\.0/);
+    assert.ok(picture.address.startsWith("https://"), `${id}: its page`);
+    if (picture.id === picture.object) assert.ok(!/WISE|2MASS/.test(picture.source.name), `${id}: no infrared picture is the widest view of it`);
+  }
+  // the widest picture of each of these is a photograph, where it was infrared in false colour
+  for (const id of ["M31", "M33", "M42", "M45", "M8", "M16", "M17", "M20", "M27", "NGC 5139"]) assert.ok(NATURAL.has(deepSkyPicture(id)!.source.name), `${id} is a photograph`);
+});
+
+test("a natural-colour picture lies where the photograph's stars say: the index puts its corners within a pixel (and 3 arc-seconds) of the fitted placement, and the fit is a fit", () => {
+  const unverified: string[] = [];
+  for (const id of NATURAL_IDS) {
+    const picture = deepSkyPictures().find((p) => p.id === id)!;
+    const entry = natural[id]!;
+    pictureCorners(picture).forEach((corner, i) => {
+      const [ra, dec] = entry.wcsCorners[i]!;
+      const off = arcsecBetween(corner, { rightAscension: ra, declination: dec });
+      assert.ok(off < Math.max(3, picture.arcsecPerPixel), `${id}: corner ${i} is ${off.toFixed(2)} arc-seconds from the fitted placement`);
+    });
+    if (entry.placement === "fit") {
+      // matched to this package's own stars by least squares (turn, scale and centre), to a small fraction of a pixel of the photograph
+      assert.ok(entry.matched! >= 8, `${id}: ${entry.matched} stars matched`);
+      assert.ok(entry.rmsArcsec! < 1.5, `${id}: the residual is ${entry.rmsArcsec} arc-seconds`);
+      assert.ok(entry.avmShiftArcsec < 6, `${id}: the fit and the release's own tags agree to ${entry.avmShiftArcsec} arc-seconds`);
+    } else if (entry.placement === "shift") {
+      // a field of a few arc-minutes holds too few of our stars for the turn and the scale, which are the release's own: the centre is fitted to the few there are
+      assert.ok(entry.matched! >= 3, `${id}: ${entry.matched} stars matched`);
+      assert.ok(entry.rmsArcsec! < 1.5, `${id}: the residual is ${entry.rmsArcsec} arc-seconds`);
+      assert.ok(entry.avmShiftArcsec < 6, `${id}: the shift from the release's own tags is ${entry.avmShiftArcsec} arc-seconds`);
+      assert.ok(entry.agree.near >= 0.6 * entry.agree.inside, `${id}: ${entry.agree.near} of ${entry.agree.inside} of our stars are on a star of the picture`);
+    } else if (entry.agree.inside >= 5) {
+      // the release's own position, checked against the stars there are
+      assert.ok(entry.agree.near >= 0.6 * entry.agree.inside && entry.agree.medianPixels! <= 3, `${id}: ${entry.agree.near} of ${entry.agree.inside} of our stars are on a star of the picture`);
+    } else unverified.push(id);
+  }
+  // the pictures whose field holds almost none of our stars (to magnitude 12) are laid by the release's own position and are the ones NOTICE.md and the guide name as not checked
+  assert.deepEqual(unverified.sort(), ["M101-heic0602a", "M27", "NGC 1316"]);
+});
+
+test("Andromeda's picture sits on Andromeda: its middle within a twentieth of its width of the outline's, its long axis within 3 degrees of the catalogue's angle, and the disc in the picture within 5", () => {
+  const picture = deepSkyPicture("M31")!;
+  const m31 = deepSkyObject("M31")!;
+  const shape = deepSkyShape(m31);
+  const widthArcmin = (Math.max(picture.width, picture.height) * picture.arcsecPerPixel) / 60;
+  assert.ok(separation(picture.centre, m31) * 60 <= widthArcmin / 20, `the middle of the picture is ${(separation(picture.centre, m31) * 60).toFixed(1)}' from the middle of M31's outline, of ${widthArcmin.toFixed(0)}' across`);
+  // the picture's long side runs along the galaxy: its direction on the sky, east of north, from the corners
+  const [topLeft, topRight] = pictureCorners(picture);
+  const east = (topRight.rightAscension - topLeft.rightAscension) * Math.cos((picture.centre.declination * Math.PI) / 180);
+  const north = topRight.declination - topLeft.declination;
+  assert.ok(picture.width > picture.height * 3, "a long picture of a long galaxy");
+  const frameAngle = ((Math.atan2(east, north) * 180) / Math.PI + 360) % 180;
+  assert.ok(Math.abs(frameAngle - shape.positionAngle!) <= 3, `the long side runs at ${frameAngle.toFixed(1)} degrees, the catalogue's angle is ${shape.positionAngle}`);
+  // and the galaxy's own light, measured in the saved picture by scripts/make-natural-pictures.py, lies along the catalogue's outline
+  const measured = natural["M31"]!.galaxy!;
+  assert.ok(Math.abs(measured.measuredPositionAngle! - shape.positionAngle!) <= 5, `the disc in the picture is at ${measured.measuredPositionAngle}, the catalogue's angle is ${shape.positionAngle}`);
+  assert.ok(measured.centreOffsetArcmin <= widthArcmin / 20, `the bright middle is ${measured.centreOffsetArcmin}' from the catalogue's`);
+  // it is under the Hubble strip: coarser than it, so drawn first
+  const all = deepSkyPicturesOf("M31");
+  assert.equal(all[0]!.id, "M31");
+  assert.equal(all[all.length - 1]!.id, "M31-heic1502a");
+});
+
+test("a natural-colour picture that is the widest of its object is coarser than the finer pictures of it, so they are drawn over it", () => {
+  for (const id of NATURAL_IDS) {
+    const picture = deepSkyPictures().find((p) => p.id === id)!;
+    if (picture.id !== picture.object) continue;
+    for (const finer of deepSkyPicturesOf(picture.object).filter((p) => p.id !== picture.id)) assert.ok(finer.arcsecPerPixel < picture.arcsecPerPixel, `${finer.id} is finer than ${picture.id}`);
+    assert.equal(deepSkyPicturesOf(picture.object)[0]!.id, picture.id);
+  }
 });

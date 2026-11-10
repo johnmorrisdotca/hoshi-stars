@@ -1,5 +1,5 @@
 // Pictures of deep-sky objects and where each lies on the sky. The deep-sky pictures tier (`@johnmorrisdotca/hoshi-stars/deep-sky/pictures`): the index only (about 8 kB gzipped). The picture files
-// (about 9 MB in all) are NOT in the npm package: they are served from the demo site (https://johnmorrisdotca.github.io/hoshi-stars/pictures/) and fetched only by a page that draws them; a page that
+// (about 10 MB in all) are NOT in the npm package: they are served from the demo site (https://johnmorrisdotca.github.io/hoshi-stars/pictures/) and fetched only by a page that draws them; a page that
 // wants them from its own server copies the repository's `pictures/` folder there and passes that address to `pictureUrl`. Pure: no DOM, no clock, no state beyond the parsed table.
 import { PICTURE_ROWS, PICTURE_SOURCES } from "./data/deep-sky-pictures.ts";
 import { offsetOnSky } from "./deep-sky-shape-core.ts";

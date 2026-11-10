@@ -612,7 +612,9 @@ const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElemen
 
 // ----- what is picked -----
 const SOURCE_WORDS: Record<string, string> = { RC3: "srcRC3", NED: "srcNed", "Catalogue row": "srcRow" };
-const SURVEY_WORDS: Record<string, string> = { "SDSS g, r, i": "pictureSdss", "2MASS J, H, K": "picture2mass", "WISE 3.4, 4.6, 12 micron": "pictureWise", "ESA/Hubble": "pictureHubble" };
+/** The sources of photographs in true colour (an observatory's own), placed by a fit to our stars. */
+const NATURAL_SOURCES: ReadonlySet<string> = new Set(["NSF NOIRLab", "ESO"]);
+const SURVEY_WORDS: Record<string, string> = { "SDSS g, r, i": "pictureSdss", "2MASS J, H, K": "picture2mass", "WISE 3.4, 4.6, 12 micron": "pictureWise", "ESA/Hubble": "pictureHubble", "NSF NOIRLab": "pictureNatural", ESO: "pictureNatural" };
 const fill = (text: string, values: Record<string, string>): string => Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
 const arcmin = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n * 10) / 10));
 
@@ -650,7 +652,7 @@ function deepCard(object: DeepSkyObject, title: HTMLElement, list: HTMLElement, 
   for (const picture of pictures) {
     const credit = Object.assign(document.createElement("p"), { className: "fam-fine" });
     credit.dataset.testid = "picture-credit";
-    credit.textContent = `${fill(say("pictureFrom"), { survey: picture.source.name, colour: say(SURVEY_WORDS[picture.source.name] ?? "pictureHubble"), credit: picture.credit, licence: picture.source.licence })} ${say(picture.source.name === "ESA/Hubble" ? "pictureNoteRelease" : "pictureNote")}`;
+    credit.textContent = `${fill(say("pictureFrom"), { survey: picture.source.name, colour: say(SURVEY_WORDS[picture.source.name] ?? "pictureHubble"), credit: picture.credit, licence: picture.source.licence })} ${say(NATURAL_SOURCES.has(picture.source.name) ? "pictureNoteNatural" : picture.source.name === "ESA/Hubble" ? "pictureNoteRelease" : "pictureNote")}`;
     host.append(credit);
   }
   const inside = object.type === "open cluster" || object.type === "globular cluster" ? starsInside(object, shape) : undefined;
