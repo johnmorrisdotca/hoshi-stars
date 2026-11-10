@@ -2,7 +2,7 @@
 title: Sky cultures
 section: how-to
 order: 9
-description: The same stars under Western, traditional Japanese and traditional Chinese figures and names: the 88 constellations and asterisms, 昴 and 北斗七星, the Twenty-Eight Mansions, in English, Japanese, Simplified and Traditional Chinese.
+description: "The same stars under Western, traditional Japanese and traditional Chinese figures and names: the 88 constellations and asterisms, 昴 and 北斗七星, the Twenty-Eight Mansions, in English, Japanese, Simplified and Traditional Chinese."
 ---
 
 [日本語](ja/sky-cultures.md)

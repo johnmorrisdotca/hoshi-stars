@@ -2,7 +2,7 @@
 title: Faint stars
 section: how-to
 order: 8
-description: About 2.5 million more stars, to magnitude 12, from UCAC4, in sky tiles that a page loads for the part of the sky it shows. Zooming into the map, or into the whole-sky page, draws them. Only the rows UCAC4 measured itself: nothing copied from Hipparcos or Tycho. The ghosts beside bright stars are left out, and the magnitudes of the bright end are APASS DR10's.
+description: "About 2.5 million more stars, to magnitude 12, from UCAC4, in sky tiles that a page loads for the part of the sky it shows. Zooming into the map, or into the whole-sky page, draws them. Only the rows UCAC4 measured itself: nothing copied from Hipparcos or Tycho. The ghosts beside bright stars are left out, and the magnitudes of the bright end are APASS DR10's."
 ---
 
 [日本語](ja/faint-stars.md)

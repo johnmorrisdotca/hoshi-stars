@@ -2,7 +2,7 @@
 title: Black holes
 section: how-to
 order: 11
-description: 301 black holes with a place on the sky, a mass and a distance with their ranges, the companion star, how each was found and the paper behind each fact: Cygnus X-1, V404 Cygni, Gaia BH1, Sagittarius A*, M87* and more.
+description: "301 black holes with a place on the sky, a mass and a distance with their ranges, the companion star, how each was found and the paper behind each fact: Cygnus X-1, V404 Cygni, Gaia BH1, Sagittarius A*, M87* and more."
 ---
 
 [日本語](ja/black-holes.md)
