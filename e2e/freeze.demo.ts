@@ -144,3 +144,114 @@ test("changing the constellation, the viewpoint and the look over and over gives
   // The first rounds warm the page up (the first shaders), so the baseline is the third.
   expect(Math.max(...settled.slice(2)), "no more GPU objects after 24 rounds than after the third, give or take three.js's own fixtures").toBeLessThanOrEqual(settled[2]! + 4);
 });
+
+// The star in 3D (star.html?view=3d, and the star's 3D picture in the side panel): it turns on its own while it is in sight, so it may draw at most 30 frames a second then; Pause, reduced motion, out of sight and a hidden
+// tab draw nothing; one context; a 5K screen keeps its canvas in budget; and making its view again and again gives back what each took.
+test.describe("the star in 3D", () => {
+  const STAR = "/hoshi-stars/star.html?view=3d&star=";
+  const starFrames = (page: Page) => page.getByTestId("star-3d").evaluate((el) => (Reflect.get(el, "stats") as { draws: number }).draws);
+  const starWindow = async (page: Page, ms: number) => {
+    const began = Date.now();
+    const start = await readCounts(page);
+    const framesStart = await starFrames(page);
+    await page.waitForTimeout(ms);
+    const end = await readCounts(page);
+    const framesEnd = await starFrames(page);
+    return { seconds: (Date.now() - began) / 1000, frames: framesEnd - framesStart, draws: end.draws - start.draws, requests: end.rafRequests - start.rafRequests, callbacks: end.rafCallbacks - start.rafCallbacks, outstanding: end.rafRequests - end.rafCallbacks };
+  };
+  async function openStar(page: Page, hr: number): Promise<void> {
+    await page.addInitScript(COUNT_SCRIPT);
+    await page.goto(`${STAR}${hr}`);
+    await page.getByTestId("star-3d").and(page.locator("[data-live=true]")).waitFor({ timeout: 60_000 });
+    await expect.poll(async () => (await readCounts(page)).draws).toBeGreaterThan(0);
+    await page.waitForTimeout(800);
+  }
+
+  test.describe("turning", () => {
+    test.use({ reducedMotion: "no-preference" });
+
+    test("it turns at most 30 frames a second, one frame asked for at a time, and Pause rests it", async ({ page }) => {
+      await openStar(page, 2061);
+      const turning = await starWindow(page, 3000);
+      expect(turning.frames, "it turns on its own").toBeGreaterThan(5);
+      expect(turning.frames, `no more than 30 a second, over ${turning.seconds.toFixed(1)} seconds`).toBeLessThanOrEqual(turning.seconds * 30 + 4);
+      expect(turning.draws, "GL draw calls for each frame drawn").toBeLessThanOrEqual(Math.max(1, turning.frames) * 4);
+      expect(turning.requests).toBeLessThanOrEqual(turning.callbacks + 3);
+      expect(turning.outstanding, "one request waiting at a time").toBeLessThanOrEqual(3);
+      await page.getByTestId("star-3d-pause").click();
+      await page.waitForTimeout(500);
+      const rest = await starWindow(page, 2000);
+      expect(rest.draws).toBe(0);
+      expect(rest.frames).toBe(0);
+      expect(rest.requests).toBeLessThanOrEqual(2);
+    });
+
+    test("out of sight, and in a hidden tab, it draws nothing while it would turn", async ({ page }) => {
+      await openStar(page, 2061);
+      await page.evaluate(() => {
+        const spacer = document.createElement("div");
+        spacer.style.height = "6000px";
+        document.body.style.display = "block";
+        document.body.style.height = "auto";
+        document.body.prepend(spacer);
+        window.scrollTo(0, 0);
+      });
+      await expect.poll(async () => page.getByTestId("star-3d").evaluate((el) => el.getBoundingClientRect().top)).toBeGreaterThan(1000);
+      await page.waitForTimeout(800);
+      const away = await starWindow(page, 2500);
+      expect(away.draws, "no GL draws out of sight").toBe(0);
+      expect(away.frames).toBe(0);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(800);
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+        Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await page.waitForTimeout(500);
+      const hidden = await starWindow(page, 2500);
+      expect(hidden.draws, "no GL draws in a hidden tab").toBe(0);
+      expect(hidden.frames).toBe(0);
+    });
+  });
+
+  test("with reduced motion it is drawn once and then rests", async ({ page }) => {
+    await openStar(page, 7557);
+    const rest = await starWindow(page, 2500);
+    expect(rest.draws).toBe(0);
+    expect(rest.frames).toBe(0);
+  });
+
+  test("on a 5K screen at a pixel ratio of 2 its canvas stays inside 6 million pixels and 4096 a side", async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 2560, height: 1440 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await openStar(page, 2061);
+    await page.getByTestId("star-3d").evaluate((el) => {
+      el.style.cssText += ";position:fixed;inset:0;width:2560px;height:1440px;max-width:none;z-index:9";
+    });
+    await page.waitForTimeout(2000);
+    const size = await canvasSize(page);
+    expect(size.count).toBe(1);
+    expect(withinPixelBudget(size)).toBe(true);
+    expect((await readCounts(page)).contexts, "one WebGL context").toBe(1);
+    await context.close();
+  });
+
+  test("putting the star's 3D view away and making it again, over and over, gives back what it took: GPU objects stay flat in the one context", async ({ page }) => {
+    await page.addInitScript(COUNT_SCRIPT);
+    const settled: number[] = [];
+    await page.goto("/hoshi-stars/?pick=S:2061&pview=3d");
+    for (let round = 0; round < 16; round += 1) {
+      // the side panel draws again on every change of view: portrait, then 3D, puts one star's view away and makes the next
+      await page.getByTestId("star-view-portrait").click();
+      await page.getByTestId("star-view-3d").click();
+      await page.getByTestId("star-3d").and(page.locator("[data-live=true]")).waitFor({ timeout: 60_000 });
+      await page.waitForTimeout(1600);
+      const counted = await readCounts(page);
+      settled.push(gpuObjects(counted));
+      expect(counted.contexts, "one WebGL context for the page").toBe(1);
+    }
+    console.log(`live GPU objects after each round: ${settled.join(", ")}`);
+    expect(Math.max(...settled.slice(2)), "no more GPU objects after 16 rounds than after the third, give or take three.js's own fixtures").toBeLessThanOrEqual(settled[2]! + 4);
+  });
+});
