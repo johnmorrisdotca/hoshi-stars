@@ -53,5 +53,7 @@ test("nearest and farthest galaxies are ten rows each, fetched on the first clic
   await expect(farthest.first()).toContainText("billion light-years");
   await farthest.first().locator("button").click();
   await expect(page.locator("#picked").getByTestId("distance-source")).toBeVisible();
-  expect(new URL(page.url()).searchParams.get("gal")).toBe("far");
+  // the address is written a moment after a choice (the family's address state batches writes, 250 ms), so read it until it settles; both the order and the pick must be in it
+  const param = (name: string): string | null => new URL(page.url()).searchParams.get(name);
+  await expect.poll(() => [param("gal"), param("pick")?.startsWith("D:")]).toEqual(["far", true]);
 });
