@@ -27,6 +27,10 @@ for (const lang of ["en", "ja"] as const) {
       const size = page.viewportSize()!;
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(size.width);
+      for (const button of await page.locator("button").all()) {
+        const other = await button.boundingBox();
+        if (other !== null) expect(box.y + box.height <= other.y || other.y + other.height <= box.y || box.x + box.width <= other.x || other.x + other.width <= box.x, "the credit covers a button").toBe(true);
+      }
     });
   }
 }

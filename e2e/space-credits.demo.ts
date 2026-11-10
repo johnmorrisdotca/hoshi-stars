@@ -15,5 +15,10 @@ for (const lang of ["en", "ja"] as const) {
     await expect(credit).toBeVisible();
     await expect(credit).toContainText(lang === "ja" ? "イェール輝星カタログ" : "Yale Bright Star Catalogue");
     await expect(credit).toHaveAttribute("href", NOTICE);
+    const box = (await credit.boundingBox())!;
+    for (const button of await page.locator("button").all()) {
+      const other = await button.boundingBox();
+      if (other !== null) expect(box.y + box.height <= other.y || other.y + other.height <= box.y || box.x + box.width <= other.x || other.x + other.width <= box.x, "the credit covers a button").toBe(true);
+    }
   });
 }
