@@ -6,35 +6,35 @@
    "medianPixels": null,
    "near": 0
   },
-  "arcsecPerPixel": 1.26,
+  "arcsecPerPixel": 1.13,
   "avmRotation": 3.5400000000000014,
   "avmScale": 0.6186777393910353,
   "avmShiftArcsec": 0.0,
-  "bytes": 106448,
+  "bytes": 109770,
   "catalogue": 1,
   "centre": [
-   210.79869,
-   54.35044
+   210.7987,
+   54.35049
   ],
   "credit": "Image: European Space Agency & NASA Acknowledgements: Project Investigators for the original Hubble data: K.D. Kuntz (GSFC), F. Bresolin (University of Hawaii), J. Trauger (JPL), J. Mould (NOAO), and Y.-H. Chu (University of Illinois, Urbana) Image processing: Davide De Martin (ESA/Hubble) CFHT image: Canada-France-Hawaii Telescope/J.-C. Cuillandre/Coelum NOAO image: George Jacoby, Bruce Bohannan, Mark Hanna/NOAO/AURA/NSF (ESA/Hubble)",
   "detected": 500,
   "fitRotation": 3.5400000000000014,
   "fitScale": 0.6186777393910353,
   "galaxy": {
-   "brightShare": 0.112,
+   "brightShare": 0.113,
    "catalogueDec": 54.3488,
    "cataloguePositionAngle": null,
    "catalogueRa": 210.8024,
-   "centreOffsetArcmin": 0.13,
-   "measuredDec": 54.34747,
-   "measuredPositionAngle": 48.5,
-   "measuredRa": 210.80545
+   "centreOffsetArcmin": 0.14,
+   "measuredDec": 54.34751,
+   "measuredPositionAngle": 61.0,
+   "measuredRa": 210.80559
   },
-  "height": 493,
+  "height": 549,
   "image": "heic0602a",
   "matched": 0,
   "placement": "avm",
-  "quality": 65,
+  "quality": 58,
   "rotation": 3.5,
   "site": "hubble",
   "wcsCorners": [
@@ -47,15 +47,15 @@
     54.442861
    ],
    [
-    210.601789,
-    54.271011
+    210.601799,
+    54.271118
    ],
    [
-    210.977742,
-    54.257754
+    210.977754,
+    54.257862
    ]
   ],
-  "width": 630
+  "width": 702
  },
  "M110": {
   "address": "https://noirlab.edu/public/images/noao-m110/",
@@ -68,7 +68,7 @@
   "avmRotation": 359.8654883121,
   "avmScale": 0.90365625,
   "avmShiftArcsec": 0.43680606295911883,
-  "bytes": 78398,
+  "bytes": 69822,
   "catalogue": 19,
   "centre": [
    10.09316,
@@ -119,7 +119,7 @@
   "avmRotation": 359.99456698621,
   "avmScale": 1.5035400274500001,
   "avmShiftArcsec": 0.3691884530999703,
-  "bytes": 109450,
+  "bytes": 105586,
   "catalogue": 106,
   "centre": [
    274.70578,
@@ -133,7 +133,7 @@
   "image": "eso0926a",
   "matched": 36,
   "placement": "fit",
-  "quality": 58,
+  "quality": 65,
   "rmsArcsec": 0.3433021020106641,
   "rmsPixels": 0.22833662134439328,
   "rotation": 0.0,
@@ -170,7 +170,7 @@
   "avmRotation": 0.14000000000000454,
   "avmScale": 2.5033356152919968,
   "avmShiftArcsec": 3.511212411876136,
-  "bytes": 106008,
+  "bytes": 107888,
   "catalogue": 329,
   "centre": [
    275.24494,
@@ -184,7 +184,7 @@
   "image": "eso1119a",
   "matched": 120,
   "placement": "fit",
-  "quality": 50,
+  "quality": 65,
   "rmsArcsec": 0.5747675466792146,
   "rmsPixels": 0.22972476521488872,
   "rotation": 0.1,
@@ -221,7 +221,7 @@
   "avmRotation": 359.8434608703364,
   "avmScale": 0.6504218945181323,
   "avmShiftArcsec": 3.111657224027396,
-  "bytes": 98198,
+  "bytes": 90458,
   "catalogue": 55,
   "centre": [
    270.57748,
@@ -272,7 +272,7 @@
   "avmRotation": 357.94,
   "avmScale": 0.4173773406892032,
   "avmShiftArcsec": 0.0,
-  "bytes": 69410,
+  "bytes": 100324,
   "catalogue": 3,
   "centre": [
    299.90378,
@@ -286,7 +286,7 @@
   "image": "noao-m27",
   "matched": 0,
   "placement": "avm",
-  "quality": 65,
+  "quality": 72,
   "rotation": 357.9,
   "site": "noirlab",
   "wcsCorners": [
@@ -320,7 +320,7 @@
   "avmRotation": 125.82000000000001,
   "avmScale": 3.2642342921736582,
   "avmShiftArcsec": 5.17005975928034,
-  "bytes": 104228,
+  "bytes": 95492,
   "catalogue": 884,
   "centre": [
    10.7054,
@@ -335,10 +335,10 @@
    "catalogueDec": 41.2688,
    "cataloguePositionAngle": 35,
    "catalogueRa": 10.6847,
-   "centreOffsetArcmin": 1.48,
-   "measuredDec": 41.27605,
+   "centreOffsetArcmin": 1.5,
+   "measuredDec": 41.27597,
    "measuredPositionAngle": 38.5,
-   "measuredRa": 10.71595
+   "measuredRa": 10.71645
   },
   "height": 454,
   "image": "noao-m31lgs_ubvIha",
@@ -377,14 +377,14 @@
    "medianPixels": 0.19184170651148716,
    "near": 45
   },
-  "arcsecPerPixel": 7.28,
+  "arcsecPerPixel": 5.1,
   "avmRotation": 269.9999999999998,
   "avmScale": 3.1880164591225664,
   "avmShiftArcsec": 2.674787924528566,
-  "bytes": 102848,
+  "bytes": 106728,
   "catalogue": 80,
   "centre": [
-   23.46749,
+   23.46714,
    30.67316
   ],
   "credit": "ESO",
@@ -396,16 +396,16 @@
    "catalogueDec": 30.6602,
    "cataloguePositionAngle": 23,
    "catalogueRa": 23.4621,
-   "centreOffsetArcmin": 0.46,
-   "measuredDec": 30.6621,
+   "centreOffsetArcmin": 0.43,
+   "measuredDec": 30.66209,
    "measuredPositionAngle": 23.5,
-   "measuredRa": 23.47067
+   "measuredRa": 23.4702
   },
-  "height": 470,
+  "height": 671,
   "image": "eso1424a",
   "matched": 38,
   "placement": "fit",
-  "quality": 65,
+  "quality": 58,
   "rmsArcsec": 0.671118508579941,
   "rmsPixels": 0.21071179722937394,
   "rotation": 270.0,
@@ -421,15 +421,15 @@
     30.105835
    ],
    [
-    24.016757,
-    30.105798
+    24.016056,
+    30.105801
    ],
    [
-    24.023285,
-    31.238155
+    24.022575,
+    31.238158
    ]
   ],
-  "width": 560
+  "width": 800
  },
  "M42": {
   "address": "https://www.eso.org/public/images/eso1723a/",
@@ -442,7 +442,7 @@
   "avmRotation": 359.82,
   "avmScale": 2.8103239590835445,
   "avmShiftArcsec": 4.2269163982385365,
-  "bytes": 108080,
+  "bytes": 100656,
   "catalogue": 128,
   "centre": [
    83.78489,
@@ -493,7 +493,7 @@
   "avmRotation": 90.69909386,
   "avmScale": 3.2191874999999994,
   "avmShiftArcsec": 1.030086705927134,
-  "bytes": 105018,
+  "bytes": 102830,
   "catalogue": 149,
   "centre": [
    56.58104,
@@ -507,7 +507,7 @@
   "image": "noao-m45",
   "matched": 65,
   "placement": "fit",
-  "quality": 58,
+  "quality": 65,
   "rmsArcsec": 1.2805814250172884,
   "rmsPixels": 0.39778491584891534,
   "rotation": 90.7,
@@ -544,7 +544,7 @@
   "avmRotation": 359.99552615775,
   "avmScale": 4.3824751974,
   "avmShiftArcsec": 2.0674931287571026,
-  "bytes": 108912,
+  "bytes": 104226,
   "catalogue": 588,
   "centre": [
    270.95123,
@@ -558,7 +558,7 @@
   "image": "eso0936a",
   "matched": 187,
   "placement": "fit",
-  "quality": 50,
+  "quality": 58,
   "rmsArcsec": 1.1477630342293452,
   "rmsPixels": 0.2618603727048843,
   "rotation": 360.0,
@@ -595,7 +595,7 @@
   "avmRotation": 359.6597497464,
   "avmScale": 1.0870453125,
   "avmShiftArcsec": 0.0,
-  "bytes": 87882,
+  "bytes": 78366,
   "catalogue": 17,
   "centre": [
    148.88824,
@@ -612,7 +612,7 @@
    "catalogueRa": 148.8882,
    "centreOffsetArcmin": 0.1,
    "measuredDec": 69.06442,
-   "measuredPositionAngle": 153.0,
+   "measuredPositionAngle": 152.5,
    "measuredRa": 148.89205
   },
   "height": 800,
@@ -653,7 +653,7 @@
   "avmRotation": 0.0682818894999991,
   "avmScale": 0.30348223812864,
   "avmShiftArcsec": 0.0,
-  "bytes": 64168,
+  "bytes": 59344,
   "catalogue": 1,
   "centre": [
    50.67588,
@@ -701,7 +701,7 @@
   "avmRotation": 359.72,
   "avmScale": 1.35455353215179,
   "avmShiftArcsec": 0.7373360620098599,
-  "bytes": 102970,
+  "bytes": 95236,
   "catalogue": 17,
   "centre": [
    114.21077,
@@ -718,8 +718,8 @@
    "catalogueRa": 114.2142,
    "centreOffsetArcmin": 0.05,
    "measuredDec": 65.60174,
-   "measuredPositionAngle": 123.0,
-   "measuredRa": 114.21338
+   "measuredPositionAngle": 122.5,
+   "measuredRa": 114.21335
   },
   "height": 562,
   "image": "iotw2221a",
@@ -758,11 +758,11 @@
    "medianPixels": 0.21509119123370452,
    "near": 131
   },
-  "arcsecPerPixel": 6.94,
+  "arcsecPerPixel": 6.16,
   "avmRotation": 359.99948826939,
   "avmScale": 2.3848234560000003,
   "avmShiftArcsec": 1.9720178014408984,
-  "bytes": 96210,
+  "bytes": 107610,
   "catalogue": 426,
   "centre": [
    201.69007,
@@ -772,7 +772,7 @@
   "detected": 500,
   "fitRotation": 0.0010447774888291406,
   "fitScale": 2.385276841467472,
-  "height": 440,
+  "height": 496,
   "image": "eso1119b",
   "matched": 109,
   "placement": "fit",
@@ -800,6 +800,6 @@
     -47.889891
    ]
   ],
-  "width": 440
+  "width": 496
  }
 }

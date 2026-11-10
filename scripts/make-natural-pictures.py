@@ -21,6 +21,7 @@ A picture is a WebP with an alpha channel a little over the brightness (1.15 tim
     python3 -I scripts/make-natural-pictures.py --cache-only         # asks the sites for nothing
     python3 -I scripts/make-natural-pictures.py --raw DIR            # where the downloads are kept (default ~/Projects/backups/hoshi-stars/2026-11-10-natural-colour-raw, or $HOSHI_STARS_BACKUP_DIR/...)
     python3 -I scripts/make-natural-pictures.py --sheet OUT.png      # also a contact sheet of the pictures made, for looking at
+    python3 -I scripts/make-natural-pictures.py --feather-finer       # once, after make-deep-sky-pictures.py: fade the straight edges of the finer ESA/Hubble pictures
     python3 -I scripts/make-natural-pictures.py --dry                # fit and report; write no file
 
 make-deep-sky-pictures.py rewrites the whole data file from the survey pictures, so run this after it: every row here replaces the survey picture of the same id, or is added. None of this runs in the test.
@@ -48,6 +49,7 @@ OUT = ROOT / "pictures"
 DATA_OUT = ROOT / "src" / "data" / "deep-sky-pictures.ts"
 NOTICE = ROOT / "NOTICE.md"
 MANIFEST = ROOT / "scripts" / "natural-pictures.json"
+FEATHERED = ROOT / "scripts" / "finer-feathered.json"
 USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
 BUDGET_BYTES = 110_000  # a natural picture file is never larger than this; the page budget (six at once) follows from it
 ARCSEC = 3600.0
@@ -387,18 +389,19 @@ def agree(image, placement, reach, radius=3.0):
 
 # ---------------------------------------------------------------------------------------------------------------- the picture
 
-def to_rgba(rgb, feather=0.04, sky_percent=15, gain=1.15):
+def to_rgba(rgb, feather=0.04, sky_percent=15, gain=1.15, wide_share=0.14):
     """RGB (0 to 1) into the picture: alpha is `gain` times the brightness (to 1; a little over 1, so that a galaxy's light is not seen through, and no more, so that the dark sky of the photograph darkens little of what lies under it), the colour is divided by it, and the edges fade, so over black it is the photograph's light and nothing else.
     The sky of the photograph is taken off first (the faintest `sky_percent` in 100 of what it holds, a channel at a time), so that where a mosaic's data ends the sky it held does not end in a step; and the fade follows the edge of the
-    data as well as the edge of the picture, over a seventh of the smaller side: a mosaic's tiles do not end in a straight line."""
+    data as well as the edge of the picture, over `wide_share` (0.14) of the smaller side: a mosaic's tiles do not end in a straight line, and a photograph's own square edge must not show against what is under it."""
     height, width = rgb.shape[:2]
     footprint = ndimage.binary_opening(rgb.max(-1) > 0.02, iterations=2)
     footprint = ndimage.binary_fill_holes(footprint)
     edge = max(2, int(min(width, height) * feather))
-    wide = max(edge, int(min(width, height) * 0.07))
+    wide = max(edge, int(min(width, height) * wide_share))
     inside = ndimage.distance_transform_edt(np.pad(footprint, 1, constant_values=False))[1:-1, 1:-1]
     ramp = np.clip(inside / wide, 0, 1)
     window = ramp * ramp * (3 - 2 * ramp)
+    window = window * window * (3 - 2 * window)
     sky = np.array([np.percentile(rgb[..., c][footprint], sky_percent) if footprint.any() else 0.0 for c in range(3)])
     cleaned = np.clip((rgb - sky) / (1 - sky), 0, 1)
     light = cleaned * window[..., None]
@@ -563,6 +566,9 @@ def main():
     dry = "--dry" in args
     objects = object_table()
     OUT.mkdir(exist_ok=True)
+    if "--feather-finer" in args:
+        feather_finer(json.loads(MANIFEST.read_text(encoding="utf-8")))
+        return
     specs = [p for p in PICTURES if only is None or fold(p["id"]) in only]
     done = []
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8")) if MANIFEST.exists() else {}
@@ -599,6 +605,43 @@ def main():
     write_data(done)
     if "--sheet" in args:
         contact_sheet(done, args[args.index("--sheet") + 1])
+
+
+FINER_SHARE = 0.14
+
+
+def feather_finer(natural):
+    """The finer ESA/Hubble pictures (`<object>-<release>.webp`) are laid over a wider picture, and their straight edges, where the data of the release ends, show as lines. Fade each one's alpha from the edge of its data over
+    FINER_SHARE of its smaller side, with the same soft mask as the photographs: the footprint is where it has any light (closed and filled), the fade is the distance from its edge. Done to the saved file, once: scripts/finer-feathered.json says which have been (make-deep-sky-pictures.py makes them with the narrow fade; run this after it)."""
+    done = json.loads(FEATHERED.read_text(encoding="utf-8")) if FEATHERED.exists() else {}
+    rows = parse_data()[2]
+    for row in rows:
+        p = row.split("|")
+        if p[0] == p[1] or p[8] != "3" or p[0] in done or p[0] in natural:
+            continue
+        path = OUT / file_of(p[0])
+        image = Image.open(path).convert("RGBA")
+        data = np.asarray(image, dtype=np.float64) / 255
+        alpha = data[..., 3]
+        footprint = ndimage.binary_fill_holes(ndimage.binary_closing(alpha > 0.05, iterations=6))
+        inside = ndimage.distance_transform_edt(np.pad(footprint, 1, constant_values=False))[1:-1, 1:-1]
+        ramp = np.clip(inside / max(4, min(image.size) * FINER_SHARE), 0, 1)
+        window = ramp * ramp * (3 - 2 * ramp)
+        window = window * window * (3 - 2 * window)
+        data[..., 3] = alpha * window
+        faded = Image.fromarray((np.clip(data, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
+        before = path.stat().st_size
+        saved = None
+        for quality in (60, 55, 50, 45, 40):
+            faded.save(path, "WEBP", quality=quality, method=6, alpha_quality=quality)
+            if path.stat().st_size <= 90_000:
+                saved = quality
+                break
+        if saved is None:
+            raise RuntimeError(f"{path.name} is {path.stat().st_size} bytes at the lowest setting")
+        done[p[0]] = {"share": FINER_SHARE, "quality": saved}
+        print(f"  {p[0]}: faded at its edge, {before // 1024} kB -> {path.stat().st_size // 1024} kB (quality {saved})")
+    FEATHERED.write_text(json.dumps(done, indent=1, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def parse_data():
