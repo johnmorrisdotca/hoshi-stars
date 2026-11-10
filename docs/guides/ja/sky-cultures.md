@@ -124,7 +124,7 @@ console.log(figureOf("the w", mine).stars.map((star) => star.name).join(", "));
 
 ## 図の絵
 
-デモでは、どの文化も絵のカードで見られます。カードには、図の小さな絵、その文化の文字での名前、読み(中国の図はピンイン、日本の図はひらがな)、データに英語名があればその英語名、そしてカタログにない暗い星があるときはその数(`暗い星3個以上は描いていません`)が出ます。星空の地図の上の帯、ギャラリー(`constellations.html?culture=chinese`)、一覧表(`constellation-list.html?culture=chinese`)は、どれも「星座の文化」に合わせて変わり、選んだ文化はアドレスに残ります。
+デモでは、どの文化も絵のカードで見られ、3つの空は1つの組になっています。どのカードも同じ作りで、絵、その文化の文字での名前、その下の小さな1行からできていて、高さも同じです。小さな1行は、読み(中国の図はピンイン、日本の図はひらがな)と、データに英語名があればその英語名です。西洋のカードでは、略号ともう一方の言語での名前です(`Ori · オリオン座`)。カタログにない暗い星があるときは、その数(`暗い星3個以上は描いていません`)がカードのタイトル(ポインターを合わせると表示され、画面読み上げソフトが読み上げる文字)に入り、3行目にはなりません。星空の地図の上の帯、ギャラリー(`constellations.html?culture=chinese`)、一覧表(`constellation-list.html?culture=chinese`)は、どれも「星座の文化」に合わせて変わり、選んだ文化はアドレスに残ります。
 
 | 空 | カード |
 |---|---|
@@ -134,21 +134,22 @@ console.log(figureOf("the w", mine).stars.map((star) => star.name).join(", "));
 
 カードをタップすると、その文化のままで、地図にその図が開きます(`?culture=chinese&pick=C:bei3-dou3`)。検索は、中国語の名前(繁体字でも簡体字でも)、声調記号やスペースのあるなしを問わないピンイン、日本語、かな(カタカナもひらがなも同じ)、ローマ字、英語で見つかります。ギャラリーの題と数は、どの空を見せているかを示します(`中国の空: 238の図`、`宿28と星官210`)。
 
-絵は、88星座の絵と同じ描き方で、このパッケージの星と、私たちが星をつないだ線から描きます。その図の星は大きく、まわりの星はうすく描き、図の線を引きます。図には境界線がないので、境界線は描きません。境界線のない図は、`thumbnailSvg`の`frame`(枠に入れる星の位置)で絵の範囲を決めます。範囲の幅は最低4度です。
+絵は、88星座の絵と同じ描き方で、このパッケージの星と、私たちが星をつないだ線から描きます。そのため、中国や日本の図も西洋のカードと同じ見た目になります。絵は正方形で、図のまわりの余白は同じ広さです。うしろには、となりの星座の境界線とうすい星が見え、線の太さと星の大きさも同じです。図の星は大きく描き、星のあいだに私たちのつないだ線を引きます。星が2つ以上の図は、うすく色をつけたやわらかい点線の輪郭の中に入ります。西洋のカードの境界線と同じ描き方です。公式の境界線があるのは88星座だけで、この輪郭は、星をつつむ形に余白をつけたものです。描くための補助であり、境界ではありません。絵の幅は5度以上で、となりの星座の境界線が絵の中を1本通るまで広げます(最大24度)。そのため、どの絵にもうすい境界線が入ります。星が1つの図(源氏星はリゲル、天狼はシリウス)は、その星のある星座の絵の中に、その星をアクセント色の輪で囲んで描きます。点だけの絵にはしません。`figureThumbnail`が絵を1枚描き、`paddedOutline`がそのやわらかい輪郭です。
 
 ```js
 import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
-import { thumbnailSvg } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+import { figureThumbnail, paddedOutline } from "@johnmorrisdotca/hoshi-stars/thumbnails";
 import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
 
 const dipper = figureOf("北斗", chinese);
-const mine = new Set(dipper.stars.map((star) => star.hr));
-const svg = thumbnailSvg({ title: "北斗", outlines: [], frame: dipper.stars, segments: dipper.segments, owns: (star) => mine.has(star.hr) }, { theme: "dark" });
-console.log(svg.startsWith("<svg"), svg.includes("data-hr"));
-// true true
+const svg = figureThumbnail({ title: "北斗", stars: dipper.stars, segments: dipper.segments }, { theme: "dark" });
+const sirius = figureOf("天狼", chinese);
+const ringed = figureThumbnail({ title: "天狼", stars: sirius.stars, segments: sirius.segments }, { theme: "dark" });
+console.log(svg.includes("stroke-dasharray"), svg.includes("data-hr"), ringed.includes("data-ring"), paddedOutline(dipper.stars).length > 8);
+// true true true true
 ```
 
-中国と日本の図の絵は、Pagesのサイトだけにあるファイルです(`thumbnails/chinese/png/<size>/<look>/<id>.png`、160と480ピクセル、明るい見た目と暗い見た目。256の図、PNG 1,024枚、合わせて4.6 MB)。`pnpm site`で作ります。npmのパッケージには入れません。npmに入るのは、これまでどおり88星座の絵です。何も表示していないときは何も取りに行きません。カードの絵は、そのカードが画面に入ったときにだけ読みこまれます。
+中国と日本の図の絵は、Pagesのサイトだけにあるファイルです(`thumbnails/chinese/png/<size>/<look>/<id>.png`、160と480ピクセル、明るい見た目と暗い見た目。256の図、PNG 1,024枚、合わせて15 MB)。`pnpm site`で作ります。npmのパッケージには入れません。npmに入るのは、これまでどおり88星座の絵です。何も表示していないときは何も取りに行きません。カードの絵は、そのカードが画面に入ったときにだけ読みこまれます。
 
 ## デモでは
 

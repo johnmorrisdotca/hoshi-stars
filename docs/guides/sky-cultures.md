@@ -124,7 +124,7 @@ console.log(figureOf("the w", mine).stars.map((star) => star.name).join(", "));
 
 ## Pictures of the figures
 
-Each culture is also a set of picture cards in the demo. A card is a small picture of the figure with its name in the culture's own writing, its reading (pinyin for a Chinese figure, hiragana for a Japanese one) and its English name where the data has one, and, where stars are fainter than the catalogue goes, how many are missing (`3+ fainter stars not shown`). The strip above the sky map, the gallery (`constellations.html?culture=chinese`) and the list (`constellation-list.html?culture=chinese`) all follow the Sky culture and keep it in the address:
+Each culture is also a set of picture cards in the demo, and the three skies make one set: every card is the same block, a picture, the name in the culture's own writing and one small line under it, and every card is the same height. The small line is the reading (pinyin for a Chinese figure, hiragana for a Japanese one) and the English name where the data has one; a Western card's is its abbreviation and its name in the other language (`Ori · オリオン座`). Where stars are fainter than the catalogue goes, how many are missing (`3+ fainter stars not shown`) is in the card's title (what a pointer shows and a screen reader says), not a third line. The strip above the sky map, the gallery (`constellations.html?culture=chinese`) and the list (`constellation-list.html?culture=chinese`) all follow the Sky culture and keep it in the address:
 
 | Sky | The cards |
 |---|---|
@@ -134,21 +134,22 @@ Each culture is also a set of picture cards in the demo. A card is a small pictu
 
 A tap on a card opens that figure on the map in its culture (`?culture=chinese&pick=C:bei3-dou3`). Search finds a figure by its Chinese name in either writing, pinyin with or without tone marks and spaces, Japanese, kana (katakana against hiragana), romaji or English. The gallery's title and count say which sky it shows (`The Chinese sky: 238 figures`, `28 mansions and 210 asterisms`).
 
-The pictures are drawn by the same renderer as the 88's, from this package's own stars and our own joins of them: the figure's stars full, the other stars near it faint, the figure's lines, and no boundary, because a figure has none. A figure with no boundary is framed with `thumbnailSvg`'s `frame`, the positions to frame, with a least width of 4 degrees:
+The pictures are drawn by the same renderer as the 88's, from this package's own stars and our own joins of them, so a Chinese or Japanese figure looks like a Western card: a square with the same room round the figure, the neighbouring constellations' boundaries and the faint stars behind it, the same line weight and star sizes, and the figure's stars in full with our own joins between them. A figure of two stars or more stands in a soft dashed outline with a faint wash, the Western card's boundary style. Only the 88 constellations have official boundaries: this outline is the stars' hull with a margin, a drawing aid and not a border. A picture is at least 5 degrees wide, and is widened (to 24 degrees at most) until a neighbouring boundary line crosses it, so every picture has its faint lines. A figure of one star (源氏星 is Rigel, 天狼 is Sirius) is drawn inside its own constellation's picture with the star ringed in the accent colour, never as a lone dot. `figureThumbnail` draws one, and `paddedOutline` is the soft outline:
 
 ```js
 import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
-import { thumbnailSvg } from "@johnmorrisdotca/hoshi-stars/thumbnails";
+import { figureThumbnail, paddedOutline } from "@johnmorrisdotca/hoshi-stars/thumbnails";
 import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
 
 const dipper = figureOf("北斗", chinese);
-const mine = new Set(dipper.stars.map((star) => star.hr));
-const svg = thumbnailSvg({ title: "北斗", outlines: [], frame: dipper.stars, segments: dipper.segments, owns: (star) => mine.has(star.hr) }, { theme: "dark" });
-console.log(svg.startsWith("<svg"), svg.includes("data-hr"));
-// true true
+const svg = figureThumbnail({ title: "北斗", stars: dipper.stars, segments: dipper.segments }, { theme: "dark" });
+const sirius = figureOf("天狼", chinese);
+const ringed = figureThumbnail({ title: "天狼", stars: sirius.stars, segments: sirius.segments }, { theme: "dark" });
+console.log(svg.includes("stroke-dasharray"), svg.includes("data-hr"), ringed.includes("data-ring"), paddedOutline(dipper.stars).length > 8);
+// true true true true
 ```
 
-The pictures of the Chinese and Japanese figures are files of the Pages site only (`thumbnails/chinese/png/<size>/<look>/<id>.png`, 160 and 480 pixels, light and dark: 256 figures, 1,024 PNGs, 4.6 MB in all), made by `pnpm site`. The npm package does not ship them; it still ships the 88's. Nothing is fetched at rest: a card's picture is loaded only when the card comes into view.
+The pictures of the Chinese and Japanese figures are files of the Pages site only (`thumbnails/chinese/png/<size>/<look>/<id>.png`, 160 and 480 pixels, light and dark: 256 figures, 1,024 PNGs, 15 MB in all), made by `pnpm site`. The npm package does not ship them; it still ships the 88's. Nothing is fetched at rest: a card's picture is loaded only when the card comes into view.
 
 ## In the demo
 
