@@ -199,6 +199,11 @@
       "import": "./dist/faint.js",
       "default": "./dist/faint.js"
     },
+    "./door": {
+      "types": "./dist/door.d.ts",
+      "import": "./dist/door.js",
+      "default": "./dist/door.js"
+    },
     "./sky-from": {
       "types": "./dist/sky-from.d.ts",
       "import": "./dist/sky-from.js",

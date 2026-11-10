@@ -1,7 +1,8 @@
 // The faint stars on the demo's maps: the loader for UCAC4's tiles (served beside the page, in `faint-tiles/`), the patch of sky a view shows, and what to draw from the tiles that are here.
 // A view asks for stars to a depth (the telescope rule, `faintDepthOf`); the tiles it needs are fetched in the background and the chart is drawn again when they arrive. Nothing here runs at rest.
 // Both maps use this: the sky chart (`faintFor`, which finds the patch of sky from its projection) and the whole-sky page (`faintAt`, handed the patch).
-import { faintSky, faintTilesFor, type FaintField } from "../src/faint.ts";
+import { faintTilesFor, type FaintField } from "../src/faint.ts";
+import { starSky, ucac4Source, type Credit } from "../src/door.ts";
 import { fromScreen, type Layer, type View } from "./chart.ts";
 import { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, type FaintDraw } from "./faint-layer.ts";
 
@@ -11,7 +12,8 @@ const MAX_TILES = 48;
 /** The most stars taken from the field before the screen's edges cut it: the field is a circle round a rectangle. */
 const FIELD_CAP = FAINT_DOT_CAP * 2;
 
-const tiles = faintSky({ baseUrl: new URL("faint-tiles/", document.baseURI).href });
+// The faint stars come through the data door, as the package's own UCAC4 source: the page draws them, and `faintCredits` names what was drawn.
+const tiles = starSky({ sources: [ucac4Source({ baseUrl: new URL("faint-tiles/", document.baseURI).href })] });
 const failed = new Set<string>();
 
 /** The round patch of sky a chart of `width` by `height` pixels shows, with a margin so that a small pan finds its tiles already here; `undefined` where it is too wide to be of use. */
@@ -27,6 +29,9 @@ export function fieldOf(view: View, width: number, height: number): FaintField |
   }
   return { rightAscension: view.ra, declination: view.dec, radius: radius * 1.08 + 0.05 };
 }
+
+/** The credits of the faint stars the last draw used: the package's own UCAC4 tiles, and any source a page has added to the door. Empty before the first faint star is drawn. */
+export const faintCredits = (): Credit[] => tiles.credits();
 
 /** What a map is given back: the stars to draw, the depth they are complete to, and whether the tiles are all here. */
 export type FaintResult = FaintDraw & { state: "ready" | "loading" | "failed" };

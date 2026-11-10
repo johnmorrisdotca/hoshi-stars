@@ -16,6 +16,19 @@
 export const FAINT_LIMIT = 12;
 
 /**
+ * Where the tiles are by default: the package's GitHub Pages site. Every release's Pages build carries the tiles of that release in `faint-tiles/`, so the address does not change; to pin a version, or to keep the tiles on your own server,
+ * pass `baseUrl`.
+ *
+ * @example
+ * ```ts
+ * import { FAINT_TILES_URL } from "@johnmorrisdotca/hoshi-stars/faint";
+ *
+ * console.log(`${FAINT_TILES_URL}L0/9-0.bin`);
+ * ```
+ */
+export const FAINT_TILES_URL = "https://johnmorrisdotca.github.io/hoshi-stars/faint-tiles/";
+
+/**
  * The tile levels, brightest first. A star lies in the first level whose `faintest` it does not pass, so level 0 holds everything to magnitude 10, level 1 the stars from 10 to 11 and level 2 those from 11 to 12.
  * A level's tiles are bands of declination `bandDegrees` high, each cut into as many tiles along right ascension as keep a tile about as wide as it is tall at the edge of the band nearer the equator.
  *
@@ -116,6 +129,12 @@ export interface FaintTile {
   declination: Float64Array;
   magnitude: Float64Array;
   colourIndex: Float64Array;
+  /** Optional, from a source that has them (the package's own tiles do not): the parallax in milliarcseconds, `NaN` where a star has none. Types only: nothing here reads it yet. */
+  parallaxMas?: Float64Array;
+  /** Optional: the proper motion along right ascension in milliarcseconds a year, already times cos(declination) (the usual `pmRA`), `NaN` where a star has none. Types only. */
+  properMotionRa?: Float64Array;
+  /** Optional: the proper motion along declination in milliarcseconds a year, `NaN` where a star has none. Types only. */
+  properMotionDec?: Float64Array;
 }
 
 /** How many tiles lie along a band: as many as keep a tile about as wide as it is tall at the band's edge nearer the equator (the same rule as scripts/make-faint-data.py). */
@@ -295,6 +314,75 @@ function cosineBetween(ra1: number, sinDec1: number, cosDec1: number, ra2: numbe
 }
 
 /**
+ * The stars of some decoded tiles that lie in a round patch of sky and are as bright as a limit, brightest first, and the tile each came from. With `max`, the brightest `max` of them: the list is then complete only to `depth`, which is the magnitude the list is cut at.
+ * A star whose right ascension, declination or magnitude is not a finite number is left out and counted in `skipped`, so that a bad tile never reaches a drawing. This is `faintStarsIn` with the extra facts a view with several sources needs (whose star it is).
+ *
+ * @param tiles - Decoded tiles, from `decodeFaintTile` or from a source (any more than the field needs is fine).
+ * @param field - The patch.
+ * @param limit - The faintest magnitude wanted; 12 where left out.
+ * @param max - The most stars to return; all of them where left out.
+ * @returns The stars, `from` (the tile of each star, in the same order), `depth` (see `faintStarsIn`) and `skipped`.
+ *
+ * @example
+ * ```ts
+ * import { faintStarsWithTiles, type FaintTile } from "@johnmorrisdotca/hoshi-stars/faint";
+ *
+ * const tiles: FaintTile[] = []; // fetched and decoded
+ * const { stars, from, skipped } = faintStarsWithTiles(tiles, { rightAscension: 83.8, declination: -5.4, radius: 1 }, 11, 2000);
+ * console.log(stars.length, from.length, skipped);
+ * ```
+ */
+export function faintStarsWithTiles(tiles: Iterable<FaintTile>, field: FaintField, limit: number = FAINT_LIMIT, max: number = Infinity): { stars: FaintStar[]; from: FaintTile[]; depth: number; skipped: number } {
+  const cosRadius = Math.cos(Math.min(180, Math.max(0, field.radius)) * RADIANS);
+  const sinDec = Math.sin(field.declination * RADIANS);
+  const cosDec = Math.cos(field.declination * RADIANS);
+  // the magnitudes are in steps of 1/20: a histogram of the stars in the patch finds the cut without sorting them all
+  const steps = Math.min(255, Math.floor(limit * MAGNITUDE_STEP + 1e-6));
+  const histogram = new Uint32Array(steps + 1);
+  const picked: Array<{ tile: FaintTile; index: number }> = [];
+  let skipped = 0;
+  for (const tile of tiles) {
+    for (let i = 0; i < tile.count; i++) {
+      const ra = tile.rightAscension[i]!;
+      const dec = tile.declination[i]!;
+      const mag = tile.magnitude[i]!;
+      if (!Number.isFinite(ra) || !Number.isFinite(dec) || !Number.isFinite(mag)) {
+        skipped++;
+        continue;
+      }
+      const step = Math.round(mag * MAGNITUDE_STEP);
+      if (step > steps || step < 0) continue;
+      if (cosineBetween(field.rightAscension, sinDec, cosDec, ra, dec) < cosRadius) continue;
+      histogram[step]!++;
+      picked.push({ tile, index: i });
+    }
+  }
+  let cut = steps;
+  let depth = limit;
+  if (picked.length > max) {
+    // the faintest step whose stars, and all the brighter ones, number no more than `max`
+    let running = 0;
+    cut = -1;
+    for (let step = 0; step <= steps; step++) {
+      if (running + histogram[step]! > max) break;
+      running += histogram[step]!;
+      cut = step;
+    }
+    depth = Math.max(0, cut) / MAGNITUDE_STEP;
+  }
+  const kept = picked.filter(({ tile, index }) => Math.round(tile.magnitude[index]! * MAGNITUDE_STEP) <= cut);
+  kept.sort((a, b) => a.tile.magnitude[a.index]! - b.tile.magnitude[b.index]!);
+  const stars: FaintStar[] = [];
+  const from: FaintTile[] = [];
+  for (const { tile, index } of kept) {
+    const c = tile.colourIndex[index]!;
+    stars.push({ rightAscension: tile.rightAscension[index]!, declination: tile.declination[index]!, magnitude: tile.magnitude[index]!, colourIndex: Number.isNaN(c) ? undefined : c });
+    from.push(tile);
+  }
+  return { stars, from, depth: Math.round(depth * 100) / 100, skipped };
+}
+
+/**
  * The stars of some decoded tiles that lie in a round patch of sky and are as bright as a limit, brightest first. With `max`, the brightest `max` of them: the list is then complete only to `depth`, which is the magnitude the list is cut at.
  *
  * @param tiles - Decoded tiles, from `decodeFaintTile` (any more than the field needs is fine).
@@ -313,41 +401,6 @@ function cosineBetween(ra1: number, sinDec1: number, cosDec1: number, ra2: numbe
  * ```
  */
 export function faintStarsIn(tiles: Iterable<FaintTile>, field: FaintField, limit: number = FAINT_LIMIT, max: number = Infinity): { stars: FaintStar[]; depth: number } {
-  const cosRadius = Math.cos(Math.min(180, Math.max(0, field.radius)) * RADIANS);
-  const sinDec = Math.sin(field.declination * RADIANS);
-  const cosDec = Math.cos(field.declination * RADIANS);
-  // the magnitudes are in steps of 1/20: a histogram of the stars in the patch finds the cut without sorting them all
-  const steps = Math.min(255, Math.floor(limit * MAGNITUDE_STEP + 1e-6));
-  const histogram = new Uint32Array(steps + 1);
-  const picked: Array<{ tile: FaintTile; index: number }> = [];
-  for (const tile of tiles) {
-    for (let i = 0; i < tile.count; i++) {
-      const step = Math.round(tile.magnitude[i]! * MAGNITUDE_STEP);
-      if (step > steps) continue;
-      if (cosineBetween(field.rightAscension, sinDec, cosDec, tile.rightAscension[i]!, tile.declination[i]!) < cosRadius) continue;
-      histogram[step]!++;
-      picked.push({ tile, index: i });
-    }
-  }
-  let cut = steps;
-  let depth = limit;
-  if (picked.length > max) {
-    // the faintest step whose stars, and all the brighter ones, number no more than `max`
-    let running = 0;
-    cut = -1;
-    for (let step = 0; step <= steps; step++) {
-      if (running + histogram[step]! > max) break;
-      running += histogram[step]!;
-      cut = step;
-    }
-    depth = Math.max(0, cut) / MAGNITUDE_STEP;
-  }
-  const stars: FaintStar[] = [];
-  for (const { tile, index } of picked) {
-    if (Math.round(tile.magnitude[index]! * MAGNITUDE_STEP) > cut) continue;
-    const c = tile.colourIndex[index]!;
-    stars.push({ rightAscension: tile.rightAscension[index]!, declination: tile.declination[index]!, magnitude: tile.magnitude[index]!, colourIndex: Number.isNaN(c) ? undefined : c });
-  }
-  stars.sort((a, b) => a.magnitude - b.magnitude);
-  return { stars, depth: Math.round(depth * 100) / 100 };
+  const { stars, depth } = faintStarsWithTiles(tiles, field, limit, max);
+  return { stars, depth };
 }

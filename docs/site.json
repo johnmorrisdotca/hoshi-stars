@@ -145,6 +145,11 @@
       "ja": "暗い星 (UCAC4の約300万個、12等まで。見ている空の部分のタイルだけを読み込みます)",
       "platform": "neutral"
     },
+    "./door": {
+      "en": "The data door: hand the package your own stars or objects as a source with its own licence and credit, and see whose data is on the screen",
+      "ja": "データの入口（自分で用意した星やディープスカイ天体を、ライセンスと出典つきのソースとして渡し、いま画面にあるのは誰のデータかを示します）",
+      "platform": "neutral"
+    },
     "./sky-from": {
       "en": "The sky seen from another star: positions, distances and brightness from there, with the Sun among the stars",
       "ja": "ほかの星から見た空 (そこから見た位置・距離・明るさ。太陽も星のひとつ)",

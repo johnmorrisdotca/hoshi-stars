@@ -1,18 +1,7 @@
-// The loader for the faint stars: fetches the tiles of a patch of sky, decodes them, and keeps the last few hundred. It takes the `fetch` to use and reads no clock; a failed tile is simply asked for again the next time.
-import { decodeFaintTile, faintStarsIn, faintTilePath, faintTilesFor, FAINT_LIMIT, type FaintField, type FaintStar, type FaintTile, type FaintTileId } from "./faint-core.ts";
-
-/**
- * Where the tiles are by default: the package's GitHub Pages site. Every release's Pages build carries the tiles of that release in `faint-tiles/`, so the address does not change; to pin a version, or to keep the tiles on your own server,
- * pass `baseUrl`.
- *
- * @example
- * ```ts
- * import { FAINT_TILES_URL } from "@johnmorrisdotca/hoshi-stars/faint";
- *
- * console.log(`${FAINT_TILES_URL}L0/9-0.bin`);
- * ```
- */
-export const FAINT_TILES_URL = "https://johnmorrisdotca.github.io/hoshi-stars/faint-tiles/";
+// The loader for the faint stars: fetches the tiles of a patch of sky, decodes them, and keeps the last few hundred. It takes the `fetch` to use and reads no clock; a failed tile is asked for again the next time `load` is called.
+// It is the data door (`./door.ts`) with one source, UCAC4's own tiles: a thin wrapper that keeps every option and every answer it always had.
+import { starSky, ucac4Source, type TileFetch } from "./door.ts";
+import { FAINT_LIMIT, FAINT_TILES_URL, type FaintField, type FaintStar } from "./faint-core.ts";
 
 /**
  * What `faintSky` takes.
@@ -29,7 +18,7 @@ export interface FaintSkyOptions {
   /** The folder the tiles are in, with a closing slash: `FAINT_TILES_URL` where left out. */
   baseUrl?: string;
   /** The `fetch` to use: the global one where left out. */
-  fetch?: (url: string) => Promise<{ ok: boolean; status: number; arrayBuffer(): Promise<ArrayBuffer> }>;
+  fetch?: TileFetch;
   /** How many decoded tiles to keep before the oldest is let go: 256 where left out (about 40 MB at the most). */
   maxTiles?: number;
 }
@@ -57,7 +46,7 @@ export interface FaintSky {
 }
 
 /**
- * Make the loader for the faint stars.
+ * Make the loader for the faint stars. It is `starSky` with the package's own UCAC4 source (`ucac4Source`); to add a source of your own, or to see the credits of what is drawn, use `starSky` from `@johnmorrisdotca/hoshi-stars/door`.
  *
  * @param options - Where the tiles are, and the `fetch` to use.
  * @returns The loader.
@@ -71,52 +60,15 @@ export interface FaintSky {
  * ```
  */
 export function faintSky(options: FaintSkyOptions = {}): FaintSky {
-  const base = options.baseUrl ?? FAINT_TILES_URL;
-  const maxTiles = options.maxTiles ?? 256;
-  const get = options.fetch ?? ((url: string) => globalThis.fetch(url));
-  const here = new Map<string, FaintTile>();
-  const coming = new Map<string, Promise<void>>();
-  const keyOf = (tile: FaintTileId): string => faintTilePath(tile);
-
-  function fetchTile(tile: FaintTileId): Promise<void> {
-    const key = keyOf(tile);
-    let promise = coming.get(key);
-    if (promise === undefined) {
-      promise = (async () => {
-        const response = await get(base + key);
-        if (!response.ok) throw new Error(`The faint tile ${key} could not be fetched (${response.status})`);
-        const decoded = decodeFaintTile(tile, new Uint8Array(await response.arrayBuffer()));
-        here.set(key, decoded);
-        while (here.size > maxTiles) here.delete(here.keys().next().value!);
-      })().finally(() => coming.delete(key));
-      coming.set(key, promise);
-    }
-    return promise;
-  }
-
+  const sky = starSky({
+    sources: [ucac4Source({ baseUrl: options.baseUrl ?? FAINT_TILES_URL, ...(options.fetch === undefined ? {} : { fetch: options.fetch }) })],
+    maxTiles: options.maxTiles ?? 256,
+  });
   return {
-    async load(field, limit = FAINT_LIMIT) {
-      const need = faintTilesFor(field, limit).filter((tile) => !here.has(keyOf(tile)));
-      const results = await Promise.allSettled(need.map(fetchTile));
-      const failed = results.find((r): r is PromiseRejectedResult => r.status === "rejected");
-      if (failed !== undefined) throw failed.reason;
-    },
-    stars(field, limit = FAINT_LIMIT, max = Infinity) {
-      const need = faintTilesFor(field, limit);
-      const tiles: FaintTile[] = [];
-      for (const tile of need) {
-        const found = here.get(keyOf(tile));
-        if (found !== undefined) {
-          tiles.push(found);
-          // a tile in use is the newest
-          here.delete(keyOf(tile));
-          here.set(keyOf(tile), found);
-        }
-      }
-      return { ...faintStarsIn(tiles, field, limit, max), loaded: tiles.length === need.length };
-    },
+    load: (field, limit = FAINT_LIMIT) => sky.load(field, limit),
+    stars: (field, limit = FAINT_LIMIT, max = Infinity) => sky.stars(field, limit, max),
     get size() {
-      return here.size;
+      return sky.size;
     },
   };
 }

@@ -496,6 +496,46 @@ console.log(faintTilesFor({ rightAscension: 83.8, declination: -5.4, radius: 1 }
 
 The demo's map has a **Faint stars** layer: zoom into Orion and more stars appear, with `Stars to magnitude 9.5 here` under the map. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the counts, the tile format and what is left out (`NOTICE.md` has the licence sentences).
 
+## Outside data
+
+The package draws; you bring the data. `@johnmorrisdotca/hoshi-stars/door` takes outside stars (and deep-sky objects) as a **source**: a small object that carries its own licence and credit, so the page can always say whose data is on the screen. Without a source the package draws exactly what it did before, from its own Yale and UCAC4 data. A source of yours may be non-commercial or share-alike; the credit line says so beside the licence, and the package never bundles one.
+
+```js
+import { creditLine, starSky } from "@johnmorrisdotca/hoshi-stars/door";
+
+// A source of your own: here two stars in one tile, held in memory. A real one would fetch its tiles from a server, and says whose they are and under what licence.
+const mine = {
+  kind: "tiles",
+  info: {
+    id: "my-stars",
+    name: { en: "My stars", ja: "私の星" },
+    credit: { en: "My stars, A. Person (2026)", ja: "私の星（A. Person、2026年）" },
+    licence: { name: "CC BY-NC 4.0", url: "https://creativecommons.org/licenses/by-nc/4.0/", nonCommercial: true },
+    url: "https://example.org/my-stars",
+    retrieved: "2026-11-10",
+  },
+  need: () => ["tile-0"],
+  load: async () => {
+    const column = (values) => Float64Array.from(values);
+    return { id: { level: 0, band: 0, column: 0 }, count: 2, rightAscension: column([83.8, 83.9]), declination: column([-5.4, -5.3]), magnitude: column([9.1, 10.4]), colourIndex: column([0.6, NaN]) };
+  },
+  bytes: (tile) => tile.count * 32,
+};
+
+const sky = starSky({ sources: [mine] });
+const orion = { rightAscension: 83.8, declination: -5.4, radius: 1 };
+await sky.load(orion, 12);
+const { stars } = sky.stars(orion, 12);
+console.log(`${stars.length} stars, the brightest of magnitude ${stars[0].magnitude}`);
+console.log(creditLine(sky.credits(), "en"));
+console.log(creditLine(sky.credits(), "ja"));
+
+sky.enable("my-stars", false);
+console.log(`${sky.stars(orion, 12).stars.length} stars with the source off`);
+```
+
+`starSky` loads the tiles of a patch of sky from every source, under one 48 MB budget, six loads at a time per source, and sends nothing at rest. `remove()`, `enable(id, false)` and `ownOnly(true)` switch outside sources off, abort their loads and free their tiles. `ucac4Source` is the package's own faint stars as a source, `faintSky` is `starSky` with that one source, `withObjects` adds deep-sky objects from your records, `ownCredit` and `OWN_SOURCES` give the package's own credits, and `SkyPictureSource` is the shape of a sky picture in tiles. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the shapes and the rules.
+
 ## The data in other languages
 
 Every release attaches the data as CSV and Parquet files with a schema, checksums and a note on which credit each table needs, so Python, R or Rust can load it without this package: [data files](docs/guides/data-files.md). To answer queries from your own server, see [serve it yourself](docs/guides/serve-it-yourself.md); we host nothing.

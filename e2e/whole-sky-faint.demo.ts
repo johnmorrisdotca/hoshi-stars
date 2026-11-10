@@ -167,6 +167,33 @@ test("the faint stars are in Japanese too", async ({ page }) => {
   await expect(page.getByTestId("ws-layers").getByRole("button", { name: "暗い星" })).toBeVisible();
 });
 
+test("the credit line under the map names the sources of what is drawn, with their licences, in English and Japanese (MODULES-831)", async ({ page }) => {
+  const credit = page.getByTestId("faint-credit");
+  await open(page);
+  await expect(credit).toContainText("Yale Bright Star Catalogue");
+  await expect(credit).not.toContainText("UCAC4");
+  await zoomInto(page, "Ori", 12);
+  await expect.poll(() => dots(page)).toBeGreaterThan(20);
+  await expect(credit).toContainText("UCAC4");
+  await expect(credit).toContainText("UCAC4 terms of use");
+  await expect(credit).toContainText("Public domain");
+  // the faint layer off: its source is no longer credited
+  await page.getByTestId("ws-layers").getByRole("button", { name: "Faint stars" }).click();
+  await expect.poll(() => dots(page)).toBe(0);
+  await expect(credit).not.toContainText("UCAC4");
+  await expect(credit).toContainText("Yale Bright Star Catalogue");
+});
+
+test("the credit line is in Japanese in Japanese", async ({ page }) => {
+  const credit = page.getByTestId("faint-credit");
+  await open(page, "?lang=ja");
+  await expect(credit).toContainText("イェール輝星カタログ");
+  await expect(credit).toContainText("パブリックドメイン");
+  await zoomInto(page, "Ori", 12);
+  await expect.poll(() => dots(page)).toBeGreaterThan(20);
+  await expect(credit).toContainText("暗い星：UCAC4");
+});
+
 test("panning the zoomed-in map asks for each tile once, only for what is in view, and then comes to rest", async ({ page, browserName, isMobile }) => {
   test.skip(browserName !== "chromium" || isMobile, "the drag is a Chromium mouse drag");
   const tiles = watchTiles(page);

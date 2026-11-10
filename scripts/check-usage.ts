@@ -310,6 +310,14 @@ await step("angular", async () => {
   });
 });
 
+await step("door-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("door"), "source.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
+  if (out.length !== 4 || !out[0]!.startsWith("2 stars")) throw new Error(`the source was not drawn: ${out.join(" | ")}`);
+  if (!/CC BY-NC 4\.0; non-commercial/.test(out[1]!)) throw new Error(`the English credit does not say non-commercial beside the licence: ${out[1]}`);
+  if (!/CC BY-NC 4\.0、非営利のみ/.test(out[2]!)) throw new Error(`the Japanese credit does not say 非営利のみ beside the licence: ${out[2]}`);
+  if (out[3] !== "0 stars with the source off") throw new Error(`switching the source off did not bring back the first picture: ${out[3]}`);
+});
+
 await step("deep-sky-node", () => {
   const out = execFileSync(process.execPath, [join(examples("deep-sky"), "outline.mjs")], { cwd: usage, encoding: "utf8" }).trim();
   if (out !== "M31 190.5 61.7 35 pictures/M31.webp") throw new Error(`unexpected output: ${out}`);
@@ -361,6 +369,7 @@ const FILES: Record<string, string[]> = {
   "portrait/iframe.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/iframe-3d.html": ["docs/guides/star-in-3d.md", "docs/guides/ja/star-in-3d.md"],
   "portrait/Star.tsx": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "door/source.mjs": ["README.md", "docs/guides/data-door.md", "docs/guides/ja/data-door.md"],
   "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
 };

@@ -10,7 +10,8 @@ import { constellation } from "../src/constellations.ts";
 import type { Culture } from "../src/culture.ts";
 import { western } from "../src/cultures/western.ts";
 import { CULTURE_IDS, cultureOf } from "./cultures.ts";
-import { faintAt } from "./faint.ts";
+import { creditLine, ownCredit } from "../src/door.ts";
+import { faintAt, faintCredits } from "./faint.ts";
 import { faintDepthOf, faintMarks } from "./faint-layer.ts";
 import { mountPicker } from "./picker.ts";
 import { langNow, nameIn, type Lang } from "./thumbs.ts";
@@ -173,6 +174,10 @@ function drawFaint(height: number, k: number): void {
   }
   const note = $("ws-faint-note");
   if (note.textContent !== text) note.textContent = text;
+  // the credit of what is drawn now: the bright stars always, and the faint ones' source once they are on the map
+  const credit = $("ws-faint-credit");
+  const line = creditLine([ownCredit("yale-bsc", 5080), ...(svg === "" ? [] : faintCredits())], langNow());
+  if (credit.textContent !== line) credit.textContent = line;
 }
 
 function schedule(): void {
