@@ -5,7 +5,8 @@ import { boundaries, constellationAt } from "../src/boundaries.ts";
 import type { Constellation } from "../src/constellations.ts";
 import { blackHoles, type BlackHole } from "../src/black-holes.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
-import { deepSkyShape, type DeepSkyShape } from "../src/deep-sky-shape.ts";
+import { deepSkyPictures } from "../src/deep-sky-pictures.ts";
+import { deepSkyShape, offsetOnSky, type DeepSkyShape } from "../src/deep-sky-shape.ts";
 import { DEEP_COLOURS, drawDeep } from "./deep-draw.ts";
 import { figures, type CultureFigure } from "../src/lines.ts";
 import type { Culture } from "../src/culture.ts";
@@ -71,9 +72,12 @@ export interface Hit {
 }
 
 export const DEFAULT_VIEW: View = { projection: "stereographic", ra: 84, dec: 0, zoom: 1 };
-/** The least zoom: the whole sky, small. The most: about 0.7 degree across a desk-wide chart, where the closest naked-eye pairs (Mizar and Alcor, 12 arc-minutes) still draw apart. */
+/**
+ * The least zoom: the whole sky, small. The most: 8,000, where the smallest deep-sky object that has a picture, the Ring Nebula (M57, 1 arc-minute across in the package's table), fills about 0.58 of the smaller side of the chart whatever its size
+ * (a chart's pixels for an arc-minute are its smaller side times 7.3e-5 times the zoom, so 1 arc-minute is `side * 0.58` pixels at 8,000), about 3 arc-minutes across the chart. Where the picture under the middle runs out of detail first, `pictureZoomCap` stops the zoom sooner.
+ */
 export const ZOOM_MIN = 0.1;
-export const ZOOM_MAX = 500;
+export const ZOOM_MAX = 8000;
 const WIDE: readonly Projection[] = ["equirectangular", "mollweide", "hammer"];
 const SQRT8 = Math.sqrt(8);
 
@@ -122,9 +126,33 @@ export function dragged(view: View, width: number, height: number, dx: number, d
   return at === undefined ? view : { ...view, ra: wrap360(at.rightAscension), dec: Math.max(-90, Math.min(90, at.declination)) };
 }
 
-/** The view zoomed by `factor` with the sky under (`x`, `y`) kept under it. */
-export function zoomedAbout(view: View, width: number, height: number, factor: number, x: number, y: number): View {
-  const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, view.zoom * factor));
+/**
+ * The most a view may zoom in about the sky under (`x`, `y`) so that no picture there is drawn bigger than its own pixels: one pixel of the finest picture covering that sky is at most one pixel of the chart.
+ * Where no picture covers it the answer is `ZOOM_MAX`. It is a limit on zooming in, never a push out: a view already past it stays where it is.
+ */
+export function pictureZoomCap(view: View, width: number, height: number, x: number, y: number): number {
+  const at = fromScreen(view, width, height, x, y);
+  if (at === undefined) return ZOOM_MAX;
+  const sinDec = Math.sin(at.declination * (Math.PI / 180));
+  const cosDec = Math.cos(at.declination * (Math.PI / 180));
+  let finest = Infinity;
+  for (const picture of deepSkyPictures()) {
+    if (picture.arcsecPerPixel >= finest) continue;
+    const apart = Math.acos(Math.max(-1, Math.min(1, sinDec * Math.sin(picture.centre.declination * (Math.PI / 180)) + cosDec * Math.cos(picture.centre.declination * (Math.PI / 180)) * Math.cos((at.rightAscension - picture.centre.rightAscension) * (Math.PI / 180))))) * (180 / Math.PI);
+    if (apart <= (0.5 * Math.max(picture.width, picture.height) * picture.arcsecPerPixel) / 3600) finest = picture.arcsecPerPixel;
+  }
+  if (finest === Infinity) return ZOOM_MAX;
+  const here = toScreen(view, width, height, at);
+  const east = toScreen(view, width, height, offsetOnSky(at, 1, 0));
+  const north = toScreen(view, width, height, offsetOnSky(at, 0, 1));
+  if (here === undefined || east === undefined || north === undefined) return ZOOM_MAX;
+  const perArcmin = Math.sqrt(Math.hypot(east[0] - here[0], east[1] - here[1]) * Math.hypot(north[0] - here[0], north[1] - here[1]));
+  return perArcmin === 0 ? ZOOM_MAX : Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, (view.zoom * (60 / finest)) / perArcmin));
+}
+
+/** The view zoomed by `factor` with the sky under (`x`, `y`) kept under it, no further in than `most` (`ZOOM_MAX` where left out): a view already past `most` is not zoomed further in, nor pushed out. */
+export function zoomedAbout(view: View, width: number, height: number, factor: number, x: number, y: number, most: number = ZOOM_MAX): View {
+  const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, view.zoom * factor, Math.max(most, view.zoom)));
   const under = fromScreen(view, width, height, x, y);
   const next = { ...view, zoom };
   if (under === undefined) return next;

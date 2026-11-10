@@ -19,7 +19,7 @@ import { deepSkyShape, measuredParts, type DeepSkyShape } from "../src/deep-sky-
 import { deepSkyPicturesOf } from "../src/deep-sky-pictures.ts";
 import { starsInside } from "../src/deep-sky-members.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
-import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
+import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, pictureZoomCap, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
 import { CULTURE_IDS, cultureOf, cultureText } from "./cultures.ts";
 import { western } from "../src/cultures/western.ts";
 import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
@@ -128,7 +128,9 @@ function clear(): Box[] {
 
 function draw(): void {
   queued = false;
-  $("zoom-readout").textContent = zoomText(view.zoom / opening());
+  const shown = view.zoom / opening();
+  // from a thousand on, whole numbers with a thousands separator: "2,837×" is the width of "177.3×"
+  $("zoom-readout").textContent = shown >= 1000 ? `${Math.round(shown).toLocaleString(lang())}×` : zoomText(shown);
   const faint = sky === undefined ? faintFor(view, width, height, magnitude, layers, schedule) : undefined;
   if ((layers.has("deep") && view.zoom >= TIER_ZOOM) || (picked?.startsWith("D:") === true && deepSkyObject(picked.slice(2)) === undefined)) void fetcher.loadTier();
   const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
@@ -327,6 +329,7 @@ const hands = attachHands(box, {
   view: () => view,
   size: () => ({ width, height }),
   opening,
+  zoomCap: (at, x, y) => (layers.has("pictures") ? pictureZoomCap(at, width, height, x, y) : ZOOM_MAX),
   moved(next, final) {
     cancelFly();
     view = next;
@@ -444,7 +447,9 @@ function fly(to: Place): void {
   const b = unit(to.ra, to.dec);
   const dot = Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
   const angle = Math.acos(dot);
-  const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, to.zoom));
+  // no closer than the picture at the place can show sharp
+  const cap = layers.has("pictures") ? pictureZoomCap({ ...from, ra: to.ra, dec: to.dec, zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, to.zoom)) }, width, height, width / 2, height / 2) : ZOOM_MAX;
+  const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, to.zoom, cap));
   const place = (t: number): View => {
     const k = angle < 1e-6 ? [0, 1] : [Math.sin((1 - t) * angle) / Math.sin(angle), Math.sin(t * angle) / Math.sin(angle)];
     const x = k[0]! * a[0] + k[1]! * b[0];

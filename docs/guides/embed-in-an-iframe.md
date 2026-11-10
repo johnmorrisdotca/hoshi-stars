@@ -32,14 +32,14 @@ For a page that cannot run script of its own (a blog, a wiki, a CMS), the demo s
 
 The chart fills the frame and draws again when the frame is resized. It fetches nothing but its own files.
 
-The reader can move it: drag to turn the sky, pinch or use Ctrl or Command and the wheel to zoom, press `+`, `-`, the arrow keys or `0` with the frame focused, or use the three buttons (zoom in, zoom out, back to the start). At the opening view the plain wheel scrolls the page behind the frame; zoomed in, it moves the sky. The page writes where it looks (`ra`, `dec`, `zoom`) back into its own address as the reader moves it. The zoom runs from 0.1 (the whole sky, small) to 500 (about 0.7 degree across a desk-wide frame, as far in as a catalogue of naked-eye stars has anything to show). Light and dark make no difference: the chart is always a night sky.
+The reader can move it: drag to turn the sky, pinch or use Ctrl or Command and the wheel to zoom, press `+`, `-`, the arrow keys or `0` with the frame focused, or use the three buttons (zoom in, zoom out, back to the start). At the opening view the plain wheel scrolls the page behind the frame; zoomed in, it moves the sky. The page writes where it looks (`ra`, `dec`, `zoom`) back into its own address as the reader moves it. The zoom runs from 0.1 (the whole sky, small) to 8000 (about 3 arc-minutes across, where the smallest object with a picture, the Ring Nebula, takes more than half of the frame's shorter side); over a deep-sky picture it stops sooner, where one pixel of the picture is one pixel of the frame, so a picture is never blown up past its own pixels. Light and dark make no difference: the chart is always a night sky.
 
 ## The address
 
 | Part | Means |
 |---|---|
 | `proj` | One of `stereographic`, `orthographic`, `gnomonic`, `equidistant`, `equirectangular`, `mollweide`, `hammer`. |
-| `ra`, `dec`, `zoom` | Where it looks, in degrees, and how far in (0.1 to 500). Left out, it looks at Orion (`ra=84`, `dec=0`) about 90 degrees wide, or 60 when the frame is under 600 pixels wide. |
+| `ra`, `dec`, `zoom` | Where it looks, in degrees, and how far in (0.1 to 8000). Left out, it looks at Orion (`ra=84`, `dec=0`) about 90 degrees wide, or 60 when the frame is under 600 pixels wide. |
 | `mag` | The faintest star, 2 to 6. |
 | `layers` | A comma list of `milky` (the Milky Way), `lines`, `boundaries`, `names`, `deep` (Messier) and `grid`, or `none`. Left out, it is `milky,lines,names,grid`. |
 | `lang` | `ja` for constellation names in Japanese. |

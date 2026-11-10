@@ -137,3 +137,90 @@ test("the embed page draws the picture of the object it is aimed at", async ({ p
   await expect(page.locator("#frame image[data-pic='M51']")).toHaveCount(1, { timeout: 20_000 });
   await expect(page.locator('#frame [data-deep="M51"]')).toHaveCount(1);
 });
+
+/** How many chart pixels one pixel of a picture is on the chart now (the scale of its matrix). */
+const pixelOf = (page: Page, id: string): Promise<number> =>
+  page.locator(`#chart image[data-pic='${id}']`).first().evaluate((node) => {
+    const [a = 0, b = 0] = (node.getAttribute("transform") ?? "").replace(/matrix\(|\)/g, "").split(" ").map(Number);
+    return Math.hypot(a, b);
+  });
+
+test("the Ring Nebula, the smallest object with a picture, can be zoomed in on until it fills the view, its Hubble picture still sharp", async ({ page }) => {
+  await page.goto("/hoshi-stars/?ra=283.396&dec=33.029&zoom=7000&pick=D:M57");
+  await expect(page.locator("#chart image[data-pic='M57-heic1310a']")).toHaveCount(1, { timeout: 20_000 });
+  for (let i = 0; i < 3; i += 1) await page.getByTestId("zoom-in").click();
+  await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThanOrEqual(7000);
+  expect(Number(param(page, "zoom"))).toBeLessThanOrEqual(8000);
+  // the ring (1 arc-minute) fills over a third of the smaller side of the chart
+  const chart = (await page.locator("#chart").boundingBox())!;
+  await expect.poll(() => widthOf(page, "M57")).toBeGreaterThan(Math.min(chart.width, chart.height) * 0.35);
+  expect(await pixelOf(page, "M57-heic1310a")).toBeLessThanOrEqual(1.01);
+  expect(await pixelOf(page, "M57-heic1310a")).toBeGreaterThan(0.5);
+  // the survey picture under it (1.4 arc-seconds a pixel) would be stretched about eight times: it is neither fetched nor drawn there, so the sky shows beside the Hubble picture, not a blur
+  await expect(page.locator("#chart image[data-pic='M57']")).toHaveCount(0);
+  // the zoom readout holds a number of four digits
+  const readout = page.getByTestId("zoom-readout");
+  await expect(readout).toHaveText(/^\d[\d,]*×$/);
+  expect(await readout.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+});
+
+test("a picture with less detail stops the zoom where its own pixels run out, and a step out starts from there", async ({ page }) => {
+  const phone = page.viewportSize()!.width < 600;
+  // M91's survey picture is 2 arc-seconds a pixel: one of its pixels is one chart pixel at a zoom of about 1,100 on a phone and about 600 to 700 on a desk, well short of 8000
+  await page.goto(`/hoshi-stars/?ra=188.86&dec=14.496&zoom=${phone ? 900 : 450}&pick=D:M91`);
+  await expect(page.locator("#chart image[data-pic='M91']")).toHaveCount(1, { timeout: 20_000 });
+  for (let i = 0; i < 8; i += 1) await page.getByTestId("zoom-in").click();
+  await page.waitForTimeout(300);
+  await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(500);
+  const stopped = Number(param(page, "zoom"));
+  expect(stopped).toBeLessThan(1300);
+  expect(await pixelOf(page, "M91")).toBeLessThanOrEqual(1.01);
+  await page.getByTestId("zoom-out").click();
+  await expect.poll(() => Number(param(page, "zoom"))).toBeLessThan(stopped * 0.7);
+  await page.getByTestId("zoom-in").click();
+  await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(stopped * 0.9);
+  expect(await pixelOf(page, "M91")).toBeLessThanOrEqual(1.01);
+});
+
+test("flying to a small object with a picture never draws the picture past its pixels", async ({ page }) => {
+  await page.goto("/hoshi-stars/");
+  await expect(page.locator("#chart circle").first()).toBeVisible();
+  await fly(page, "M72");
+  await expect(page.locator("#chart image[data-pic='M72']")).toHaveCount(1, { timeout: 20_000 });
+  await expect.poll(() => pixelOf(page, "M72")).toBeLessThanOrEqual(1.01);
+  // and it is there to see, not faded away
+  expect(Number(await page.locator("#chart image[data-pic='M72']").first().getAttribute("opacity"))).toBeGreaterThan(0.4);
+});
+
+test("at the top of the zoom the faint stars ask for no more tiles than the view needs, and nothing more at rest", async ({ page }) => {
+  const tiles: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/faint-tiles/")) tiles.push(request.url());
+  });
+  await page.goto("/hoshi-stars/?ra=283.396&dec=33.029&zoom=8000");
+  await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
+  await page.waitForTimeout(1500);
+  const asked = tiles.length;
+  expect(asked).toBeLessThanOrEqual(6);
+  await page.waitForTimeout(1500);
+  expect(tiles.length).toBe(asked);
+});
+
+test("the pictures are not blocked by the page's Content-Security-Policy (the map draws them from blob addresses)", async ({ page }) => {
+  const blocked: string[] = [];
+  page.on("console", (message) => message.text().includes("Content Security Policy") && blocked.push(message.text()));
+  await page.goto("/hoshi-stars/?ra=202.47&dec=47.195&zoom=500&pick=D:M51");
+  await expect(page.locator("#chart image[data-pic='M51']")).toHaveCount(1, { timeout: 20_000 });
+  // the picture itself is loaded: an image element given the same address decodes
+  const size = await page.evaluate(async () => {
+    const href = document.querySelector("#chart image[data-pic='M51']")!.getAttribute("href")!;
+    const image = new Image();
+    image.src = href;
+    await image.decode();
+    return image.naturalWidth;
+  });
+  expect(size).toBeGreaterThan(100);
+  await page.goto("/hoshi-stars/embed.html?ra=202.47&dec=47.2&zoom=300&layers=milky,deep,pictures");
+  await expect(page.locator("#frame image[data-pic='M51']")).toHaveCount(1, { timeout: 20_000 });
+  expect(blocked).toEqual([]);
+});

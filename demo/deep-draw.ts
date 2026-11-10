@@ -20,6 +20,9 @@ export const MAX_PICTURES = 6;
 export const LOAD_FROM = 90;
 export const SHOW_FROM = 130;
 export const SHOW_FULL = 360;
+/** A picture is never drawn bigger than its own pixels, but for a little rounding: it is fully there while one of its pixels is at most `STRETCH_FULL` chart pixels, fades out to `STRETCH_GONE`, and is neither fetched nor drawn past that (the finer picture over it, or the sky, shows instead). */
+export const STRETCH_FULL = 1.1;
+export const STRETCH_GONE = 1.35;
 
 const smooth = (low: number, high: number, x: number): number => {
   const t = Math.max(0, Math.min(1, (x - low) / (high - low)));
@@ -106,7 +109,7 @@ function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: M
     const [tl, tr, , bl] = corners(picture).map((p) => c.place(p)) as [Spot?, Spot?, Spot?, Spot?];
     if (tl === undefined || tr === undefined || bl === undefined) continue;
     const widthPx = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
-    if (widthPx < LOAD_FROM) continue;
+    if (widthPx < LOAD_FROM || widthPx / picture.width >= STRETCH_GONE) continue;
     const mid: Spot = [(tr[0] + bl[0]) / 2, (tr[1] + bl[1]) / 2];
     if (Math.abs(mid[0] - c.width / 2) > c.width / 2 + widthPx * 0.7 || Math.abs(mid[1] - c.height / 2) > c.height / 2 + widthPx * 0.7) continue;
     // a whole-sky map that stretches a picture across its seam would smear it: keep to what the corners say a picture of its angular size should be
@@ -121,7 +124,7 @@ function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: M
   let under = "";
   for (const { picture, widthPx, matrix } of chosen) {
     if (!c.ready.has(picture.id)) continue;
-    const opacity = smooth(SHOW_FROM, SHOW_FULL, widthPx);
+    const opacity = smooth(SHOW_FROM, SHOW_FULL, widthPx) * (1 - smooth(STRETCH_FULL, STRETCH_GONE, widthPx / picture.width));
     if (opacity <= 0.01) continue;
     shown.set(picture.object, Math.max(shown.get(picture.object) ?? 0, opacity));
     under += `<image data-pic="${picture.id}" href="${pictureBlobs.get(picture.id) ?? pictureUrl(picture, c.base)}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.map((n) => n.toFixed(6)).join(" ")})" opacity="${opacity.toFixed(3)}" preserveAspectRatio="none"/>`;

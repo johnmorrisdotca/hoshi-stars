@@ -14,6 +14,8 @@ export interface HandsHost {
   moved(view: View, final: boolean): void;
   /** Where Home, 0 and the reset button go; the opening view of Orion when left out. */
   home?(): View;
+  /** The most the view may zoom in about the chart's pixel (`x`, `y`): `ZOOM_MAX` when left out. The demo stops a zoom over a picture where the picture's own pixels run out. */
+  zoomCap?(view: View, x: number, y: number): number;
 }
 
 export interface Hands {
@@ -83,7 +85,9 @@ export function attachHands(box: HTMLElement, host: HandsHost): Hands {
       const slideY = state.panY - k * before.panY;
       const atX = state.zoom <= 1 ? 0 : slideX / (1 - k);
       const atY = state.zoom <= 1 ? 0 : slideY / (1 - k);
-      view = zoomedAbout(view, width, height, (state.zoom * open) / view.zoom, width / 2 + atX, height / 2 + atY);
+      const x = width / 2 + atX;
+      const y = height / 2 + atY;
+      view = zoomedAbout(view, width, height, (state.zoom * open) / view.zoom, x, y, host.zoomCap?.(view, x, y));
     } else {
       const turnX = wrap180(state.yaw - before.yaw);
       const turnY = state.tilt - before.tilt;
@@ -100,6 +104,8 @@ export function attachHands(box: HTMLElement, host: HandsHost): Hands {
       }
     }
     host.moved(view, final);
+    // A zoom the chart stopped short of (a picture's own pixels ran out): the controller is told where the view really is, so a step out starts from there.
+    if (Math.abs(view.zoom - state.zoom * open) > 1e-6 * view.zoom) sync();
   }
 
   sync();
