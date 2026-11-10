@@ -47,7 +47,7 @@ export interface Licence {
  * ```
  */
 export interface SourceInfo {
-  /** Unique in a view: lower-case letters, digits and hyphens ("ucac4", "esa-gaia-dr3"). */
+  /** Unique in a view: lower-case letters, digits and hyphens ("ucac4", "my-catalogue"). */
   id: string;
   name: { en: string; ja: string };
   /** The line shown on screen. Never empty, in both languages. */
