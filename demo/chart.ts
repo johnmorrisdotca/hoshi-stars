@@ -5,7 +5,8 @@ import { boundaries, constellationAt } from "../src/boundaries.ts";
 import type { Constellation } from "../src/constellations.ts";
 import { blackHoles, type BlackHole } from "../src/black-holes.ts";
 import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
-import { deepSkyPictures } from "../src/deep-sky-pictures.ts";
+import { pictureCorners, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
+import { drawnPictures } from "./picture-quality.ts";
 import { deepSkyShape, offsetOnSky, type DeepSkyShape } from "../src/deep-sky-shape.ts";
 import { DEEP_COLOURS, drawDeep } from "./deep-draw.ts";
 import { figures, type CultureFigure } from "../src/lines.ts";
@@ -126,6 +127,42 @@ export function dragged(view: View, width: number, height: number, dx: number, d
   return at === undefined ? view : { ...view, ra: wrap360(at.rightAscension), dec: Math.max(-90, Math.min(90, at.declination)) };
 }
 
+const cornerCache = new Map<string, Array<[number, number]>>();
+/** The picture's four corners in the tangent plane about its own middle (east, north; radians), the corners in order. */
+function cornersOf(picture: DeepSkyPicture): Array<[number, number]> {
+  let found = cornerCache.get(picture.id);
+  if (found === undefined) {
+    found = pictureCorners(picture).map((corner) => tangent(picture.centre, corner));
+    cornerCache.set(picture.id, found);
+  }
+  return found;
+}
+function tangent(centre: SkyPoint, point: SkyPoint): [number, number] {
+  const d = Math.PI / 180;
+  const a = (point.rightAscension - centre.rightAscension) * d;
+  const sin0 = Math.sin(centre.declination * d);
+  const cos0 = Math.cos(centre.declination * d);
+  const sin1 = Math.sin(point.declination * d);
+  const cos1 = Math.cos(point.declination * d);
+  const k = sin0 * sin1 + cos0 * cos1 * Math.cos(a);
+  return [(cos1 * Math.sin(a)) / k, (cos0 * sin1 - sin0 * cos1 * Math.cos(a)) / k];
+}
+/** Whether a point of the sky is on the picture itself (inside its four corners), not only near it. */
+export function onPicture(picture: DeepSkyPicture, point: SkyPoint): boolean {
+  const [x, y] = tangent(picture.centre, point);
+  const ring = cornersOf(picture);
+  let side = 0;
+  for (let i = 0; i < ring.length; i += 1) {
+    const [x1, y1] = ring[i]!;
+    const [x2, y2] = ring[(i + 1) % ring.length]!;
+    const cross = (x2 - x1) * (y - y1) - (y2 - y1) * (x - x1);
+    if (cross === 0) continue;
+    if (side === 0) side = Math.sign(cross);
+    else if (Math.sign(cross) !== side) return false;
+  }
+  return true;
+}
+
 /**
  * The most a view may zoom in about the sky under (`x`, `y`) so that no picture there is drawn bigger than its own pixels: one pixel of the finest picture covering that sky is at most one pixel of the chart.
  * Where no picture covers it the answer is `ZOOM_MAX`. It is a limit on zooming in, never a push out: a view already past it stays where it is.
@@ -133,14 +170,8 @@ export function dragged(view: View, width: number, height: number, dx: number, d
 export function pictureZoomCap(view: View, width: number, height: number, x: number, y: number): number {
   const at = fromScreen(view, width, height, x, y);
   if (at === undefined) return ZOOM_MAX;
-  const sinDec = Math.sin(at.declination * (Math.PI / 180));
-  const cosDec = Math.cos(at.declination * (Math.PI / 180));
   let finest = Infinity;
-  for (const picture of deepSkyPictures()) {
-    if (picture.arcsecPerPixel >= finest) continue;
-    const apart = Math.acos(Math.max(-1, Math.min(1, sinDec * Math.sin(picture.centre.declination * (Math.PI / 180)) + cosDec * Math.cos(picture.centre.declination * (Math.PI / 180)) * Math.cos((at.rightAscension - picture.centre.rightAscension) * (Math.PI / 180))))) * (180 / Math.PI);
-    if (apart <= (0.5 * Math.max(picture.width, picture.height) * picture.arcsecPerPixel) / 3600) finest = picture.arcsecPerPixel;
-  }
+  for (const picture of drawnPictures()) if (picture.arcsecPerPixel < finest && onPicture(picture, at)) finest = picture.arcsecPerPixel;
   if (finest === Infinity) return ZOOM_MAX;
   const here = toScreen(view, width, height, at);
   const east = toScreen(view, width, height, offsetOnSky(at, 1, 0));

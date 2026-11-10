@@ -1,6 +1,7 @@
 // Deep-sky objects at their true size, and their pictures: an outline that grows with the zoom, a picture that is fetched and shown only when zoomed in, a card that says what is measured and
 // credits the picture, a layer toggle kept in the address, the bright stars inside a cluster, and the NGC and IC objects once zoomed in. The embed page draws them too.
 import { expect, test, type Page } from "@playwright/test";
+import { deepSkyPicture } from "../src/deep-sky-pictures.ts";
 
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
 const webp = (page: Page): string[] => {
@@ -156,8 +157,10 @@ test("the Ring Nebula, the smallest object with a picture, can be zoomed in on u
   await expect.poll(() => widthOf(page, "M57")).toBeGreaterThan(Math.min(chart.width, chart.height) * 0.35);
   expect(await pixelOf(page, "M57-heic1310a")).toBeLessThanOrEqual(1.01);
   expect(await pixelOf(page, "M57-heic1310a")).toBeGreaterThan(0.5);
-  // the survey picture under it (1.4 arc-seconds a pixel) would be stretched about eight times: it is neither fetched nor drawn there, so the sky shows beside the Hubble picture, not a blur
-  await expect(page.locator("#chart image[data-pic='M57']")).toHaveCount(0);
+  // the survey picture under it (1.4 arc-seconds a pixel) is stretched about eight times: it is drawn, softened (dimmed), round the Hubble picture, never left out
+  await expect(page.locator("#chart image[data-pic='M57']")).toHaveCount(1, { timeout: 20_000 });
+  expect(Number(await page.locator("#chart image[data-pic='M57']").getAttribute("opacity"))).toBeLessThan(0.7);
+  expect(Number(await page.locator("#chart image[data-pic='M57']").getAttribute("opacity"))).toBeGreaterThan(0.4);
   // the zoom readout holds a number of four digits
   const readout = page.getByTestId("zoom-readout");
   await expect(readout).toHaveText(/^\d[\d,]*×$/);
@@ -223,4 +226,34 @@ test("the pictures are not blocked by the page's Content-Security-Policy (the ma
   await page.goto("/hoshi-stars/embed.html?ra=202.47&dec=47.2&zoom=300&layers=milky,deep,pictures");
   await expect(page.locator("#frame image[data-pic='M51']")).toHaveCount(1, { timeout: 20_000 });
   expect(blocked).toEqual([]);
+});
+
+test("each picture is drawn on its object: its middle is within a twentieth of its width of the outline's, for objects of every kind", async ({ page }) => {
+  for (const id of ["M31", "M51", "M81", "M1", "M104", "M13", "M45", "M42"]) {
+    const picture = deepSkyPicture(id)!;
+    const fov = (picture.width * picture.arcsecPerPixel) / 60;
+    await page.goto(`/hoshi-stars/?pick=D:${id}&ra=${picture.centre.rightAscension}&dec=${picture.centre.declination}&zoom=1`);
+    await expect(page.locator("#chart circle").first()).toBeVisible();
+    const box = (await page.locator("#chart").boundingBox())!;
+    // a zoom that puts the picture about 400 pixels across (a chart's pixels for an arc-minute are its smaller side times 0.000073 times the zoom)
+    const zoom = Math.round(400 / (fov * 0.000073 * Math.min(box.width, box.height)));
+    await page.goto(`/hoshi-stars/?pick=D:${id}&ra=${picture.centre.rightAscension}&dec=${picture.centre.declination}&zoom=${zoom}`);
+    await expect(page.locator(`#chart image[data-pic='${id}']`), id).toHaveCount(1, { timeout: 20_000 });
+    const shown = await middleOf(page, `#chart image[data-pic='${id}']`);
+    const mark = await middleOf(page, `#chart [data-deep="${id}"]`);
+    expect(Math.hypot(shown.x - mark.x, shown.y - mark.y), id).toBeLessThan(shown.width * 0.05 + 6);
+  }
+});
+
+test("past where a picture's pixels run out an address still draws it, softened, over the object, and the wheel and the buttons stop at the cap", async ({ page }) => {
+  // M31's survey picture is 21 arc-seconds a pixel: at 800 it is blown up about 14 times, and still the galaxy, not bare sky
+  await page.goto("/hoshi-stars/?pick=D:M31&ra=10.685&dec=41.269&zoom=800");
+  await expect(page.locator("#chart image[data-pic='M31']")).toHaveCount(1, { timeout: 20_000 });
+  const opacity = Number(await page.locator("#chart image[data-pic='M31']").getAttribute("opacity"));
+  expect(opacity).toBeGreaterThan(0.3);
+  expect(opacity).toBeLessThan(1);
+  for (let i = 0; i < 3; i += 1) await page.getByTestId("zoom-in").click();
+  await page.waitForTimeout(300);
+  // the buttons do not push it further in
+  expect(Number(param(page, "zoom") ?? 800)).toBeLessThanOrEqual(800.5);
 });

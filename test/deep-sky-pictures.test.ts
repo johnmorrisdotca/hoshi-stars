@@ -128,3 +128,34 @@ test("the sources are all ones whose terms allow it, and none is one the package
     assert.doesNotMatch(`${picture.source.name} ${picture.address}`, /\bDSS\b|stellarium|digitized/i);
   }
 });
+
+test("every finer picture lies inside its survey picture, where the object has one: its middle is on it (a wide Hubble field may reach past the survey's edge)", () => {
+  let checked = 0;
+  for (const finer of deepSkyPictures().filter((p) => p.id !== p.object)) {
+    const survey = deepSkyPicture(finer.object);
+    if (survey === undefined || survey.id !== survey.object) continue;
+    checked += 1;
+    const [a, b, c, d] = pictureCorners(survey).map((corner) => ({ x: (corner.rightAscension - survey.centre.rightAscension) * Math.cos((survey.centre.declination * Math.PI) / 180), y: corner.declination - survey.centre.declination }));
+    const inside = (point: { rightAscension: number; declination: number }): boolean => {
+      const p = { x: (point.rightAscension - survey.centre.rightAscension) * Math.cos((survey.centre.declination * Math.PI) / 180), y: point.declination - survey.centre.declination };
+      const ring = [a!, b!, c!, d!];
+      const signs = ring.map((q, i) => {
+        const r = ring[(i + 1) % 4]!;
+        return Math.sign((r.x - q.x) * (p.y - q.y) - (r.y - q.y) * (p.x - q.x));
+      });
+      return signs.every((s) => s === signs[0]);
+    };
+    assert.ok(inside(finer.centre), `${finer.id}'s middle is on ${survey.id}`);
+  }
+  assert.ok(checked >= 14, `${checked} finer pictures checked`);
+});
+
+test("the demo leaves out the pictures that look broken, and draws no finer picture alone but the one that is most of its object", async () => {
+  const { drawnPictures, LEFT_OUT } = await import("../demo/picture-quality.ts");
+  const all = deepSkyPictures();
+  for (const id of Object.keys(LEFT_OUT)) assert.ok(all.some((p) => p.id === id), `${id} is a picture`);
+  const drawn = drawnPictures();
+  assert.equal(drawn.length, 117);
+  for (const id of Object.keys(LEFT_OUT)) assert.ok(!drawn.some((p) => p.id === id));
+  for (const finer of drawn.filter((p) => p.id !== p.object)) assert.ok(drawn.some((p) => p.id === finer.object) || finer.id === "M16-heic1501a", `${finer.id} has its wide picture`);
+});

@@ -16,7 +16,7 @@ import { blackHole, blackHoles } from "../src/black-holes.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
 import { PROJECTIONS, project, type Projection } from "../src/projection.ts";
 import { deepSkyShape, measuredParts, type DeepSkyShape } from "../src/deep-sky-shape.ts";
-import { deepSkyPicturesOf } from "../src/deep-sky-pictures.ts";
+import { drawnPictures } from "./picture-quality.ts";
 import { starsInside } from "../src/deep-sky-members.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, pictureZoomCap, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
@@ -625,7 +625,7 @@ function deepCard(object: DeepSkyObject, title: HTMLElement, list: HTMLElement, 
   if (object.ngc !== undefined) fact(list, "fieldNgc", object.ngc);
   const c = object.constellation === undefined ? undefined : constellation(object.constellation);
   if (c !== undefined) fact(list, "fieldIn", linkTo(nameOf(c), `C:${c.abbreviation}`));
-  const pictures = deepSkyPicturesOf(object.id);
+  const pictures = drawnPictures().filter((picture) => picture.object === object.id);
   host.append(Object.assign(document.createElement("h4"), { textContent: say("fieldPicture") }));
   if (pictures.length === 0) host.append(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("pictureNone") }));
   for (const picture of pictures) {

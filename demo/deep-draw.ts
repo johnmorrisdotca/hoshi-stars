@@ -2,7 +2,8 @@
 // It only calls the package: the sizes, angles, outlines and picture corners are the package's; the strokes, the fades and the pixels are decided here.
 import type { DeepSkyObject } from "../src/deep-sky-core.ts";
 import { starsInside } from "../src/deep-sky-members.ts";
-import { deepSkyPictures, pictureCorners, pictureUrl, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
+import { pictureCorners, pictureUrl, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
+import { drawnPictures } from "./picture-quality.ts";
 import { pictureBlobs } from "./picture-cache.ts";
 import { deepSkyOutline, measuredParts, offsetOnSky, type DeepSkyShape } from "../src/deep-sky-shape.ts";
 import type { SkyPoint } from "../src/projection.ts";
@@ -20,9 +21,14 @@ export const MAX_PICTURES = 6;
 export const LOAD_FROM = 90;
 export const SHOW_FROM = 130;
 export const SHOW_FULL = 360;
-/** A picture is never drawn bigger than its own pixels, but for a little rounding: it is fully there while one of its pixels is at most `STRETCH_FULL` chart pixels, fades out to `STRETCH_GONE`, and is neither fetched nor drawn past that (the finer picture over it, or the sky, shows instead). */
+/** The zoom and the flights stop where a picture's pixels run out, but an address may ask for more: the picture is then drawn softened, never left out. It is fully there while one of its pixels is at most `STRETCH_FULL` chart pixels, dims to `STRETCH_SOFT` of its strength by `STRETCH_FAR`, and is not drawn at all past `STRETCH_GONE` (a picture more than a hundred times blown up is no longer the object). */
 export const STRETCH_FULL = 1.1;
-export const STRETCH_GONE = 1.35;
+export const STRETCH_FAR = 4;
+export const STRETCH_SOFT = 0.6;
+/** Blown up more than `STRETCH_FAR` times a picture dims further, by `STRETCH_MORE` more at `STRETCH_FARTHER` times: its pixels show as blocks, and the sky should win over them. */
+export const STRETCH_MORE = 0.25;
+export const STRETCH_FARTHER = 16;
+export const STRETCH_GONE = 120;
 
 const smooth = (low: number, high: number, x: number): number => {
   const t = Math.max(0, Math.min(1, (x - low) / (high - low)));
@@ -105,7 +111,7 @@ function localScale(place: Place, at: Spot, point: SkyPoint): { east: Spot; nort
 function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: Map<string, number> } {
   const shown = new Map<string, number>();
   const candidates: Array<{ picture: DeepSkyPicture; widthPx: number; matrix: number[] }> = [];
-  for (const picture of deepSkyPictures()) {
+  for (const picture of drawnPictures()) {
     const [tl, tr, , bl] = corners(picture).map((p) => c.place(p)) as [Spot?, Spot?, Spot?, Spot?];
     if (tl === undefined || tr === undefined || bl === undefined) continue;
     const widthPx = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
@@ -124,7 +130,7 @@ function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: M
   let under = "";
   for (const { picture, widthPx, matrix } of chosen) {
     if (!c.ready.has(picture.id)) continue;
-    const opacity = smooth(SHOW_FROM, SHOW_FULL, widthPx) * (1 - smooth(STRETCH_FULL, STRETCH_GONE, widthPx / picture.width));
+    const opacity = smooth(SHOW_FROM, SHOW_FULL, widthPx) * (1 - (1 - STRETCH_SOFT) * smooth(STRETCH_FULL, STRETCH_FAR, widthPx / picture.width) - STRETCH_MORE * smooth(STRETCH_FAR, STRETCH_FARTHER, widthPx / picture.width));
     if (opacity <= 0.01) continue;
     shown.set(picture.object, Math.max(shown.get(picture.object) ?? 0, opacity));
     under += `<image data-pic="${picture.id}" href="${pictureBlobs.get(picture.id) ?? pictureUrl(picture, c.base)}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.map((n) => n.toFixed(6)).join(" ")})" opacity="${opacity.toFixed(3)}" preserveAspectRatio="none"/>`;

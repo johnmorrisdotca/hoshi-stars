@@ -4,7 +4,8 @@ import type { DeepSkyObject } from "../src/deep-sky-core.ts";
 import type { DeepSkyShape } from "../src/deep-sky-shape.ts";
 import { MAX_PICTURES } from "./deep-draw.ts";
 import { pictureBlobs } from "./picture-cache.ts";
-import { deepSkyPictures, pictureUrl } from "../src/deep-sky-pictures.ts";
+import { pictureUrl } from "../src/deep-sky-pictures.ts";
+import { drawnPictures } from "./picture-quality.ts";
 
 /** The zoom from which the NGC and IC objects are fetched, when the deep-sky layer is on. */
 export const TIER_ZOOM = 8;
@@ -23,8 +24,8 @@ export interface DeepFetcher {
   want(ids: readonly string[]): void;
 }
 
-let byId: Map<string, ReturnType<typeof deepSkyPictures>[number]> | undefined;
-const pictureById = (): Map<string, ReturnType<typeof deepSkyPictures>[number]> => (byId ??= new Map(deepSkyPictures().map((picture) => [picture.id, picture])));
+let byId: Map<string, ReturnType<typeof drawnPictures>[number]> | undefined;
+const pictureById = (): Map<string, ReturnType<typeof drawnPictures>[number]> => (byId ??= new Map(drawnPictures().map((picture) => [picture.id, picture])));
 
 export function createDeepFetcher(base: string, changed: () => void): DeepFetcher {
   const ready = new Set<string>();
