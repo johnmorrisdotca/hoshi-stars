@@ -2,7 +2,7 @@
 title: Deep-sky sizes and pictures
 section: how-to
 order: 7
-description: How big a galaxy, cluster or nebula is on the sky, which way it lies, its outline, the pictures of the brightest ones laid at their true place and size, and what is measured and what is only drawn.
+description: How big a galaxy, cluster or nebula is on the sky, which way it lies, its outline, the pictures of the brightest ones laid at their true place and size, what is measured and what is only drawn, and how far away a galaxy is.
 ---
 
 [日本語](ja/deep-sky-pictures.md)
@@ -135,9 +135,48 @@ A picture is pinned to the sky by three of its corners; the outline goes over it
 </html>
 ```
 
+## How far away a galaxy is
+
+`galaxyDistance(object)` gives the distance to a galaxy, or `null` for any other object and for a galaxy with none. 6,202 of the 10,282 galaxies have one, all 40 Messier galaxies among them. Import it from `@johnmorrisdotca/hoshi-stars/deep-sky` for the Messier galaxies (2 kB more) or from `.../deep-sky/ngc-ic` for all of them (about 70 kB gzipped more).
+
+| Part | Meaning |
+|---|---|
+| `lightYears`, `parsecs` | the distance, the median of the statements, in both units |
+| `error` | the statement's own error in both units (a `DistanceValue`), or `null` where no statement gives one |
+| `method` | always `"compiled, method not stated"` |
+| `sources` | where the values were read (a `GalaxyDistanceSource`): `name` and `licence`, `items`, the Wikidata item numbers to look the values up by, and `values`, how many statements |
+| `count` | how many statements the median is of |
+| `spread` | the `low` and the `high` statement, each a `DistanceValue` |
+| `disagree` | `true` where the highest is more than 1.2 times the lowest |
+
+The numbers are Wikidata's "distance from Earth" statements (CC0), read on 2026-11-10. Wikidata gathers published values and names no method, so the package does not either: it never averages values as if they came from one method, and the error is the one a statement gives (1,178 galaxies have one), which is a statistical error and not a total. Where there are several values they usually differ from one another by more than any one error says, which is what `disagree` is for: 22 galaxies have values more than 1.2 times apart, and a card or a label should say so and show the range. Statements Wikidata marks deprecated are not used, and neither is any under 20 kiloparsecs (the nearest galaxy in the lists is the Small Magellanic Cloud at 60): a star cluster that the table calls a galaxy has such a value.
+
+NASA/IPAC NED's distances (NED-D), Cosmicflows-4 and HyperLEDA are not used, because their terms do not let an MIT package pass the values on (NED-D's file says "All Rights Reserved"; the question has been asked). A distance with a real method from a paper that is free to reuse can be added to the same record later.
+
+```ts
+import { deepSkyObject, galaxyDistance } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+
+const m74 = galaxyDistance(deepSkyObject("M74")!)!;
+console.log(Math.round(m74.lightYears / 1e5) / 10, m74.count, m74.disagree);               // 29.2 2 true
+console.log(m74.spread.low.parsecs, m74.spread.high.parsecs, m74.method);                  // 7200000 10731000 compiled, method not stated
+console.log(galaxyDistance(deepSkyObject("M33")!)!.error?.parsecs, m74.sources[0]?.items);  // 100000 [ 'Q14013' ]
+```
+
+The nearest and farthest galaxies are a sort of the whole table:
+
+```ts
+import { deepSky, galaxyDistance } from "@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic";
+
+const ranked = deepSky({ type: "galaxy" })
+  .map((galaxy) => ({ id: galaxy.id, distance: galaxyDistance(galaxy) }))
+  .filter((one) => one.distance !== null)
+  .sort((a, b) => a.distance!.parsecs - b.distance!.parsecs);
+console.log(ranked.length, ranked[0]?.id, ranked[ranked.length - 1]?.id);  // 6202 NGC 292 IC 4059
+```
+
 ## In the demo
 
-The **Deep sky** layer draws every object at its true size; the **Pictures** layer lays the pictures. Both are kept in the address (`layers=…,deep,pictures`), and tapping an object opens its card: what is measured (size, angle, source), what is drawn, the picture's credit and licence, and, for an open cluster, the bright catalogue stars inside its outline (ringed on the map). Those stars are where the catalogue puts them; that they belong to the cluster is not checked, because the catalogue gives no cluster distance.
+The **Deep sky** layer draws every object at its true size; the **Pictures** layer lays the pictures. Both are kept in the address (`layers=…,deep,pictures`), and tapping an object opens its card: what is measured (size, angle, source), what is drawn, the picture's credit and licence, and, for a galaxy, its distance with the range of the values and the line saying they are compiled from Wikidata, method not stated, and, for an open cluster, the bright catalogue stars inside its outline (ringed on the map). Those stars are where the catalogue puts them; that they belong to the cluster is not checked, because the catalogue gives no cluster distance.
 
 How to read the marks:
 
@@ -146,3 +185,5 @@ How to read the marks:
 - Brighter objects are drawn stronger, by magnitude.
 - A dimmer dotted symbol of fixed size is an object with no measured size.
 - Until an object is big enough to see at its true size, its symbol is drawn at the smallest size.
+
+A list beside the map, **Nearest and farthest galaxies**, shows the ten nearest or the ten farthest (the choice is kept in the address, `gal=near` or `gal=far`); the first click fetches the NGC and IC tier, and a row opens that galaxy's card.

@@ -2,6 +2,7 @@
 // to show them), and the pictures of the deep-sky objects (a WebP file each, asked for only when one fills enough of the screen). Each arrival asks the page to draw again.
 import type { DeepSkyObject } from "../src/deep-sky-core.ts";
 import type { DeepSkyShape } from "../src/deep-sky-shape.ts";
+import type { GalaxyDistance } from "../src/galaxy-distance-core.ts";
 import { MAX_PICTURES } from "./deep-draw.ts";
 import { pictureBlobs } from "./picture-cache.ts";
 import { pictureUrl } from "../src/deep-sky-pictures.ts";
@@ -16,6 +17,8 @@ export interface DeepFetcher {
   /** The whole table of objects and its shapes once fetched, else `undefined`. */
   catalogue(): readonly DeepSkyObject[] | undefined;
   shapeOf(): ((object: DeepSkyObject) => DeepSkyShape) | undefined;
+  /** The distance of any galaxy of the whole table once fetched, else `undefined`. */
+  distanceOf(): ((object: DeepSkyObject) => GalaxyDistance | null) | undefined;
   /** An object of the whole table by any of its names, once fetched. */
   find(text: string): DeepSkyObject | undefined;
   /** Fetch the NGC and IC objects now; resolves when they are in. */
@@ -32,18 +35,21 @@ export function createDeepFetcher(base: string, changed: () => void): DeepFetche
   const asked = new Set<string>();
   let objects: readonly DeepSkyObject[] | undefined;
   let shape: ((object: DeepSkyObject) => DeepSkyShape) | undefined;
+  let distance: ((object: DeepSkyObject) => GalaxyDistance | null) | undefined;
   let find: ((text: string) => DeepSkyObject | undefined) | undefined;
   let tier: Promise<void> | undefined;
   return {
     ready,
     catalogue: () => objects,
     shapeOf: () => shape,
+    distanceOf: () => distance,
     find: (text) => find?.(text),
     loadTier() {
       tier ??= Promise.all([import("../src/deep-sky-ngc-ic.ts"), import("../src/deep-sky-shape-ngc-ic.ts")]).then(([table, shapes]) => {
         objects = table.deepSky();
         find = table.deepSkyObject;
         shape = shapes.deepSkyShape;
+        distance = table.galaxyDistance;
         changed();
       });
       return tier;

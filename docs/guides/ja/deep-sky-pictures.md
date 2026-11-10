@@ -2,7 +2,7 @@
 title: ディープスカイ天体の大きさと写真
 section: how-to
 order: 7
-description: 銀河・星団・星雲の空での大きさと向き、その輪郭、明るい天体の写真を実際の位置と大きさで重ねる方法、そして測定した部分と描いただけの部分の見分け方。
+description: 銀河・星団・星雲の空での大きさと向き、その輪郭、明るい天体の写真を実際の位置と大きさで重ねる方法、測定した部分と描いただけの部分の見分け方、そして銀河までの距離。
 ---
 
 [English](../deep-sky-pictures.md)
@@ -135,9 +135,48 @@ console.log("M31", shape.majorArcmin, shape.minorArcmin, shape.positionAngle, pi
 </html>
 ```
 
+## 銀河までの距離
+
+`galaxyDistance(object)` は銀河までの距離を返します。銀河以外の天体や、距離のない銀河には `null` を返します。10,282個の銀河のうち6,202個に距離があり、メシエ銀河40個はすべて含まれます。メシエ銀河だけなら `@johnmorrisdotca/hoshi-stars/deep-sky` から読み込みます (2 kB増えます)。すべての銀河なら `.../deep-sky/ngc-ic` から読み込みます (gzip後で約70 kB増えます)。
+
+| 項目 | 意味 |
+|---|---|
+| `lightYears`, `parsecs` | 距離。ステートメント (Wikidataの1つ1つの記載) の値の中央値を、2つの単位で |
+| `error` | ステートメント自身が示す誤差を2つの単位で (`DistanceValue`)。誤差を示すステートメントがなければ `null` |
+| `method` | いつも `"compiled, method not stated"` (集めた値で、測定方法は書かれていない) |
+| `sources` | 値を読んだ場所 (`GalaxyDistanceSource`)。`name` と `licence`、値を探せるWikidataの項目番号 `items`、ステートメントの数 `values` |
+| `count` | 中央値のもとになったステートメントの数 |
+| `spread` | 最も小さい値 `low` と最も大きい値 `high` (どちらも `DistanceValue`) |
+| `disagree` | 最大値が最小値の1.2倍を超えるとき `true` |
+
+数値は、Wikidataの「地球からの距離」のステートメント (CC0) を2026-11-10に読んだものです。Wikidataは公表された値を集めていて、測定方法は書いていません。このパッケージも書きません。1つの方法で得た値のように平均することはなく、誤差もステートメントが示すものだけです (誤差のある銀河は1,178個)。これは統計誤差であり、全体の誤差ではありません。値がいくつもあるときは、どれか1つの誤差が示すよりも値どうしが大きく食い違うのがふつうです。`disagree` はそのためにあり、最大値が最小値の1.2倍を超える銀河は22個です。カードやラベルにはそのことを書き、範囲も示してください。Wikidataが「非推奨 (deprecated)」のランクにしたステートメントは使いません。20キロパーセクより近い値も使いません (リストの中でいちばん近い銀河は60キロパーセクの小マゼラン雲です)。銀河とされている星団には、そのような値があるからです。
+
+NASA/IPAC NEDの距離 (NED-D)、Cosmicflows-4、HyperLEDAは使いません。MITライセンスのパッケージが値をそのまま渡してよいという条件が確認できないためです (NED-Dのファイルには「All Rights Reserved」とあり、問い合わせ中です)。測定方法がわかっていて、再利用できる論文の距離は、あとで同じ記録に加えられます。
+
+```ts
+import { deepSkyObject, galaxyDistance } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+
+const m74 = galaxyDistance(deepSkyObject("M74")!)!;
+console.log(Math.round(m74.lightYears / 1e5) / 10, m74.count, m74.disagree);               // 29.2 2 true
+console.log(m74.spread.low.parsecs, m74.spread.high.parsecs, m74.method);                  // 7200000 10731000 compiled, method not stated
+console.log(galaxyDistance(deepSkyObject("M33")!)!.error?.parsecs, m74.sources[0]?.items);  // 100000 [ 'Q14013' ]
+```
+
+近い順・遠い順の銀河は、表全体を並べ替えるだけで得られます。
+
+```ts
+import { deepSky, galaxyDistance } from "@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic";
+
+const ranked = deepSky({ type: "galaxy" })
+  .map((galaxy) => ({ id: galaxy.id, distance: galaxyDistance(galaxy) }))
+  .filter((one) => one.distance !== null)
+  .sort((a, b) => a.distance!.parsecs - b.distance!.parsecs);
+console.log(ranked.length, ranked[0]?.id, ranked[ranked.length - 1]?.id);  // 6202 NGC 292 IC 4059
+```
+
 ## デモで
 
-**ディープスカイ**の層は、すべての天体を実際の大きさで描き、**写真**の層は写真を重ねます。どちらの設定もアドレスに残ります (`layers=…,deep,pictures`)。天体をタップするとカードが開き、測定したもの (大きさ・角度・測定元)、描いたもの、写真のクレジットとライセンス、散開星団ならその輪郭の中にあるカタログの明るい星 (地図で丸く囲みます) がわかります。その星はカタログの位置にあるだけで、星団の仲間かどうかは確かめていません。カタログに星団までの距離がないためです。
+**ディープスカイ**の層は、すべての天体を実際の大きさで描き、**写真**の層は写真を重ねます。どちらの設定もアドレスに残ります (`layers=…,deep,pictures`)。天体をタップするとカードが開き、測定したもの (大きさ・角度・測定元)、描いたもの、写真のクレジットとライセンス、銀河ならその距離 (値の範囲と、「Wikidataから集めた値で、測定方法は書かれていない」という一文つき)、散開星団ならその輪郭の中にあるカタログの明るい星 (地図で丸く囲みます) がわかります。その星はカタログの位置にあるだけで、星団の仲間かどうかは確かめていません。カタログに星団までの距離がないためです。
 
 記号の読み方:
 
@@ -146,3 +185,5 @@ console.log("M31", shape.majorArcmin, shape.minorArcmin, shape.positionAngle, pi
 - 明るい天体ほど濃く描きます (等級に応じて変えます)。
 - 薄い色の点線で描いた大きさ固定の記号は、大きさが測定されていない天体です。
 - 実際の大きさで見えるほど拡大するまでは、最小の大きさの記号で描きます。
+
+地図の横の**いちばん近い銀河と遠い銀河**のリストは、近い方または遠い方の10個を示します (選んだ内容はアドレスの `gal=near` か `gal=far` に残ります)。最初にクリックしたときにNGC・IC天体のデータを読み込み、行を押すとその銀河のカードが開きます。

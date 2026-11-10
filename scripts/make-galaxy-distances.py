@@ -20,6 +20,7 @@ What it keeps
 
     python3 -I scripts/make-galaxy-distances.py --save DIR     # runs the query (needs the network) and keeps the answer in DIR
     python3 -I scripts/make-galaxy-distances.py --from DIR     # reads the answer saved earlier
+    python3 -I scripts/make-galaxy-distances.py --from DIR --out DIR2   # writes the two data files to DIR2 instead of src/data (the test does)
 
 None of this runs in the test.
 """
@@ -37,8 +38,7 @@ from pathlib import Path
 ENDPOINT = "https://query.wikidata.org/sparql"
 USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars; john@johnmorris.ca)"
 ROOT = Path(__file__).resolve().parent.parent
-OUT_MESSIER = ROOT / "src" / "data" / "galaxy-distances-messier.ts"
-OUT_NGC_IC = ROOT / "src" / "data" / "galaxy-distances-ngc-ic.ts"
+DATA = ROOT / "src" / "data"
 
 QUERY = """SELECT ?item ?id ?st ?rank ?d ?unit ?lo ?hi ?meth ?statedin WHERE {
   VALUES ?cat { wd:Q14530 wd:Q14534 wd:Q741672 }
@@ -127,6 +127,8 @@ def galaxies():
 def main() -> None:
     saved = Path(sys.argv[sys.argv.index("--from") + 1]) if "--from" in sys.argv else None
     keep = Path(sys.argv[sys.argv.index("--save") + 1]) if "--save" in sys.argv else None
+    out_dir = Path(sys.argv[sys.argv.index("--out") + 1]) if "--out" in sys.argv else DATA
+    out_messier, out_ngc_ic = out_dir / "galaxy-distances-messier.ts", out_dir / "galaxy-distances-ngc-ic.ts"
     rows = fetch(saved, keep)
     by_name, galaxy_ids = galaxies()
 
@@ -201,14 +203,14 @@ def main() -> None:
 """
     messier = [r for r in out if r.startswith("M")]
     rest = [r for r in out if not r.startswith("M")]
-    OUT_MESSIER.write_text(header + f"\n/** The Messier galaxies that have a distance, one per line. */\nexport const MESSIER_DISTANCES = `{chr(10).join(messier)}`;\n", encoding="utf-8")
-    OUT_NGC_IC.write_text(header + f"\n/** The NGC and IC galaxies that are not Messier objects and have a distance, one per line. */\nexport const NGC_IC_DISTANCES = `{chr(10).join(rest)}`;\n", encoding="utf-8")
+    out_messier.write_text(header + f"\n/** The Messier galaxies that have a distance, one per line. */\nexport const MESSIER_DISTANCES = `{chr(10).join(messier)}`;\n", encoding="utf-8")
+    out_ngc_ic.write_text(header + f"\n/** The NGC and IC galaxies that are not Messier objects and have a distance, one per line. */\nexport const NGC_IC_DISTANCES = `{chr(10).join(rest)}`;\n", encoding="utf-8")
     disagree = sum(1 for g in per_galaxy.values() if len(g["pc"]) > 1 and max(g["pc"]) > 1.2 * min(g["pc"]))
     with_error = sum(1 for g in per_galaxy.values() if g["errors"])
     print(f"read {len(rows)} answer rows: {len(statements)} statements ({deprecated} deprecated, {sum(skipped_units.values())} in another unit {dict(skipped_units)}), {len(with_method)} with a method")
     print(f"items matched to a galaxy {len(galaxy_of)}, naming two galaxies {len(mixed)} {mixed[:10]}, matching no galaxy {unmatched}")
     print(f"{len(too_near)} statements under 20 kpc left out: {sorted(set(i for i, _ in too_near))[:6]} ...")
-    print(f"wrote {OUT_MESSIER} ({len(messier)}) and {OUT_NGC_IC} ({len(rest)}): {len(out)} of {len(galaxy_ids)} galaxies have a distance; {disagree} disagree (highest over 1.2 times lowest); {with_error} have an error")
+    print(f"wrote {out_messier} ({len(messier)}) and {out_ngc_ic} ({len(rest)}): {len(out)} of {len(galaxy_ids)} galaxies have a distance; {disagree} disagree (highest over 1.2 times lowest); {with_error} have an error")
 
 
 if __name__ == "__main__":

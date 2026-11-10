@@ -1,0 +1,315 @@
+{
+ "head": {
+  "vars": []
+ },
+ "results": {
+  "bindings": [
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2347"
+    },
+    "id": {
+     "value": "NGC 253"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2347-1"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "3.5"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2347"
+    },
+    "id": {
+     "value": "NGC 253"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2347-2"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "3500"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q11929860"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2347"
+    },
+    "id": {
+     "value": "NGC 253"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2347-3"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "3500000"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q12129"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2347"
+    },
+    "id": {
+     "value": "NGC 253"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2347-4"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "11415473.2"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q531"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2328"
+    },
+    "id": {
+     "value": "NGC 891"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2328-5"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "8"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2328"
+    },
+    "id": {
+     "value": "NGC 891"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2328-6"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "9"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    },
+    "lo": {
+     "value": "8.5"
+    },
+    "hi": {
+     "value": "9.5"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2328"
+    },
+    "id": {
+     "value": "NGC 891"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2328-7"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "12"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2418"
+    },
+    "id": {
+     "value": "NGC 4565"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2418-8"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "10"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2418"
+    },
+    "id": {
+     "value": "NGC 4565"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2418-9"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "12"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q13957"
+    },
+    "id": {
+     "value": "M51"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q13957-10"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "7.6"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q13957"
+    },
+    "id": {
+     "value": "M51"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q13957-11"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#DeprecatedRank"
+    },
+    "d": {
+     "value": "4.0"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2469"
+    },
+    "id": {
+     "value": "M31"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2469-12"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "0.82"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q2469"
+    },
+    "id": {
+     "value": "NGC 224"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q2469-12"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "0.82"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q3773454"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q961593"
+    },
+    "id": {
+     "value": "NGC 6469"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q961593-14"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "550"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q12129"
+    }
+   },
+   {
+    "item": {
+     "value": "http://www.wikidata.org/entity/Q1115"
+    },
+    "id": {
+     "value": "NGC 1068"
+    },
+    "st": {
+     "value": "http://www.wikidata.org/entity/statement/Q1115-15"
+    },
+    "rank": {
+     "value": "http://wikiba.se/ontology#NormalRank"
+    },
+    "d": {
+     "value": "14.4"
+    },
+    "unit": {
+     "value": "http://www.wikidata.org/entity/Q99999999"
+    }
+   }
+  ]
+ }
+}

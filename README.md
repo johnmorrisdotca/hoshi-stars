@@ -240,7 +240,7 @@ console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date
 
 ## Deep-sky objects
 
-Two imports, so a page pays only for what it uses. `@johnmorrisdotca/hoshi-stars/deep-sky` is the 110 Messier objects (about 3 kB gzipped); `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` adds the NGC and IC objects, 11,898 in all (about 150 kB gzipped). Both have the same three functions. The data is Wikidata's (CC0), read on 2026-11-08 and checked against NASA/IPAC NED; the numbers are in [NOTICE.md](NOTICE.md).
+Two imports, so a page pays only for what it uses. `@johnmorrisdotca/hoshi-stars/deep-sky` is the 110 Messier objects (about 3 kB gzipped); `@johnmorrisdotca/hoshi-stars/deep-sky/ngc-ic` adds the NGC and IC objects, 11,898 in all (about 220 kB gzipped). Both have the same functions. The data is Wikidata's (CC0), read on 2026-11-08 and checked against NASA/IPAC NED; the numbers are in [NOTICE.md](NOTICE.md).
 
 ```ts
 import { deepSky, deepSkyObject, messier } from "@johnmorrisdotca/hoshi-stars/deep-sky";
@@ -258,12 +258,26 @@ console.log(deepSky({ magnitude: 4 }).map((o) => o.id));                        
 | `deepSky({ catalogue?, magnitude?, type? })` | the objects that meet the options, in catalogue order: Messier, then NGC, then IC. `catalogue` is `"messier"`, `"ngc"` or `"ic"` (objects with a number in it); `magnitude` the faintest to include |
 | `DEEP_SKY_CATALOGUES`, `DEEP_SKY_TYPES` | the catalogue names `catalogue` takes (`"messier"`, `"ngc"`, `"ic"`) and the kinds of object `type` takes |
 | `deepSkyObject(text)` | one object by `M31`, `NGC 224`, `IC 434`, any other NGC or IC number it carries, or an English name; `undefined` if none |
+| `galaxyDistance(object)` | a galaxy's distance, as the next section says; `null` for anything else or a galaxy with none (`/deep-sky` holds the Messier galaxies only) |
 
 An object has `id`, `messier`, `ngc`, `ic` (each a string such as `"NGC 224"`), `otherIds`, `name`, `type` (`galaxy`, `globular cluster`, `open cluster`, `nebula`, `planetary nebula`, `supernova remnant` or `other`), `constellation` (the IAU abbreviation), `rightAscension` and `declination` (degrees, J2000), `magnitude` (visual, or `undefined`) and `sizeArcmin` (the major axis, or `undefined`).
 
 - **M102** is the Messier object nobody can agree on: Messier's own description fits M101, and the modern lists take it for the galaxy NGC 5866, which is what this table does. **M40** is a double star (Winnecke 4) and **M73** four stars in a row; both are `other`, because Messier listed them.
 - **Magnitudes and sizes of the Messier objects** are the published visual magnitudes and major axes of NASA HEASARC's Messier table, because Wikidata's V-band magnitudes for 14 of them are more than a magnitude off (the central star's, for the four planetary nebulae). The NGC and IC magnitudes are Wikidata's, except that a planetary nebula has none (Wikidata's is its central star's); about four in ten have none, and almost none has a size.
 - **Positions** are Wikidata's. Every Messier object was compared with NED and a sample of the others too; the objects that were more than an arc-minute apart are listed in [NOTICE.md](NOTICE.md), and where Wikidata was wrong the table has NED's position.
+
+### How far away a galaxy is
+
+`galaxyDistance(object)` gives the distance to 6,202 of the 10,282 galaxies (all 40 Messier galaxies have one), from Wikidata's "distance from Earth" statements (CC0), the median of them. It is a `GalaxyDistance`: `lightYears` and `parsecs`, `error` (a `DistanceValue` with both units, or `null` where no statement has bounds), `method`, `sources` (a `GalaxyDistanceSource`: `name`, `licence`, `items`, the Wikidata item numbers to look up, and `values`), `count`, `spread` (the `low` and `high` statement, each a `DistanceValue`) and `disagree`. The `method` is always `"compiled, method not stated"`: Wikidata gathers published values and names no method, so no value is averaged with another method's and the `error` is the statement's own bound, not a total. Where the highest statement is more than 1.2 times the lowest, `disagree` is `true` and the distance is good to a good deal less than its digits. Statements Wikidata marks deprecated are not used, and neither is any under 20 kiloparsecs (a star cluster that the table calls a galaxy). Details and the other sources that are not used are in the [guide](docs/guides/deep-sky-pictures.md) and [NOTICE.md](NOTICE.md).
+
+```ts
+import { deepSkyObject, galaxyDistance } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+
+const m74 = galaxyDistance(deepSkyObject("M74")!)!;
+console.log(Math.round(m74.lightYears / 1e5) / 10, m74.count, m74.disagree);               // 29.2 2 true
+console.log(m74.spread.low.parsecs, m74.spread.high.parsecs, m74.method);                  // 7200000 10731000 compiled, method not stated
+console.log(galaxyDistance(deepSkyObject("M33")!)!.error?.parsecs, m74.sources[0]?.items);  // 100000 [ 'Q14013' ]
+```
 
 ## Black holes
 

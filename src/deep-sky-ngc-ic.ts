@@ -9,7 +9,7 @@ import { distanceTable, type GalaxyDistance } from "./galaxy-distance-core.ts";
 
 export { DEEP_SKY_CATALOGUES, DEEP_SKY_TYPES, type DeepSkyObject, type DeepSkyOptions, type DeepSkyType } from "./deep-sky-core.ts";
 
-export { COMPILED_METHOD, type DistanceValue, type GalaxyDistance, type GalaxyDistanceSource } from "./galaxy-distance-core.ts";
+export { type DistanceValue, type GalaxyDistance, type GalaxyDistanceSource } from "./galaxy-distance-core.ts";
 
 const table = deepSkyTable([MESSIER_ROWS, NGC_IC_ROWS]);
 const distances = distanceTable([MESSIER_DISTANCES, NGC_IC_DISTANCES]);

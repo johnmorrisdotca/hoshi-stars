@@ -13,7 +13,9 @@ import { constellation, starsIn, type Constellation } from "../src/constellation
 import type { Culture } from "../src/culture.ts";
 import type { CultureFigure } from "../src/lines.ts";
 import { blackHole, blackHoles } from "../src/black-holes.ts";
-import { deepSkyObject, messier, type DeepSkyObject } from "../src/deep-sky.ts";
+import { deepSkyObject, galaxyDistance as messierDistance, messier, type DeepSkyObject } from "../src/deep-sky.ts";
+import type { GalaxyDistance } from "../src/galaxy-distance-core.ts";
+import { byDistance, compact, ends, GALAXY_LIST_COUNT, parsecsText, type Order } from "./galaxies.ts";
 import { PROJECTIONS, project, type Projection } from "../src/projection.ts";
 import { deepSkyShape, measuredParts, type DeepSkyShape } from "../src/deep-sky-shape.ts";
 import { drawnPictures } from "./picture-quality.ts";
@@ -56,6 +58,7 @@ let magnitude = DEFAULT_MAGNITUDE;
 let layers: Set<Layer> = layersOf(null);
 let picked: string | null = null;
 let by: By = "sky";
+let galaxyOrder: Order | null = null;
 let from: Star | undefined;
 let culture: Culture = western;
 let sky: SeenSky | undefined;
@@ -82,6 +85,7 @@ function read(): void {
   profileView = pview === "compare" || pview === "3d" ? pview : "portrait";
   embedWhat = address.get("ew") === "star" ? "star" : "chart";
   by = address.get("by") === "space" ? "space" : "sky";
+  galaxyOrder = address.get("gal") === "near" ? "near" : address.get("gal") === "far" ? "far" : null;
   from = viewpointOf(address.get("from"));
   sky = skyOf(from);
   culture = cultureOf(address.get("culture")) ?? western;
@@ -107,6 +111,7 @@ const fetcher = createDeepFetcher("./", () => schedule());
 /** An object of the Messier table, or of the whole table once the NGC and IC objects are in. */
 const deepObject = (id: string): DeepSkyObject | undefined => deepSkyObject(id) ?? fetcher.find(id);
 const shapeOfObject = (object: DeepSkyObject): DeepSkyShape => (fetcher.shapeOf() ?? deepSkyShape)(object);
+const distanceOfObject = (object: DeepSkyObject): GalaxyDistance | null => (fetcher.distanceOf() ?? messierDistance)(object);
 
 /** The figure to show brighter: the picked figure, or the figure of the culture the picked star is in (its constellation in the Western and Japanese skies). */
 const pickedConstellation = (): string | undefined => {
@@ -624,8 +629,21 @@ function deepCard(object: DeepSkyObject, title: HTMLElement, list: HTMLElement, 
   if (shape.source !== undefined) fact(list, "fieldMeasuredBy", say(SOURCE_WORDS[shape.source]!));
   fact(list, "fieldDrawn", say(parts.oval ? "drawnOval" : parts.size ? "drawnRound" : "drawnFixed"));
   if (object.ngc !== undefined) fact(list, "fieldNgc", object.ngc);
+  const away = object.type === "galaxy" ? distanceOfObject(object) : null;
+  if (object.type === "galaxy") fact(list, "fieldDistance", away === null ? say("distanceNone") : `${fill(say("distanceLy"), { n: compact(away.lightYears, lang()) })} (${parsecsText(away.parsecs)})`);
   const c = object.constellation === undefined ? undefined : constellation(object.constellation);
   if (c !== undefined) fact(list, "fieldIn", linkTo(nameOf(c), `C:${c.abbreviation}`));
+  if (away !== null) {
+    const line = (testid: string, text: string): void => {
+      const p = Object.assign(document.createElement("p"), { className: "fam-fine", textContent: text });
+      p.dataset.testid = testid;
+      host.append(p);
+    };
+    if (away.error !== null) line("distance-error", fill(say("distanceError"), { e: compact(away.error.lightYears, lang()) }));
+    if (away.count > 1) line("distance-range", fill(say("distanceRange"), { n: String(away.count), low: compact(away.spread.low.lightYears, lang()), high: compact(away.spread.high.lightYears, lang()) }));
+    if (away.disagree) line("distance-disagree", say("distanceDisagree"));
+    line("distance-source", say("distanceSource"));
+  }
   const pictures = drawnPictures().filter((picture) => picture.object === object.id);
   host.append(Object.assign(document.createElement("h4"), { textContent: say("fieldPicture") }));
   if (pictures.length === 0) host.append(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("pictureNone") }));
@@ -685,6 +703,7 @@ const nameOf = (c: Constellation): string => (lang() === "ja" ? c.japanese : c.n
 function details(): void {
   picker.refresh();
   nearbyPanel();
+  galaxiesPanel();
   const host = $("picked");
   host.replaceChildren();
   if (picked === null) {
@@ -888,6 +907,65 @@ function nearbyPanel(): void {
     note.textContent = inSpace ? `${found.skipped.toLocaleString(lang())} ${say("nearbySkipped")}` : found.canSpace ? say("nearbySkyNote") : say("nearbyNoSpace");
     host.append(note);
   }
+}
+
+// ----- the nearest and farthest galaxies -----
+let sortedGalaxies: ReturnType<typeof byDistance> | undefined;
+/** Ten galaxies, the nearest or the farthest. The whole table (the NGC and IC tier) is fetched when one of the two is first chosen, not before. */
+function galaxiesPanel(): void {
+  const host = $("galaxies");
+  host.replaceChildren(Object.assign(document.createElement("h3"), { textContent: say("galaxiesHeading") }));
+  const row = document.createElement("div");
+  row.className = "fam-row";
+  const group = document.createElement("span");
+  group.className = "fam-seg";
+  group.dataset.testid = "galaxies-order";
+  group.setAttribute("role", "group");
+  group.setAttribute("aria-label", say("galaxiesHeading"));
+  for (const [value, label] of [["near", "galaxiesNearest"], ["far", "galaxiesFarthest"]] as const) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.value = value;
+    button.textContent = say(label);
+    button.setAttribute("aria-pressed", String(galaxyOrder === value));
+    button.addEventListener("click", () => {
+      galaxyOrder = value;
+      address.set("gal", value);
+      galaxiesPanel();
+    });
+    group.append(button);
+  }
+  row.append(group);
+  host.append(row);
+  const say1 = (key: string, className = "fam-fine"): HTMLParagraphElement => host.appendChild(Object.assign(document.createElement("p"), { className, textContent: say(key) }));
+  if (galaxyOrder === null) {
+    say1("galaxiesPrompt");
+    return;
+  }
+  const all = fetcher.catalogue();
+  if (all === undefined) {
+    say1("galaxiesLoading").dataset.testid = "galaxies-loading";
+    void fetcher.loadTier().then(galaxiesPanel);
+    return;
+  }
+  sortedGalaxies ??= byDistance(all, distanceOfObject);
+  const list = document.createElement("ol");
+  list.dataset.testid = "galaxies-list";
+  for (const { object, distance } of ends(sortedGalaxies, galaxyOrder, GALAXY_LIST_COUNT)) {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "fam-button";
+    button.dataset.key = `D:${object.id}`;
+    button.append(object.name === undefined ? object.id : `${object.id} ${object.name}`, Object.assign(document.createElement("span"), { className: "value", textContent: fill(say("distanceLy"), { n: compact(distance.lightYears, lang()) }) }));
+    button.addEventListener("click", () => goTo(`D:${object.id}`));
+    item.append(button);
+    list.append(item);
+  }
+  host.append(list);
+  const note = Object.assign(document.createElement("p"), { className: "fam-fine", textContent: fill(say("galaxiesNote"), { n: sortedGalaxies.length.toLocaleString(lang()), total: all.filter((o) => o.type === "galaxy").length.toLocaleString(lang()), d: sortedGalaxies.filter((g) => g.distance.disagree).length.toLocaleString(lang()) }) });
+  note.dataset.testid = "galaxies-note";
+  host.append(note);
 }
 
 // ----- the code to copy -----
