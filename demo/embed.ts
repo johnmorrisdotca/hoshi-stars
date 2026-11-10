@@ -14,6 +14,7 @@ import { viewpointOf, skyOf } from "./from.ts";
 import { nearbyOf } from "./nearby.ts";
 import { faintFor } from "./faint.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
+import { frameCredit } from "./frame-credit.ts";
 
 const frame = document.getElementById("frame")!;
 const sky = document.getElementById("sky")!;
@@ -22,6 +23,7 @@ const sizeOf = (): { width: number; height: number } => ({ width: Math.max(1, Ma
 let { width, height } = sizeOf();
 const choice = choiceOf(new URLSearchParams(location.search), width, height);
 const ja = choice.lang === "ja";
+frameCredit(ja);
 const seen = skyOf(viewpointOf(choice.from));
 const near = nearbyOf(choice.nearTo, choice.nearBy ?? "sky", seen);
 const nearKeys = near === undefined ? [] : near.rows.map((row) => row.key);

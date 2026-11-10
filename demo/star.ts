@@ -5,6 +5,7 @@ import { starByHr } from "../src/index.ts";
 import { starComparison, starPortrait } from "../src/portrait.ts";
 import { starProfile } from "../src/profile.ts";
 import { starChoiceOf } from "./star-code.ts";
+import { frameCredit } from "./frame-credit.ts";
 
 const host = document.getElementById("star")!;
 const choice = starChoiceOf(new URLSearchParams(location.search), (hr) => {
@@ -13,6 +14,7 @@ const choice = starChoiceOf(new URLSearchParams(location.search), (hr) => {
 });
 const ja = new URLSearchParams(location.search).get("lang") === "ja";
 document.documentElement.lang = ja ? "ja" : "en";
+frameCredit(ja);
 
 if (choice === undefined) {
   host.innerHTML = `<p>${ja ? "星の番号が見つかりません。" : "No star: give its Bright Star Catalogue number as ?star=2061."}</p>`;

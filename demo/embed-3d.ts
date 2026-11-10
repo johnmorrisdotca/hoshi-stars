@@ -8,6 +8,7 @@ import { viewpointOf } from "./from.ts";
 import { mountSpace } from "./space-view.ts";
 import { lookNow } from "./thumbs.ts";
 import { say } from "./words.ts";
+import { frameCredit } from "./frame-credit.ts";
 
 const query = new URLSearchParams(location.search);
 if (query.get("lang") === "ja") document.documentElement.lang = "ja";
@@ -19,6 +20,7 @@ const number = (name: string, low: number, high: number): number => Math.max(low
 const abbreviation = constellation(query.get("c") ?? "")?.abbreviation ?? "Ori";
 const from = viewpointOf(query.get("from"));
 const lang = document.documentElement.lang === "ja" ? "ja" : "en";
+frameCredit(lang === "ja");
 
 const mount = mountSpace({
   host,

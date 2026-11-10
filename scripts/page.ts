@@ -6,6 +6,11 @@ import { ALL_WORDS } from "./gallery-words.ts";
 import { WORDS } from "./page-words.ts";
 
 const id = "hoshi-stars";
+/** Where every data credit is written in full. */
+const NOTICE = "https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.md";
+
+/** The family's footer, with a link to every data credit beside the one-line credit, so a reader need not open anything to find the sources. */
+const footer = (): string => familyFooter({ id }).replace('<span data-say="foot"></span>', `<span><span data-say="foot"></span> <a href="${NOTICE}" data-say="creditsAll"></a></span>`);
 const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
@@ -15,7 +20,7 @@ export function renderIndex(): string {
     .replace("<!--family:head-->", familyHead({ id, title: WORDS.en.title, description: WORDS.en.description }))
     .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
-    .replace("<!--family:footer-->", familyFooter({ id }))
+    .replace("<!--family:footer-->", footer())
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/demo.js"></script>`);
 }
 
@@ -26,7 +31,7 @@ export function renderKids(): string {
     .replace("<!--family:head-->", familyHead({ id, title: WORDS.en.kd_title, description: WORDS.en.kd_description }))
     .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
-    .replace("<!--family:footer-->", familyFooter({ id }))
+    .replace("<!--family:footer-->", footer())
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/kids.js"></script>`);
 }
 
@@ -38,7 +43,7 @@ export function renderConstellationPage(file: string, title: string, description
     .replace("<!--family:head-->", familyHead({ id, title: words[title]!.replace("{name}", "Constellation"), description: words[description]!.replace("{name}", "A constellation").replace("({abbreviation})", "") }))
     .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
-    .replace("<!--family:footer-->", familyFooter({ id }))
+    .replace("<!--family:footer-->", footer())
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/${script}.js"></script>`);
 }
 
@@ -50,7 +55,7 @@ export function renderSpace(): string {
     .replace("<!--family:head-->", familyHead({ id, title: words["sp_title"]!, description: words["sp_description"]! }))
     .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
-    .replace("<!--family:footer-->", familyFooter({ id }))
+    .replace("<!--family:footer-->", footer())
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/constellation-3d.js"></script>`);
 }
 
