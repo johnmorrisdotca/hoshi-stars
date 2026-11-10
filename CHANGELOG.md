@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-11-10
+
 - **One card look for all three skies** (MODULES-879). The Chinese figures and the 18 traditional Japanese ones were drawn by a second renderer path (`ThumbnailInput.frame`, no boundary): no shaded area, no boundary lines, a figure sometimes tiny (昴) and a single named star (源氏星, 織姫) a lone dot, with two or three text lines so the cards differed in height. They are now drawn the way a constellation is. New `figureThumbnail` in `/thumbnails` (a figure of two stars or more in a soft dashed outline with the Western wash, from the new `paddedOutline`; a figure of one star inside its own constellation's picture with the star ringed in the accent colour), the same room round the figure, the neighbouring boundaries and faint stars, the same line and star sizes; the picture is at least 5 degrees wide and is widened, to 24 degrees at most, until a neighbouring boundary line crosses it (`ThumbnailInput.leastSpan`, `seeNeighbours`, `ringed`). Only the 88 have official boundaries: the outline is a drawing aid, and the sky-cultures guide (EN and JA) says so. Every card, in the strip, the gallery and the list, is the same block in every sky: the name, then one small line (the reading and English; a Western card's abbreviation and other-language name), with `3+ fainter stars not shown` in the card's title and its screen-reader name, never a third line. The 1,024 culture PNGs are made again (about 15 MB in the Pages build; the npm folder is unchanged). Tests: every picture has a dashed filled area, boundary lines and the same parts as a Western card; a single-star card is its constellation's picture with a ring; every card, tile and row is one height in all three skies at desk and phone.
 
 ## [0.24.0] - 2026-11-10
