@@ -132,7 +132,7 @@ const sky = faintSky();
 await sky.load({ rightAscension: 299, declination: 40, radius: 2 }, 12);
 ```
 
-自分でデータを取ってくるページのために、`faintSky`の部品は単独でも使えます。`decodeFaintTile(tile, bytes)`は、タイルのファイルを`FaintTile`(`rightAscension`、`declination`、`magnitude`、`colourIndex`(ない星は`NaN`)を、それぞれ同じ長さの配列にしたもので、赤緯の順に並びます)にします。`faintStarsIn(tiles, field, limit, max)`は、手元のタイルから、空の部分の星を選びます。星は`FaintStar`で、`rightAscension`、`declination`、`magnitude`、`colourIndex`(ない星は`undefined`)を持ちます。読み込み役の設定は`FaintSkyOptions`(`baseUrl`、`fetch`、`maxTiles`)で、返すものは`FaintSky`です。タイルのファイルは、星1つにつき1バイトずつの6つの面(プレーン)で、`decodeFaintTile`の説明にあります。中心の部分は純粋(じゅんすい)で、時計もDOMも使いません。入出力をするのは`faintSky`だけで、それも、渡された`fetch`を通してです。`FAINT_LIMIT`は12です。
+自分でデータを取ってくるページのために、`faintSky`の部品は単独でも使えます。`decodeFaintTile(tile, bytes)`は、タイルのファイルを`FaintTile`(`rightAscension`、`declination`、`magnitude`、`colourIndex`(ない星は`NaN`)を、それぞれ同じ長さの配列にしたもので、赤緯の順に並びます)にします。`faintStarsIn(tiles, field, limit, max)`は、手元のタイルから、空の部分の星を選びます（`faintStarsWithTiles`は同じことをして、各星の元のタイルと、位置か等級が有限の数でないために除いた星の数も返します。[データの入口](data-door.md)が使います）。星は`FaintStar`で、`rightAscension`、`declination`、`magnitude`、`colourIndex`(ない星は`undefined`)を持ちます。読み込み役の設定は`FaintSkyOptions`(`baseUrl`、`fetch`、`maxTiles`)で、返すものは`FaintSky`です。タイルのファイルは、星1つにつき1バイトずつの6つの面(プレーン)で、`decodeFaintTile`の説明にあります。中心の部分は純粋(じゅんすい)で、時計もDOMも使いません。入出力をするのは`faintSky`だけで、それも、渡された`fetch`を通してです。`FAINT_LIMIT`は12です。
 
 ## デモの地図で
 

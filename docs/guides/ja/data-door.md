@@ -49,7 +49,7 @@ sky.enable("my-stars", false);
 console.log(`${sky.stars(orion, 12).stars.length} stars with the source off`);
 ```
 
-`starSky`は、ソースが追加されるときに`validateSource`で検証します。出典が空、ライセンスがない、idが重複している、関数が足りない、のどれかがあると、すぐに`TypeError`を投げます。`load(field, magnitude)`は、範囲のタイルをすべてのソースから取得します。同時に取得するのは、ソース1つにつき6枚までです。メモリの上限は全ソースで共通の1つです（48MB。変えるには`budgetBytes`、枚数に上限をつけるには`maxTiles`）。`stars(field, magnitude, max)`は、手元にあるタイルだけで答え、通信はしません。だから静止中、入口は何もしません。失敗したタイルは、次の`load`でもう一度試します。失敗したタイル、`FaintTile`でないもの、位置か等級が有限の数でない星を含むタイルは、`stats()`で数えられ、描かれません。
+`starSky`は、ソースが追加されるときに`validateSource`で検証します。出典が空、ライセンスがない、idが重複している、関数が足りない、のどれかがあると、すぐに`TypeError`を投げます。`load(field, magnitude)`は、範囲のタイルをすべてのソースから取得します。同時に取得するのは、ソース1つにつき6枚（`MAX_IN_FLIGHT`）までです。メモリの上限は全ソースで共通の1つです（`TILE_BUDGET_BYTES`で48MB。変えるには`budgetBytes`、枚数に上限をつけるには`maxTiles`）。`stars(field, magnitude, max)`は、手元にあるタイルだけで答え、通信はしません。だから静止中、入口は何もしません。失敗したタイルは、次の`load`でもう一度試します。失敗したタイル、`FaintTile`でないもの、位置か等級が有限の数でない星を含むタイルは、`stats()`で数えられ、描かれません。
 
 ## いま画面にあるのは誰のデータか
 
@@ -61,7 +61,7 @@ console.log(`${sky.stars(orion, 12).stars.length} stars with the source off`);
 
 ## ディープスカイ天体と画像
 
-天体のソースは、メモリに収まるリスト（20万件まで）で、読み込みは1回だけです。`withObjects(sources, { own })`は、ページがすでに描いている天体（`own`。たとえば`messier()`）に、それらを足します。空の座標として正しくない位置、有限でない数、未知の種類、すでに使われているidを持つレコードは、除外して数えます。例外を投げるソースや、レコードが多すぎるソースは`failed`に報告され、何も追加しません。`SkyPictureSource`は、空の画像をタイルで渡す形です（赤経と赤緯の場所、赤経の全周のピクセル数で表す詳細度、`ImageTile`）。パッケージはまだ描きませんが、この形のソースは、すでに`createTileStore`で扱えます。
+天体のソースは、メモリに収まるリスト（20万件、`MAX_RECORDS`まで）で、読み込みは1回だけです。`withObjects(sources, { own })`は、ページがすでに描いている天体（`own`。たとえば`messier()`）に、それらを足します。空の座標として正しくない位置、有限でない数、未知の種類、すでに使われているidを持つレコードは、除外して数えます。例外を投げるソースや、レコードが多すぎるソースは`failed`に報告され、何も追加しません。`SkyPictureSource`は、空の画像をタイルで渡す形です（赤経と赤緯の場所、赤経の全周のピクセル数で表す詳細度、`ImageTile`）。パッケージはまだ描きませんが、この形のソースは、すでに`createTileStore`で扱えます。
 
 ```ts no-check
 import { messier } from "@johnmorrisdotca/hoshi-stars/deep-sky";

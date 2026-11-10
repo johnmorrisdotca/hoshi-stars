@@ -49,7 +49,7 @@ sky.enable("my-stars", false);
 console.log(`${sky.stars(orion, 12).stars.length} stars with the source off`);
 ```
 
-`starSky` checks every source with `validateSource` when it is added, so an empty credit, no licence, a clashing id or a missing function is a `TypeError` at once. `load(field, magnitude)` fetches the tiles of the patch from every source, six at a time for each, under one budget (48 MB for all of them, `budgetBytes` to change it, `maxTiles` to cap the count). `stars(field, magnitude, max)` answers from the tiles that are here and sends nothing, so at rest the door is silent; a failed tile is tried again by the next `load`. A tile that fails, is not a faint tile or holds a star whose position or magnitude is not a finite number is counted in `stats()` and never drawn.
+`starSky` checks every source with `validateSource` when it is added, so an empty credit, no licence, a clashing id or a missing function is a `TypeError` at once. `load(field, magnitude)` fetches the tiles of the patch from every source, six at a time for each, under one budget (`TILE_BUDGET_BYTES`, 48 MB for all of them, `budgetBytes` to change it, `maxTiles` to cap the count). The six is `MAX_IN_FLIGHT`. `stars(field, magnitude, max)` answers from the tiles that are here and sends nothing, so at rest the door is silent; a failed tile is tried again by the next `load`. A tile that fails, is not a faint tile or holds a star whose position or magnitude is not a finite number is counted in `stats()` and never drawn.
 
 ## Whose data is on the screen
 
@@ -61,7 +61,7 @@ console.log(`${sky.stars(orion, 12).stars.length} stars with the source off`);
 
 ## Deep-sky objects and pictures
 
-A source of objects is a list that fits in memory, at most 200,000 records, read once. `withObjects(sources, { own })` adds them to the objects a page already draws (`own`, for example `messier()`), and leaves out and counts a record with a position that is not on the sky, a number that is not finite, an unknown kind or an id already taken; a source that throws or holds too many is reported in `failed` and adds nothing. `SkyPictureSource` is the shape of a sky picture in tiles (a place in right ascension and declination, a detail in pixels across the circle, an `ImageTile`); the package draws none yet, and a source of that shape already works with `createTileStore`.
+A source of objects is a list that fits in memory, at most 200,000 records (`MAX_RECORDS`), read once. `withObjects(sources, { own })` adds them to the objects a page already draws (`own`, for example `messier()`), and leaves out and counts a record with a position that is not on the sky, a number that is not finite, an unknown kind or an id already taken; a source that throws or holds too many is reported in `failed` and adds nothing. `SkyPictureSource` is the shape of a sky picture in tiles (a place in right ascension and declination, a detail in pixels across the circle, an `ImageTile`); the package draws none yet, and a source of that shape already works with `createTileStore`.
 
 ```ts no-check
 import { messier } from "@johnmorrisdotca/hoshi-stars/deep-sky";
