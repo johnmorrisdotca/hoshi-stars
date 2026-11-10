@@ -4,6 +4,7 @@ import { constellationFacts } from "../src/constellation-facts.ts";
 import { messier } from "../src/deep-sky.ts";
 import { neighbouringConstellations } from "../src/nearest.ts";
 import { starDistanceLightYears, type Star } from "../src/stars.ts";
+import { makeCard, paintCard } from "./constellation-card.ts";
 import { langNow, lookNow, nameIn, onLook, thumbSrc, type Lang } from "./thumbs.ts";
 import { monthName, say } from "./words.ts";
 
@@ -81,7 +82,13 @@ function render(c: Constellation): void {
     }
   }
 
-  $("cp-neighbours").replaceChildren(...neighbouringConstellations(c.abbreviation).map((n) => element("a", { href: `constellation.html?c=${n.abbreviation}`, className: "fam-chip", textContent: nameIn(n, lang) })));
+  $("cp-neighbours").replaceChildren(
+    ...neighbouringConstellations(c.abbreviation).map((n) => {
+      const card = makeCard(n.abbreviation, `constellation.html?c=${n.abbreviation}`);
+      paintCard(card, n, lang, look);
+      return element("li", {}, card);
+    }),
+  );
   $("cp-stars").replaceChildren(
     ...starsIn(c.abbreviation).slice(0, 24).map((star) => {
       const light = starDistanceLightYears(star);

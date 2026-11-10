@@ -29,7 +29,9 @@ import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.t
 import type { Box } from "./labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 import { distanceText, foundKey, kindKey, massText, papersOf, placeText } from "./holes.ts";
+import { makeCard, paintCard } from "./constellation-card.ts";
 import { mountPicker } from "./picker.ts";
+import { lookNow, onLook } from "./thumbs.ts";
 import { faintFor } from "./faint.ts";
 import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileView } from "./profile-panel.ts";
 import { starProfile } from "../src/profile.ts";
@@ -845,12 +847,23 @@ function nearbyPanel(): void {
   const heading = Object.assign(document.createElement("h4"), { textContent: say(found.kind === "constellation" ? "nearbyConstellations" : "nearbyStars") });
   const list = document.createElement("ol");
   list.dataset.testid = "nearby-list";
+  // Constellations are the strip's picture cards in a grid that fits the panel; stars and objects are rows with their distance.
+  if (found.kind === "constellation") list.className = "pick-grid";
   const inSpace = by === "space" && found.canSpace && found.kind === "star";
   for (const row of found.rows) {
     const item = document.createElement("li");
     const id = row.key.slice(2);
-    const star = row.key.startsWith("S:") ? starByHr(Number(id)) : undefined;
     const c = row.key.startsWith("C:") ? constellation(id) : undefined;
+    if (c !== undefined && found.kind === "constellation") {
+      const card = makeCard(c.abbreviation) as HTMLButtonElement;
+      card.dataset.key = row.key;
+      paintCard(card, c, lang(), lookNow());
+      card.addEventListener("click", () => goTo(row.key));
+      item.append(card);
+      list.append(item);
+      continue;
+    }
+    const star = row.key.startsWith("S:") ? starByHr(Number(id)) : undefined;
     const button = document.createElement("button");
     button.type = "button";
     button.className = "fam-button";
@@ -926,6 +939,7 @@ function everything(): void {
   codes();
   schedule();
 }
+onLook(nearbyPanel);
 document.addEventListener("hoshi-language", () => {
   words();
   showResults(search(field.value), field.value);

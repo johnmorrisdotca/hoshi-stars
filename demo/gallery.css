@@ -18,6 +18,14 @@
 .pick-tile:hover { border-color: var(--accent); }
 .pick-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; }
 .pick-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* the same cards in a grid, for a list of constellations in a column (the Neighbours of a constellation, the Nearby panel): as many to a row as fit, the pictures as wide as the cell */
+.pick-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.pick-grid > li { display: grid; min-width: 0; }
+.pick-grid .pick-tile { width: auto; min-width: 0; text-decoration: none; }
+.pick-grid .pick-tile { align-content: start; }
+.pick-grid .pick-tile img { width: 100%; height: auto; aspect-ratio: 1; }
+/* a long name (Canes Venatici, いっかくじゅう座) wraps under its picture instead of being cut short */
+.pick-grid .pick-tile span { white-space: normal; text-align: center; overflow-wrap: anywhere; line-height: 1.25; }
 
 /* the gallery */
 .gl-title { margin: 0 0 4px; font-size: 1.4rem; }

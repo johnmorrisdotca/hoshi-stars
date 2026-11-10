@@ -1,6 +1,7 @@
 // The picker above the sky map: a strip of the constellations' pictures with a search box. Tapping one calls `go`, and the page's map flies there and picks it.
 import { constellation } from "../src/constellations.ts";
-import { answers, inOrder, langNow, lookNow, nameIn, onLook, thumbSrc } from "./thumbs.ts";
+import { makeCard, paintCard } from "./constellation-card.ts";
+import { answers, inOrder, langNow, lookNow, onLook } from "./thumbs.ts";
 
 export interface PickerOptions {
   strip: HTMLElement;
@@ -22,17 +23,7 @@ export function mountPicker(o: PickerOptions): { refresh: () => void } {
     tiles.clear();
     o.strip.replaceChildren(
       ...inOrder(lang).map((c) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = "pick-tile";
-        button.dataset.abbr = c.abbreviation;
-        const image = document.createElement("img");
-        image.width = 80;
-        image.height = 80;
-        image.loading = "lazy";
-        image.alt = "";
-        const label = document.createElement("span");
-        button.append(image, label);
+        const button = makeCard(c.abbreviation) as HTMLButtonElement;
         button.addEventListener("click", () => o.go(c.abbreviation));
         tiles.set(c.abbreviation, button);
         return button;
@@ -52,12 +43,8 @@ export function mountPicker(o: PickerOptions): { refresh: () => void } {
       const show = answers(c, o.search.value);
       button.hidden = !show;
       if (show) shown.push(abbreviation);
-      button.querySelector("span")!.textContent = nameIn(c, lang);
-      const image = button.querySelector("img")!;
-      const src = thumbSrc(abbreviation, 160, look);
-      if (image.getAttribute("src") !== src) image.setAttribute("src", src);
+      paintCard(button, c, lang, look);
       button.setAttribute("aria-pressed", String(abbreviation === here));
-      button.setAttribute("aria-label", nameIn(c, lang));
     }
     const none = (o.strip.closest(".picker") ?? o.strip.parentElement)?.querySelector<HTMLElement>("[data-pick-none]");
     if (none !== null && none !== undefined) none.hidden = shown.length > 0;

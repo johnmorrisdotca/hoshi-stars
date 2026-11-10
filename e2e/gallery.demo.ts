@@ -76,3 +76,28 @@ test("an unknown constellation says so; the Japanese page is in Japanese; next a
   await page.locator("#cp-prev").click();
   await expect(page).toHaveURL(/c=Ori$/);
 });
+
+test("the Neighbours of Andromeda are six picture cards that open the right constellation, and nothing overflows", async ({ page }) => {
+  await page.goto(`${SITE}constellation.html?c=And`);
+  const cards = page.getByTestId("cp-neighbours").locator("a.pick-tile");
+  await expect(cards).toHaveText(["Cassiopeia", "Lacerta", "Pegasus", "Perseus", "Pisces", "Triangulum"]);
+  for (const abbreviation of ["Cas", "Lac", "Peg", "Per", "Psc", "Tri"]) {
+    const image = page.getByTestId("cp-neighbours").locator(`a[data-abbr='${abbreviation}'] img`);
+    await expect(image).toHaveAttribute("src", new RegExp(`thumbnails/png/160/(light|dark)/${abbreviation}\\.png$`));
+    await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBe(160);
+  }
+  await expect(cards.first()).toHaveAccessibleName("Cassiopeia");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  await cards.filter({ hasText: "Perseus" }).click();
+  await expect(page).toHaveURL(/constellation\.html\?c=Per$/);
+  await expect(page.getByTestId("cp-name")).toHaveText("Perseus");
+});
+
+test("the Neighbours follow the language and are reached by the keyboard", async ({ page }) => {
+  await page.goto(`${SITE}constellation.html?c=Ori&lang=ja`);
+  const cards = page.getByTestId("cp-neighbours").locator("a.pick-tile");
+  await expect(cards.filter({ hasText: "おうし座" })).toHaveCount(1);
+  await cards.first().focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/constellation\.html\?c=Eri/);
+});
