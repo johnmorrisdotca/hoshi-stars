@@ -4,7 +4,24 @@
 
 <p>Part of <strong>Space Program X (SPX)</strong>, the space packages: <a href="https://github.com/johnmorrisdotca/wakusei-planets">Wakusei Planets</a> · <a href="https://github.com/johnmorrisdotca/hoshi-stars">Hoshi Stars</a> · <a href="https://github.com/johnmorrisdotca/chikyu-earth">Chikyu Earth</a> · <a href="https://github.com/johnmorrisdotca/uchusen-rockets">Uchusen Rockets</a></p>
 
-**[Try the demo](https://johnmorrisdotca.github.io/hoshi-stars/)**: a sky chart you turn, zoom and search, in English and Japanese.
+**[Open the demo](https://johnmorrisdotca.github.io/hoshi-stars/)**: a sky chart you turn, zoom and search, in English and Japanese. It runs in the browser of a phone, a tablet or a computer: nothing to install, no account, and it is free.
+
+<p align="center"><img alt="The demo on a desk: the constellation Orion on the sky chart, its lines and boundary drawn over the Milky Way, with the search box and Orion's card beside it" src="docs/images/chart-desk.webp" width="620"> <img alt="The same chart on a phone: Orion with its bright stars named, and the zoom buttons under it" src="docs/images/chart-phone.webp" width="200"></p>
+
+## Who it is for
+
+- **A teacher** who wants a class to look at the real sky: a chart that turns and zooms in any browser, and sheets to print, in English and Japanese: connect-the-dots constellations, a star wheel to cut out, a sky map for each month and the constellations that suit where you live.
+- **A family or a stargazer** who wants to know what that bright star is, which constellations to look for this month, and what the sky would look like from another star.
+- **A site owner** who wants a sky chart on a page: the demo's "Put it in your page" panel writes the `<iframe>`, with no build step and no script of your own.
+- **A developer** who wants the stars as data: the 5,080 stars you can see without a telescope, the 88 constellations, the Messier objects and seven map projections, typed, with no dependencies and one import for each.
+
+## Try it now, nothing to install
+
+**[Your sky from a place](https://johnmorrisdotca.github.io/hoshi-stars/kids.html?kind=guide&lat=45)** (a sheet of the constellations for your latitude this month: pick your country, or tap Use my location) · **[The 88 constellations, a picture of each](https://johnmorrisdotca.github.io/hoshi-stars/constellations.html)** · **[Sheets to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html)** · **[The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/?from=HR5459)** (Alpha Centauri) · **[日本語](https://johnmorrisdotca.github.io/hoshi-stars/?lang=ja)** · **[English](https://johnmorrisdotca.github.io/hoshi-stars/?lang=en)**
+
+## For teachers and families
+
+Hoshi Stars works on a phone or a tablet as well as on a computer, in the browser, and it is free: the code is MIT-licensed, and nothing is installed or signed up for. [The sheets guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/guides/printable-sheets.html) says what each printable sheet is, and [the sky-charts guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/guides/sky-charts.html) shows how to put a chart on your own page. Every source is credited in [NOTICE.md](NOTICE.md) and at the foot of each demo page.
 
 The stars you can see without a telescope: 5,080 of them, with names, positions, proper motion, distance and colour. Typed, no dependencies, about 100 kB gzipped; 2.5 million fainter ones are a separate, tiled import. Hoshi (星) is the Japanese word for a star.
 
