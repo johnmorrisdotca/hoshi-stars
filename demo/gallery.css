@@ -10,11 +10,22 @@
 .culture-stack button:hover { border-color: var(--accent); }
 .culture-stack button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .culture-stack button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* the same three choices in a row, for the gallery and the list */
+.culture-row { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.culture-row button { min-height: 48px; min-width: 96px; padding: 0 14px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.culture-row button:hover { border-color: var(--accent); }
+.culture-row button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.culture-row button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .picker-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
 .pick-tile { flex: 0 0 auto; width: 132px; display: grid; justify-items: center; gap: 4px; padding: 6px 4px 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); font: inherit; font-size: .8rem; cursor: pointer; scroll-snap-align: start; }
 .pick-tile[hidden] { display: none; }
 .pick-tile img { display: block; width: 120px; height: 120px; border-radius: 6px; background: var(--rule); }
 .pick-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-tile span[hidden] { display: none; }
+/* a figure of the Japanese or Chinese sky: its reading and English under the name, smaller, and what is missing, wrapped */
+.pick-tile.pick-own { align-content: start; }
+.pick-tile.pick-own span:first-of-type { font-size: 1rem; font-weight: 600; }
+.pick-tile .pick-sub, .pick-tile .pick-missing { font-size: .72rem; color: var(--muted); white-space: normal; text-align: center; overflow-wrap: anywhere; line-height: 1.2; }
 .pick-tile:hover { border-color: var(--accent); }
 .pick-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 600; }
 .pick-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -30,17 +41,20 @@
 /* the gallery */
 .gl-title { margin: 0 0 4px; font-size: 1.4rem; }
 .gallery .fam-row, .cpage .fam-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
-.gallery input[type="search"] { flex: 1 1 14rem; min-width: 0; max-width: 28rem; }
+.gallery input[type="search"], .clist input[type="search"] { flex: 1 1 14rem; min-width: 0; max-width: 28rem; }
+.clist .fam-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .gl-grid { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 640px) { .gl-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 900px) { .gl-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 @media (min-width: 1200px) { .gl-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-.gl-tile { display: grid; gap: 2px; padding: 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); text-decoration: none; }
+.gl-grid > li { display: grid; min-width: 0; }
+.gl-tile { align-content: start; display: grid; gap: 2px; padding: 8px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); color: var(--ink); text-decoration: none; }
 .gl-tile:hover { border-color: var(--accent); }
 .gl-tile:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .gl-tile img { display: block; width: 100%; height: auto; aspect-ratio: 1; border-radius: 6px; background: var(--rule); }
 .gl-name { font-weight: 600; margin-top: 4px; }
 .gl-sub { color: var(--muted); font-size: .8rem; }
+.gl-mix { margin: 4px 0 0; }
 .gl-pager { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 16px; }
 .gl-pager .fam-button[aria-current="page"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-weight: 700; }
 

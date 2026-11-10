@@ -14,7 +14,10 @@ export interface FilterGroup {
 }
 
 export interface FilterBarOptions<G extends FilterGroup> {
-  groups: readonly G[];
+  /** The filters, or a function that gives them now (the Japanese and Chinese skies have their own). Call `rebuild` when they change. */
+  groups: readonly G[] | (() => readonly G[]);
+  /** The words key of the sheet's "Show {n}" button (`ls_show` when left out). */
+  showWord?: () => string;
   chosen: (group: G) => string[];
   toggle: (group: G, value: string) => void;
   clearAll: () => void;
@@ -38,7 +41,8 @@ export function chipValue(group: FilterGroup, on: readonly string[]): string {
 
 /** Builds the chips and the sheet in the page's language. Returns `refresh` (read the choices again) and `rebuild` (the language changed). */
 export function mountFilterBar<G extends FilterGroup>(chips: HTMLElement, sheet: HTMLDialogElement, opener: HTMLButtonElement, options: FilterBarOptions<G>): { refresh: () => void; rebuild: () => void } {
-  const { groups, chosen, toggle } = options;
+  const { chosen, toggle } = options;
+  const groups = (): readonly G[] => (typeof options.groups === "function" ? options.groups() : options.groups);
   let openChip: HTMLElement | undefined;
 
   const items = (menu: HTMLElement): HTMLButtonElement[] => Array.from(menu.querySelectorAll<HTMLButtonElement>('[role="menuitemcheckbox"]'));
@@ -119,7 +123,7 @@ export function mountFilterBar<G extends FilterGroup>(chips: HTMLElement, sheet:
     const head = make("div", { className: "ls-sheet-head" });
     head.append(title, close);
     const body = make("div", { className: "ls-sheet-body" });
-    for (const group of groups) {
+    for (const group of groups()) {
       const row = make("div", { className: "ls-sheet-row" });
       const label = make("span", { className: "fam-label", textContent: say(group.label), id: `ls-sheet-${group.key}` });
       const seg = make("span", { className: "ls-sheet-choices" }, { role: "group", "aria-labelledby": label.id, "data-sheet-group": group.key });
@@ -142,7 +146,7 @@ export function mountFilterBar<G extends FilterGroup>(chips: HTMLElement, sheet:
 
   function refresh(): void {
     let active = 0;
-    for (const group of groups) {
+    for (const group of groups()) {
       const on = chosen(group);
       if (on.length > 0) active += 1;
       const chip = chips.querySelector<HTMLElement>(`[data-group="${group.key}"]`)!;
@@ -154,13 +158,13 @@ export function mountFilterBar<G extends FilterGroup>(chips: HTMLElement, sheet:
     opener.replaceChildren(document.createTextNode(say("ls_filters")), ...(active === 0 ? [] : [make("span", { className: "ls-badge", textContent: String(active) }, { "data-testid": "list-active" })]));
     opener.classList.toggle("ls-on", active > 0);
     const show = sheet.querySelector<HTMLElement>(".ls-show");
-    if (show !== null) show.textContent = say("ls_show", { n: options.shown() });
+    if (show !== null) show.textContent = say(options.showWord?.() ?? "ls_show", { n: options.shown() });
     sheet.querySelector<HTMLButtonElement>('[data-testid="list-sheet-clear"]')!.disabled = active === 0;
   }
 
   function rebuild(): void {
     openChip = undefined;
-    chips.replaceChildren(...groups.map(buildChip));
+    chips.replaceChildren(...groups().map(buildChip));
     buildSheet();
     refresh();
   }

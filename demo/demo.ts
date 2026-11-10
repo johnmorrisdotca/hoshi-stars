@@ -20,7 +20,7 @@ import { drawnPictures } from "./picture-quality.ts";
 import { starsInside } from "../src/deep-sky-members.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, defaultZoom, figureById, figuresOf, figureUnder, fitScale, keyOfSeen, labelOf, LAYERS, pictureZoomCap, reachOfConstellation, toScreen, ZOOM_MAX, ZOOM_MIN, type Hit, type Layer, type View } from "./chart.ts";
-import { CULTURE_IDS, cultureOf, cultureText } from "./cultures.ts";
+import { CULTURE_IDS, cultureOf, cultureText, type CultureId } from "./cultures.ts";
 import { western } from "../src/cultures/western.ts";
 import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
 import { attachHands } from "./hands.ts";
@@ -603,7 +603,7 @@ $("find").addEventListener("submit", (event) => {
 });
 
 // ----- the picker over the map -----
-const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), go: (abbreviation) => goTo(`C:${abbreviation}`), current: pickedConstellation, say });
+const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), culture: () => culture.id as CultureId, go: (id) => goTo(`C:${id}`), current: pickedConstellation, say });
 
 // ----- what is picked -----
 const SOURCE_WORDS: Record<string, string> = { RC3: "srcRC3", NED: "srcNed", "Catalogue row": "srcRow" };
@@ -963,8 +963,10 @@ read();
 words();
 details();
 everything();
-const goAsked = constellation(address.get("go") ?? "");
-if (goAsked !== undefined) {
+// `go=` opens the map on a figure and takes itself out of the address: a constellation by any of its names, else a figure of the culture in the address by its id (the gallery's tiles of the Japanese and Chinese skies)
+const goText = address.get("go") ?? "";
+const goAsked = constellation(goText)?.abbreviation ?? (figureById(goText, culture) === undefined ? undefined : goText);
+if (goAsked !== undefined && figureById(goAsked, culture) !== undefined) {
   address.set("go", null);
-  goTo(`C:${goAsked.abbreviation}`);
+  goTo(`C:${goAsked}`);
 }

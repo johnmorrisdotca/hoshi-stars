@@ -12,15 +12,17 @@
       <!--family:header-->
       <!--family:unreviewed-->
       <section class="gallery" aria-labelledby="gl-heading">
-        <h1 id="gl-heading" class="gl-title" data-say="gl_heading"></h1>
-        <p class="lead" data-say="gl_lede"></p>
+        <h1 id="gl-heading" class="gl-title" data-testid="gallery-heading"></h1>
+        <p class="lead" id="gl-lede"></p>
+        <div class="fam-row"><span class="fam-label" id="gl-culture-label" data-say="culture"></span><span class="culture-row" id="gl-cultures" data-testid="cultures" role="group" aria-labelledby="gl-culture-label"></span></div>
         <form class="fam-row" id="gl-find" role="search" autocomplete="off">
-          <label class="fam-label" for="gl-search" data-say="gl_search"></label>
-          <input id="gl-search" type="search" class="fam-field" data-testid="gallery-search" data-say-placeholder="gl_placeholder" enterkeyhint="search" />
+          <label class="fam-label" for="gl-search" id="gl-search-label"></label>
+          <input id="gl-search" type="search" class="fam-field" data-testid="gallery-search" enterkeyhint="search" />
           <output class="fam-fine" id="gl-count" data-testid="gallery-count" aria-live="polite"></output>
         </form>
+        <p class="fam-fine gl-mix" id="gl-mix" data-testid="gallery-mix" hidden></p>
         <ul class="gl-grid" id="gl-grid" data-testid="gallery-grid"></ul>
-        <p class="fam-fine" id="gl-none" data-say="gl_none" hidden></p>
+        <p class="fam-fine" id="gl-none" hidden></p>
         <nav class="gl-pager" id="gl-pager" data-testid="gallery-pager" data-say-label="gl_pages"></nav>
       </section>
       <!--family:footer-->

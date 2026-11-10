@@ -1,42 +1,71 @@
-// The gallery: a grid of all 88 constellations' pictures with a search box and pages. A tile opens that constellation's own page (constellation.html). The search and the page are kept in the address.
+// The gallery: a grid of the pictures of a sky culture's figures with a search box and pages: the 88 constellations (the Western sky), the Japanese sky or the Chinese sky. A Western tile opens that constellation's own page (constellation.html);
+// a figure of the Japanese or Chinese sky opens on the sky map in its culture. The culture, the search and the page are kept in the address.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
-import { answers, inOrder, langNow, lookNow, nameIn, onLook, thumbSrc } from "./thumbs.ts";
+import { cardAnswers, cardsOf, faceOf, mixOf, pictureOf, type FigureCard } from "./culture-cards.ts";
+import { cultureIn, mountCultureButtons } from "./culture-buttons.ts";
+import { langNow, lookNow, onLook } from "./thumbs.ts";
 import { say } from "./words.ts";
 
 const PAGE = 24;
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const address = createAddressState({ defaults: { q: "", page: "1" } });
 
+/** Where a tile leads: the constellation's own page in the Western sky, else the sky map in the culture, opened on the figure. */
+const hrefOf = (card: FigureCard): string => (card.culture === "western" ? `constellation.html?c=${card.id}` : `./?culture=${card.culture}&go=${encodeURIComponent(card.id)}`);
+
+function tile(card: FigureCard, lang: "en" | "ja", look: "light" | "dark"): HTMLLIElement {
+  const face = faceOf(card, lang);
+  const item = document.createElement("li");
+  const link = document.createElement("a");
+  link.className = "gl-tile";
+  link.href = hrefOf(card);
+  link.dataset.abbr = card.id;
+  const image = document.createElement("img");
+  image.src = pictureOf(card, 480, look);
+  image.width = 240;
+  image.height = 240;
+  image.loading = "lazy";
+  image.alt = "";
+  const name = Object.assign(document.createElement("span"), { className: "gl-name", textContent: face.name });
+  const sub = Object.assign(document.createElement("span"), {
+    className: "gl-sub",
+    textContent: card.culture === "western" ? `${card.id} · ${lang === "ja" ? card.constellation!.name : card.constellation!.japanese}` : [face.reading, face.english].filter((part) => part !== "").join(" · "),
+  });
+  link.append(image, name, sub);
+  if (face.missingText !== "") link.append(Object.assign(document.createElement("span"), { className: "gl-sub", textContent: face.missingText }));
+  link.setAttribute("aria-label", face.label);
+  item.append(link);
+  return item;
+}
+
 function render(): void {
   const lang = langNow();
   const look = lookNow();
-  const found = inOrder(lang).filter((c) => answers(c, address.get("q") ?? ""));
+  const culture = cultureIn(address);
+  const all = cardsOf(culture, lang);
+  const found = all.filter((card) => cardAnswers(card, address.get("q") ?? ""));
   const pages = Math.max(1, Math.ceil(found.length / PAGE));
   const page = Math.min(pages, Math.max(1, Number(address.get("page")) || 1));
   const search = $<HTMLInputElement>("gl-search");
   if (search.value !== (address.get("q") ?? "") && document.activeElement !== search) search.value = address.get("q") ?? "";
-  $("gl-count").textContent = say("gl_count", { n: found.length });
+  // the page says which sky it shows, in its heading, its title and its words
+  const western = culture === "western";
+  const n = all.length;
+  const heading = western ? say("gl_heading") : say(`gl_heading_${culture}`, { n });
+  $("gl-heading").textContent = heading;
+  document.title = western ? say("gl_title") : say(`gl_title_${culture}`, { n });
+  $("gl-lede").textContent = say(western ? "gl_lede" : `gl_lede_${culture}`);
+  $("gl-search-label").textContent = say(western ? "gl_search" : "gl_search_figures");
+  search.placeholder = western ? say("gl_placeholder") : say(`pk_placeholder_${culture}`);
+  $("gl-count").textContent = say("gl_count", { n: found.length, total: n });
+  const mix = mixOf(culture);
+  const mixText = $("gl-mix");
+  mixText.hidden = mix === undefined;
+  mixText.textContent = mix === undefined ? "" : say(`gl_mix_${culture}`, { a: mix[0], b: mix[1] });
+  $("gl-none").textContent = say(western ? "gl_none" : "gl_none_figures");
   $("gl-none").hidden = found.length > 0;
-  $("gl-grid").replaceChildren(
-    ...found.slice((page - 1) * PAGE, page * PAGE).map((c) => {
-      const item = document.createElement("li");
-      const link = document.createElement("a");
-      link.className = "gl-tile";
-      link.href = `constellation.html?c=${c.abbreviation}`;
-      link.dataset.abbr = c.abbreviation;
-      const image = document.createElement("img");
-      image.src = thumbSrc(c.abbreviation, 480, look);
-      image.width = 240;
-      image.height = 240;
-      image.loading = "lazy";
-      image.alt = "";
-      const name = Object.assign(document.createElement("span"), { className: "gl-name", textContent: nameIn(c, lang) });
-      const sub = Object.assign(document.createElement("span"), { className: "gl-sub", textContent: `${c.abbreviation} · ${lang === "ja" ? c.name : c.japanese}` });
-      link.append(image, name, sub);
-      item.append(link);
-      return item;
-    }),
-  );
+  cultures.refresh();
+  $("gl-grid").replaceChildren(...found.slice((page - 1) * PAGE, page * PAGE).map((card) => tile(card, lang, look)));
   const pager = $("gl-pager");
   pager.hidden = pages === 1;
   const buttons: HTMLButtonElement[] = [];
@@ -61,6 +90,7 @@ function render(): void {
   pager.replaceChildren(...buttons);
 }
 
+const cultures = mountCultureButtons($("gl-cultures"), address, () => render());
 $("gl-find").addEventListener("submit", (event) => event.preventDefault());
 $<HTMLInputElement>("gl-search").addEventListener("input", (event) => {
   const text = (event.target as HTMLInputElement).value;

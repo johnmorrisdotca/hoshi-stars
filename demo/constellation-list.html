@@ -12,8 +12,14 @@
       <!--family:header-->
       <!--family:unreviewed-->
       <section class="clist" aria-labelledby="ls-heading">
-        <h1 id="ls-heading" class="gl-title" data-say="ls_heading"></h1>
+        <h1 id="ls-heading" class="gl-title" data-testid="list-heading"></h1>
         <p class="lead" id="ls-lede"></p>
+        <div class="fam-row"><span class="fam-label" id="ls-culture-label" data-say="culture"></span><span class="culture-row" id="ls-cultures" data-testid="cultures" role="group" aria-labelledby="ls-culture-label"></span></div>
+        <form class="fam-row" id="ls-find" role="search" autocomplete="off" hidden>
+          <label class="fam-label" for="ls-search" data-say="ls_search"></label>
+          <input id="ls-search" type="search" class="fam-field" data-testid="list-search" enterkeyhint="search" />
+        </form>
+        <p class="fam-fine gl-mix" id="ls-mix" data-testid="list-mix" hidden></p>
         <div class="ls-bar" data-testid="list-filters" role="group" data-say-label="ls_filters">
           <div class="ls-chips" id="ls-chips"></div>
           <button type="button" class="fam-button ls-open" id="ls-open-sheet" data-testid="list-sheet-open"></button>
@@ -23,8 +29,8 @@
           </div>
         </div>
         <dialog class="ls-sheet" id="ls-sheet" data-testid="list-sheet" aria-labelledby="ls-sheet-title"></dialog>
-        <p class="fam-fine" id="ls-empty" data-say="ls_empty" hidden></p>
-        <div class="ls-scroll" tabindex="0" role="region" data-say-label="ls_table">
+        <p class="fam-fine" id="ls-empty" hidden></p>
+        <div class="ls-scroll" id="ls-scroll" tabindex="0" role="region">
           <table class="ls-table" id="ls-table" data-testid="list-table"></table>
         </div>
       </section>

@@ -22,6 +22,9 @@ export function onLook(change: () => void): void {
 /** The address of a picture file, relative to the demo's pages. */
 export const thumbSrc = (abbreviation: string, size: 160 | 480 | 1200 = 160, look: Look = lookNow()): string => `thumbnails/png/${size}/${look}/${abbreviation}.png`;
 
+/** The address of a picture of a Japanese or Chinese figure (Pages only: the npm package ships the 88), by culture, size and look. */
+export const figureThumbSrc = (culture: string, id: string, size: 160 | 480 = 160, look: Look = lookNow()): string => `thumbnails/${culture}/png/${size}/${look}/${id}.png`;
+
 export const nameIn = (c: Constellation, lang: Lang): string => (lang === "ja" ? c.japanese : c.name);
 
 /** Lower case, without accents, katakana as hiragana: what a search compares. */
