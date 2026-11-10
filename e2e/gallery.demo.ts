@@ -84,6 +84,7 @@ test("the Neighbours of Andromeda are six picture cards that open the right cons
   for (const abbreviation of ["Cas", "Lac", "Peg", "Per", "Psc", "Tri"]) {
     const image = page.getByTestId("cp-neighbours").locator(`a[data-abbr='${abbreviation}'] img`);
     await expect(image).toHaveAttribute("src", new RegExp(`thumbnails/png/160/(light|dark)/${abbreviation}\\.png$`));
+    await image.scrollIntoViewIfNeeded();
     await expect.poll(() => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBe(160);
   }
   await expect(cards.first()).toHaveAccessibleName("Cassiopeia");
