@@ -50,8 +50,9 @@
 
 /* the list */
 /* the filter bar: a chip for each filter on a desk (a menu of its choices under it), one Filters button and a sheet on a phone */
-.ls-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 8px 0; }
-.ls-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+/* the chips take the room left and wrap inside it, so the count and Clear all stay on the first line whatever the font's width */
+.ls-bar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 12px; margin: 8px 0; }
+.ls-chips { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .ls-chip { position: relative; }
 .ls-chip-button, .ls-choice { min-height: 44px; padding: 0 12px; border: 1px solid var(--rule); border-radius: 999px; background: var(--surface); color: var(--ink); font-size: .85rem; font-weight: 600; }
 .ls-chip-button { display: inline-flex; align-items: center; white-space: nowrap; }
