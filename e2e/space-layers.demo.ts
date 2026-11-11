@@ -40,6 +40,7 @@ test("stepping the limit out fills the sky shell by shell and is kept in the add
   await expect(page.locator("#sp-stage")).toHaveAttribute("data-scale", "linear");
   await page.getByTestId("dist-seg").getByRole("button", { name: "10", exact: true }).click();
   await expect.poll(() => things(page)).toBeLessThan(before);
+  await expect.poll(() => param(page, "dist")).toBe("10");
   await page.reload();
   await page.locator("#sp-stage[data-state=live]").waitFor({ timeout: 60_000 });
   expect(await things(page)).toBeLessThan(before);

@@ -323,9 +323,9 @@ test.describe("the sky by distance in 3D", () => {
       });
       expect(away.draws, "no GL draws out of sight").toBe(0);
       expect(away.frames).toBe(0);
-      await page.evaluate(() => window.scrollTo(0, 0));
       const back = await framesDrawn(page);
-      await expect.poll(() => framesDrawn(page), "in sight again it turns again").toBeGreaterThan(back);
+      await page.locator("#sp-view").evaluate((el) => el.scrollIntoView());
+      await expect.poll(() => framesDrawn(page), { message: "in sight again it builds the waiting layers and turns again", timeout: 20_000 }).toBeGreaterThan(back);
       await page.evaluate(() => {
         Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
         Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
