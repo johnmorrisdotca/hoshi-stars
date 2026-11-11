@@ -3,7 +3,7 @@
 import type { SharedRenderer, View } from "@johnmorrisdotca/kazoku-ui/renderer";
 import type { DistanceLayers } from "../src/distance.ts";
 import { layersItem, type LayersFrame, type LayersScene } from "./layers-scene.ts";
-import type { LayersLayout } from "./layers-layout.ts";
+import { layoutLayers, type LayersLayout } from "./layers-layout.ts";
 import { pageRenderer } from "./page-renderer.ts";
 import { RESTING_POSE, type Pose } from "./space-camera.ts";
 import { lightYearsText } from "./space-text.ts";
@@ -46,6 +46,21 @@ export function mountLayers(options: LayersMountOptions): LayersMount {
   let live = false;
   let lastPose: Pose = { ...RESTING_POSE };
   let elements = new Map<string, HTMLElement>();
+  // a new scene is built only where it can be seen: layers asked for out of sight wait, and are built when the view comes back
+  let seen = true;
+  let waiting: DistanceLayers | undefined;
+  if (typeof IntersectionObserver === "function") {
+    new IntersectionObserver((entries) => {
+      const last = entries[entries.length - 1];
+      if (last === undefined) return;
+      seen = last.isIntersecting;
+      if (seen && waiting !== undefined) {
+        const next = waiting;
+        waiting = undefined;
+        void show(next);
+      }
+    }).observe(host);
+  }
 
   function buildLabels(): void {
     labels.replaceChildren();
@@ -72,6 +87,13 @@ export function mountLayers(options: LayersMountOptions): LayersMount {
   }
 
   async function show(layers: DistanceLayers): Promise<boolean> {
+    if (!seen && view !== undefined) {
+      waiting = layers;
+      layout = layoutLayers(layers);
+      buildLabels();
+      options.onShown?.(layers, layout, live);
+      return live;
+    }
     const mine = ++token;
     view?.dispose();
     view = undefined;
