@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **The demo's names keep clear in any font.** The sky chart placed its names in boxes worked out from the text's length (0.6 of the size for a Latin letter, the whole size for a Japanese one, 0.85 above the baseline and 0.3 below), and a reader whose sans-serif is taller or wider got names that touched: in Microsoft's Playwright image, whose only sans-serif is WenQuanYi Zen Hei (1.26 of the size tall), Mintaka touched Orion's Belt and ベラトリックス touched オリオン座. In a browser each name is now also measured in the chart's own font, and the larger of the two is used.
 - **CI's browser jobs run in the Playwright image and need no apt mirror** (KAZOKU-UI-100). The runner's apt mirror stopped answering on 2026-11-11 from about 13:50 UTC, and every browser job failed in its setup before a test ran. The demo, usage and freeze jobs (`ci.yml`) and the Pages deploy (`pages.yml`) now run in `mcr.microsoft.com/playwright:v1.64.0-noble`, the lockfile's Playwright version, which has the browsers and their system libraries. `.github/actions/playwright` (the family's, kazoku-ui's copy is canonical) checks the libraries with `ldd` first and runs apt only when one is missing, skips the browser cache in the image, works without `sudo`, and warns when a workflow's image and the lockfile name different Playwright versions.
 
 ## [0.30.0] - 2026-11-11
