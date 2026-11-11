@@ -23,6 +23,8 @@ for (const where of PAGES) {
       let box = (await page.locator(where.box).boundingBox())!;
       if (box.y + Math.min(box.height / 2, 300) > page.viewportSize()!.height - 20) {
         await page.locator(where.box).scrollIntoViewIfNeeded();
+        // two drawn frames after the scroll: until WebKit has drawn one, a wheel there can come as one the page cannot keep (cancelable false), and the page would scroll too
+        await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
         box = (await page.locator(where.box).boundingBox())!;
       }
       return { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 300) };
