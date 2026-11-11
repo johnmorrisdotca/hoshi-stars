@@ -4,9 +4,8 @@
 import { deepSkyPictures, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
 
 const NOTICE = "https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.md";
-const CC_BY_4 = "https://creativecommons.org/licenses/by/4.0/";
-/** The observatories whose released images are laid over the chart: resized and faded at the edges here, which the line says. */
-const RELEASES = new Set(["ESA/Hubble", "NSF NOIRLab", "ESO"]);
+/** Where each Creative Commons licence named is linked: the licence itself, or for SDSS, which names no version, its image use policy. */
+const LICENCE_PAGES: Record<string, string> = { "CC BY 4.0": "https://creativecommons.org/licenses/by/4.0/", "CC BY": "https://www.sdss.org/collaboration/image-use-policy/" };
 
 /** One piece of the credit line: words, or words that link to a page. */
 export interface CreditPiece {
@@ -22,36 +21,38 @@ function licenceOf(picture: DeepSkyPicture): string | undefined {
 }
 
 /**
- * The credit line for the pictures drawn (the chart's `pictures`, the most seen first), in pieces: each credit once and word for word, with its licence linked where it is CC BY 4.0, that the released images are
- * resized and faded at the edges, and a link to every credit. Empty when no picture is drawn.
+ * The credit line for the pictures drawn (the chart's `pictures`), in pieces: each credit once and word for word, in a fixed order (by source, then credit) so that panning does not reshuffle it, with its
+ * licence linked where it is a Creative Commons one, that the pictures are resized and faded at the edges (every one is: the survey pictures are resampled and made clear at the black, the observatories'
+ * images resized and faded), and a link to every credit. Empty when no picture is drawn.
  */
 export function pictureCredits(ids: readonly string[], ja: boolean): CreditPiece[] {
   byId ??= new Map(deepSkyPictures().map((picture) => [picture.id, picture]));
-  const pictures = ids.map((id) => byId!.get(id)).filter((picture): picture is DeepSkyPicture => picture !== undefined);
-  if (pictures.length === 0) return [];
-  const pieces: CreditPiece[] = [{ text: ja ? "写真: " : "Pictures: " }];
-  const seen = new Set<string>();
-  for (const picture of pictures) {
+  const credits = new Map<string, { credit: string; licence: string | undefined }>();
+  for (const id of ids) {
+    const picture = byId.get(id);
+    if (picture === undefined) continue;
     const licence = licenceOf(picture);
-    const key = `${picture.credit}|${licence ?? ""}`;
-    if (seen.has(key)) continue;
-    if (seen.size > 0) pieces.push({ text: "; " });
-    seen.add(key);
-    pieces.push({ text: picture.credit });
-    if (licence !== undefined) pieces.push({ text: " (" }, licence === "CC BY 4.0" ? { text: licence, href: CC_BY_4 } : { text: licence }, { text: ")" });
+    credits.set(`${picture.source.name}|${picture.credit}|${licence ?? ""}`, { credit: picture.credit, licence });
   }
-  pieces.push({ text: ". " });
-  if (pictures.some((picture) => RELEASES.has(picture.source.name))) pieces.push({ text: ja ? "大きさを変え、縁をぼかしています。" : "Resized, with the edges faded. " });
+  if (credits.size === 0) return [];
+  const pieces: CreditPiece[] = [{ text: ja ? "写真：" : "Pictures: " }];
+  [...credits.keys()].sort().forEach((key, i) => {
+    const { credit, licence } = credits.get(key)!;
+    if (i > 0) pieces.push({ text: "; " });
+    pieces.push({ text: credit });
+    if (licence !== undefined) pieces.push({ text: " (" }, { text: licence, href: LICENCE_PAGES[licence] }, { text: ")" });
+  });
+  pieces.push({ text: ja ? "。大きさを変え、縁をぼかしています。" : ". Resized, with the edges faded. " });
   pieces.push({ text: ja ? "出典一覧" : "All credits", href: NOTICE });
   return pieces;
 }
 
-/** Fills `host` with the credit line of the pictures drawn, links opening in a new tab, and hides it when none is drawn. */
-export function showPictureCredits(host: HTMLElement, ids: readonly string[], ja: boolean): void {
+/** Fills `host` with the credit line of the pictures drawn, links opening in a new tab, and hides it when none is drawn. Returns whether the line changed (so its box may have: the page draws again to keep names clear of it). */
+export function showPictureCredits(host: HTMLElement, ids: readonly string[], ja: boolean): boolean {
   const pieces = pictureCredits(ids, ja);
   const text = pieces.map((piece) => piece.text).join("");
   host.hidden = pieces.length === 0;
-  if (host.dataset["text"] === text) return;
+  if ((host.dataset["text"] ?? "") === text) return false;
   host.dataset["text"] = text;
   host.replaceChildren(
     ...pieces.map((piece) => {
@@ -61,4 +62,5 @@ export function showPictureCredits(host: HTMLElement, ids: readonly string[], ja
       return link;
     }),
   );
+  return true;
 }

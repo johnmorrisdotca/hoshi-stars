@@ -299,15 +299,14 @@ test("every laid-over picture fades to nothing at its corners and the middle of 
   for (const [file, alpha] of Object.entries(edges)) expect(alpha, `${file}: the most opaque corner or side middle`).toBeLessThanOrEqual(3);
 });
 
-test("a picture drawn with nothing picked has its credit on the chart, with its licence, clear of the buttons, on the page and in the embed, and the credit goes when the picture does", async ({ page }) => {
-  const clearOf = async (a: string, b: string): Promise<boolean> => {
-    const one = (await page.locator(a).first().boundingBox())!;
-    const two = (await page.locator(b).first().boundingBox())!;
-    return one.x + one.width <= two.x || two.x + two.width <= one.x || one.y + one.height <= two.y || two.y + two.height <= one.y;
-  };
-  for (const [address, box, tools] of [
-    ["/hoshi-stars/?layers=milky,deep,pictures&ra=83.82&dec=-5.39&zoom=150", "#chart-box", ".chart-tools"],
-    ["/hoshi-stars/embed.html?layers=milky,deep,pictures&ra=83.82&dec=-5.39&zoom=150", "#frame", "#tools"],
+test("a picture drawn with nothing picked has its credit on the chart, with its licence, clear of the buttons and of every name, on the page, in wide mode and in the embed, and the credit goes when the picture does", async ({ page }) => {
+  const VIEW = "layers=milky,deep,names,pictures&ra=83.82&dec=-5.39&zoom=150";
+  const overlaps = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }): boolean =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  for (const [address, box, tools, names] of [
+    [`/hoshi-stars/?${VIEW}`, "#chart-box", ".chart-tools", "#chart-box svg text"],
+    [`/hoshi-stars/?wide=on&${VIEW}`, "#chart-box", ".chart-tools", "#chart-box svg text"],
+    [`/hoshi-stars/embed.html?${VIEW}`, "#frame", "#tools", "#frame svg text"],
   ] as const) {
     await page.goto(address);
     await expect(page.locator("[data-pic='M42']")).toHaveCount(1, { timeout: 20_000 });
@@ -316,7 +315,16 @@ test("a picture drawn with nothing picked has its credit on the chart, with its 
     await expect(credits).toContainText("ESO/G. Beccari (CC BY 4.0)");
     await expect(credits.getByRole("link", { name: "CC BY 4.0" }).first()).toHaveAttribute("href", "https://creativecommons.org/licenses/by/4.0/");
     await expect(credits.getByRole("link", { name: "All credits" })).toHaveAttribute("href", /NOTICE\.md$/);
-    expect(await clearOf("[data-testid='picture-credits']", tools), `${address}: clear of the buttons`).toBe(true);
+    // the line is laid out a frame after the chart, and the chart draws once more to keep its names clear of it: wait for what the page shows
+    await expect
+      .poll(async () => {
+        const line = (await credits.boundingBox())!;
+        const buttons = await page.locator(`${tools} button`).evaluateAll((nodes) => nodes.map((n) => n.getBoundingClientRect().toJSON() as DOMRect));
+        const words = await page.locator(names).evaluateAll((nodes) => nodes.map((n) => ({ text: n.textContent, box: n.getBoundingClientRect().toJSON() as DOMRect })));
+        const hit = [...buttons.map((b) => ({ text: "a button", box: b })), ...words].filter((one) => one.box.width > 0 && overlaps(line, one.box));
+        return hit.map((one) => one.text).join(", ");
+      }, { message: `${address}: the credit line covers nothing`, timeout: 10_000 })
+      .toBe("");
     const inside = await page.evaluate(([c, b]) => {
       const one = document.querySelector(c)!.getBoundingClientRect();
       const two = document.querySelector(b)!.getBoundingClientRect();
@@ -324,9 +332,13 @@ test("a picture drawn with nothing picked has its credit on the chart, with its 
     }, ["[data-testid='picture-credits']", box] as const);
     expect(inside, `${address}: on the chart`).toBe(true);
   }
-  // zoomed out until no picture is drawn (M42's field is then under 90 pixels across), the line is gone
-  await page.goto("/hoshi-stars/?layers=milky,deep,pictures&ra=83.82&dec=-5.39&zoom=150");
+  // a tap on the line's words is not a tap on the sky under it: what is picked stays picked
+  await page.goto(`/hoshi-stars/?pick=D:M42&${VIEW}`);
   await expect(page.getByTestId("picture-credits")).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId("picture-credits").click({ position: { x: 4, y: 4 } });
+  await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+  expect(param(page, "pick")).toBe("D:M42");
+  // zoomed out until no picture is drawn (M42's field is then under 90 pixels across), the line is gone
   for (let i = 0; i < 7; i += 1) await page.getByTestId("zoom-out").click();
   await expect(page.locator("#chart image[data-pic]")).toHaveCount(0);
   await expect(page.getByTestId("picture-credits")).toBeHidden();
