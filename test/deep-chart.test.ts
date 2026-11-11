@@ -2,11 +2,11 @@
 // dotted where no size is measured; the layers; the bright stars inside a cluster.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW, type ChartOptions } from "../demo/chart.ts";
-import { deepLimit, markOpacity, MAX_PICTURES } from "../demo/deep-draw.ts";
+import { chart, DEFAULT_VIEW, toScreen, type ChartOptions } from "../demo/chart.ts";
+import { choosePictures, deepLimit, KEEP_MARGIN, markOpacity, MAX_PICTURES, visibleArea } from "../demo/deep-draw.ts";
 import { DEFAULT_LAYERS, layersOf, layersText } from "../demo/choice.ts";
 import { deepSkyObject } from "../src/deep-sky-ngc-ic.ts";
-import { deepSkyPicture, deepSkyPictures } from "../src/deep-sky-pictures.ts";
+import { deepSkyPicture, deepSkyPictures, pictureCorners } from "../src/deep-sky-pictures.ts";
 import { deepSky } from "../src/deep-sky-ngc-ic.ts";
 import { deepSkyShape } from "../src/deep-sky-shape-ngc-ic.ts";
 import { PROJECTIONS } from "../src/projection.ts";
@@ -50,7 +50,13 @@ test("a mark is dotted where no size is measured, and solid where it is", () => 
   assert.ok(none.includes("stroke-dasharray"), "M40, which has no size, is a dotted symbol");
 });
 
-test("a picture is asked for only when its field is wide enough, never more than five (at most 90 kB each, so within a 500 kB budget), and the widest first", () => {
+/** How much of a picture is on the chart, in square pixels, worked out here from its corners. */
+const areaOf = (id: string, view: { ra: number; dec: number; zoom: number }): number => {
+  const quad = pictureCorners(deepSkyPictures().find((p) => p.id === id)!).map((point) => toScreen({ ...DEFAULT_VIEW, ...view }, size.width, size.height, point)!);
+  return visibleArea(quad, size.width, size.height);
+};
+
+test("a picture is asked for only when its field is wide enough, never more than five (at most 90 kB each, so within a 500 kB budget), the one most on the screen first", () => {
   assert.ok(MAX_PICTURES * 90_000 <= 500_000);
   assert.deepEqual(chart(options({ ...DEFAULT_VIEW, zoom: 3 })).wanted, []);
   const seen = chart(options({ ...at("M51"), zoom: 300 }));
@@ -58,6 +64,43 @@ test("a picture is asked for only when its field is wide enough, never more than
   assert.ok(seen.wanted.length <= MAX_PICTURES);
   const crowded = chart(options({ ...at("M8"), zoom: 40 }));
   assert.ok(crowded.wanted.length <= MAX_PICTURES);
+  // the Leo triplet and M81 with M82: several pictures in view, in the order of how much of each is on the chart
+  for (const view of [{ ra: 169.9, dec: 13.0, zoom: 200 }, { ra: 148.9, dec: 69.3, zoom: 300 }]) {
+    const wanted = chart(options(view)).wanted;
+    assert.ok(wanted.length >= 3, wanted.join(","));
+    const areas = wanted.map((id) => areaOf(id, view));
+    assert.deepEqual(areas, [...areas].sort((a, b) => b - a), `${wanted.join(",")}: ${areas.map((a) => a.toFixed(0)).join(",")}`);
+  }
+});
+
+test("visibleArea counts only the part of a picture on the chart, so one mostly off the screen cannot take a place", () => {
+  assert.equal(visibleArea([[0, 0], [100, 0], [100, 50], [0, 50]], 800, 520), 5000);
+  assert.equal(visibleArea([[-50, 0], [50, 0], [50, 50], [-50, 50]], 800, 520), 2500, "half of it off the left side");
+  assert.equal(visibleArea([[-500, -500], [-100, -500], [-100, -100], [-500, -100]], 800, 520), 0);
+  assert.ok(Math.abs(visibleArea([[400, 0], [800, 260], [400, 520], [0, 260]], 800, 520) - 208_000) < 1e-6, "a diamond touching the middle of each side: half the box");
+  assert.ok(Math.abs(visibleArea([[-1000, -1000], [2000, -1000], [2000, 2000], [-1000, 2000]], 800, 520) - 800 * 520) < 1e-6, "one bigger than the chart counts the chart");
+  const huge = { id: "off", area: visibleArea([[790, 0], [5000, 0], [5000, 520], [790, 520]], 800, 520) };
+  const middle = { id: "on", area: visibleArea([[300, 200], [500, 200], [500, 320], [300, 320]], 800, 520) };
+  assert.deepEqual(choosePictures([huge, middle], new Set()).map((x) => x.id), ["on", "off"], "a field far wider than the chart but mostly off it comes after one in the middle");
+});
+
+test("of more than five pictures in view the five most on the screen are chosen; one chosen last frame keeps its place against a newcomer of about its size", () => {
+  const seven = [700, 600, 500, 400, 300, 280, 100].map((area, i) => ({ id: `P${i}`, area }));
+  assert.deepEqual(choosePictures(seven, new Set()).map((x) => x.id), ["P0", "P1", "P2", "P3", "P4"]);
+  // P5 was chosen last frame and P4 now shows a little more: P5 stays, and the list is still the most seen first
+  const kept = choosePictures(seven, new Set(["P0", "P1", "P2", "P3", "P5"]));
+  assert.deepEqual(kept.map((x) => x.id), ["P0", "P1", "P2", "P3", "P5"]);
+  // a newcomer that shows more than KEEP_MARGIN times as much takes the place
+  const grown = seven.map((x) => (x.id === "P4" ? { ...x, area: 280 * KEEP_MARGIN + 1 } : x));
+  assert.deepEqual(choosePictures(grown, new Set(["P0", "P1", "P2", "P3", "P5"])).map((x) => x.id), ["P0", "P1", "P2", "P3", "P4"]);
+  // on the chart: a small move with the last frame's choice given keeps the same pictures
+  for (const view of [{ ra: 169.9, dec: 13.0, zoom: 175 }, { ra: 148.9, dec: 69.3, zoom: 300 }]) {
+    const first = chart(options(view)).wanted;
+    for (const step of [-0.02, 0.02]) {
+      const moved = chart(options({ ...view, ra: view.ra + step, previousPictures: new Set(first) })).wanted;
+      assert.deepEqual(new Set(moved), new Set(first), `${first.join(",")} then ${moved.join(",")}`);
+    }
+  }
 });
 
 test("a picture that has arrived is drawn pinned to the sky, under the marks, and fades with the zoom; one that has not is not", () => {

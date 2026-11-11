@@ -17,6 +17,8 @@ export const DEEP_COLOURS = { deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4",
 
 /** The most pictures asked for, and drawn, at once: the budget that keeps a page's picture bytes down (each file is at most 90 kB, so a view asks for at most 450 kB, within 500 kB). */
 export const MAX_PICTURES = 5;
+/** A picture chosen on the last frame keeps its place unless a newcomer shows this many times more of itself on the screen: without it, two pictures of about the same size swap in and out as the view moves. */
+export const KEEP_MARGIN = 1.25;
 /** A picture is asked for once its field is this wide on the screen, in pixels; it starts to show at `SHOW_FROM` and is fully there at `SHOW_FULL`. */
 export const LOAD_FROM = 90;
 export const SHOW_FROM = 130;
@@ -57,6 +59,8 @@ export interface DeepContext {
   /** The pictures that have arrived (by object id), and where the picture files are served from. */
   ready: ReadonlySet<string>;
   base: string;
+  /** The pictures chosen on the last frame (its `wanted`), which keep their places against a newcomer of about their size. */
+  previous: ReadonlySet<string>;
 }
 
 export interface DeepLabel {
@@ -84,7 +88,7 @@ export interface DeepDrawn {
   labels: DeepLabel[];
   hits: DeepHit[];
   obstacles: Box[];
-  /** The ids of the pictures (`DeepSkyPicture.id`) to fetch, the one filling most of the screen first, at most `MAX_PICTURES`. */
+  /** The ids of the pictures (`DeepSkyPicture.id`) to fetch, the one showing most of itself on the screen first, at most `MAX_PICTURES`. */
   wanted: string[];
   /** The catalogue stars inside the clusters that are shown large: ringed as inside the outline. */
   inside: Star[];
@@ -107,13 +111,46 @@ function localScale(place: Place, at: Spot, point: SkyPoint): { east: Spot; nort
   return { east, north, k: Math.sqrt(Math.hypot(east[0], east[1]) * Math.hypot(north[0], north[1])) };
 }
 
+/** The area of a four-cornered shape inside the box from (0, 0) to (`width`, `height`), in square pixels: the shape is cut to each side of the box in turn. */
+export function visibleArea(quad: readonly Spot[], width: number, height: number): number {
+  let shape = quad.slice();
+  const sides: Array<(p: Spot) => number> = [(p) => p[0], (p) => width - p[0], (p) => p[1], (p) => height - p[1]];
+  for (const inside of sides) {
+    const cut: Spot[] = [];
+    shape.forEach((a, i) => {
+      const b = shape[(i + 1) % shape.length]!;
+      const fa = inside(a);
+      const fb = inside(b);
+      if (fa >= 0) cut.push(a);
+      if ((fa >= 0) !== (fb >= 0)) {
+        const t = fa / (fa - fb);
+        cut.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
+      }
+    });
+    shape = cut;
+    if (shape.length < 3) return 0;
+  }
+  let twice = 0;
+  shape.forEach((a, i) => {
+    const b = shape[(i + 1) % shape.length]!;
+    twice += a[0] * b[1] - b[0] * a[1];
+  });
+  return Math.abs(twice) / 2;
+}
+
+/** The pictures to ask for and draw: at most `MAX_PICTURES`, chosen by how much of each is on the screen (`area`), where one chosen on the last frame counts `KEEP_MARGIN` times its area; returned the most seen first. */
+export function choosePictures<T extends { id: string; area: number }>(candidates: readonly T[], previous: ReadonlySet<string>): T[] {
+  const score = (one: T): number => one.area * (previous.has(one.id) ? KEEP_MARGIN : 1);
+  return [...candidates].sort((a, b) => score(b) - score(a)).slice(0, MAX_PICTURES).sort((a, b) => b.area - a.area);
+}
+
 /** The pictures: which are in view and big enough, the ones to fetch, and the `<image>` of each that has arrived. */
 function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: Map<string, number> } {
   const shown = new Map<string, number>();
-  const candidates: Array<{ picture: DeepSkyPicture; widthPx: number; matrix: number[] }> = [];
+  const candidates: Array<{ id: string; picture: DeepSkyPicture; widthPx: number; area: number; matrix: number[] }> = [];
   for (const picture of drawnPictures()) {
-    const [tl, tr, , bl] = corners(picture).map((p) => c.place(p)) as [Spot?, Spot?, Spot?, Spot?];
-    if (tl === undefined || tr === undefined || bl === undefined) continue;
+    const [tl, tr, br, bl] = corners(picture).map((p) => c.place(p)) as [Spot?, Spot?, Spot?, Spot?];
+    if (tl === undefined || tr === undefined || br === undefined || bl === undefined) continue;
     const widthPx = Math.hypot(tr[0] - tl[0], tr[1] - tl[1]);
     if (widthPx < LOAD_FROM || widthPx / picture.width >= STRETCH_GONE) continue;
     const mid: Spot = [(tr[0] + bl[0]) / 2, (tr[1] + bl[1]) / 2];
@@ -121,10 +158,10 @@ function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: M
     // a whole-sky map that stretches a picture across its seam would smear it: keep to what the corners say a picture of its angular size should be
     const high = Math.hypot(bl[0] - tl[0], bl[1] - tl[1]);
     if (widthPx > 6 * high * (picture.width / picture.height) || high > 6 * widthPx * (picture.height / picture.width)) continue;
-    candidates.push({ picture, widthPx, matrix: [(tr[0] - tl[0]) / picture.width, (tr[1] - tl[1]) / picture.width, (bl[0] - tl[0]) / picture.height, (bl[1] - tl[1]) / picture.height, tl[0], tl[1]] });
+    candidates.push({ id: picture.id, picture, widthPx, area: visibleArea([tl, tr, br, bl], c.width, c.height), matrix: [(tr[0] - tl[0]) / picture.width, (tr[1] - tl[1]) / picture.width, (bl[0] - tl[0]) / picture.height, (bl[1] - tl[1]) / picture.height, tl[0], tl[1]] });
   }
-  candidates.sort((a, b) => b.widthPx - a.widthPx);
-  const chosen = candidates.slice(0, MAX_PICTURES);
+  const chosen = choosePictures(candidates, c.previous);
+  const wanted = chosen.map((x) => x.id);
   // the coarse survey picture first and each finer one over it
   chosen.sort((a, b) => b.picture.arcsecPerPixel - a.picture.arcsecPerPixel);
   let under = "";
@@ -135,7 +172,7 @@ function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: M
     shown.set(picture.object, Math.max(shown.get(picture.object) ?? 0, opacity));
     under += `<image data-pic="${picture.id}" href="${pictureBlobs.get(picture.id) ?? pictureUrl(picture, c.base)}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.map((n) => n.toFixed(6)).join(" ")})" opacity="${opacity.toFixed(3)}" preserveAspectRatio="none"/>`;
   }
-  return { under, wanted: [...chosen].sort((a, b) => b.widthPx - a.widthPx).map((x) => x.picture.id), shown };
+  return { under, wanted, shown };
 }
 
 /** A ring of sky points as a closed path in pixels, lifted where a point is off the map. */

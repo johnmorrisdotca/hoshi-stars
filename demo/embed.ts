@@ -61,6 +61,8 @@ const configureOverlay = (): void => overlay.configure({ names: choice.starNames
 configureOverlay();
 
 const fetcher = createDeepFetcher("./", () => schedule());
+/** The pictures the last frame chose, so they keep their places as the view moves. */
+let chosenPictures: ReadonlySet<string> = new Set();
 
 function draw(): void {
   const frameBox = frame.getBoundingClientRect();
@@ -72,7 +74,8 @@ function draw(): void {
   if (choice.layers.has("deep") && view.zoom >= TIER_ZOOM) void fetcher.loadTier();
   const room = { width, height };
   if (seen === undefined) overlay.update(projector, room, keepClear);
-  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: overlay.names } : undefined, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: overlay.names } : undefined, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  chosenPictures = new Set(drawn.wanted);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame
   const kept = new Map<string, Element>();
   sky.querySelectorAll("image[data-pic]").forEach((node) => kept.set(node.getAttribute("data-pic")!, node));

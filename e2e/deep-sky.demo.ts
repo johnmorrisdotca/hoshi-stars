@@ -1,7 +1,7 @@
 // Deep-sky objects at their true size, and their pictures: an outline that grows with the zoom, a picture that is fetched and shown only when zoomed in, a card that says what is measured and
 // credits the picture, a layer toggle kept in the address, the bright stars inside a cluster, and the NGC and IC objects once zoomed in. The embed page draws them too.
 import { expect, test, type Page } from "@playwright/test";
-import { deepSkyPicture } from "../src/deep-sky-pictures.ts";
+import { deepSkyPicture, deepSkyPictures } from "../src/deep-sky-pictures.ts";
 
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
 const webp = (page: Page): string[] => {
@@ -273,4 +273,28 @@ test("past where a picture's pixels run out an address still draws it, softened,
   await page.waitForTimeout(300);
   // the buttons do not push it further in
   expect(Number(param(page, "zoom") ?? 800)).toBeLessThanOrEqual(800.5);
+});
+
+test("every laid-over picture fades to nothing at its corners and the middle of its sides, so no straight edge is left to show", async ({ page, browserName, isMobile }) => {
+  test.skip(browserName !== "chromium" || isMobile, "the files are the same on every browser: read once");
+  // the photographs in true colour and the finer pictures; Andromeda's panorama fades from the edge of its data only, as the galaxy fills it from end to end
+  const laid = deepSkyPictures().filter((p) => p.id !== "M31" && (p.id !== p.object || ["NSF NOIRLab", "ESO"].includes(p.source.name)));
+  expect(laid.length).toBeGreaterThanOrEqual(30);
+  await page.goto("/hoshi-stars/?layers=milky");
+  const edges = await page.evaluate(async (files) => {
+    const out: Record<string, number> = {};
+    for (const file of files) {
+      const bitmap = await createImageBitmap(await (await fetch(file)).blob());
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context = canvas.getContext("2d")!;
+      context.drawImage(bitmap, 0, 0);
+      const w = bitmap.width - 1;
+      const h = bitmap.height - 1;
+      const spots: Array<[number, number]> = [[0, 0], [w, 0], [0, h], [w, h], [w >> 1, 0], [w >> 1, h], [0, h >> 1], [w, h >> 1]];
+      out[file] = Math.max(...spots.map(([x, y]) => context.getImageData(x, y, 1, 1).data[3]!));
+      bitmap.close();
+    }
+    return out;
+  }, laid.map((p) => p.file));
+  for (const [file, alpha] of Object.entries(edges)) expect(alpha, `${file}: the most opaque corner or side middle`).toBeLessThanOrEqual(3);
 });
