@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **Every time the demo shows is the reader's own** (MODULES-851): the sheets page opens on the device's month and dates a sheet with the device's day (the print header reads local time). A test in Kiritimati (UTC+14) at 20:00 UTC on 31 December 2026 holds it: the page says January and 2027-01-01, not December.
 - **The constellation in 3D opens turning** (MODULES-817). On its page and in its embed the figure turns once in 30 seconds from the start (kazoku-ui's gentle speed, the first at which the turn is plain to see); a reader who prefers reduced motion gets it still with Play ready. The embed has a Play and Pause button and reads `spin=off` to stay held; on the page a Pause is kept in the address as `spin=off`. Tested with normal motion: it draws again within two seconds of its first frame and the picture changes. The star in 3D already opened turning (one turn in 40 seconds). The sky chart and the whole-sky map have no time and no turn of their own, so they open still; a sky that turns with the time is MODULES-814.
 
 ## [0.27.0] - 2026-11-11
