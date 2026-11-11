@@ -6,7 +6,7 @@ import { DEFAULT_LABEL_STYLE, labelHeight, labelStyle, labelText, labelWidth, ty
 import type { NameLanguage, ScreenPoint, SkyProjector, SkyView } from "./star-names.ts";
 
 /**
- * A rectangle in the page's pixels, for the boxes a figure's name must stay clear of (`StarNames.labels` are such boxes).
+ * A rectangle in the page's pixels, for the boxes a figure's name must stay clear of (`StarNames.labels` are such boxes). A box that also has the star's place (`x`, `y`) and the radius of its `ring` keeps the name off the ring too.
  *
  * @example
  * ```ts
@@ -21,6 +21,9 @@ export interface Box {
   y0: number;
   x1: number;
   y1: number;
+  x?: number;
+  y?: number;
+  ring?: number;
 }
 
 /**
@@ -105,6 +108,8 @@ export interface FigureLinesSettings {
   strength?: number;
   /** How near a line the pointer must be to pick its figure, in pixels. 14 by default; a finger may want more. */
   reach?: number;
+  /** The radius in pixels of a star's dot, which a figure's name must not cover: 3 by default. */
+  dotRadius?: number;
   /** A line longer than this many pixels is left out: a page that draws the whole sky flat uses it to drop the lines that cross the seam. Left out, no line is dropped for its length. */
   maxLength?: number;
   /** The language of the figure's name when it is picked: `en` gives the Latin name (`Canis Major`), `ja` the Japanese (`おおいぬ座`). `en` by default. */
@@ -256,10 +261,24 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
   };
   set(settings);
 
+  /** Whether a box of text touches a name or ring in `avoided`, or the dot of a star of a figure in view. */
   const clear = (x0: number, y0: number, x1: number, y1: number): boolean => {
     for (let i = 0; i < avoided.length; i += 1) {
       const box = avoided[i]!;
       if (x0 < box.x1 + 2 && x1 > box.x0 - 2 && y0 < box.y1 + 1 && y1 > box.y0 - 1) return false;
+      if (box.ring !== undefined && box.ring > 0 && box.x !== undefined && box.y !== undefined) {
+        const dx = box.x < x0 ? x0 - box.x : box.x > x1 ? box.x - x1 : 0;
+        const dy = box.y < y0 ? y0 - box.y : box.y > y1 ? box.y - y1 : 0;
+        if (dx * dx + dy * dy < (box.ring + 1) * (box.ring + 1)) return false;
+      }
+    }
+    const radius = current.dotRadius ?? 3;
+    for (let i = 0; i < count * 2; i += 1) {
+      const x = segments[(i >> 1) * 4 + (i & 1) * 2]!;
+      const y = segments[(i >> 1) * 4 + (i & 1) * 2 + 1]!;
+      const dx = x < x0 ? x0 - x : x > x1 ? x - x1 : 0;
+      const dy = y < y0 ? y0 - y : y > y1 ? y - y1 : 0;
+      if (dx * dx + dy * dy < radius * radius) return false;
     }
     return true;
   };
@@ -272,20 +291,30 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
     const width = labelWidth(name.text, style);
     const height = labelHeight(style);
     const gap = Math.ceil(style.size * 0.6);
-    const x = Math.max(margin + width / 2, Math.min(size.width - margin - width / 2, figure.x));
-    const x0 = x - width / 2;
-    const x1 = x + width / 2;
-    // above the figure, stepping up past any star's name that is in the way
-    let top = figure.top - gap - height;
-    while (top >= margin && !clear(x0, top, x1, top + height)) top -= height;
-    if (top < margin) {
-      // no room above (the figure reaches the top of the view, or names fill the space): below it
-      top = figure.bottom + gap;
-      while (top + height <= size.height - margin && !clear(x0, top, x1, top + height)) top += height;
-      if (top + height > size.height - margin) top = Math.max(margin, figure.top - gap - height);
+    const fits = (centre: number, top: number): boolean => top >= margin && top + height <= size.height - margin && clear(centre - width / 2, top, centre + width / 2, top + height);
+    const put = (centre: number, top: number): void => {
+      name.x = centre;
+      name.y = top + height * 0.8;
+    };
+    const inside = (centre: number): number => Math.max(margin + width / 2, Math.min(size.width - margin - width / 2, centre));
+    // above the figure, stepping up past anything in the way; failing that below it, stepping down; then a step to either side and again
+    for (const shift of [0, -0.5, 0.5, -1, 1, -1.5, 1.5]) {
+      const centre = inside(figure.x + shift * width);
+      for (let top = figure.top - gap - height; top >= margin; top -= height) if (fits(centre, top)) return put(centre, top);
+      for (let top = figure.bottom + gap; top + height <= size.height - margin; top += height) if (fits(centre, top)) return put(centre, top);
     }
-    name.x = x;
-    name.y = top + height * 0.8;
+    // anywhere in the view that is free, the nearest to the figure's middle first
+    const middle = (figure.top + figure.bottom) / 2;
+    let best: { centre: number; top: number; away: number } | undefined;
+    for (let top = margin; top + height <= size.height - margin; top += Math.max(2, height / 2)) {
+      for (let centre = inside(figure.x - 2 * width); centre <= inside(figure.x + 2 * width); centre += Math.max(4, width / 4)) {
+        const away = Math.abs(top - middle) + Math.abs(centre - figure.x) * 0.5;
+        if ((best === undefined || away < best.away) && fits(centre, top)) best = { centre, top, away };
+      }
+    }
+    // nothing is free: above the figure as far as the view allows, whatever is there
+    if (best !== undefined) return put(best.centre, best.top);
+    put(inside(figure.x), Math.max(margin, Math.min(size.height - margin - height, figure.top - gap - height)));
   };
 
   const lines: FigureLines = {

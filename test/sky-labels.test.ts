@@ -234,7 +234,7 @@ test("the two names attributes are read as text", () => {
   assert.equal(starNamesFromAttributes("0", null), undefined);
   assert.equal(starNamesFromAttributes("-3", null), undefined);
   assert.equal(starNamesFromAttributes("many", " "), undefined);
-  assert.equal(starNamesFromAttributes("100000", null)!.count, 400);
+  assert.equal(starNamesFromAttributes("100000", null)!.count, 335);
   assert.equal(starNamesFromAttributes(null, "99")!.magnitude, 7);
 });
 
@@ -468,4 +468,60 @@ test("a figure that reaches the top of the view has its name below it", () => {
   lines.point(lines.segments[ursa.start * 4]!, lines.segments[ursa.start * 4 + 1]!);
   assert.equal(lines.picked, ursa);
   assert.ok(lines.name!.y >= 0 && lines.name!.y <= VIEW.height);
+});
+
+test("the most names asked for is the number of stars that have one", () => {
+  assert.equal(starNamesFromAttributes("100000", null)!.count, stars().filter((star) => star.name !== undefined).length);
+  assert.equal(starNamesFromAttributes("100000", null)!.count, 335);
+});
+
+test("the dot table is built once, however low the magnitude limit is", () => {
+  for (const dotMagnitude of [-5, 3]) {
+    const names = createStarNames({ count: 3, dotMagnitude });
+    let built = 0;
+    const counting: SkyProjector = (ra, dec, out) => {
+      built += 1;
+      return project(ra, dec, out);
+    };
+    names.update(counting, VIEW);
+    const first = built;
+    names.update(counting, VIEW);
+    assert.equal(built - first, first, "the second update asks the projector for the same stars as the first, and builds nothing more");
+  }
+});
+
+test("a figure that runs off the view still has its name clear of every star's name, ring and dot (Orion at 70 px a degree)", () => {
+  const close: SkyProjector = (ra, dec, out) => {
+    out.x = 640 - (ra - 84) * 70;
+    out.y = 360 - dec * 70;
+    return Math.abs(ra - 84) < 40;
+  };
+  for (const count of [8, 30, 60]) {
+    const names = createStarNames({ count });
+    const lines = createFigureLines({ strength: 0.16 });
+    names.update(close, VIEW);
+    lines.update(close, VIEW, names.labels);
+    const orion = lines.figures.find((figure) => figure.abbreviation === "Ori")!;
+    assert.ok(orion.end > orion.start);
+    assert.ok(orion.top < 4 || orion.bottom > VIEW.height - 4 || orion.left < 0 || orion.right > VIEW.width, "the figure runs off the view");
+    lines.point(lines.segments[orion.start * 4]!, lines.segments[orion.start * 4 + 1]!);
+    assert.equal(lines.picked, orion);
+    const name = lines.name!;
+    const half = labelWidth(name.text, lines.style) / 2;
+    const box = { x0: name.x - half, x1: name.x + half, y0: name.y - labelHeight(lines.style) * 0.8, y1: name.y + labelHeight(lines.style) * 0.2 };
+    for (const label of names.labels) {
+      assert.ok(box.x1 <= label.x0 || box.x0 >= label.x1 || box.y1 <= label.y0 || box.y0 >= label.y1, `clear of the name ${label.text} with ${count} names`);
+      const dx = label.x < box.x0 ? box.x0 - label.x : label.x > box.x1 ? label.x - box.x1 : 0;
+      const dy = label.y < box.y0 ? box.y0 - label.y : label.y > box.y1 ? label.y - box.y1 : 0;
+      assert.ok(dx * dx + dy * dy >= label.ring * label.ring, `clear of the ring round ${label.text}`);
+    }
+    for (let i = 0; i < lines.count * 2; i += 1) {
+      const x = lines.segments[(i >> 1) * 4 + (i & 1) * 2]!;
+      const y = lines.segments[(i >> 1) * 4 + (i & 1) * 2 + 1]!;
+      const dx = x < box.x0 ? box.x0 - x : x > box.x1 ? x - box.x1 : 0;
+      const dy = y < box.y0 ? box.y0 - y : y > box.y1 ? y - box.y1 : 0;
+      assert.ok(dx * dx + dy * dy >= 9, "clear of the dot of a star of a figure");
+    }
+    assert.ok(box.x0 >= 0 && box.x1 <= VIEW.width && box.y0 >= 0 && box.y1 <= VIEW.height, "and inside the view");
+  }
 });

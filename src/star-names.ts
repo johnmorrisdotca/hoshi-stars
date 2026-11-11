@@ -219,8 +219,8 @@ export const STAR_NAMES_ATTRIBUTES = Object.freeze({ count: "star-names", magnit
 
 /** The number of names `star-names` with no value asks for. */
 const DEFAULT_COUNT = 10;
-/** The most stars that carry a name in the 5,080: every name of the IAU Working Group on Star Names that the catalogue holds. */
-const MOST = 400;
+/** The most stars that carry a name in the 5,080: the 335 names of the IAU Working Group on Star Names (and three traditional ones) that the catalogue holds. A test holds it to the catalogue. */
+const MOST = 335;
 
 /**
  * Settings from the two attributes a page offers, `star-names` (a count) and `star-names-magnitude` (a limit), read as text. Off when neither is there: names are never on unless asked. `star-names` with no value (`""`) asks for 10; a count of 0, a negative or text that is not a number asks for none.
@@ -388,7 +388,7 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
   const labels: StarNameLabel[] = [];
   const spot: ScreenPoint = { x: 0, y: 0 };
   // the dots a name must not cover: every star brighter than `dotMagnitude`, projected afresh by each update into reused arrays
-  let dots: Star[] = [];
+  let dots: Star[] | undefined;
   let dotX = new Float32Array(0);
   let dotY = new Float32Array(0);
 
@@ -401,7 +401,7 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
     style = labelStyle(next.style ?? DEFAULT_LABEL_STYLE);
     texts = [];
     designations = [];
-    dots = [];
+    dots = undefined;
   };
   set(settings);
 
@@ -425,13 +425,14 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
         texts = list.map((star) => labelText((ja ? star.nameJa : undefined) ?? star.name!, style));
         designations = list.map((star) => (style.designation === "none" ? "" : star.designation ?? ""));
       }
-      if (dots.length === 0) {
+      if (dots === undefined) {
         dots = stars().filter((star) => star.magnitude <= (current.dotMagnitude ?? 3));
         dotX = new Float32Array(dots.length);
         dotY = new Float32Array(dots.length);
       }
-      for (let d = 0; d < dots.length; d += 1) {
-        const dot = dots[d]!;
+      const around = dots;
+      for (let d = 0; d < around.length; d += 1) {
+        const dot = around[d]!;
         if (project(dot.rightAscension, dot.declination, spot)) {
           dotX[d] = spot.x;
           dotY[d] = spot.y;
@@ -458,9 +459,9 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
             const other = labels[j]!;
             if ((slot.x0 < other.x1 + 2 && slot.x1 > other.x0 - 2 && slot.y0 < other.y1 + 1 && slot.y1 > other.y0 - 1) || (other.ring > 0 && reaches(slot.x0, slot.y0, slot.x1, slot.y1, other.x, other.y, other.ring + 1))) clear = false;
           }
-          for (let d = 0; d < dots.length && clear; d += 1) {
+          for (let d = 0; d < around.length && clear; d += 1) {
             const x = dotX[d]!;
-            if (x === x && dots[d]!.hr !== star.hr && reaches(slot.x0, slot.y0, slot.x1, slot.y1, x, dotY[d]!, radius)) clear = false;
+            if (x === x && around[d]!.hr !== star.hr && reaches(slot.x0, slot.y0, slot.x1, slot.y1, x, dotY[d]!, radius)) clear = false;
           }
           found = clear;
         }
