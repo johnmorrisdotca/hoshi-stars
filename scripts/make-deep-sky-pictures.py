@@ -50,7 +50,7 @@ ENDPOINT = "https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl"
 USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
 MAX_PIXELS = 720
 WEBP_QUALITY = 60
-BUDGET_BYTES = 90_000  # a picture file is never larger than this; the page budget (six at once) follows from it
+BUDGET_BYTES = 90_000  # a picture file is never larger than this; the page budget (five at once, 450 kB) follows from it
 
 SURVEYS = {
     "sdss": {

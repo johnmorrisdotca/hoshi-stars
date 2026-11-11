@@ -125,6 +125,9 @@ def raw_dir(args):
     return base / "2026-11-10-natural-colour-raw"
 
 
+FETCHED = set()  # the addresses asked of the web in this run (the rest came from the cache)
+
+
 def get(address, cache, binary=True):
     """A file from the web, kept in the cache folder (one at a time, politely)."""
     path = cache / (hashlib.sha1(address.encode()).hexdigest()[:16] + (".bin" if binary else ".html"))
@@ -134,6 +137,7 @@ def get(address, cache, binary=True):
         cache.mkdir(parents=True, exist_ok=True)
         with urllib.request.urlopen(urllib.request.Request(address, headers={"User-Agent": USER_AGENT}), timeout=180) as answer:
             path.write_bytes(answer.read())
+        FETCHED.add(address)
         time.sleep(1.0)
     return path.read_bytes() if binary else path.read_text(encoding="utf-8", errors="replace")
 
@@ -495,9 +499,11 @@ def object_table():
 
 def make(spec, objects, cache):
     site = SITES[spec["site"]]
-    page_text = get(site["page"].format(id=spec["image"]), cache, binary=False)
+    page_address = site["page"].format(id=spec["image"])
+    file_address = site["file"].format(id=spec["image"], variant=spec.get("variant", "screen"))
+    page_text = get(page_address, cache, binary=False)
     page_credit = credit_of(spec["site"], page_text)
-    jpeg = get(site["file"].format(id=spec["image"], variant=spec.get("variant", "screen")), cache)
+    jpeg = get(file_address, cache)
     tags = avm(jpeg)
     # the credit line is the one in the image's own metadata where it has one (the same words as the page's, without the page's spacing), else the page's; ESA/Hubble's carry the release's name after it
     credit = re.sub(r"\)(?=[A-Z])", ") ", re.sub(r"\s*/\s*$", "", " ".join(html.unescape(tags["credit"] or "").split())))
@@ -541,7 +547,7 @@ def make(spec, objects, cache):
     rgba = to_rgba(rgb, sky_percent=spec.get("sky", 15), oval=spec.get("oval", True))
     # the placement of the saved picture, after any shrinking in encode, is made from the cut box: its middle and its pixel scale
     cut = Placement(placement.ra0, placement.dec0, placement.cx - box[0], placement.cy - box[1], placement.scale, placement.rotation, cw, ch)
-    return {"spec": spec, "credit": credit, "numbers": numbers, "rgb": rgb, "image": rgba, "cut": cut, "address": site["page"].format(id=spec["image"]), "box": box, "size": (cw, ch), "object": obj}
+    return {"spec": spec, "fresh": page_address in FETCHED or file_address in FETCHED, "credit": credit, "numbers": numbers, "rgb": rgb, "image": rgba, "cut": cut, "address": site["page"].format(id=spec["image"]), "box": box, "size": (cw, ch), "object": obj}
 
 
 def pid(spec):
@@ -709,8 +715,8 @@ def write_data(done):
         source = SITES[spec["site"]]["source"]
         mine = f"| pictures/{file_of(pid(spec))} |"
         hit = [i for i, r in enumerate(table) if r.startswith(mine)]
-        # the day is the day the page and the image were read: a run from the cache keeps the row's own
-        read = re.search(r"\| (\d{4}-\d\d-\d\d) \|$", table[hit[0]]).group(1) if hit and "--cache-only" in sys.argv else today
+        # the day is the day the page and the image were read: where the cache already held both, the row keeps its own
+        read = re.search(r"\| (\d{4}-\d\d-\d\d) \|$", table[hit[0]]).group(1) if hit and not made["fresh"] else today
         line = f"{mine} {spec['id']} | {source['name']} | {made['address']} | {made['credit']} | {source['licence']} | {read} |"
         if hit:
             table[hit[0]] = line
