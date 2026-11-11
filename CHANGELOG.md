@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-11-11
+
 - **The demo's names keep clear in any font.** The sky chart placed its names in boxes worked out from the text's length (0.6 of the size for a Latin letter, the whole size for a Japanese one, 0.85 above the baseline and 0.3 below), and a reader whose sans-serif is taller or wider got names that touched: in Microsoft's Playwright image, whose only sans-serif is WenQuanYi Zen Hei (1.26 of the size tall), Mintaka touched Orion's Belt and ベラトリックス touched オリオン座. In a browser each name is now also measured in the chart's own font, and the larger of the two is used.
 
 - **A guide for teachers: "One sky, three traditions"** (MODULES-820), in English and Japanese. Five patterns that are easy to find (Orion, the Big Dipper, the Pleiades, the Summer Triangle, Scorpius) as the Western, Japanese and Chinese skies name and join them, with readings, short stories in our own words and a link to the demo in each sky with the figure picked, and the three limits a class should know (our own joins for the Chinese lines, no stars fainter than 6.0, names read from Wikidata). A test opens all fifteen links of both guides.
