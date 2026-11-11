@@ -67,7 +67,10 @@ test("the look is a setting: case, size, letter spacing and a leader line come f
   await expect(first).toHaveAttribute("font-size", "16");
   await expect(first).toHaveAttribute("letter-spacing", "0.1em");
   await expect(first).toHaveAttribute("font-weight", "700");
-  expect(await page.locator("#sky [data-star-name-leader]").count()).toBe(await names(page).count());
+  // a leader line goes with a name on the right or left of its star; a name above or below has none
+  const leaders = await page.locator("#sky [data-star-name-leader]").count();
+  expect(leaders).toBeGreaterThan(0);
+  expect(leaders).toBeLessThanOrEqual(await names(page).count());
 });
 
 test("a bare constellation-lines is the faint default, 0.16", async ({ page }) => {
