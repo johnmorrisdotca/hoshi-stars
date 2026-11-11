@@ -130,6 +130,19 @@ export function createOverlay(): Overlay {
         touches.delete(event.pointerId);
         if (start !== undefined && !start.moved) pick(event);
       });
+      // the keyboard: ] and [ step through the figures in view, Escape lets the picked one go
+      frame.addEventListener("keydown", (event) => {
+        if (lines === undefined || event.altKey || event.ctrlKey || event.metaKey) return;
+        let changed = false;
+        if (event.key === "]" || event.key === "[") {
+          event.preventDefault();
+          changed = lines.step(event.key === "]" ? 1 : -1);
+        } else if (event.key === "Escape" && lines.picked !== undefined) changed = lines.point();
+        if (changed) {
+          say();
+          redraw();
+        }
+      });
       // a finger the browser took for a scroll, a pan or a pinch picks nothing
       frame.addEventListener("pointercancel", (event) => touches.delete(event.pointerId));
       frame.addEventListener("pointerleave", (event) => {

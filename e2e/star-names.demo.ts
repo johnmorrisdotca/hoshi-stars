@@ -239,6 +239,41 @@ test.describe("pointers", () => {
     await send(page, "pointerleave", "mouse", { x: 0, y: 0 });
     await expect(live).toHaveText("");
   });
+
+  test("the keyboard picks a figure: ] and [ step through the figures in view, and Esc lets go", async ({ page }) => {
+    const live = page.getByTestId("figure-announce");
+    await page.getByTestId("frame").focus();
+    await page.keyboard.press("]");
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
+    await expect(live).not.toHaveText("");
+    const first = (await live.textContent())!;
+    await expect(page.locator("#sky [data-figure-name]")).toHaveText(first);
+    await page.keyboard.press("]");
+    await expect(live).not.toHaveText(first);
+    await page.keyboard.press("[");
+    await expect(live).toHaveText(first);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
+    await expect(live).toHaveText("");
+  });
+
+  test("while the sky moves under a picked figure its name is not written again to the screen reader", async ({ page }) => {
+    const spot = await onALine(page);
+    await send(page, "pointermove", "mouse", spot);
+    await expect(page.getByTestId("figure-announce")).not.toHaveText("");
+    await page.evaluate(() => {
+      const live = document.querySelector("[data-testid='figure-announce']")!;
+      Reflect.set(window, "liveWrites", 0);
+      new MutationObserver((changes) => Reflect.set(window, "liveWrites", (Reflect.get(window, "liveWrites") as number) + changes.length)).observe(live, { childList: true, characterData: true, subtree: true });
+    });
+    const at = () => page.locator("#sky [data-figure-name]").getAttribute("x");
+    const before = await at();
+    await page.getByTestId("frame").focus();
+    await page.keyboard.press("ArrowRight");
+    await expect.poll(at, { message: "the sky moved, and the picked figure's name with it" }).not.toBe(before);
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
+    expect(await page.evaluate(() => Reflect.get(window, "liveWrites"))).toBe(0);
+  });
 });
 
 test.describe("the demo's own controls", () => {
