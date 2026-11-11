@@ -69,6 +69,8 @@ frame.append(legend);
 if (choice.limit !== undefined) loadDistances(() => schedule());
 
 const fetcher = createDeepFetcher("./", () => schedule());
+/** The pictures the last frame chose, so they keep their places as the view moves. */
+let chosenPictures: ReadonlySet<string> = new Set();
 
 function draw(): void {
   const frameBox = frame.getBoundingClientRect();
@@ -82,7 +84,8 @@ function draw(): void {
   if (seen === undefined) overlay.update(projector, room, keepClear);
   const layers = choice.limit === undefined || seen !== undefined ? undefined : layersFor(choice.limit);
   if (choice.limit !== undefined) renderLegend(legend, layers, ja ? "ja" : "en");
-  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: layers === undefined ? overlay.names : undefined } : undefined, distance: layers === undefined ? undefined : { layers, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR }, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: layers === undefined ? overlay.names : undefined } : undefined, distance: layers === undefined ? undefined : { layers, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR }, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  chosenPictures = new Set(drawn.wanted);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame
   const kept = new Map<string, Element>();
   sky.querySelectorAll("image[data-pic]").forEach((node) => kept.set(node.getAttribute("data-pic")!, node));

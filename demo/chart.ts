@@ -63,6 +63,8 @@ export interface ChartOptions extends View {
   /** The ids of the pictures that have been fetched and may be drawn (the `pictures` layer), and where the package's `pictures/` folder is served from (`./` when left out). */
   readyPictures?: ReadonlySet<string> | undefined;
   pictureBase?: string | undefined;
+  /** The pictures the last frame chose (its `wanted`): they keep their places against a newcomer of about their size, so a picture does not flicker in and out as the view moves. */
+  previousPictures?: ReadonlySet<string> | undefined;
   /** The `sky-labels` tier, laid out by the caller for this very view: faint constellation lines with the picked figure at full strength (they replace the `lines` layer), and names on the brightest stars (they replace the chart's own star names). */
   overlay?: { lines?: FigureLines | undefined; names?: StarNames | undefined } | undefined;
   /** The sky out to a distance (`layersByDistance`): only these things are drawn, each in the colour of its band (`colours`, six of them, near to far); a thing whose distance is uncertain is a hollow ring in `uncertain`; a thing with no distance is not drawn. The faintest-star limit, the faint layer and the deep-sky marks and pictures are left off while it is on. */
@@ -534,7 +536,7 @@ export function chart(o: ChartOptions): Chart {
   const seen = o.sky === undefined ? undefined : new Map(o.sky.map((star) => [star.id, star]));
   const near = new Set(o.near ?? []);
   const nearConstellations = new Set([...near].filter((key) => key.startsWith("C:")).map((key) => key.slice(2)));
-  const deep = drawDeep({ width, height, zoom: o.zoom, place, marks: layers.has("deep") && o.distance === undefined, pictures: layers.has("pictures") && o.distance === undefined, catalogue: o.catalogue ?? messier(), shapeOf: o.shapeOf ?? deepSkyShape, picked: o.picked, near, ready: o.readyPictures ?? new Set(), base: o.pictureBase ?? "./" });
+  const deep = drawDeep({ width, height, zoom: o.zoom, place, marks: layers.has("deep") && o.distance === undefined, pictures: layers.has("pictures") && o.distance === undefined, catalogue: o.catalogue ?? messier(), shapeOf: o.shapeOf ?? deepSkyShape, picked: o.picked, near, ready: o.readyPictures ?? new Set(), base: o.pictureBase ?? "./", previous: o.previousPictures ?? new Set() });
   body += deep.under;
   if (seen === undefined && (layers.has("boundaries") || o.highlight !== undefined || nearConstellations.size > 0)) {
     let quiet = "";

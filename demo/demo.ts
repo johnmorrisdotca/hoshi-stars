@@ -152,6 +152,8 @@ const opening = (): number => defaultZoom(view.projection, width, height);
 let hits: Hit[] = [];
 let queued = false;
 const fetcher = createDeepFetcher("./", () => schedule());
+/** The pictures the last frame chose, so they keep their places as the view moves. */
+let chosenPictures: ReadonlySet<string> = new Set();
 /** An object of the Messier table, or of the whole table once the NGC and IC objects are in. */
 const deepObject = (id: string): DeepSkyObject | undefined => deepSkyObject(id) ?? fetcher.find(id);
 const shapeOfObject = (object: DeepSkyObject): DeepSkyShape => (fetcher.shapeOf() ?? deepSkyShape)(object);
@@ -187,7 +189,8 @@ function draw(): void {
   const keepClear = clear();
   overlay.update(projector, { width, height }, keepClear);
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
-  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  chosenPictures = new Set(out.wanted);
   faintNote(out.faint, faint?.state);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame while the browser decodes it again
