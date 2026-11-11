@@ -541,6 +541,19 @@ console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
 // 14
 ```
 
+## Near stars and their planets
+
+`@johnmorrisdotca/hoshi-stars/near-stars` is the 73 star systems within 20 light-years (Alpha Centauri with Proxima, Barnard's Star, Wolf 359, Sirius and the rest), each with its name in English and Japanese where known, its place (J2000), its distance with the error, its companions and the source of every value. `@johnmorrisdotca/hoshi-stars/exoplanet-hosts` is 80 host stars of confirmed planets (the ones within 50 light-years, the IAU-named ones beyond and TRAPPIST-1) with each planet's name and orbital period. The planets are the NASA Exoplanet Archive's; the stars' places and distances are the Yale tables' and 2MASS's, never the Archive's Gaia and Hipparcos values. A page that shows the planets shows `EXOPLANET_ARCHIVE_ACKNOWLEDGEMENT`. [The guide](docs/guides/near-stars.md) has the fields and the rules.
+
+```ts
+import { exoplanetHostByName } from "@johnmorrisdotca/hoshi-stars/exoplanet-hosts";
+import { nearStarByName } from "@johnmorrisdotca/hoshi-stars/near-stars";
+
+const sirius = nearStarByName("Sirius")!;
+console.log(sirius.nameJa, sirius.lightYears.toFixed(1), sirius.members.map((m) => m.name));  // シリウス 8.5 [ 'Sirius', 'Sirius B' ]
+console.log(exoplanetHostByName("Proxima Cen")!.planets.map((p) => p.name));                  // [ 'Proxima Cen b', 'Proxima Cen d' ]
+```
+
 ## Outside data
 
 The package draws; you bring the data. `@johnmorrisdotca/hoshi-stars/door` takes outside stars (and deep-sky objects) as a **source**: a small object that carries its own licence and credit, so the page can always say whose data is on the screen. Without a source the package draws exactly what it did before, from its own Yale and UCAC4 data. A source of yours may be non-commercial or share-alike; the credit line says so beside the licence, and the package never bundles one.

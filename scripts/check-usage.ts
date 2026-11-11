@@ -359,6 +359,12 @@ await step("deep-sky-picture", async () => {
   });
 });
 
+await step("near-stars", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "near-stars.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = ["73 systems within 20 light-years, the nearest Alpha Centauri", "Barnard's Star (バーナード星): 5.98 light-years, M5 V", "position from 2MASS, distance from GCTP, Oph", "TRAPPIST-1: 7 planets, periods 1.51, 2.42, 4.05, 6.10, 9.21, 12.35, 18.77 days"].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await browser.close();
 lock.release();
 
@@ -394,6 +400,7 @@ const FILES: Record<string, string[]> = {
   "door/source.mjs": ["README.md", "docs/guides/data-door.md", "docs/guides/ja/data-door.md"],
   "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
+  "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
 };
 const normal = (text: string) => text.replace(/\r\n/g, "\n").trim();
 for (const [file, places] of everything ? Object.entries(FILES) : []) {

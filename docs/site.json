@@ -169,6 +169,16 @@
       "en": "The sky seen from another star, with the nearby stars moved too",
       "ja": "ほかの星から見た空 (近くの星も動かす)",
       "platform": "neutral"
+    },
+    "./near-stars": {
+      "en": "The 73 star systems within 20 light-years, with names in English and Japanese, place, distance, companions and the source of each value",
+      "ja": "20光年以内の73の星系 (英語と日本語の名前、位置、距離、伴星、値ごとの出典つき)",
+      "platform": "neutral"
+    },
+    "./exoplanet-hosts": {
+      "en": "The host stars of confirmed exoplanets worth a visit: place, distance, and each planet's name and orbital period",
+      "ja": "確認された系外惑星をもつ、訪ねてみたい星 (位置・距離、惑星ごとの名前と公転周期)",
+      "platform": "neutral"
     }
   }
 }
