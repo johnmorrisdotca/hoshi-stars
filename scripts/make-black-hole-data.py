@@ -567,8 +567,6 @@ def main() -> None:
     # NED places for the host galaxies
     ned_path = cache / "ned.json"
     ned = json.loads(ned_path.read_text()) if ned_path.exists() else {}
-    if offline:
-        pass
     wanted_hosts = sorted({re.sub(r"\{\\tiny (.*)\}", r"\1", r["name"]) for r in vdb_rows} | {"M87"})
     for host in wanted_hosts:
         if host in ned or host in NED_DROP:
