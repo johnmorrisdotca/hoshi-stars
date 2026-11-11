@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
-import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderSpace } from "./page.ts";
+import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderLayers, renderSpace } from "./page.ts";
 import { chinese } from "../src/cultures/chinese.ts";
 import { japanese } from "../src/cultures/japanese.ts";
 import { writeCultureThumbnails, writeThumbnails } from "./thumbnail-files.ts";
@@ -27,6 +27,7 @@ writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.h
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
 writeFileSync(join(site, "birthday.html"), renderConstellationPage("birthday.html", "bd_title", "bd_description", "birthday"));
 writeFileSync(join(site, "constellation-3d.html"), renderSpace());
+writeFileSync(join(site, "layers-3d.html"), renderLayers());
 writeThumbnails(join(site, "thumbnails"));
 // The pictures of the Chinese asterisms and the traditional Japanese figures: Pages only, never in the npm package (which ships the 88).
 writeCultureThumbnails(join(site, "thumbnails"), chinese);
@@ -37,9 +38,9 @@ cpSync(join(root, "pictures"), join(site, "pictures"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 // Michroma, the family's font for a name on a body (kazoku-ui's body-label, SIL Open Font License 1.1 beside it): copied from kazoku-ui's build so the embed page can load it from its own site, only when its names are on.
 cpSync(join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui", "dist", "body-label", "fonts"), join(site, "fonts"), { recursive: true });
-for (const file of ["embed.html", "embed-3d.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
+for (const file of ["embed.html", "embed-3d.html", "embed-layers.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), birthday: join(root, "demo", "birthday.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts") },
   outdir: join(site, "js"),
   bundle: true,
   splitting: true,

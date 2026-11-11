@@ -270,3 +270,105 @@ test.describe("the star in 3D", () => {
     expect(Math.max(...settled.slice(2)), "no more GPU objects after 16 rounds than after the third, give or take three.js's own fixtures").toBeLessThanOrEqual(settled[2]! + 4);
   });
 });
+
+// The sky by distance in 3D asks no more than the constellation does: the same rules, on its own page. Each wait is on what the page reports: the limit it drew, its frame counts at rest, its canvas size.
+test.describe("the sky by distance in 3D", () => {
+  const LAYERS = "/hoshi-stars/layers-3d.html";
+  async function openLayers(page: Page, query = ""): Promise<void> {
+    await page.addInitScript(COUNT_SCRIPT);
+    await page.goto(`${LAYERS}${query}`);
+    await page.locator("#sp-stage[data-state=live]").waitFor({ timeout: 60_000 });
+    await expect.poll(async () => (await readCounts(page)).draws).toBeGreaterThan(0);
+  }
+
+  test("held still, at rest nothing is drawn and no frame is asked for", async ({ page }) => {
+    await openLayers(page, "?spin=off");
+    await untilStill(page, drawCounts);
+    const rest = await bounded(page, 3000);
+    expect(rest.draws).toBe(0);
+    expect(rest.frames).toBe(0);
+    expect(rest.requests).toBeLessThanOrEqual(2);
+  });
+
+  test.describe("turning", () => {
+    test.use({ reducedMotion: "no-preference" });
+
+    test("it opens turning at most 30 frames a second, one frame asked for at a time, and its Pause rests it", async ({ page }) => {
+      await openLayers(page);
+      const turning = await bounded(page, 3000);
+      expect(turning.frames, "it turns on its own").toBeGreaterThan(5);
+      expect(turning.frames, `no more than 30 a second, over ${turning.seconds.toFixed(1)} seconds`).toBeLessThanOrEqual(turning.seconds * 30 + 4);
+      expect(turning.outstanding, "one request waiting at a time").toBeLessThanOrEqual(3);
+      await page.getByTestId("sp-controls").locator('[data-b="play"]').click();
+      await untilStill(page, drawCounts);
+      const rest = await bounded(page, 2000);
+      expect(rest.draws).toBe(0);
+      expect(rest.frames).toBe(0);
+      await drainGpu(page);
+    });
+
+    test("out of sight, and in a hidden tab, it draws nothing and asks for nothing", async ({ page }) => {
+      await openLayers(page);
+      await page.evaluate(() => {
+        const spacer = document.createElement("div");
+        spacer.style.height = "6000px";
+        document.body.prepend(spacer);
+        window.scrollTo(0, 0);
+      });
+      await expect.poll(async () => page.locator("#sp-view").evaluate((el) => el.getBoundingClientRect().top)).toBeGreaterThan(1000);
+      await untilStill(page, drawCounts);
+      const away = await bounded(page, 2500, async () => {
+        await page.getByTestId("dist-farther").evaluate((el) => (el as HTMLButtonElement).click());
+        await expect(page.getByTestId("dist-seg").locator('button[data-value="500"]')).toHaveAttribute("aria-pressed", "true");
+      });
+      expect(away.draws, "no GL draws out of sight").toBe(0);
+      expect(away.frames).toBe(0);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      const back = await framesDrawn(page);
+      await expect.poll(() => framesDrawn(page), "in sight again it turns again").toBeGreaterThan(back);
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+        Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await untilStill(page, drawCounts);
+      const hidden = await bounded(page, 2500);
+      expect(hidden.draws, "no GL draws in a hidden tab").toBe(0);
+      expect(hidden.frames).toBe(0);
+    });
+  });
+
+  test("on a 5K screen at a pixel ratio of 2 its canvas stays inside 6 million pixels and 4096 a side", async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 2560, height: 1440 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await openLayers(page);
+    const before = await canvasSize(page);
+    await page.locator("#sp-stage").evaluate((el) => {
+      el.style.cssText += ";position:fixed;inset:0;width:2560px;height:1440px;max-width:none;z-index:9";
+    });
+    await expect.poll(async () => (await canvasSize(page)).pixels, "the canvas grows to the full screen").toBeGreaterThan(before.pixels);
+    await untilStill(page, async (p) => { const s = await canvasSize(p); return [s.pixels, s.side, s.count]; });
+    const size = await canvasSize(page);
+    expect(size.count).toBe(1);
+    expect(withinPixelBudget(size)).toBe(true);
+    expect((await readCounts(page)).contexts, "one WebGL context").toBe(1);
+    await context.close();
+  });
+
+  test("stepping the limit out and in over and over gives back what it took: GPU objects stay flat in the one context", async ({ page }) => {
+    await openLayers(page, "?spin=off");
+    const steps = ["10", "50", "100", "500", "1000", "all"];
+    const settled: number[] = [];
+    for (let round = 0; round < 24; round += 1) {
+      const step = steps[round % steps.length]!;
+      await page.getByTestId("dist-seg").locator(`button[data-value="${step}"]`).click();
+      await page.locator(`#sp-stage[data-state=live][data-limit="${step}"]`).waitFor({ state: "attached" });
+      await untilStill(page, drawCounts);
+      const counted = await readCounts(page);
+      settled.push(gpuObjects(counted));
+      expect(counted.contexts, "one WebGL context for the page, however it changes").toBe(1);
+    }
+    console.log(`live GPU objects after each round: ${settled.join(", ")}`);
+    expect(Math.max(...settled.slice(2)), "no more GPU objects after 24 rounds than after the third").toBeLessThanOrEqual(settled[2]! + 4);
+  });
+});
