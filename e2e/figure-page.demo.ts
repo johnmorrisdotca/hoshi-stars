@@ -91,7 +91,7 @@ test("the Japanese sky holds the constellations under their Japanese names, with
   await expect(page.getByTestId("cp-space")).toBeVisible();
 });
 
-test("the same sky in the other two cultures is side by side, each card a link to the matching figure", async ({ page, isMobile }) => {
+test("the same sky in the other two cultures is side by side, each card a link to the matching figure", async ({ page }) => {
   await open(page, "c=bei3-dou3&culture=chinese");
   const compare = page.getByTestId("cp-compare");
   const columns = compare.locator(".cp-column");
@@ -110,7 +110,7 @@ test("the same sky in the other two cultures is side by side, each card a link t
   await loaded(page, "#cp-compare .cp-column:nth-child(2) img");
   // a desk puts the two columns beside each other, a phone one under the other
   const [one, two] = await Promise.all([columns.nth(0).boundingBox(), columns.nth(1).boundingBox()]);
-  if (isMobile) expect(two!.y).toBeGreaterThan(one!.y + one!.height - 1);
+  if ((page.viewportSize()?.width ?? 0) < 900) expect(two!.y).toBeGreaterThan(one!.y + one!.height - 1);
   else {
     expect(Math.abs(two!.y - one!.y)).toBeLessThan(4);
     expect(two!.x).toBeGreaterThan(one!.x + one!.width - 1);
