@@ -2,6 +2,7 @@
 // zoom). Its buttons turn it 90 degrees, bring it back to the view from the Earth, and zoom. The address is read as text:
 //   ?c=Ori                    the constellation (the IAU abbreviation; Orion when left out)     &from=HR5459   the star it is seen from (a Bright Star Catalogue number: Alpha Centauri)
 //   &yaw=-90&tilt=10          how far it is turned (degrees)                                     &lang=ja       Japanese words        &theme=light  the paper look (the device's when left out)
+//   &spin=off                 held still (it opens turning, one turn in 30 seconds, unless the reader prefers reduced motion)
 import { createViewController } from "@johnmorrisdotca/kazoku-ui/view-controls";
 import { constellation } from "../src/constellations.ts";
 import { viewpointOf } from "./from.ts";
@@ -44,13 +45,28 @@ const mount = mountSpace({
   },
 });
 
+const spin = $("spin");
 const controller = createViewController({
   turnable: true,
+  // one turn in 30 seconds: the family's gentle speed, and the first at which the turn is plain to see
+  speed: 12,
   limits: { tiltMax: 85, zoomMin: 0.5, zoomMax: 10 },
   initial: { yaw: number("yaw", -180, 180), tilt: number("tilt", -85, 85) },
-  onChange: (state) => mount.pose({ yaw: state.yaw, tilt: state.tilt, roll: state.roll ?? 0, zoom: state.zoom, panX: state.panX, panY: state.panY }),
+  onChange: (state) => {
+    showSpin(state.turning);
+    mount.pose({ yaw: state.yaw, tilt: state.tilt, roll: state.roll ?? 0, zoom: state.zoom, panX: state.panX, panY: state.panY });
+  },
 });
 controller.bind(host);
+// It opens turning (MODULES-817), unless the address says spin=off or the reader prefers reduced motion: then it is still, with Play ready.
+function showSpin(turning: boolean): void {
+  const label = say(turning ? "sp_pause" : "sp_play");
+  spin.textContent = label;
+  spin.setAttribute("aria-pressed", String(turning));
+}
+spin.addEventListener("click", () => (controller.state.turning ? controller.pause() : controller.play()));
+showSpin(false);
+if (query.get("spin") !== "off" && !matchMedia("(prefers-reduced-motion: reduce)").matches) controller.play();
 
 const buttons: Array<[string, string, () => void]> = [
   ["turn", say("sp_turn"), () => controller.set({ yaw: ((((controller.state.yaw - 90 + 180) % 360) + 360) % 360) - 180 }, true, "turn")],

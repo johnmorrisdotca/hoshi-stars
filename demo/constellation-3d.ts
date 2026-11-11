@@ -19,6 +19,8 @@ import { say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const address = createAddressState({ defaults: { c: "Ori", from: "" } });
+/** The turn's degrees a second: one turn in 30 seconds. */
+const SPIN_SPEED = 12;
 const stage = $("sp-stage");
 const controls = $<ViewControlsElement>("sp-controls");
 let across = 0;
@@ -174,6 +176,15 @@ $("sp-from").addEventListener("change", () => {
 });
 const poseOf = (s: ViewChangeDetail | ViewControlsElement["state"]): Pose => ({ yaw: s.yaw, tilt: s.tilt, roll: s.roll ?? 0, zoom: s.zoom, panX: s.panX, panY: s.panY });
 controls.addEventListener("kazoku-viewchange", (event) => mount.pose(poseOf((event as CustomEvent<ViewChangeDetail>).detail)));
+// It opens turning, as every view that can move does (MODULES-817), at one turn in 30 seconds: the family's gentle speed, and the first at which the turn is plain to see. A reader
+// who prefers reduced motion gets it still with Auto-turn ready, and a reader's Pause is kept in the address (spin=off) so a shared or reloaded link stays held.
+controls.setAttribute("speed", String(SPIN_SPEED));
+controls.addEventListener("kazoku-viewchange", (event) => {
+  const reason = (event as CustomEvent<ViewChangeDetail>).detail.reason;
+  if (reason === "pause") address.set("spin", "off");
+  else if (reason === "play") address.set("spin", null);
+});
+if (address.get("spin") !== "off" && !matchMedia("(prefers-reduced-motion: reduce)").matches) controls.controller.play();
 document.addEventListener("hoshi-language", () => {
   controls.setAttribute("lang", langNow());
   fromChoices();

@@ -84,7 +84,7 @@ A page with no WebGL can draw the figure from the side with the same numbers: th
 
 ## The live 3D view in an iframe
 
-The demo's embed page draws the figure with kazoku-ui's shared renderer (one WebGL context, drawn only when something moves, at most 30 frames a second) and takes the family's hands: drag to turn, pinch or Ctrl and the wheel to zoom, and buttons for Turn 90°, From Earth and zoom. Its address says what to draw: `c` (the constellation, `Ori` when left out), `from` (`HR5459` for Alpha Centauri), `yaw` and `tilt` (degrees), `lang` (`ja`) and `theme` (`light` or `dark`).
+The demo's embed page draws the figure with kazoku-ui's shared renderer (one WebGL context, drawn only when something moves, at most 30 frames a second) and takes the family's hands: drag to turn, pinch or Ctrl and the wheel to zoom, and buttons for Play and Pause, Turn 90°, From Earth and zoom. It opens turning, once in 30 seconds, and the demo's page does the same; a reader who prefers reduced motion gets it still, with Play ready. Its address says what to draw: `c` (the constellation, `Ori` when left out), `from` (`HR5459` for Alpha Centauri), `yaw` and `tilt` (degrees), `spin=off` (held still), `lang` (`ja`) and `theme` (`light` or `dark`). On the demo's page a Pause is kept in the address as `spin=off`.
 
 ```html
 <!doctype html>

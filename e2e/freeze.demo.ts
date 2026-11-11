@@ -67,8 +67,23 @@ test.describe("turning", () => {
     await drainGpu(page);
   });
 
-  test("Turn 90° eases over a few frames at most 30 a second, then rests: nothing is drawn after it settles", async ({ page }) => {
+  test("it opens turning at most 30 frames a second, one frame asked for at a time, and its Pause rests it", async ({ page }) => {
     await open(page);
+    const turning = await bounded(page, 3000);
+    expect(turning.frames, "it turns on its own").toBeGreaterThan(5);
+    expect(turning.frames, `no more than 30 a second, over ${turning.seconds.toFixed(1)} seconds`).toBeLessThanOrEqual(turning.seconds * 30 + 4);
+    expect(turning.outstanding, "one request waiting at a time").toBeLessThanOrEqual(3);
+    await page.getByTestId("sp-controls").locator('[data-b="play"]').click();
+    await untilStill(page, drawCounts);
+    const rest = await bounded(page, 2000);
+    expect(rest.draws).toBe(0);
+    expect(rest.frames).toBe(0);
+    await drainGpu(page);
+  });
+
+  test("Turn 90° eases over a few frames at most 30 a second, then rests: nothing is drawn after it settles", async ({ page }) => {
+    // held (spin=off), so the only motion is the Turn 90° ease
+    await open(page, "?spin=off");
     const turned = await bounded(page, 1500, () => page.getByTestId("sp-turn").click());
     expect(turned.frames).toBeGreaterThan(2);
     expect(turned.frames).toBeLessThanOrEqual(turned.seconds * 30 + 4);
