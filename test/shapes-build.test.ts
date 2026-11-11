@@ -1,8 +1,9 @@
-// The shapes' build script, run for real on saved answers (test/data/shapes: a few rows of RC3 and NED's diameters answers for seven galaxies, so no network): the build with RC3 and the NED-only build
-// (`--no-rc3`) both run, the second holds no RC3 number, and neither reads NGC 2000.0 or the Sky Catalog.
+// The shapes' build script, run for real on saved answers (test/data/shapes: a few rows of RC3 and NED's diameters answers for seven galaxies, so no network): the build with RC3, the NED-only build
+// (`--no-rc3`) and the build without NED (`--no-ned`) all run, each holds only its own sources, and none reads NGC 2000.0 or the Sky Catalog. The scripts that used NED's web pages refuse to ask
+// them, which is tested before any network call: each stops at once, says why, and writes nothing.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -11,7 +12,7 @@ const ONLY = "M31,NGC 253,NGC 891,NGC 4565,M104,M51,NGC 5128";
 
 function build(extra: string[]): { messier: string[]; ngcIc: string[]; log: string } {
   const out = mkdtempSync(join(tmpdir(), "hoshi-shapes-"));
-  const run = spawnSync("python3", ["-I", "scripts/make-deep-sky-shapes.py", "--from", "test/data/shapes", "--out", out, "--only", ONLY, ...extra], { encoding: "utf8" });
+  const run = spawnSync("python3", ["-I", "scripts/make-deep-sky-shapes.py", "--from", "test/data/shapes", "--out", out, "--only", ONLY, ...extra], { encoding: "utf8", timeout: 60_000 });
   assert.equal(run.status, 0, run.stderr);
   const rows = (name: string): string[] => /= `(.*)`;/s.exec(readFileSync(join(out, name), "utf8"))![1]!.split("\n").filter((row) => row !== "" && !row.startsWith("//") && !row.startsWith("/**"));
   assert.deepEqual(readdirSync(out).sort(), ["deep-sky-shapes-messier.ts", "deep-sky-shapes-ngc-ic.ts"]);
@@ -53,4 +54,45 @@ test("the script reads neither NGC 2000.0 nor the Sky Catalog's Messier table, a
     const rows = /= `(.*)`;/s.exec(readFileSync(file, "utf8"))![1]!.split("\n");
     assert.ok(rows.length > 0 && rows.every((row) => /^[MNI]\d+[A-Z]?\|\d+\|\d*\|\d*\|[rd]$/.test(row)), `${file} has a row that is not RC3's or NED's`);
   }
+});
+
+test("the build without NED keeps RC3's rows as they are and leaves out every NED row", () => {
+  const full = build([]);
+  const noNed = build(["--no-ned"]);
+  assert.match(noNed.log, /ned off/);
+  assert.match(full.log, /ned on/);
+  assert.deepEqual(noNed.messier, full.messier.filter((row) => !row.endsWith("|d")));
+  assert.deepEqual(noNed.ngcIc, full.ngcIc.filter((row) => !row.endsWith("|d")));
+  assert.ok(![...noNed.messier, ...noNed.ngcIc].some((row) => row.endsWith("|d")));
+  assert.ok(!noNed.ngcIc.some((row) => row.startsWith("N5128|")), "NGC 5128 has only NED's shape, so none: it is drawn as the dotted symbol");
+});
+
+function refused(args: string[]): void {
+  const out = mkdtempSync(join(tmpdir(), "hoshi-refuse-"));
+  const run = spawnSync("python3", ["-I", ...args.map((a) => (a === "OUT" ? out : a))], { encoding: "utf8", timeout: 10_000 });
+  assert.equal(run.error, undefined, String(run.error));
+  assert.equal(run.status, 1, run.stdout + run.stderr);
+  assert.match(run.stderr, /does not ask NASA\/IPAC NED's web pages \(MODULES-839\)/);
+  assert.match(run.stderr, /robots\.txt/);
+  assert.deepEqual(readdirSync(out), [], "nothing is written");
+}
+
+test("the scripts that used NED's web pages refuse to ask them: the shapes build without saved answers, the position check without a full cache", () => {
+  refused(["scripts/make-deep-sky-shapes.py", "--out", "OUT"]);
+  refused(["scripts/make-deep-sky-shapes.py", "--no-rc3", "--out", "OUT"]);
+  refused(["scripts/check-deep-sky-ned.py", "--write", "OUT/positions.tsv"]);
+  refused(["scripts/check-deep-sky-ned.py", "--cache", "OUT/none.json", "--write", "OUT/positions.tsv"]);
+  const cache = join(mkdtempSync(join(tmpdir(), "hoshi-cache-")), "partial.json");
+  writeFileSync(cache, JSON.stringify({ "NGC 224": [10.68, 41.27, "G"] }));
+  refused(["scripts/check-deep-sky-ned.py", "--cache", cache, "--write", "OUT/positions.tsv"]);
+});
+
+test("no script holds an address of NED's /srs/ or /cgi-bin/ pages, and the black-hole build stops rather than ask NED", () => {
+  for (const file of readdirSync("scripts").filter((name) => name.endsWith(".py"))) {
+    const code = readFileSync(join("scripts", file), "utf8");
+    assert.doesNotMatch(code, /["']https?:\/\/ned\.ipac\.caltech\.edu\/(srs|cgi-bin)\//, `${file} holds an address of NED's pages that robots.txt keeps scripts out of`);
+  }
+  const blackHoles = readFileSync("scripts/make-black-hole-data.py", "utf8");
+  assert.match(/def ned_lookup\(name: str\):\n(.*)\n/.exec(blackHoles)![1]!, /raise SystemExit\(f"\{REFUSE_NED\}/);
+  assert.match(blackHoles, /REFUSE_NED = \("make-black-hole-data\.py does not ask NASA\/IPAC NED's web pages \(MODULES-839\)/);
 });

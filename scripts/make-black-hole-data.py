@@ -7,6 +7,8 @@ Sources (the sentence relied on and the date read are in NOTICE.md)
   distance, a mass, a spectral type, a year, and the paper each comes from), never its text, pictures or layout, and cites it.
 - Supermassive black holes: the table of black hole masses in van den Bosch (2016, ApJ 831, 134), read from the paper's LaTeX source on arXiv (arXiv:1606.01246), with the
   galaxy's place from NASA/IPAC NED (the nucleus's position, a fact; NED asks for an acknowledgement, which NOTICE.md gives). Rows that are only upper limits are left out.
+  NED's places were looked up on 2026-11-09 at its /srs/ObjectLookup, which NED's robots.txt asks scripts not to use, so they are read only from the cache (ned.json) saved then:
+  a host missing from it stops the build, and NED is never asked.
 - The few systems typed here (HAND_STELLAR, HAND_QUIET, HAND_SUPERMASSIVE) are facts from the discovery papers named in each row; their places are Wikidata's (CC0),
   checked against the papers or against BlackCAT.
 
@@ -32,7 +34,8 @@ OUT = ROOT / "src" / "data" / "black-holes.ts"
 USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
 BLACKCAT = "https://www.astro.puc.cl/BlackCAT"
 VDB16_SOURCE = "https://arxiv.org/e-print/1606.01246"
-NED_LOOKUP = "https://ned.ipac.caltech.edu/srs/ObjectLookup"
+REFUSE_NED = ("make-black-hole-data.py does not ask NASA/IPAC NED's web pages (MODULES-839): its /srs/ObjectLookup is a part of NED's site that robots.txt keeps scripts out of "
+              "(with /cgi-bin/ and a 10 s crawl delay). Put the host's answer in the saved ned.json, or leave the host out (NED_DROP).")
 WIKIDATA = "https://query.wikidata.org/sparql"
 
 KINDS = ["stellar", "quiet", "supermassive"]
@@ -463,17 +466,7 @@ def ned_names(name: str) -> list[str]:
 
 
 def ned_lookup(name: str):
-    body = json.dumps({"name": {"v": name}}).encode()
-    for attempt in range(3):
-        try:
-            answer = json.loads(get(NED_LOOKUP, body, {"Content-Type": "application/json"}, tries=1))
-            found = answer.get("Preferred")
-            if found is None:
-                return None
-            return {"ned": found["Name"], "ra": found["Position"]["RA"], "dec": found["Position"]["Dec"], "asked": name, "type": (found.get("ObjType") or {}).get("Value")}
-        except Exception:
-            time.sleep(2)
-    return None
+    raise SystemExit(f"{REFUSE_NED} No saved answer for {name}.")
 
 
 def host_name(name: str) -> str:

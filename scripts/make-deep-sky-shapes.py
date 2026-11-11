@@ -4,9 +4,11 @@
 The objects are those of src/data/messier.ts and src/data/ngc-ic.ts (Wikidata, CC0). A shape (a major diameter, a minor diameter, a position angle) comes from two places only; NOTICE.md
 records each and the day it was read:
 
-- NASA/IPAC NED's diameters table (the "Diameters" data of one object at https://ned.ipac.caltech.edu/cgi-bin/nph-datasearch?search_type=Diameters&objname=...): for a galaxy, the
-  measurement at the B-band 25 mag/arcsec^2 isophote that NED lists (ESO-LV, UGC, ESO-Uppsala), and where there is none, the 2MASS K_s "total" diameter. Never a row that NED took from RC3
-  (so the NED-only build below holds no RC3 number), never an X-ray extent, never a guess.
+- NASA/IPAC NED's diameters table (the "Diameters" data of one object, as NED's web pages gave it on 2026-11-09): for a galaxy, the measurement at the B-band 25 mag/arcsec^2 isophote that
+  NED lists (ESO-LV, UGC, ESO-Uppsala), and where there is none, the 2MASS K_s "total" diameter. Never a row that NED took from RC3 (so the NED-only build below holds no RC3 number), never an
+  X-ray extent, never a guess. Those answers were fetched one page per galaxy from NED's /cgi-bin/, which NED's robots.txt asks scripts not to use, and NED's terms for passing the numbers on
+  are being confirmed (NOTICE.md). So this script never asks NED: it reads NED's answers only from a folder saved earlier (`--from`), and refuses to run otherwise. It is ONE FLAG too:
+  `--no-ned` builds the shapes without NED (RC3's, and the dotted symbol where RC3 has none).
 - RC3, the Third Reference Catalogue of Bright Galaxies (de Vaucouleurs et al. 1991; HEASARC table `rc3`): for a galaxy, the major diameter at the B-band 25 mag/arcsec^2 isophote (D25),
   the axis ratio (R25) and the position angle. RC3 states no licence and its use is under confirmation (NOTICE.md), so it is ONE FLAG: `--no-rc3` builds the shapes from NED alone.
 
@@ -16,30 +18,27 @@ what `deepSkyShape` then offers is the size that the object's own row carries (`
 What an object gets, first that has it: RC3 (unless `--no-rc3`), then NED. A row is `id | major | minor | angle | source`: the major and minor diameters in tenths of an arc-minute (minor
 left empty where unknown), the angle in whole degrees east of north (0 to 179, empty where unknown) and one letter for where it is from (r RC3, d NED).
 
-    python3 -I scripts/make-deep-sky-shapes.py                   # asks NED about each galaxy (needs the network; a few hours) and downloads RC3 (HEASARC)
-    python3 -I scripts/make-deep-sky-shapes.py --no-rc3          # the same, without RC3: the NED-only build
     python3 -I scripts/make-deep-sky-shapes.py --from DIR        # reads DIR/heasarc_rc3.tdat.gz and DIR/ned/<object>.txt saved earlier, asking nobody
+    python3 -I scripts/make-deep-sky-shapes.py --from DIR --no-rc3   # the same, without RC3: the NED-only build
+    python3 -I scripts/make-deep-sky-shapes.py --no-ned          # without NED: RC3 only (from DIR with --from, else downloaded from HEASARC)
+    python3 -I scripts/make-deep-sky-shapes.py                   # refuses: NED's web pages are not asked
     python3 -I scripts/make-deep-sky-shapes.py --out DIR         # writes the two data files into DIR instead of src/data (the test does)
     python3 -I scripts/make-deep-sky-shapes.py --only "M31,NGC 253"   # just those objects
     python3 -I scripts/make-deep-sky-shapes.py --reverse --out DIR    # asks from the other end of the list, so that a second run shares the asking with the first
 
-The answers of NED are kept in .cache/deep-sky-shapes (git-ignored). None of this runs in the test except through `--from` and the saved answers in test/data/shapes.
+None of this runs in the test except through `--from` and the saved answers in test/data/shapes, and the refusal.
 """
 import gzip
 import math
 import re
 import sys
-import time
-import urllib.error
-import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CACHE = ROOT / ".cache" / "deep-sky-shapes"
 RC3_URL = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_rc3.tdat.gz"
-NED_URL = "https://ned.ipac.caltech.edu/cgi-bin/nph-datasearch"
+REFUSE_NED = ("make-deep-sky-shapes.py does not ask NASA/IPAC NED's web pages (MODULES-839): they were fetched one page per galaxy against NED's robots.txt, which keeps scripts out of "
+              "/cgi-bin/ and /srs/ with a 10 s crawl delay, and NED's terms are being confirmed. Use --from DIR with answers saved earlier, or --no-ned to build without NED.")
 USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
 GALAXY = 1  # the index of "galaxy" in DEEP_SKY_TYPES
 
@@ -105,33 +104,11 @@ def ned_name(o):
 
 
 def ned_text(name, folder):
-    """NED's diameters answer for one object as text, from the saved answers, else from NED (kept in the cache). An object NED has no diameters for answers with an error page: kept as empty text."""
-    key = re.sub(r"[^A-Za-z0-9]+", "-", name) + ".txt"
-    for place in ([folder / "ned"] if folder is not None else []) + [CACHE]:
-        if (place / key).exists():
-            return (place / key).read_text(encoding="utf-8")
-    if folder is not None:
-        return ""
-    url = NED_URL + "?" + urllib.parse.urlencode({"search_type": "Diameters", "objname": name, "of": "ascii_bar"})
-    text = None
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT}), timeout=60) as answer:
-                text = answer.read().decode("utf-8", "replace")
-            break
-        except urllib.error.HTTPError as error:
-            if error.code == 500:  # NED's answer for an object it has no diameters for
-                text = ""
-                break
-            time.sleep(5 * (attempt + 1))
-        except Exception:
-            time.sleep(5 * (attempt + 1))
-    if text is None:
-        return None  # not asked successfully: not kept, so a later run asks again
-    CACHE.mkdir(parents=True, exist_ok=True)
-    (CACHE / key).write_text(text, encoding="utf-8")
-    time.sleep(0.15)
-    return text
+    """NED's diameters answer for one object as text, from the answers saved in `folder` (empty text where none is saved: NED had no diameters for it). NED itself is never asked."""
+    if folder is None:
+        raise SystemExit(REFUSE_NED)
+    path = folder / "ned" / (re.sub(r"[^A-Za-z0-9]+", "-", name) + ".txt")
+    return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
 def ned_rows(text):
@@ -181,6 +158,9 @@ def main():
     folder = Path(args_value("--from")) if args_value("--from") else None
     out_dir = Path(args_value("--out")) if args_value("--out") else ROOT / "src" / "data"
     use_rc3 = "--no-rc3" not in sys.argv
+    use_ned = "--no-ned" not in sys.argv
+    if use_ned and folder is None:
+        raise SystemExit(REFUSE_NED)
     only = {x.strip().upper() for x in args_value("--only").split(",")} if args_value("--only") else None
 
     rc3 = {}
@@ -202,19 +182,11 @@ def main():
     galaxies = [o for o in objects() if o["type"] == GALAXY and (only is None or o["id"].upper() in only)]
     if "--reverse" in sys.argv:  # a second run from the other end, to share the asking
         galaxies.reverse()
-    texts = {}
-    if folder is not None:
-        for o in galaxies:
-            texts[o["id"]] = ned_text(ned_name(o), folder)
-    else:
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            for o, text in zip(galaxies, pool.map(lambda o: ned_text(ned_name(o), None), galaxies)):
-                texts[o["id"]] = text
+    texts = {o["id"]: ned_text(ned_name(o), folder) for o in galaxies} if use_ned else {}
 
     out = {"messier": [], "ngc-ic": []}
     counts = {}
     rejected = 0
-    unasked = 0
     for o in galaxies:
         entry = None  # (major, minor, angle, source)
         for d in o["names"]:
@@ -231,16 +203,12 @@ def main():
             entry = (major, minor, None if angle is None or minor is None or minor > 0.97 * major else int(angle) % 180, "r")
             break
         if entry is None:
-            text = texts.get(o["id"])
-            if text is None:
-                unasked += 1
-            else:
-                found = ned_shape(text)
-                if found is not None:
-                    major, minor, angle = found
-                    if minor is not None and minor > 0.97 * major:
-                        angle = None
-                    entry = (major, minor, angle, "d")
+            found = ned_shape(texts[o["id"]]) if use_ned else None
+            if found is not None:
+                major, minor, angle = found
+                if minor is not None and minor > 0.97 * major:
+                    angle = None
+                entry = (major, minor, angle, "d")
         if entry is None:
             continue
         counts[entry[3]] = counts.get(entry[3], 0) + 1
@@ -253,7 +221,7 @@ def main():
         (out_dir / f"deep-sky-shapes-{name}.ts").write_text(HEADER + f"\n/** {note} */\nexport const {constant} = `" + "\n".join(out[name]) + "`;\n", encoding="utf-8")
     angled = sum(1 for rows in out.values() for row in rows if row.split("|")[3] != "")
     ratioed = sum(1 for rows in out.values() for row in rows if row.split("|")[2] != "")
-    print(f"rows: messier {len(out['messier'])}, ngc-ic {len(out['ngc-ic'])}; by source {counts}; with a minor axis {ratioed}; with an angle {angled}; rc3 rows refused for position {rejected}; not asked {unasked}; rc3 {'on' if use_rc3 else 'off'}")
+    print(f"rows: messier {len(out['messier'])}, ngc-ic {len(out['ngc-ic'])}; by source {counts}; with a minor axis {ratioed}; with an angle {angled}; rc3 rows refused for position {rejected}; rc3 {'on' if use_rc3 else 'off'}; ned {'on' if use_ned else 'off'}")
 
 
 if __name__ == "__main__":
