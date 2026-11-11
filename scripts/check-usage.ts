@@ -185,6 +185,26 @@ await step("sky-labels-iframe", async () => {
   });
 });
 
+await step("distance-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("distance"), "layers.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
+  if (out.length !== 7 || out[0] !== "10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance") throw new Error(`the nearest layer is not the 9 stars within 10 light-years: ${out.join(" | ")}`);
+  if (!/^Infinity: 7672 things/.test(out[5]!) || out[6] !== "true 225 640") throw new Error(`unexpected output: ${out.join(" | ")}`);
+});
+
+await step("distance-iframe", async () => {
+  if (!existsSync(at("site", "embed.html"))) throw new Error("site/ is not built: `pnpm test:usage` builds it");
+  await opened(browser, async (page) => {
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    await showPage(page, "distance/iframe.html");
+    const flat = page.frameLocator("iframe").first();
+    await flat.locator("[data-dist-band]").first().waitFor({ state: "attached", timeout: 30_000 });
+    if ((await flat.locator('.dist-legend li[data-band="0"]').count()) !== 1) throw new Error("the flat embed has no legend for the first band");
+    const space = page.frameLocator("iframe").last();
+    await space.locator("#sp-stage[data-state=live]").waitFor({ state: "attached", timeout: 60_000 });
+    if (Number(await space.locator("#sp-stage").getAttribute("data-things")) < 500) throw new Error("the 3D embed drew too few things for 100 light-years");
+  });
+});
+
 await step("constellation-3d-node", () => {
   const out = execFileSync(process.execPath, [join(examples("constellation-3d"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
   if (out.length !== 9 || out[0] !== "Betelgeuse (rough): 333 ly, between 225 and 640" || out[4] !== "Alnilam (none): distance unknown" || out[5] !== "Saiph (rough): 247 ly, at least 116") throw new Error(`unexpected output: ${out.join("\n")}`);
@@ -397,6 +417,8 @@ const FILES: Record<string, string[]> = {
   "portrait/Star.tsx": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "sky-labels/labels.mjs": ["README.md", "docs/guides/sky-names-and-lines.md", "docs/guides/ja/sky-names-and-lines.md"],
   "sky-labels/iframe.html": ["docs/guides/sky-names-and-lines.md", "docs/guides/ja/sky-names-and-lines.md"],
+  "distance/layers.mjs": ["README.md", "docs/guides/sky-by-distance.md", "docs/guides/ja/sky-by-distance.md"],
+  "distance/iframe.html": ["docs/guides/sky-by-distance.md", "docs/guides/ja/sky-by-distance.md"],
   "door/source.mjs": ["README.md", "docs/guides/data-door.md", "docs/guides/ja/data-door.md"],
   "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
