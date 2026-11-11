@@ -17,6 +17,8 @@ import { faintMarks, type FaintDraw } from "./faint-layer.ts";
 import { project, unproject, type Projection, type SkyPoint } from "../src/projection.ts";
 import type { SeenSky } from "../src/sky-from.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
+import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
+import type { FigureLines, StarNames } from "../src/sky-labels.ts";
 
 export { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM, FAINT_PAST_GAP, type FaintDraw } from "./faint-layer.ts";
 export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "pictures", "holes", "faint", "grid"] as const;
@@ -60,6 +62,8 @@ export interface ChartOptions extends View {
   /** The ids of the pictures that have been fetched and may be drawn (the `pictures` layer), and where the package's `pictures/` folder is served from (`./` when left out). */
   readyPictures?: ReadonlySet<string> | undefined;
   pictureBase?: string | undefined;
+  /** The `sky-labels` tier, laid out by the caller for this very view: faint constellation lines with the picked figure at full strength (they replace the `lines` layer), and names on the brightest stars (they replace the chart's own star names). */
+  overlay?: { lines?: FigureLines | undefined; names?: StarNames | undefined } | undefined;
 }
 
 /** What a tap can land on, in chart pixels. */
@@ -545,13 +549,15 @@ export function chart(o: ChartOptions): Chart {
     body += `<path d="${quiet}" fill="none" stroke="${COLOURS.boundary}" stroke-width="1" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/><path d="${neighbours}" fill="none" stroke="${COLOURS.near}" stroke-width="1.6" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/><path d="${loud}" fill="none" stroke="${COLOURS.boundaryOn}" stroke-width="1.6" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/>`;
   }
 
-  if (layers.has("lines") || o.highlight !== undefined) {
+  if (o.overlay?.lines !== undefined) body += figureLinesSvg(o.overlay.lines);
+
+  if ((layers.has("lines") && o.overlay?.lines === undefined) || o.highlight !== undefined) {
     let quiet = "";
     let other = "";
     let loud = "";
     for (const figure of drawn) {
       const on = figure.asterism.id === o.highlight;
-      if (!on && !layers.has("lines")) continue;
+      if (!on && (!layers.has("lines") || o.overlay?.lines !== undefined)) continue;
       const side = figure.asterism.kind === "asterism" && culture.id !== "chinese";
       for (const [star, next] of figure.segments) {
         const a = seen === undefined ? star : seen.get(`hr-${star.hr}`);
@@ -616,7 +622,7 @@ export function chart(o: ChartOptions): Chart {
     if (key === o.picked) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
     else if (isNear) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 5)}" fill="none" stroke="${COLOURS.near}" stroke-width="1.8"/>`;
     if (isNear && key !== o.picked) starLabels.push({ rank: 900, ...besideMarker(text ?? designation, 11, at[0], at[1], r + 6, COLOURS.near, 1) });
-    else if (layers.has("names") && text !== undefined && magnitude <= namedLimit) starLabels.push({ rank: key === o.picked ? -1 : 1000 + magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
+    else if (layers.has("names") && o.overlay?.names === undefined && text !== undefined && magnitude <= namedLimit) starLabels.push({ rank: key === o.picked ? -1 : 1000 + magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
   };
   if (o.sky === undefined) {
     const drawn = stars({ magnitude: depth });
@@ -663,6 +669,7 @@ export function chart(o: ChartOptions): Chart {
   }
   body += `<g>${dots}</g>${ring}${members}`;
 
+  for (const label of o.overlay?.names?.labels ?? []) obstacles.push({ x0: label.x0 - 2, y0: label.y0 - 1, x1: label.x1 + 2, y1: label.y1 + 1 });
   const labels = [...starLabels, ...nameLabels, ...deepLabels, ...holeLabels].sort((a, b) => a.rank - b.rank);
   const chosen = placeLabels(labels.map((l) => l.places.map((p) => p.box)), obstacles);
   let text = "";
@@ -673,6 +680,9 @@ export function chart(o: ChartOptions): Chart {
     text += `<text x="${round(p.x)}" y="${round(p.y)}" text-anchor="${p.anchor}" font-size="${l.size}" font-weight="${l.weight}" fill="${l.fill}" fill-opacity="${l.opacity}">${escapeXml(l.text)}</text>`;
   });
   body += `<g font-family="system-ui, sans-serif"${culture.id === "chinese" ? ' lang="zh-Hant"' : ""} pointer-events="none" stroke="${COLOURS.ground}" stroke-width="3" stroke-linejoin="round" paint-order="stroke">${text}</g>`;
+
+  if (o.overlay?.names !== undefined) body += starNamesSvg(o.overlay.names);
+  if (o.overlay?.lines !== undefined) body += figureNameSvg(o.overlay.lines);
 
   return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, wanted: deep.wanted, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
 }

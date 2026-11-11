@@ -165,6 +165,26 @@ await step("iframe", async () => {
   });
 });
 
+await step("sky-labels-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("sky-labels"), "labels.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
+  if (out.length !== 4 || out[0] !== "SIRIUS, RIGEL, PROCYON, BETELGEUSE, ALDEBARAN") throw new Error(`the names are not the five brightest in view: ${out.join(" | ")}`);
+  if (out[1] !== "RIGEL, PROCYON, BETELGEUSE, ALDEBARAN, POLLUX") throw new Error(`the disc did not hide Sirius: ${out[1]}`);
+  if (out[2] !== "Ori Orion 1 0.3") throw new Error(`the pointer did not raise Orion alone to full strength: ${out[2]}`);
+});
+
+await step("sky-labels-iframe", async () => {
+  if (!existsSync(at("site", "embed.html"))) throw new Error("site/ is not built: `pnpm test:usage` builds it");
+  await opened(browser, async (page) => {
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    await showPage(page, "sky-labels/iframe.html");
+    const frame = page.frameLocator("iframe");
+    await frame.locator("svg circle").first().waitFor({ state: "attached", timeout: 20_000 });
+    const named = await frame.locator("svg [data-star-name]").count();
+    if (named !== 10) throw new Error(`the embed named ${named} stars, not 10`);
+    if ((await frame.locator("svg [data-faint-lines]").getAttribute("stroke-opacity")) !== "0.16") throw new Error("the embed's lines are not at the strength its address gave");
+  });
+});
+
 await step("constellation-3d-node", () => {
   const out = execFileSync(process.execPath, [join(examples("constellation-3d"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
   if (out.length !== 9 || out[0] !== "Betelgeuse (rough): 333 ly, between 225 and 640" || out[4] !== "Alnilam (none): distance unknown" || out[5] !== "Saiph (rough): 247 ly, at least 116") throw new Error(`unexpected output: ${out.join("\n")}`);
@@ -369,6 +389,8 @@ const FILES: Record<string, string[]> = {
   "portrait/iframe.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/iframe-3d.html": ["docs/guides/star-in-3d.md", "docs/guides/ja/star-in-3d.md"],
   "portrait/Star.tsx": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "sky-labels/labels.mjs": ["README.md", "docs/guides/sky-names-and-lines.md", "docs/guides/ja/sky-names-and-lines.md"],
+  "sky-labels/iframe.html": ["docs/guides/sky-names-and-lines.md", "docs/guides/ja/sky-names-and-lines.md"],
   "door/source.mjs": ["README.md", "docs/guides/data-door.md", "docs/guides/ja/data-door.md"],
   "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],

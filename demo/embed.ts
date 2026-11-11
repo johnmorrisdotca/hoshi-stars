@@ -5,8 +5,10 @@
 //   &lang=ja             constellation names in Japanese     &c=Ori                  one constellation brighter, with its boundary
 //   &culture=chinese     the sky culture drawn: western (the 88 constellations and asterisms, the default), japanese or chinese
 //   &from=HR5459        the sky seen from a star (Bright Star Catalogue number: Alpha Centauri; it needs a distance)
+//   &star-names=12      names on the 12 brightest stars in view (&star-names-magnitude=1.5 names those brighter than 1.5)   &constellation-lines=0.2  faint constellation lines, the one under the pointer at full strength
+//   &label-size=14&label-case=upper  the look of those names: label-font, -size, -weight, -colour, -halo, -halo-width, -case, -letter-spacing, -leader, -leader-colour, -offset (or the page's --hoshi-label-* custom properties)
 //   &near=S:2491         ring what is near a star (S:<HR number>), a Messier object (D:M31) or a constellation (C:Ori)   &by=space  measure the stars' nearness in space
-import { chart, defaultZoom, pictureZoomCap, ZOOM_MAX, type View } from "./chart.ts";
+import { chart, defaultZoom, pictureZoomCap, toScreen, ZOOM_MAX, type View } from "./chart.ts";
 import { choiceOf } from "./choice.ts";
 import { cultureOf } from "./cultures.ts";
 import { attachHands } from "./hands.ts";
@@ -15,6 +17,9 @@ import { nearbyOf } from "./nearby.ts";
 import { faintFor } from "./faint.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { frameCredit } from "./frame-credit.ts";
+import { loadBodyLabelFont } from "@johnmorrisdotca/kazoku-ui/body-label";
+import { lookOf } from "./sky-labels-svg.ts";
+import { createFigureLines, createStarNames, type FigureLinesSettings, type SkyProjector } from "../src/sky-labels.ts";
 
 const frame = document.getElementById("frame")!;
 const sky = document.getElementById("sky")!;
@@ -42,15 +47,35 @@ for (const [id, label] of [["zoom-in", ja ? "拡大" : "Zoom in"], ["zoom-out", 
   button.title = label;
 }
 
+const WIDE: readonly string[] = ["equirectangular", "mollweide", "hammer"];
+const look = lookOf(document.documentElement, new URLSearchParams(location.search));
+const names = choice.starNames === undefined ? undefined : createStarNames({ ...choice.starNames, lang: choice.lang, style: look });
+const lineSettings = (): FigureLinesSettings => ({ strength: choice.lineStrength, lang: choice.lang, style: look, reach: matchMedia("(pointer: coarse)").matches ? 28 : 14, ...(WIDE.includes(choice.projection) ? { maxLength: width / 2 } : {}) });
+const lines = choice.lineStrength === undefined ? undefined : createFigureLines(lineSettings());
+const projector: SkyProjector = (ra, dec, out) => {
+  const at = toScreen(view, width, height, { rightAscension: ra, declination: dec });
+  if (at === undefined) return false;
+  out.x = at[0];
+  out.y = at[1];
+  return true;
+};
+
+if (names !== undefined || lines !== undefined) void loadBodyLabelFont(new URL("fonts/Michroma-Regular.ttf", location.href)).then(() => schedule()).catch(() => undefined);
+
 const fetcher = createDeepFetcher("./", () => schedule());
 
 function draw(): void {
   const frameBox = frame.getBoundingClientRect();
   const at = tools.getBoundingClientRect();
   const keepClear = [{ x0: at.left - frameBox.left - 4, y0: at.top - frameBox.top - 4, x1: at.right - frameBox.left + 4, y1: at.bottom - frameBox.top + 4 }];
+  const credit = document.querySelector("[data-testid='frame-credit']")?.getBoundingClientRect();
+  if (credit !== undefined) keepClear.push({ x0: credit.left - frameBox.left - 4, y0: credit.top - frameBox.top - 4, x1: credit.right - frameBox.left + 4, y1: credit.bottom - frameBox.top + 4 });
   const faint = seen === undefined ? faintFor(view, width, height, choice.magnitude, choice.layers, schedule) : undefined;
   if (choice.layers.has("deep") && view.zoom >= TIER_ZOOM) void fetcher.loadTier();
-  const drawn = chart({ ...choice, ...view, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  const room = { width, height };
+  if (names !== undefined) names.update(projector, room, (x, y) => keepClear.some((box) => x >= box.x0 && x <= box.x1 && y >= box.y0 && y <= box.y1));
+  if (lines !== undefined) lines.update(projector, room, names?.labels);
+  const drawn = chart({ ...choice, ...view, overlay: { lines, names }, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame
   const kept = new Map<string, Element>();
   sky.querySelectorAll("image[data-pic]").forEach((node) => kept.set(node.getAttribute("data-pic")!, node));
@@ -114,8 +139,26 @@ document.getElementById("reset")!.addEventListener("click", () => {
   writeAddress();
 });
 
+if (lines !== undefined) {
+  // a mouse picks the figure it rests on and lets go when it leaves; a finger picks what it touches and the pick stays until the next touch
+  const pick = (event: PointerEvent): void => {
+    const box = frame.getBoundingClientRect();
+    if (lines.point(event.clientX - box.left, event.clientY - box.top)) schedule();
+  };
+  frame.addEventListener("pointermove", (event) => {
+    if (event.pointerType === "mouse" && event.buttons === 0) pick(event);
+  });
+  frame.addEventListener("pointerdown", (event) => {
+    if (event.pointerType !== "mouse") pick(event);
+  });
+  frame.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "mouse" && lines.point()) schedule();
+  });
+}
+
 addEventListener("resize", () => {
   ({ width, height } = sizeOf());
+  lines?.set(lineSettings());
   if (!new URLSearchParams(location.search).has("zoom")) view = { ...view, zoom: opening() };
   hands.sync();
   draw();

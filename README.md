@@ -498,6 +498,49 @@ console.log(faintTilesFor({ rightAscension: 83.8, declination: -5.4, radius: 1 }
 
 The demo's map has a **Faint stars** layer: zoom into Orion and more stars appear, with `Stars to magnitude 9.5 here` under the map. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the counts, the tile format and what is left out (`NOTICE.md` has the licence sentences).
 
+## Names on the stars and faint constellation lines
+
+For a sky your page draws itself, `@johnmorrisdotca/hoshi-stars/sky-labels` chooses which of the brightest stars get a name (a count or a magnitude, in English or katakana, only those in view and not behind a body you say covers them) and lays out the 88 constellation figures as very faint lines, with the figure the pointer is on (a line or a star of it), or that is touched, at full strength and its name clear above it. The names come in Michroma in small capitals with a thin ring and the catalogue letter under them (your page loads the font with kazoku-ui's `loadBodyLabelFont`). Both are off until asked for (`star-names="12"`, `star-names-magnitude="1.5"`, `constellation-lines="0.16"`), the look is a setting (`LabelStyle`, or CSS custom properties `--hoshi-label-*`), nothing is redrawn at rest and nothing is allocated while it moves. The embed page reads the same attributes from its address. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has every setting.
+
+```js
+import { createFigureLines, createStarNames, discCover, labelStyleVars, lineStrengthFromAttribute, starNamesFromAttributes } from "@johnmorrisdotca/hoshi-stars/sky-labels";
+
+// Your own sky: this one looks at Orion, 8 pixels to the degree, in a view 1280 by 720.
+const project = (ra, dec, out) => {
+  const across = ((ra - 84 + 540) % 360) - 180;
+  out.x = 640 - across * 8;
+  out.y = 360 - dec * 8;
+  return Math.abs(across) < 80;
+};
+const view = { width: 1280, height: 720 };
+
+// The names. The settings come from the page's attributes, star-names="5" here, and a look is a setting too.
+const names = createStarNames({ ...starNamesFromAttributes("5", null), style: { case: "upper" } });
+names.update(project, view);
+console.log(names.labels.map((label) => label.text).join(", "));
+
+// A body in front of the sky hides the stars behind it: here a disc over Sirius, and the next star is named instead.
+const sirius = names.labels[0];
+names.update(project, view, discCover(sirius.x, sirius.y, 30));
+console.log(names.labels.map((label) => label.text).join(", "));
+
+// The lines, from constellation-lines="0.3": every figure at that strength, the one under the pointer at full strength.
+const lines = createFigureLines({ strength: lineStrengthFromAttribute("0.3") });
+lines.update(project, view);
+const orion = lines.figures.find((figure) => figure.abbreviation === "Ori");
+lines.point(lines.segments[orion.start * 4], lines.segments[orion.start * 4 + 1]);
+const other = lines.figures.find((figure) => figure !== lines.picked);
+console.log(lines.picked.abbreviation, lines.name.text, lines.opacityOf(lines.picked), lines.opacityOf(other));
+
+// The look as CSS custom properties, to set on the element that holds the labels.
+console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
+
+// SIRIUS, RIGEL, PROCYON, BETELGEUSE, ALDEBARAN
+// RIGEL, PROCYON, BETELGEUSE, ALDEBARAN, POLLUX
+// Ori Orion 1 0.3
+// 14
+```
+
 ## Outside data
 
 The package draws; you bring the data. `@johnmorrisdotca/hoshi-stars/door` takes outside stars (and deep-sky objects) as a **source**: a small object that carries its own licence and credit, so the page can always say whose data is on the screen. Without a source the package draws exactly what it did before, from its own Yale and UCAC4 data. A source of yours may be non-commercial or share-alike; the credit line says so beside the licence, and the package never bundles one.

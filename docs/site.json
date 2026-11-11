@@ -150,6 +150,11 @@
       "ja": "データの入口（自分で用意した星やディープスカイ天体を、ライセンスと出典つきのソースとして渡し、いま画面にあるのは誰のデータかを示します）",
       "platform": "neutral"
     },
+    "./sky-labels": {
+      "en": "Names on the brightest stars and the constellation figures as faint lines, for a sky you draw yourself: a count or a magnitude, the figure under the pointer at full strength, a body that covers part of the sky, and a look set by settings alone",
+      "ja": "いちばん明るい星の名前と、うすい星座の線 (自分で描く空のために。個数か等級で選べます。ポインターが乗っている星座は濃く表示でき、空をおおうものにも対応し、見た目は設定だけで変えられます)",
+      "platform": "neutral"
+    },
     "./sky-from": {
       "en": "The sky seen from another star: positions, distances and brightness from there, with the Sun among the stars",
       "ja": "ほかの星から見た空 (そこから見た位置・距離・明るさ。太陽も星のひとつ)",

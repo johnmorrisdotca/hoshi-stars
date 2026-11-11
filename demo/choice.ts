@@ -3,6 +3,7 @@ import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, t
 import { cultureOf, DEFAULT_CULTURE } from "./cultures.ts";
 import { fromText, viewpointOf } from "./from.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
+import { CONSTELLATION_LINES_ATTRIBUTE, lineStrengthFromAttribute, STAR_NAMES_ATTRIBUTES, starNamesFromAttributes, type StarNamesSettings } from "../src/sky-labels.ts";
 
 export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "pictures", "faint", "grid"];
 export const DEFAULT_MAGNITUDE = 5;
@@ -20,6 +21,10 @@ export interface Choice extends View {
   from?: string | undefined;
   /** The sky culture drawn: `western`, `japanese` or `chinese`; left out for the Western sky. */
   cultureId?: string | undefined;
+  /** Names on the brightest stars (`star-names=12`, `star-names-magnitude=1.5`); left out for none. */
+  starNames?: StarNamesSettings | undefined;
+  /** Faint constellation lines at this strength, 0 to 1 (`constellation-lines=0.2`); left out for none. */
+  lineStrength?: number | undefined;
 }
 
 const number = (text: string | null, fallback: number, low: number, high: number): number => {
@@ -47,6 +52,8 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
   const near = /^[SDC]:[\w.-]+$/.test(query.get("near") ?? "") ? query.get("near")! : undefined;
   const from = viewpointOf(query.get("from"));
   const culture = cultureOf(query.get("culture"));
+  const starNames = starNamesFromAttributes(query.get(STAR_NAMES_ATTRIBUTES.count), query.get(STAR_NAMES_ATTRIBUTES.magnitude));
+  const lineStrength = lineStrengthFromAttribute(query.get(CONSTELLATION_LINES_ATTRIBUTE));
   return {
     projection,
     ra: ((number(query.get("ra"), DEFAULT_VIEW.ra, -1e6, 1e6) % 360) + 360) % 360,
@@ -60,6 +67,8 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
     ...(culture === undefined || culture.id === DEFAULT_CULTURE ? {} : { cultureId: culture.id }),
     ...(near === undefined ? {} : { nearTo: near }),
     ...(near !== undefined && query.get("by") === "space" ? { nearBy: "space" as const } : {}),
+    ...(starNames === undefined ? {} : { starNames }),
+    ...(lineStrength === undefined ? {} : { lineStrength }),
   };
 }
 
