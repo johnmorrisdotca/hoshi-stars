@@ -56,8 +56,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps ${{ startsWith(matrix.project, 'webkit') && 'webkit' || 'chromium' }}
-        timeout-minutes: 25
+      - uses: ./.github/actions/playwright
+        with:
+          browsers: ${{ startsWith(matrix.project, 'webkit') && 'webkit' || 'chromium' }}
       - name: The demo, played in one browser at one width (pnpm test:demo plays all four)
         run: pnpm test:demo:one --project=${{ matrix.project }}
         timeout-minutes: 15
@@ -72,8 +73,9 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
-        timeout-minutes: 25
+      - uses: ./.github/actions/playwright
+        with:
+          browsers: chromium
       - name: Every way of using the package, built and opened as npm packs it
         run: pnpm test:usage
   docs:
@@ -133,5 +135,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      - uses: ./.github/actions/playwright
+        with:
+          browsers: chromium
       - run: pnpm test:freeze
