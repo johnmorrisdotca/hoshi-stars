@@ -43,7 +43,7 @@ TRAPPIST-1: 7 planets, periods 1.51, 2.42, 4.05, 6.10, 9.21, 12.35, 18.77 days
 
 - `id`、`name`、`nameJa`、`designation`、`aliases`、`constellation`(`Cen`)。
 - J2000の度で表した `rightAscension` と `declination`。わかっているときは `positionErrorArcsec` もあります。
-- `parallaxMas` と `parallaxErrorMas`、距離の `lightYears` とその誤差 `lightYearsError`。どの星系も、距離は10%以内の誤差でわかっています。
+- `parallaxMas` と `parallaxErrorMas`、距離の `lightYears` とその誤差 `lightYearsError`。どの星系も、距離は10%以内の誤差でわかっていて、上限は `NEAR_STAR_LIMIT_LY`(20)です。
 - `spectralType` と `luminosityClass`(矮星は `V`)、V等級の `magnitude`、固有運動の `properMotionRaMas` と `properMotionDecMas`。
 - `members`、`starsAtLeast`、`flags`(`coarsePosition` は位置がイェール大学の星表そのもので、よくても秒角単位の精度であること、`ambiguousMatch` は出典との照合がはっきりしないこと)。
 - `sources`:値ごとの出典で、`BSC`(イェール輝星カタログ)、`GCTP`(イェール視差星表)、`2MASS`(2ミクロン全天サーベイ)、`typed`(発表された値をこのパッケージに入力したもの)のどれかです。距離は `GCTP`、`BSC`、`dynamical`(連星の軌道から)のどれかです。
@@ -56,7 +56,7 @@ TRAPPIST-1: 7 planets, periods 1.51, 2.42, 4.05, 6.10, 9.21, 12.35, 18.77 days
 
 **主星の選び方。** 距離が10%以内の誤差でわかっていて、次のどれかにあてはまる星を入れています。
 
-- 50光年以内(75個)。いちばん近いのは4.2光年のプロキシマ・ケンタウリで、いちばん遠いのは49光年のG型矮星です。
+- 50光年以内(`EXOPLANET_HOST_LIMIT_LY`、75個)。いちばん近いのは4.2光年のプロキシマ・ケンタウリで、いちばん遠いのは49光年のG型矮星です。
 - それより遠くて、IAUの固有名がある星(4個:エライ、ヘルウェティオス、ティタウィン、ハマル)。
 - トラピスト1。地球ほどの大きさの惑星を7つもつ星で、距離は発見の論文から入力しています。
 

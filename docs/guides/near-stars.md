@@ -43,7 +43,7 @@ Each `NearStar` has:
 
 - `id`, `name`, `nameJa`, `designation`, `aliases` and `constellation` (`Cen`).
 - `rightAscension` and `declination` in degrees at J2000, with `positionErrorArcsec` where it is known.
-- `parallaxMas` and `parallaxErrorMas`, and the distance `lightYears` with its `lightYearsError`. Every system's distance is known to 10% or better.
+- `parallaxMas` and `parallaxErrorMas`, and the distance `lightYears` with its `lightYearsError`. Every system's distance is known to 10% or better, and `NEAR_STAR_LIMIT_LY` (20) is the limit.
 - `spectralType` and `luminosityClass` (`V` for a dwarf), `magnitude` (V), and the proper motion `properMotionRaMas` and `properMotionDecMas`.
 - `members`, `starsAtLeast` and `flags` (`coarsePosition`: the position is the Yale catalogue's own, good to arc-seconds at best; `ambiguousMatch`: the match to the source is not clear).
 - `sources`: where each value comes from, as one of `BSC` (the Yale Bright Star Catalogue), `GCTP` (the Yale General Catalogue of Trigonometric Stellar Parallaxes), `2MASS` (the Two Micron All Sky Survey) or `typed` (a published value typed into the package). The distance is `GCTP`, `BSC` or `dynamical` (from the orbit of a binary).
@@ -56,7 +56,7 @@ Each `NearStar` has:
 
 **How the hosts were picked.** A host is in if its distance is known to 10% or better and it is one of these:
 
-- within 50 light-years (75 hosts), the nearest first, from Proxima Centauri at 4.2 to a G dwarf at 49;
+- within 50 light-years (`EXOPLANET_HOST_LIMIT_LY`, 75 hosts), the nearest first, from Proxima Centauri at 4.2 to a G dwarf at 49;
 - a star with an IAU proper name beyond that (4 hosts: Errai, Helvetios, Titawin and Hamal);
 - TRAPPIST-1, the star with seven Earth-sized planets, whose distance is typed from its discovery papers.
 
