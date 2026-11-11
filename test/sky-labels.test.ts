@@ -455,9 +455,11 @@ test("the picked figure's name is clear above the figure, and never over a star'
   const box = { x0: name.x - half, x1: name.x + half, y0: name.y - labelHeight(lines.style) * 0.8, y1: name.y + labelHeight(lines.style) * 0.2 };
   assert.ok(box.y1 <= orion.top, "above the top of the figure");
   for (const label of names.labels) assert.ok(box.x1 <= label.x0 || box.x0 >= label.x1 || box.y1 <= label.y0 || box.y0 >= label.y1, `clear of ${label.text}`);
-  const before = name.y;
-  lines.update(project, VIEW, [{ x0: 0, y0: box.y0 - 1, x1: VIEW.width, y1: box.y1 + 1 }]);
-  assert.ok(lines.name!.y < before, "a star's name in the way moves it further up");
+  const bar = { x0: 0, y0: box.y0 - 1, x1: VIEW.width, y1: box.y1 + 1 };
+  lines.update(project, VIEW, [bar]);
+  const moved = { y0: lines.name!.y - labelHeight(lines.style) * 0.8, y1: lines.name!.y + labelHeight(lines.style) * 0.2 };
+  assert.ok(moved.y1 <= bar.y0 || moved.y0 >= bar.y1, "a star's name in the way moves it clear of that name");
+  assert.ok(moved.y1 <= orion.top, "and still above the figure");
 });
 
 test("a figure that reaches the top of the view has its name below it", () => {
@@ -524,4 +526,33 @@ test("a figure that runs off the view still has its name clear of every star's n
     }
     assert.ok(box.x0 >= 0 && box.x1 <= VIEW.width && box.y0 >= 0 && box.y1 <= VIEW.height, "and inside the view");
   }
+});
+
+test("a fainter named star is named only where its own ring and dot are clear of every name placed before it", () => {
+  const reaches = (box: StarNameLabel, x: number, y: number, r: number): boolean => {
+    const dx = x < box.x0 ? box.x0 - x : x > box.x1 ? x - box.x1 : 0;
+    const dy = y < box.y0 ? box.y0 - y : y > box.y1 ? y - box.y1 : 0;
+    return dx * dx + dy * dy < r * r;
+  };
+  let checked = 0;
+  for (const scale of [3, 5, 8, 14]) {
+    const scaled: SkyProjector = (ra, dec, out) => {
+      const across = ((ra - 84 + 540) % 360) - 180;
+      out.x = 640 - across * scale;
+      out.y = 360 - dec * scale;
+      return Math.abs(across) < 80;
+    };
+    const names = createStarNames({ count: 335, dotRadius: 4 });
+    names.update(scaled, VIEW);
+    for (let j = 0; j < names.labels.length; j += 1) {
+      const later = names.labels[j]!;
+      const mark = Math.max(later.ring, 4);
+      for (let i = 0; i < j; i += 1) {
+        const earlier = names.labels[i]!;
+        assert.ok(!reaches(earlier, later.x, later.y, mark), `at ${scale} px a degree the ring or dot of ${later.text} lies under the name ${earlier.text}`);
+        checked += 1;
+      }
+    }
+  }
+  assert.ok(checked > 100);
 });
