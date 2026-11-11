@@ -19,6 +19,7 @@ import type { SeenSky } from "../src/sky-from.ts";
 import { placeLabels, textSize, type Box } from "./labels.ts";
 import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
 import type { FigureLines, StarNames } from "../src/sky-labels.ts";
+import type { DistanceLayers } from "../src/distance.ts";
 
 export { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM, FAINT_PAST_GAP, type FaintDraw } from "./faint-layer.ts";
 export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "pictures", "holes", "faint", "grid"] as const;
@@ -64,6 +65,8 @@ export interface ChartOptions extends View {
   pictureBase?: string | undefined;
   /** The `sky-labels` tier, laid out by the caller for this very view: faint constellation lines with the picked figure at full strength (they replace the `lines` layer), and names on the brightest stars (they replace the chart's own star names). */
   overlay?: { lines?: FigureLines | undefined; names?: StarNames | undefined } | undefined;
+  /** The sky out to a distance (`layersByDistance`): only these things are drawn, each in the colour of its band (`colours`, six of them, near to far); a thing whose distance is uncertain is a hollow ring in `uncertain`; a thing with no distance is not drawn. The faintest-star limit, the faint layer and the deep-sky marks and pictures are left off while it is on. */
+  distance?: { layers: DistanceLayers; colours: readonly string[]; uncertain: string } | undefined;
 }
 
 /** What a tap can land on, in chart pixels. */
@@ -531,7 +534,7 @@ export function chart(o: ChartOptions): Chart {
   const seen = o.sky === undefined ? undefined : new Map(o.sky.map((star) => [star.id, star]));
   const near = new Set(o.near ?? []);
   const nearConstellations = new Set([...near].filter((key) => key.startsWith("C:")).map((key) => key.slice(2)));
-  const deep = drawDeep({ width, height, zoom: o.zoom, place, marks: layers.has("deep"), pictures: layers.has("pictures"), catalogue: o.catalogue ?? messier(), shapeOf: o.shapeOf ?? deepSkyShape, picked: o.picked, near, ready: o.readyPictures ?? new Set(), base: o.pictureBase ?? "./" });
+  const deep = drawDeep({ width, height, zoom: o.zoom, place, marks: layers.has("deep") && o.distance === undefined, pictures: layers.has("pictures") && o.distance === undefined, catalogue: o.catalogue ?? messier(), shapeOf: o.shapeOf ?? deepSkyShape, picked: o.picked, near, ready: o.readyPictures ?? new Set(), base: o.pictureBase ?? "./" });
   body += deep.under;
   if (seen === undefined && (layers.has("boundaries") || o.highlight !== undefined || nearConstellations.size > 0)) {
     let quiet = "";
@@ -601,7 +604,7 @@ export function chart(o: ChartOptions): Chart {
 
   const grow = growOf(o.zoom);
   let faintDrawn: Chart["faint"];
-  if (o.sky === undefined && layers.has("faint") && o.faint !== undefined) {
+  if (o.sky === undefined && o.distance === undefined && layers.has("faint") && o.faint !== undefined) {
     const marks = faintMarks(o.faint, place, inside, grow);
     body += marks.svg;
     faintDrawn = { drawn: marks.drawn, depth: marks.depth };
@@ -624,7 +627,29 @@ export function chart(o: ChartOptions): Chart {
     if (isNear && key !== o.picked) starLabels.push({ rank: 900, ...besideMarker(text ?? designation, 11, at[0], at[1], r + 6, COLOURS.near, 1) });
     else if (layers.has("names") && o.overlay?.names === undefined && text !== undefined && magnitude <= namedLimit) starLabels.push({ rank: key === o.picked ? -1 : 1000 + magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
   };
-  if (o.sky === undefined) {
+  if (o.sky === undefined && o.distance !== undefined) {
+    const { colours, uncertain } = o.distance;
+    const nameLimit = 2.4 + Math.log2(o.zoom) * 1.1;
+    for (const thing of o.distance.layers.things) {
+      const at = place({ rightAscension: thing.rightAscension, declination: thing.declination });
+      if (at === undefined || !inside(at)) continue;
+      const colour = thing.uncertain ? uncertain : colours[thing.band]!;
+      const magnitude = thing.magnitude ?? 9;
+      const r = Math.max(1.8, (6 - Math.max(magnitude, -2)) * 0.5 + 1.3) * grow;
+      const x = round(at[0]);
+      const y = round(at[1]);
+      const mark = `data-dist-band="${thing.uncertain ? "uncertain" : thing.band}" data-dist-kind="${thing.kind}"`;
+      if (thing.uncertain) dots += `<circle ${mark} cx="${x}" cy="${y}" r="${round(r + 1)}" fill="none" stroke="${colour}" stroke-width="1" stroke-opacity=".85"/>`;
+      else if (thing.kind === "deep-sky") dots += `<path ${mark} d="M${x} ${round(at[1] - r - 1.5)}L${round(at[0] + r + 1.5)} ${y}L${x} ${round(at[1] + r + 1.5)}L${round(at[0] - r - 1.5)} ${y}Z" fill="${colour}"/>`;
+      else dots += `<circle ${mark} cx="${x}" cy="${y}" r="${round(r)}" fill="${colour}"/>`;
+      if (thing.kind === "star") hits.push({ x: at[0], y: at[1], kind: "star", key: thing.id.slice(3) });
+      else if (thing.kind === "deep-sky") hits.push({ x: at[0], y: at[1], kind: "deep", key: thing.id });
+      if (r >= 2.6) obstacles.push(around(at[0], at[1], r + 1));
+      const star = thing.kind === "star" ? starByHr(Number(thing.id.slice(3))) : undefined;
+      const text = thing.name === undefined ? undefined : lang === "ja" && star?.nameJa !== undefined ? star.nameJa : thing.name;
+      if (layers.has("names") && text !== undefined && !thing.uncertain && (thing.kind === "star" ? magnitude <= nameLimit : thing.band <= 1 || o.zoom >= 3)) starLabels.push({ rank: 1000 + thing.band * 40 + magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, colour, 0.95) });
+    }
+  } else if (o.sky === undefined) {
     const drawn = stars({ magnitude: depth });
     for (const key of near) {
       const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;

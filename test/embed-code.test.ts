@@ -10,6 +10,8 @@ import { figures } from "../src/lines.ts";
 import { project } from "../src/projection.ts";
 import { skyFrom } from "../src/sky-from.ts";
 import { blackBodyColour, starByHr, starColour, starTemperatureK, stars } from "../src/stars.ts";
+import { BAND_COLOURS } from "../demo/distance-layers.ts";
+import { layersByDistance, starInput } from "../src/distance.ts";
 
 const choice: Choice = { ...DEFAULT_VIEW, magnitude: 4, layers: new Set(["lines"]), lang: "en" };
 
@@ -84,4 +86,20 @@ test("in a sky culture the code imports it and draws its figures, the chart's ow
   assert.ok(theirs.length > 5);
   for (const piece of theirs) assert.ok(mine.has(piece), `the chart draws ${piece} and the code does not`);
   assert.ok(!chartLines({ ...choice, cultureId: "western" }, width).body.includes("chinese"));
+});
+
+test("with a limit in light-years the code draws the bright stars within it by band, a ring for an uncertain one, and none with no distance", () => {
+  const width = 480;
+  const limited: Choice = { ...choice, layers: new Set(), projection: "hammer", ra: 180, dec: 0, zoom: 1, limit: 100 };
+  const { body, imports } = chartLines(limited, width);
+  assert.ok(imports.some((one) => one.sub === "/distance" && one.names === "layersByDistance, starInput"));
+  assert.ok(!imports.some((one) => one.names.includes("starColour")), "the colour is the band's, not the star's");
+  const svg = new Function("stars", "layersByDistance", "starInput", "project", `${body}\nreturn skyChart();`)(stars, layersByDistance, starInput, project) as string;
+  const layers = layersByDistance(stars().map(starInput), { limit: 100 });
+  const circles = svg.match(/<circle [^>]*\/>/g) ?? [];
+  assert.equal(circles.length, layers.things.length, "every thing within 100 light-years, and no other");
+  assert.equal(circles.filter((one) => one.includes('fill="none"')).length, layers.uncertain, "a ring for each uncertain one");
+  assert.ok(circles.some((one) => one.includes(BAND_COLOURS[0]!)), "the nearest band's colour");
+  for (const kind of ["html", "module", "react", "vue", "angular", "svelte"]) assert.ok(embedCode(kind, limited, width)!.includes("layersByDistance"), kind);
+  assert.ok(!embedCode("module", choice, width)!.includes("layersByDistance"), "no limit, no layers");
 });

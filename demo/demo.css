@@ -112,3 +112,12 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 
 /* The names and lines row: three groups of choices on one row, wrapping on a phone. */
 .ol-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+/* The distance layers: the legend of the bands, and the swatch of each. */
+.dist-legend { list-style: none; margin: 4px 0 8px; padding: 8px 12px; display: grid; gap: 2px 18px; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); background: #0b1020; color: #dfe5fa; border-radius: var(--radius); font-size: .85rem; }
+.dist-legend[hidden] { display: none; }
+.dist-legend li { display: flex; align-items: center; gap: 8px; }
+.dist-legend .dist-count { margin-left: auto; color: #9aa6c9; font-variant-numeric: tabular-nums; }
+.dist-swatch { width: 11px; height: 11px; border-radius: 50%; background: var(--swatch); flex: none; }
+.dist-swatch.ring { background: none; border: 2px solid var(--swatch); box-sizing: border-box; }
+.dist-unknown { color: #9aa6c9; grid-column: 1 / -1; }
+.dist-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
