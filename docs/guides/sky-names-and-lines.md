@@ -15,16 +15,16 @@ A page that offers these as attributes on its element (the way a settings panel 
 
 | Attribute | Means | Off when |
 |---|---|---|
-| `star-names="12"` | Name the 12 brightest stars that are in view and not covered. A bare `star-names` is 10. At most 400. | missing, `0`, or text that is not a number |
+| `star-names="12"` | Name the 12 brightest stars that are in view and not covered. A bare `star-names` is 10. At most 335, every star that has a name. | missing, `0`, or text that is not a number |
 | `star-names-magnitude="1.5"` | Name only stars at least that bright (Sirius is -1.46; 1.5 names the 22 brightest). With `star-names` too, both limits hold. | missing or not a number |
 | `constellation-lines="0.16"` | Draw the 88 figures at this strength, 0 to 1. A bare `constellation-lines` is 0.16, a faint line. The figure the pointer is on (on one of its lines or on one of its stars), or that is touched, is at 1 and shows its name. | missing, `0`, `off`, `false` or text that is not a number |
 
-`starNamesFromAttributes(count, magnitude)` and `lineStrengthFromAttribute(value)` read the text of those attributes (`STAR_NAMES_ATTRIBUTES` and `CONSTELLATION_LINES_ATTRIBUTE` hold the attribute names). What cannot be an attribute is a property of the page's element:
+`starNamesFromAttributes(count, magnitude)` and `lineStrengthFromAttribute(value)` read the text of those attributes (`STAR_NAMES_ATTRIBUTES` and `CONSTELLATION_LINES_ATTRIBUTE` hold the attribute names). What cannot be an attribute is given in code:
 
-| Property | Is | For |
+| Where | Is | For |
 |---|---|---|
-| `starNameCover` | a `CoverMask`: `(x, y) => boolean`, true where a body covers the sky | the Earth, a planet or a panel in front of the stars; a name behind it is left out and the next star is named |
-| `labelStyle` | a partial `LabelStyle` | the look, below |
+| the third argument of `StarNames.update(project, view, covered)` | a `CoverMask`: `(x, y) => boolean`, true where a body covers the sky | the Earth, a planet or a panel in front of the stars; a name behind it is left out and the next star is named |
+| `style` in the settings of `createStarNames` and `createFigureLines` (and `set`) | a partial `LabelStyle` | the look, below |
 
 The package never knows what covers the sky: the page does, and says so with `discCover(x, y, radius)` for a round body or any function of its own.
 

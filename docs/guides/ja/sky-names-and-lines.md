@@ -15,16 +15,16 @@ description: いちばん明るい星の名前と、星座の形をとてもう�
 
 | 属性 | 意味 | オフになるとき |
 |---|---|---|
-| `star-names="12"` | 画面の中にあって、おおわれていない星のうち、いちばん明るい12個に名前を付けます。値を書かない`star-names`は10個として扱います。最大400個。 | 属性がない、`0`、数値ではない文字列 |
+| `star-names="12"` | 画面の中にあって、おおわれていない星のうち、いちばん明るい12個に名前を付けます。値を書かない`star-names`は10個として扱います。最大335個（名前のある星すべて）。 | 属性がない、`0`、数値ではない文字列 |
 | `star-names-magnitude="1.5"` | 等級が1.5以下の、明るい星だけに名前を付けます（等級は小さいほど明るい。シリウスは-1.46等で、1.5なら明るい22個）。`star-names`も指定したときは、両方の条件に当てはまる星だけです。 | 属性がない、数値ではない |
 | `constellation-lines="0.16"` | 88の星座の形を、この濃さ（0から1）で描きます。値を書かない`constellation-lines`は0.16として扱い、とてもうすい線になります。ポインターが乗っている星座（線の上でも、その星座の星の上でも）、またはタッチした星座は、濃さが1になり、名前も出ます。 | 属性がない、`0`、`off`、`false`、数値ではない文字列 |
 
-`starNamesFromAttributes(count, magnitude)`と`lineStrengthFromAttribute(value)`が、これらの属性の値（文字列）を読み取ります（属性の名前は`STAR_NAMES_ATTRIBUTES`と`CONSTELLATION_LINES_ATTRIBUTE`にあります）。属性にできないものは、ページの要素のプロパティで渡します。
+`starNamesFromAttributes(count, magnitude)`と`lineStrengthFromAttribute(value)`が、これらの属性の値（文字列）を読み取ります（属性の名前は`STAR_NAMES_ATTRIBUTES`と`CONSTELLATION_LINES_ATTRIBUTE`にあります）。属性にできないものは、コードで渡します。
 
-| プロパティ | 型 | 使いみち |
+| 渡す場所 | 型 | 使いみち |
 |---|---|---|
-| `starNameCover` | `CoverMask`。`(x, y) => boolean`で、空をおおうものがある場所なら`true` | 星の手前にある地球、惑星、パネルなど。うしろにある星の名前は出さず、次に明るい星に名前を付けます。 |
-| `labelStyle` | `LabelStyle`の一部 | 見た目（下の「見た目は設定で決める」の節） |
+| `StarNames.update(project, view, covered)`の3番目の引数 | `CoverMask`。`(x, y) => boolean`で、空をおおうものがある場所なら`true` | 星の手前にある地球、惑星、パネルなど。うしろにある星の名前は出さず、次に明るい星に名前を付けます。 |
+| `createStarNames`と`createFigureLines`の設定の`style`（`set`でも同じ） | `LabelStyle`の一部 | 見た目（下の「見た目は設定で決める」の節） |
 
 空をおおうものが何かは、パッケージにはわかりません。ページが知っていて、丸いものなら`discCover(x, y, radius)`、それ以外は自分で書いた関数で伝えます。
 
