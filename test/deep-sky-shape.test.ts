@@ -9,6 +9,8 @@ import { messier } from "../src/deep-sky.ts";
 import { deepSkyOutline, deepSkyShape, measuredParts, offsetOnSky } from "../src/deep-sky-shape.ts";
 import { deepSkyShape as deepSkyShapeAll } from "../src/deep-sky-shape-ngc-ic.ts";
 import { shapeTable } from "../src/deep-sky-shape-core.ts";
+import { MESSIER_SHAPES } from "../src/data/deep-sky-shapes-messier.ts";
+import { NGC_IC_SHAPES } from "../src/data/deep-sky-shapes-ngc-ic.ts";
 
 const separation = (a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number => {
   const [r1, d1, r2, d2] = [a.rightAscension, a.declination, b.rightAscension, b.declination].map((x) => (x * Math.PI) / 180) as [number, number, number, number];
@@ -62,6 +64,21 @@ test("the large table gives 9,795 of the 11,898 objects a size and 7,293 an angl
   assert.equal(all.filter((o) => deepSkyShapeAll(o).positionAngle !== undefined && o.type !== "galaxy").length, 0, "only galaxies have an angle");
   assert.equal(all.filter((o) => o.type !== "galaxy" && deepSkyShapeAll(o).source !== "Catalogue row" && deepSkyShapeAll(o).source !== undefined).length, 0, "an object that is not a galaxy has only the size its row carries");
   assert.ok(all.every((o) => Object.isFrozen(deepSkyShapeAll(o))));
+});
+
+test("the fallback without NED (`--no-ned`, not shipped): RC3's 7,013 galaxies keep their shape, the 2,706 that had NED's have none and are drawn dotted, and nothing else changes", () => {
+  const noNed = (rows: string): string => rows.split("\n").filter((row) => !row.endsWith("|d")).join("\n");
+  const fallback = shapeTable([noNed(MESSIER_SHAPES), noNed(NGC_IC_SHAPES)]);
+  const all = deepSky();
+  const shapes = all.map((o) => fallback.shapeOf(o));
+  assert.equal(shapes.filter((x) => x.source === "NED").length, 0);
+  assert.equal(shapes.filter((x) => x.source === "RC3").length, 7013);
+  assert.equal(shapes.filter((x) => x.majorArcmin !== undefined).length, 7089);
+  assert.equal(shapes.filter((x) => x.positionAngle !== undefined).length, 4736);
+  assert.equal(all.filter((o, i) => o.type === "galaxy" && shapes[i]!.majorArcmin === undefined).length, 3269, "no galaxy row carries a size of its own, so these are dotted");
+  const kept = all.filter((o) => deepSkyShapeAll(o).source !== "NED");
+  assert.deepEqual(kept.map((o) => ({ ...fallback.shapeOf(o) })), kept.map((o) => ({ ...deepSkyShapeAll(o) })));
+  assert.deepEqual({ ...fallback.shapeOf(deepSkyObject("NGC 4676")!) }, { majorArcmin: undefined, minorArcmin: undefined, positionAngle: undefined, source: undefined });
 });
 
 test("a galaxy RC3 does not cover has NED's shape: the Mice, NGC 4676", () => {
