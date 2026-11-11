@@ -539,6 +539,7 @@ console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
 // RIGEL, PROCYON, BETELGEUSE, ALDEBARAN, POLLUX
 // Ori Orion 1 0.3
 // 14
+```
 
 ## The sky by distance
 
