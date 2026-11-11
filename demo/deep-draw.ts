@@ -90,6 +90,8 @@ export interface DeepDrawn {
   obstacles: Box[];
   /** The ids of the pictures (`DeepSkyPicture.id`) to fetch, the one showing most of itself on the screen first, at most `MAX_PICTURES`. */
   wanted: string[];
+  /** The ids of the pictures drawn with some of them on the screen, the most seen first: each one's credit must show while it does. */
+  pictures: string[];
   /** The catalogue stars inside the clusters that are shown large: ringed as inside the outline. */
   inside: Star[];
 }
@@ -145,7 +147,7 @@ export function choosePictures<T extends { id: string; area: number }>(candidate
 }
 
 /** The pictures: which are in view and big enough, the ones to fetch, and the `<image>` of each that has arrived. */
-function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: Map<string, number> } {
+function picturesOf(c: DeepContext): { under: string; wanted: string[]; drawn: string[]; shown: Map<string, number> } {
   const shown = new Map<string, number>();
   const candidates: Array<{ id: string; picture: DeepSkyPicture; widthPx: number; area: number; matrix: number[] }> = [];
   for (const picture of drawnPictures()) {
@@ -162,17 +164,19 @@ function picturesOf(c: DeepContext): { under: string; wanted: string[]; shown: M
   }
   const chosen = choosePictures(candidates, c.previous);
   const wanted = chosen.map((x) => x.id);
+  const drawn: string[] = [];
   // the coarse survey picture first and each finer one over it
   chosen.sort((a, b) => b.picture.arcsecPerPixel - a.picture.arcsecPerPixel);
   let under = "";
-  for (const { picture, widthPx, matrix } of chosen) {
+  for (const { picture, widthPx, area, matrix } of chosen) {
     if (!c.ready.has(picture.id)) continue;
     const opacity = smooth(SHOW_FROM, SHOW_FULL, widthPx) * (1 - (1 - STRETCH_SOFT) * smooth(STRETCH_FULL, STRETCH_FAR, widthPx / picture.width) - STRETCH_MORE * smooth(STRETCH_FAR, STRETCH_FARTHER, widthPx / picture.width));
     if (opacity <= 0.01) continue;
     shown.set(picture.object, Math.max(shown.get(picture.object) ?? 0, opacity));
+    if (area > 0) drawn.push(picture.id);
     under += `<image data-pic="${picture.id}" href="${pictureBlobs.get(picture.id) ?? pictureUrl(picture, c.base)}" width="${picture.width}" height="${picture.height}" transform="matrix(${matrix.map((n) => n.toFixed(6)).join(" ")})" opacity="${opacity.toFixed(3)}" preserveAspectRatio="none"/>`;
   }
-  return { under, wanted, shown };
+  return { under, wanted, drawn: wanted.filter((id) => drawn.includes(id)), shown };
 }
 
 /** A ring of sky points as a closed path in pixels, lifted where a point is off the map. */
@@ -253,8 +257,8 @@ function markOf(c: DeepContext, object: DeepSkyObject, shape: DeepSkyShape, at: 
 
 /** The deep-sky layer for one frame. */
 export function drawDeep(c: DeepContext): DeepDrawn {
-  const pics = c.pictures ? picturesOf(c) : { under: "", wanted: [], shown: new Map<string, number>() };
-  const out: DeepDrawn = { under: pics.under, over: "", labels: [], hits: [], obstacles: [], wanted: pics.wanted, inside: [] };
+  const pics = c.pictures ? picturesOf(c) : { under: "", wanted: [], drawn: [], shown: new Map<string, number>() };
+  const out: DeepDrawn = { under: pics.under, over: "", labels: [], hits: [], obstacles: [], wanted: pics.wanted, pictures: pics.drawn, inside: [] };
   if (!c.marks && c.near.size === 0 && c.picked === undefined) return out;
   const limit = deepLimit(c.zoom);
   const drawn: Array<{ object: DeepSkyObject; at: Spot; majorPx: number; shape: DeepSkyShape }> = [];
