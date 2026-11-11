@@ -35,6 +35,20 @@ test("each culture has the figures it should", () => {
   assert.equal(figures(western).length, western.asterisms().length);
 });
 
+test("Chinese asterisms carry Wikidata's English name and the enclosure or mansion it states", () => {
+  const all = chinese.asterisms();
+  assert.ok(all.filter((a) => a.kind === "mansion").every((a) => a.names.en !== undefined && a.partOf === undefined));
+  assert.ok(all.filter((a) => a.kind === "asterism" && a.names.en !== undefined).length >= 40);
+  const ids = new Set(all.filter((a) => a.kind === "mansion").map((a) => a.id));
+  for (const a of all) if (a.partOf !== undefined) assert.ok(["purple-forbidden", "supreme-palace", "heavenly-market"].includes(a.partOf) || ids.has(a.partOf), a.id);
+  for (const enclosure of ["purple-forbidden", "supreme-palace", "heavenly-market"]) assert.ok(all.some((a) => a.partOf === enclosure), enclosure);
+  assert.equal(chinese.find("華蓋")?.names.en, "Canopy of the Emperor");
+  assert.equal(chinese.find("華蓋")?.partOf, "purple-forbidden");
+  assert.equal(chinese.find("九斿")?.partOf, "bi4-xiu4-2", "the Net mansion, 畢宿, not the Wall, 壁宿");
+  assert.equal(chinese.find("七公")?.names.en, undefined, "a label that only spells out the pinyin is not an English name");
+  assert.equal(chinese.find("北斗")?.partOf, undefined);
+});
+
 test("the 88 constellations are the western and Japanese cultures' first figures, in the order of constellations()", () => {
   for (const culture of [western, japanese]) assert.deepEqual(culture.asterisms().slice(0, 88).map((a) => a.id), constellations().map((c) => c.abbreviation));
   assert.equal(japanese.asterisms()[0]!.name, "アンドロメダ座");

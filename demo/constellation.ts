@@ -82,7 +82,11 @@ function factsOf(card: FigureCard, lang: Lang): Array<[string, string]> {
   } else {
     rows.push(["fieldChinese", chineseName(a)], ["fieldEnglish", a.names.en ?? say("cp_noEnglish")]);
     if (a.kind === "mansion") rows.push(["fieldQuarter", say(a.group!)], ["cp_mansionNo", say("cp_mansionOf", { n: cardsOf("chinese").filter((one) => one.kind === "mansion").indexOf(card) + 1 })]);
-    else rows.push(["cp_enclosure", say("cp_notRecorded")]);
+    else {
+      const mansion = cardsOf("chinese").find((one) => one.id === a.partOf)?.asterism;
+      const part = a.partOf === undefined ? say("cp_notRecorded") : mansion === undefined ? say(a.partOf) : `${mansion.name}${lang === "en" && mansion.names.en !== undefined ? ` (${mansion.names.en})` : ""}`;
+      rows.push(["fieldEnclosure", part]);
+    }
   }
   const lies = liesIn(stars);
   if (lies.length > 0) rows.push(["fieldLiesIn", lies.map((one) => nameIn(one, lang)).join(", ")]);

@@ -56,6 +56,8 @@ export interface Asterism {
   readonly kind: AsterismKind;
   /** For a Chinese mansion, the quarter of the sky it belongs to (`azure-dragon`, `black-tortoise`, `white-tiger`, `vermilion-bird`); `undefined` otherwise. */
   readonly group: string | undefined;
+  /** For a Chinese asterism, the enclosure (`purple-forbidden`, `supreme-palace`, `heavenly-market`) or the id of the mansion it is part of, where Wikidata states it; absent otherwise. */
+  readonly partOf?: string;
   /** At least how many of its stars are fainter than visual magnitude 6.0, which the catalogue does not hold: the figure draws only the stars we have. 0 where all are held or none is known to be missing. */
   readonly missing: number;
   /** The stars as HR numbers: chains, each a run of stars joined one to the next; a chain of one is a single star. */

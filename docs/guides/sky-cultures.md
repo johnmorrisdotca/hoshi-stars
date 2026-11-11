@@ -46,6 +46,18 @@ console.log(horn.asterism.names.en, horn.asterism.group, horn.asterism.readings.
 
 Spica is 角宿一, the first star of 角宿. The names of the stars are the first part of the work: a Chinese star name is its asterism and its number in it.
 
+42 of the other asterisms also have an English name, and 41 have `partOf`: the enclosure they belong to (`purple-forbidden`, `supreme-palace` or `heavenly-market`) or the id of a mansion. Both come from Wikidata, only where it states them; the others have neither, and none is made up:
+
+```js
+import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+
+const canopy = chinese.find("華蓋");
+console.log(canopy.names.en, canopy.partOf);
+// Canopy of the Emperor purple-forbidden
+console.log(chinese.asterisms().filter((a) => a.partOf === "heavenly-market").map((a) => a.name).slice(0, 4).join(" "));
+// 七公 列肆 天市左垣 天紀
+```
+
 ### What the catalogue does not hold
 
 Most Chinese asterisms have stars fainter than magnitude 6.0, which the Bright Star Catalogue does not hold. A figure draws only the stars we have, and `missing` says at least how many it lacks: the largest star number found in the asterism, less the stars held.

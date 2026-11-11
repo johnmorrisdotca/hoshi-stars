@@ -46,6 +46,18 @@ console.log(horn.asterism.names.en, horn.asterism.group, horn.asterism.readings.
 
 スピカは角宿一(かくしゅくいち)、つまり角宿の1番目の星です。中国の星の名前は「星官の名前 + その中の番号」なので、星の名前がデータの第一歩です。
 
+ほかの星官のうち42には英語の名前があり、41には`partOf`があります。`partOf`は、その星官が入る垣(`purple-forbidden` 紫微垣、`supreme-palace` 太微垣、`heavenly-market` 天市垣)か、宿のidです。どちらもWikidataに書いてあるときだけ使います。書いていないものには、何も作りません。
+
+```js
+import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
+
+const canopy = chinese.find("華蓋");
+console.log(canopy.names.en, canopy.partOf);
+// Canopy of the Emperor purple-forbidden
+console.log(chinese.asterisms().filter((a) => a.partOf === "heavenly-market").map((a) => a.name).slice(0, 4).join(" "));
+// 七公 列肆 天市左垣 天紀
+```
+
 ### カタログにない星
 
 中国の星官の多くには、6.0等より暗い星が入っています。ブライトスター・カタログにはその星がありません。図は手元にある星だけを描き、`missing`は「少なくともいくつ足りないか」を返します(星官で見つかった一番大きい番号から、手元の星の数を引いた数です)。
