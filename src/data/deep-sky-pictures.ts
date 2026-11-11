@@ -19,15 +19,15 @@ M2|M2|32336260|-82320|432|432|349|0|1|https://skyview.gsfc.nasa.gov/current/cgi/
 M3|M3|20554920|2838010|720|720|252|0|0|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=SDSSg&Position=205.54920%2C28.38010&Size=0.50333&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M4|M4|24589680|-2652580|612|612|463|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=245.89680%2C-26.52580&Size=0.78667&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M5|M5|22963840|208100|720|720|266|0|0|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=SDSSg&Position=229.63840%2C2.08100&Size=0.53167&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
-M8|M8|27095123|-2413774|630|422|891|3600|5|https://www.eso.org/public/images/eso0936a/|ESO
+M8|M8|27095123|-2413749|702|470|799|3600|5|https://www.eso.org/public/images/eso0936a/|ESO
 M9|M9|25979910|-1851620|720|720|152|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=259.79910%2C-18.51620&Size=0.30500&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M10|M10|25428770|-410030|518|518|330|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=254.28770%2C-4.10030&Size=0.47500&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M12|M12|25180910|-194850|360|360|447|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=251.80910%2C-1.94850&Size=0.44667&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M13|M13|25042350|3646130|720|720|266|0|0|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=SDSSg&Position=250.42350%2C36.46130&Size=0.53167&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M14|M14|26440060|-324590|612|612|229|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=264.40060%2C-3.24590&Size=0.39000&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M15|M15|32249300|1216700|720|720|195|0|0|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=SDSSg&Position=322.49300%2C12.16700&Size=0.39000&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
-M16|M16|27470578|-1376389|560|560|344|0|5|https://www.eso.org/public/images/eso0926a/|ESO
-M17|M17|27524494|-1614856|496|496|646|1|5|https://www.eso.org/public/images/eso1119a/|ESO/INAF-VST/OmegaCAM. Acknowledgement: OmegaCen/Astro-WISE/Kapteyn Institute
+M16|M16|27470578|-1376389|800|800|241|0|5|https://www.eso.org/public/images/eso0926a/|ESO
+M17|M17|27524494|-1614856|560|560|572|1|5|https://www.eso.org/public/images/eso1119a/|ESO/INAF-VST/OmegaCAM. Acknowledgement: OmegaCen/Astro-WISE/Kapteyn Institute
 M19|M19|25565700|-2626790|612|612|263|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=255.65700%2C-26.26790&Size=0.44667&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M20|M20|27057748|-2294261|486|800|171|3599|5|https://www.eso.org/public/images/eso0930a/|ESO
 M22|M22|27909970|-2390480|518|518|507|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=279.09970%2C-23.90480&Size=0.73000&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
@@ -97,7 +97,7 @@ M108|M108|16787900|5567410|360|360|296|0|0|https://skyview.gsfc.nasa.gov/current
 M109|M109|17939990|5337450|360|360|265|0|0|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=SDSSg&Position=179.39990%2C53.37450&Size=0.26533&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M110|M110|1009316|4168745|595|700|194|3598|4|https://noirlab.edu/public/images/noao-m110/|NOIRLab/NSF/AURA
 NGC 104|NGC 104|602230|-7208140|720|720|463|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=6.02230%2C-72.08140&Size=0.92550&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
-NGC 5139|NGC 5139|20169007|-4746754|496|496|616|0|5|https://www.eso.org/public/images/eso1119b/|ESO/INAF-VST/OmegaCAM. Acknowledgement: A. Grado, L. Limatola/INAF-Capodimonte Observatory
+NGC 5139|NGC 5139|20169007|-4746754|560|560|545|0|5|https://www.eso.org/public/images/eso1119b/|ESO/INAF-VST/OmegaCAM. Acknowledgement: A. Grado, L. Limatola/INAF-Capodimonte Observatory
 NGC 253|NGC 253|1188810|-2528880|720|720|415|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=11.88810%2C-25.28880&Size=0.82917&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 NGC 5128|NGC 5128|20136510|-4301910|720|720|389|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=201.36510%2C-43.01910&Size=0.77817&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 IC 434|IC 434|8525360|-245380|500|500|1260|0|2|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=WISE+3.4&Position=85.25360%2C-2.45380&Size=1.75000&Pixels=500&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|

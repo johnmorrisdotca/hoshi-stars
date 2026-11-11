@@ -1,73 +1,91 @@
 {
  "M1-heic0515a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M102-opo0624a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M104-opo0328a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M16-heic1501a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M31-heic1502a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M33-heic1901a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M42-heic0601a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M51-heic0506a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M57-heic1310a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M77-heic1305a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M81-opo1438b": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M82-heic0604a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M83-heic1403a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "M94-potw1542a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "NGC 104-heic1510a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "NGC 2070-heic1105a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "NGC 3372-opo0006a": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  },
  "NGC 7293-opo0432d": {
+  "oval": 0.5,
   "quality": 60,
   "share": 0.14
  }

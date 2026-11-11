@@ -21,7 +21,7 @@ A picture is a WebP with an alpha channel a little over the brightness (1.15 tim
     python3 -I scripts/make-natural-pictures.py --cache-only         # asks the sites for nothing
     python3 -I scripts/make-natural-pictures.py --raw DIR            # where the downloads are kept (default ~/Projects/backups/hoshi-stars/2026-11-10-natural-colour-raw, or $HOSHI_STARS_BACKUP_DIR/...)
     python3 -I scripts/make-natural-pictures.py --sheet OUT.png      # also a contact sheet of the pictures made, for looking at
-    python3 -I scripts/make-natural-pictures.py --feather-finer       # once, after make-deep-sky-pictures.py: fade the straight edges of the finer ESA/Hubble pictures
+    python3 -I scripts/make-natural-pictures.py --feather-finer       # after make-deep-sky-pictures.py: fade the straight edges of the finer ESA/Hubble pictures (each step once)
     python3 -I scripts/make-natural-pictures.py --dry                # fit and report; write no file
 
 make-deep-sky-pictures.py rewrites the whole data file from the survey pictures, so run this after it: every row here replaces the survey picture of the same id, or is added. None of this runs in the test.
@@ -51,7 +51,7 @@ NOTICE = ROOT / "NOTICE.md"
 MANIFEST = ROOT / "scripts" / "natural-pictures.json"
 FEATHERED = ROOT / "scripts" / "finer-feathered.json"
 USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
-BUDGET_BYTES = 110_000  # a natural picture file is never larger than this; the page budget (six at once) follows from it
+BUDGET_BYTES = 90_000  # a natural picture file is never larger than this, as a survey picture is not; the page budget (five at once, 450 kB) follows from it
 ARCSEC = 3600.0
 
 SITES = {
@@ -94,7 +94,7 @@ SITES = {
 # `centre` says to cut the picture symmetrically about the object's own position (the largest box of the photograph that fits), which a galaxy that fills its frame wants; `scale` the coarsest arc-seconds a pixel
 # the picture may have, so that a finer picture of part of the object (the Hubble ones) is still the finer one and is drawn over it.
 PICTURES = [
-    {"id": "M31", "site": "noirlab", "image": "noao-m31lgs_ubvIha", "variant": "publicationjpg", "long": 1800, "galaxy": True, "sky": 35},
+    {"id": "M31", "site": "noirlab", "image": "noao-m31lgs_ubvIha", "variant": "publicationjpg", "long": 1800, "galaxy": True, "sky": 35, "oval": False},
     {"id": "M33", "site": "eso", "image": "eso1424a", "long": 800, "galaxy": True},
     {"id": "M42", "site": "eso", "image": "eso1723a", "long": 900},
     {"id": "M45", "site": "noirlab", "image": "noao-m45", "long": 900},
@@ -389,10 +389,11 @@ def agree(image, placement, reach, radius=3.0):
 
 # ---------------------------------------------------------------------------------------------------------------- the picture
 
-def to_rgba(rgb, feather=0.04, sky_percent=15, gain=1.15, wide_share=0.14):
+def to_rgba(rgb, feather=0.04, sky_percent=15, gain=1.15, wide_share=0.14, oval=True):
     """RGB (0 to 1) into the picture: alpha is `gain` times the brightness (to 1; a little over 1, so that a galaxy's light is not seen through, and no more, so that the dark sky of the photograph darkens little of what lies under it), the colour is divided by it, and the edges fade, so over black it is the photograph's light and nothing else.
     The sky of the photograph is taken off first (the faintest `sky_percent` in 100 of what it holds, a channel at a time), so that where a mosaic's data ends the sky it held does not end in a step; and the fade follows the edge of the
-    data as well as the edge of the picture, over `wide_share` (0.14) of the smaller side: a mosaic's tiles do not end in a straight line, and a photograph's own square edge must not show against what is under it."""
+    data as well as the edge of the picture, over `wide_share` (0.14) of the smaller side: a mosaic's tiles do not end in a straight line. With `oval` (every picture but a mosaic whose object fills its frame) the light also fades
+    to an oval inside the frame (`oval_window`), so no side or corner of the photograph is left to show as a line against a bright Milky Way under it."""
     height, width = rgb.shape[:2]
     footprint = ndimage.binary_opening(rgb.max(-1) > 0.02, iterations=2)
     footprint = ndimage.binary_fill_holes(footprint)
@@ -402,6 +403,8 @@ def to_rgba(rgb, feather=0.04, sky_percent=15, gain=1.15, wide_share=0.14):
     ramp = np.clip(inside / wide, 0, 1)
     window = ramp * ramp * (3 - 2 * ramp)
     window = window * window * (3 - 2 * window)
+    if oval:
+        window = window * oval_window(width, height)
     sky = np.array([np.percentile(rgb[..., c][footprint], sky_percent) if footprint.any() else 0.0 for c in range(3)])
     cleaned = np.clip((rgb - sky) / (1 - sky), 0, 1)
     light = cleaned * window[..., None]
@@ -414,6 +417,17 @@ def to_rgba(rgb, feather=0.04, sky_percent=15, gain=1.15, wide_share=0.14):
     mix = np.clip(alpha * 1.5, 0, 1)[..., None]
     colour = np.clip(colour * mix + blurred * (1 - mix), 0, 1)
     return Image.fromarray((np.clip(np.dstack([colour, alpha]), 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
+
+
+OVAL_FULL = 0.5  # the oval fade: full strength out to this share of the way from the middle to the frame's side, nothing at the side itself
+
+
+def oval_window(width, height, full=OVAL_FULL):
+    """1 in the middle of the picture, falling smoothly to 0 on the oval that touches the middle of each side: the picture's light ends in a round soft edge with no straight line and no corner."""
+    y, x = np.mgrid[0:height, 0:width]
+    r = np.hypot((x + 0.5 - width / 2) / (width / 2), (y + 0.5 - height / 2) / (height / 2))
+    t = np.clip((1 - r) / (1 - full), 0, 1)
+    return t * t * (3 - 2 * t)
 
 
 def encode(image, path):
@@ -524,7 +538,7 @@ def make(spec, objects, cache):
     size = (max(64, round(cw * factor)), max(64, round(ch * factor)))
     small = crop.resize(size, Image.LANCZOS)
     rgb = np.asarray(small, dtype=np.float64) / 255
-    rgba = to_rgba(rgb, sky_percent=spec.get("sky", 15))
+    rgba = to_rgba(rgb, sky_percent=spec.get("sky", 15), oval=spec.get("oval", True))
     # the placement of the saved picture, after any shrinking in encode, is made from the cut box: its middle and its pixel scale
     cut = Placement(placement.ra0, placement.dec0, placement.cx - box[0], placement.cy - box[1], placement.scale, placement.rotation, cw, ch)
     return {"spec": spec, "credit": credit, "numbers": numbers, "rgb": rgb, "image": rgba, "cut": cut, "address": site["page"].format(id=spec["image"]), "box": box, "size": (cw, ch), "object": obj}
@@ -612,22 +626,31 @@ FINER_SHARE = 0.14
 
 def feather_finer(natural):
     """The finer ESA/Hubble pictures (`<object>-<release>.webp`) are laid over a wider picture, and their straight edges, where the data of the release ends, show as lines. Fade each one's alpha from the edge of its data over
-    FINER_SHARE of its smaller side, with the same soft mask as the photographs: the footprint is where it has any light (closed and filled), the fade is the distance from its edge. Done to the saved file, once: scripts/finer-feathered.json says which have been (make-deep-sky-pictures.py makes them with the narrow fade; run this after it)."""
+    FINER_SHARE of its smaller side, with the same soft mask as the photographs (the footprint is where it has any light, closed and filled; the fade is the distance from its edge), and then to the same oval as the photographs
+    (`oval_window`), so that no straight side of a strip is left. Done to the saved file, once each: scripts/finer-feathered.json says which steps each has had (make-deep-sky-pictures.py makes them with the narrow fade; run this
+    after it)."""
     done = json.loads(FEATHERED.read_text(encoding="utf-8")) if FEATHERED.exists() else {}
     rows = parse_data()[2]
     for row in rows:
         p = row.split("|")
-        if p[0] == p[1] or p[8] != "3" or p[0] in done or p[0] in natural:
+        if p[0] == p[1] or p[8] != "3" or p[0] in natural:
+            continue
+        entry = done.get(p[0], {})
+        if "share" in entry and "oval" in entry:
             continue
         path = OUT / file_of(p[0])
         image = Image.open(path).convert("RGBA")
         data = np.asarray(image, dtype=np.float64) / 255
         alpha = data[..., 3]
-        footprint = ndimage.binary_fill_holes(ndimage.binary_closing(alpha > 0.05, iterations=6))
-        inside = ndimage.distance_transform_edt(np.pad(footprint, 1, constant_values=False))[1:-1, 1:-1]
-        ramp = np.clip(inside / max(4, min(image.size) * FINER_SHARE), 0, 1)
-        window = ramp * ramp * (3 - 2 * ramp)
-        window = window * window * (3 - 2 * window)
+        window = np.ones_like(alpha)
+        if "share" not in entry:
+            footprint = ndimage.binary_fill_holes(ndimage.binary_closing(alpha > 0.05, iterations=6))
+            inside = ndimage.distance_transform_edt(np.pad(footprint, 1, constant_values=False))[1:-1, 1:-1]
+            ramp = np.clip(inside / max(4, min(image.size) * FINER_SHARE), 0, 1)
+            window = ramp * ramp * (3 - 2 * ramp)
+            window = window * window * (3 - 2 * window)
+        if "oval" not in entry:
+            window = window * oval_window(image.width, image.height)
         data[..., 3] = alpha * window
         faded = Image.fromarray((np.clip(data, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
         before = path.stat().st_size
@@ -639,8 +662,8 @@ def feather_finer(natural):
                 break
         if saved is None:
             raise RuntimeError(f"{path.name} is {path.stat().st_size} bytes at the lowest setting")
-        done[p[0]] = {"share": FINER_SHARE, "quality": saved}
-        print(f"  {p[0]}: faded at its edge, {before // 1024} kB -> {path.stat().st_size // 1024} kB (quality {saved})")
+        done[p[0]] = {"share": entry.get("share", FINER_SHARE), "oval": OVAL_FULL, "quality": saved}
+        print(f"  {p[0]}: faded at its edge and to an oval, {before // 1024} kB -> {path.stat().st_size // 1024} kB (quality {saved})")
     FEATHERED.write_text(json.dumps(done, indent=1, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -685,8 +708,10 @@ def write_data(done):
         spec = made["spec"]
         source = SITES[spec["site"]]["source"]
         mine = f"| pictures/{file_of(pid(spec))} |"
-        line = f"{mine} {spec['id']} | {source['name']} | {made['address']} | {made['credit']} | {source['licence']} | {today} |"
         hit = [i for i, r in enumerate(table) if r.startswith(mine)]
+        # the day is the day the page and the image were read: a run from the cache keeps the row's own
+        read = re.search(r"\| (\d{4}-\d\d-\d\d) \|$", table[hit[0]]).group(1) if hit and "--cache-only" in sys.argv else today
+        line = f"{mine} {spec['id']} | {source['name']} | {made['address']} | {made['credit']} | {source['licence']} | {read} |"
         if hit:
             table[hit[0]] = line
         else:
