@@ -213,6 +213,9 @@ export interface FigureLines {
   point(x?: number, y?: number): boolean;
 }
 
+/** The steps to either side, in name widths, that a picked figure's name tries in turn. */
+const NAME_SHIFTS: readonly number[] = [0, -0.5, 0.5, -1, 1, -1.5, 1.5];
+
 /**
  * The constellation figures as lines for a sky of your own, faint, with the figure under the pointer at full strength and its name. `strength` 0 draws nothing. The figures are the package's own, from the positions of the stars.
  *
@@ -283,37 +286,51 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
     return true;
   };
 
+  // the name's size and place while it is being placed: kept here so that placing it allocates nothing
+  let nameWidth = 0;
+  let nameHeight = 0;
+  let nameMargin = 0;
+  const fits = (centre: number, top: number): boolean => top >= nameMargin && top + nameHeight <= size.height - nameMargin && clear(centre - nameWidth / 2, top, centre + nameWidth / 2, top + nameHeight);
+  const put = (centre: number, top: number): void => {
+    name.x = centre;
+    name.y = top + nameHeight * 0.8;
+  };
+  const inside = (centre: number): number => Math.max(nameMargin + nameWidth / 2, Math.min(size.width - nameMargin - nameWidth / 2, centre));
+
   const placeName = (): void => {
     const figure = onScreen[picked]!;
-    const margin = size.margin ?? 4;
+    nameMargin = size.margin ?? 4;
     if (texts.length === 0) texts = all.map((one) => labelText(current.lang === "ja" ? one.constellation.japanese : one.constellation.name, style));
     name.text = texts[picked]!;
-    const width = labelWidth(name.text, style);
-    const height = labelHeight(style);
+    nameWidth = labelWidth(name.text, style);
+    nameHeight = labelHeight(style);
+    const width = nameWidth;
+    const height = nameHeight;
+    const margin = nameMargin;
     const gap = Math.ceil(style.size * 0.6);
-    const fits = (centre: number, top: number): boolean => top >= margin && top + height <= size.height - margin && clear(centre - width / 2, top, centre + width / 2, top + height);
-    const put = (centre: number, top: number): void => {
-      name.x = centre;
-      name.y = top + height * 0.8;
-    };
-    const inside = (centre: number): number => Math.max(margin + width / 2, Math.min(size.width - margin - width / 2, centre));
     // above the figure, stepping up past anything in the way; failing that below it, stepping down; then a step to either side and again
-    for (const shift of [0, -0.5, 0.5, -1, 1, -1.5, 1.5]) {
-      const centre = inside(figure.x + shift * width);
+    for (let s = 0; s < NAME_SHIFTS.length; s += 1) {
+      const centre = inside(figure.x + NAME_SHIFTS[s]! * width);
       for (let top = figure.top - gap - height; top >= margin; top -= height) if (fits(centre, top)) return put(centre, top);
       for (let top = figure.bottom + gap; top + height <= size.height - margin; top += height) if (fits(centre, top)) return put(centre, top);
     }
     // anywhere in the view that is free, the nearest to the figure's middle first
     const middle = (figure.top + figure.bottom) / 2;
-    let best: { centre: number; top: number; away: number } | undefined;
+    let bestCentre = 0;
+    let bestTop = 0;
+    let bestAway = Number.POSITIVE_INFINITY;
     for (let top = margin; top + height <= size.height - margin; top += Math.max(2, height / 2)) {
       for (let centre = inside(figure.x - 2 * width); centre <= inside(figure.x + 2 * width); centre += Math.max(4, width / 4)) {
         const away = Math.abs(top - middle) + Math.abs(centre - figure.x) * 0.5;
-        if ((best === undefined || away < best.away) && fits(centre, top)) best = { centre, top, away };
+        if (away < bestAway && fits(centre, top)) {
+          bestAway = away;
+          bestCentre = centre;
+          bestTop = top;
+        }
       }
     }
     // nothing is free: above the figure as far as the view allows, whatever is there
-    if (best !== undefined) return put(best.centre, best.top);
+    if (bestAway !== Number.POSITIVE_INFINITY) return put(bestCentre, bestTop);
     put(inside(figure.x), Math.max(margin, Math.min(size.height - margin - height, figure.top - gap - height)));
   };
 

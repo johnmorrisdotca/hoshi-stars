@@ -50,8 +50,13 @@ export function createOverlay(): Overlay {
   let fontAsked = false;
   let announce: HTMLElement | undefined;
 
+  let said = "";
+  // the live region is written only when the picked figure's name changes, so a screen reader hears it once, not on every frame the sky moves
   const say = (): void => {
-    if (announce !== undefined) announce.textContent = lines?.name?.text ?? "";
+    const text = lines?.name?.text ?? "";
+    if (announce === undefined || text === said) return;
+    said = text;
+    announce.textContent = text;
   };
 
   return {

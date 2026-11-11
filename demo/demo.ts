@@ -76,6 +76,31 @@ let starNames: StarNamesSettings | undefined;
 let lineStrength: number | undefined;
 let labelLook: LookId = "display";
 const overlay = createOverlay();
+/** What the overlay was last set to: it is set again only when one of these changes, never on a frame that only moves the sky. */
+const overlayWas = { set: false, names: undefined as StarNamesSettings | undefined, strength: undefined as number | undefined, look: "", lang: "", maxLength: undefined as number | undefined };
+function configureOverlay(): void {
+  const sky3 = sky === undefined;
+  const names = sky3 ? starNames : undefined;
+  const strength = sky3 ? lineStrength : undefined;
+  const language = lang();
+  const maxLength = view.projection === "equirectangular" || view.projection === "mollweide" || view.projection === "hammer" ? width / 2 : undefined;
+  const was = overlayWas;
+  if (was.set && was.names === names && was.strength === strength && was.look === labelLook && was.lang === language && was.maxLength === maxLength) return;
+  was.set = true;
+  was.names = names;
+  was.strength = strength;
+  was.look = labelLook;
+  was.lang = language;
+  was.maxLength = maxLength;
+  overlay.configure({ names, strength, look: labelLook, style: lookOf(document.documentElement, new URLSearchParams(location.search)), lang: language, maxLength });
+}
+const projector: SkyProjector = (ra, dec, o) => {
+  const at = toScreen(view, width, height, { rightAscension: ra, declination: dec });
+  if (at === undefined) return false;
+  o.x = at[0];
+  o.y = at[1];
+  return true;
+};
 /** The sky out to this many light-years (Infinity for all), or undefined for the sky as it was. */
 let limit: number | undefined;
 
@@ -99,6 +124,7 @@ function read(): void {
   starNames = starNamesFromAttributes(address.get(STAR_NAMES_ATTRIBUTES.count), address.get(STAR_NAMES_ATTRIBUTES.magnitude));
   lineStrength = lineStrengthFromAttribute(address.get(CONSTELLATION_LINES_ATTRIBUTE));
   labelLook = lookIdOf(address.get("label-look"));
+  overlayWas.set = false;
   limit = limitFromText(address.get("dist"));
   if (limit !== undefined) loadDistances(() => everything());
   by = address.get("by") === "space" ? "space" : "sky";
@@ -156,15 +182,7 @@ function draw(): void {
   $("zoom-readout").textContent = shown >= 1000 ? `${Math.round(shown).toLocaleString(lang())}×` : zoomText(shown);
   const faint = sky === undefined ? faintFor(view, width, height, magnitude, layers, schedule) : undefined;
   if ((layers.has("deep") && view.zoom >= TIER_ZOOM) || (picked?.startsWith("D:") === true && deepSkyObject(picked.slice(2)) === undefined)) void fetcher.loadTier();
-  const sky3 = sky === undefined;
-  overlay.configure({ names: sky3 ? starNames : undefined, strength: sky3 ? lineStrength : undefined, look: labelLook, style: lookOf(document.documentElement, new URLSearchParams(location.search)), lang: lang(), maxLength: view.projection === "equirectangular" || view.projection === "mollweide" || view.projection === "hammer" ? width / 2 : undefined });
-  const projector: SkyProjector = (ra, dec, o) => {
-    const at = toScreen(view, width, height, { rightAscension: ra, declination: dec });
-    if (at === undefined) return false;
-    o.x = at[0];
-    o.y = at[1];
-    return true;
-  };
+  configureOverlay();
   const keepClear = clear();
   overlay.update(projector, { width, height }, keepClear);
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
