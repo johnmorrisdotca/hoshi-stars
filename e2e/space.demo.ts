@@ -203,6 +203,7 @@ test("all 88 constellations draw, each with the stars of its figure in the table
 test("the embed page draws what its address says and turns on its button", async ({ page }) => {
   await page.goto("/hoshi-stars/embed-3d.html?c=UMa");
   await expect(page.locator("#sp-stage[data-state=live]")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByTestId("sp-fallback"), "a live view says nothing about a browser that cannot draw it").toBeHidden();
   await expect.poll(async () => page.locator("#sp-labels .sp-label:not([hidden])").count()).toBeGreaterThan(2);
   await expect(page.locator("#sp-view")).toHaveAttribute("aria-label", /Ursa Major/);
   await page.getByTestId("turn").click();
