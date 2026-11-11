@@ -19,7 +19,8 @@ What it keeps
 - Names with a character outside the Basic Multilingual Plane (rare characters most phones cannot draw) are left out.
 - An asterism is matched to its Wikidata item by the item's Chinese label (zh, zh-hant or zh-hans): a label equal to one of the asterism's spellings first, else one equal once a bracketed note such as
   `(星官)` is taken off. Where that finds two items, or the name is split into two asterisms on the sky, nothing is taken. The English label is kept unless it is only the pinyin written out
-  (`Qigong`), an older romanization (ROMANIZED) or the title of an article (`... in Chinese astronomy`). The part of statement is kept when it names exactly one of the Three Enclosures or one mansion;
+  (`Qigong`), an older romanization (ROMANIZED) or the title of an article (`... in Chinese astronomy`); CAPITALS gives one
+  label a capital on each word, as the others have. The part of statement is kept when it names exactly one of the Three Enclosures or one mansion;
   a statement that names a Western constellation is a different fact and is not used.
 
     python3 -I scripts/make-culture-data.py                # runs the query (needs the network)
@@ -65,6 +66,9 @@ ENCLOSURES = {"Q1145852": "purple-forbidden", "Q1145944": "supreme-palace", "Q11
 
 # English labels that are an older romanization of the Chinese, not an English name.
 ROMANIZED = {"Teen Ta Tseang Keun"}
+
+# English labels written with a capital on each word, as the other names are.
+CAPITALS = {"Flying serpent": "Flying Serpent"}
 
 # The 28 mansions in their order, with the Symbol (the quarter of the sky) each belongs to: the Azure Dragon (east), the Black Tortoise (north), the White Tiger (west), the Vermilion Bird (south).
 MANSIONS = {
@@ -633,7 +637,7 @@ def main():
     mansion_of = {}  # Wikidata item of a mansion -> its row id; the mansions come first
     for key in keys:
         q = item.get(key)
-        english = "" if q is None or romanized(labelled[q][2], NAMES[key][1]) or labelled[q][2].endswith(" in Chinese astronomy") else labelled[q][2]
+        english = "" if q is None or romanized(labelled[q][2], NAMES[key][1]) or labelled[q][2].endswith(" in Chinese astronomy") else CAPITALS.get(labelled[q][2], labelled[q][2])
         parts = [] if q is None or key in mansion_group else [ENCLOSURES.get(x) or mansion_of.get(x) for x in labelled[q][3] if x in ENCLOSURES or x in mansion_of]
         part = parts[0] if len(parts) == 1 else ""
         for found in split[key]:
