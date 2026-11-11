@@ -1,5 +1,5 @@
 // The faint stars on the demo's map and the embed page: zooming into Orion draws more of them and says how deep the map is there, a layer button turns them off and the address keeps it,
-// a view never draws more than the cap, panning stays within a frame budget, and at rest nothing is drawn and nothing is fetched. Tiles are read from the site's own faint-tiles/.
+// a view never draws more than the cap, panning with them costs little more than without, and at rest nothing is drawn and nothing is fetched. Tiles are read from the site's own faint-tiles/.
 import { expect, test, type Page } from "@playwright/test";
 
 const ORION = "ra=83.8&dec=-5.4";
@@ -81,36 +81,57 @@ test("the embed page draws the faint stars its address asks for", async ({ page 
   expect(await dots(page)).toBe(0);
 });
 
-test("panning the zoomed-in map stays within a frame budget, and the faint stars follow the sky", async ({ page, browserName, isMobile }) => {
+/** The drawn frames of one drag across the map: 120 steps, each waiting for the page's own next drawn frame (not a clock), the first 10 left out as warm-up. */
+async function dragFrames(page: Page, query: string): Promise<number[]> {
+  const faint = !query.includes("layers=");
+  await open(page, `${CYGNUS}&zoom=80${query}`);
+  if (faint) await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
+  await page.waitForTimeout(800);
+  // the picture cards above the map are a few pixels taller or shorter from time to time: bring the map to the middle of the screen so the drag is on it
+  await page.locator("#chart-box").scrollIntoViewIfNeeded();
+  await page.evaluate(() => { (window as unknown as { drawMs: number[] }).drawMs = []; });
+  const box = (await page.locator("#chart-box").boundingBox())!;
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  const drawn = (): Promise<number> => page.evaluate(() => (window as unknown as { drawMs: number[] }).drawMs.filter((ms) => ms > 1.5).length);
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 0; i < 120; i++) {
+    const before = await drawn();
+    await page.mouse.move(x + Math.sin(i / 15) * 160, y + Math.cos(i / 15) * 90);
+    await expect.poll(drawn, { timeout: 10_000, intervals: [5] }).toBeGreaterThan(before);
+  }
+  await page.mouse.up();
+  if (faint) await expect.poll(() => dots(page)).toBeGreaterThan(20);
+  const all = (await page.evaluate(() => (window as unknown as { drawMs: number[] }).drawMs)).filter((ms) => ms > 1.5);
+  expect(all.length).toBeGreaterThanOrEqual(120);
+  return all.slice(10);
+}
+const p95Of = (frames: number[]): number => [...frames].sort((a, b) => a - b)[Math.floor(frames.length * 0.95)]!;
+
+// The faint stars must add little to a frame. The bar is set against the same drag without them, in the same browser, so it holds on a runner of any speed: on a laptop drawing in
+// software a frame here is about 22 ms; with the CPU slowed five times, about CI's speed, the 95th percentile was 61 to 113 ms with the faint stars on and 62 to 95 without, run to run,
+// and 66 with only lines, names and grid (the Milky Way and the pictures are most of a frame). The two are taken in turn, twice, so a runner that slows part way through slows both.
+// The ceiling of 250 ms (four frames a second) only catches a broken chart.
+test("panning the zoomed-in map: the faint stars add little to a frame, and they follow the sky", async ({ page, browserName, isMobile }) => {
   test.skip(browserName !== "chromium" || isMobile, "the drag is a Chromium mouse drag; the frame budget is measured once");
+  test.setTimeout(240_000);
   await page.addInitScript(() => {
     const w = window as unknown as { drawMs: number[] };
     w.drawMs = [];
     const raf = window.requestAnimationFrame.bind(window);
     window.requestAnimationFrame = (cb) => raf((t) => { const start = performance.now(); cb(t); w.drawMs.push(performance.now() - start); });
   });
-  await open(page, `${CYGNUS}&zoom=80`);
-  await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
-  await page.waitForTimeout(800);
-  await page.evaluate(() => { (window as unknown as { drawMs: number[] }).drawMs = []; });
-  // the picture cards above the map are a few pixels taller or shorter from time to time: bring the map to the middle of the screen so the drag is on it
-  await page.locator("#chart-box").scrollIntoViewIfNeeded();
-  const box = (await page.locator("#chart-box").boundingBox())!;
-  const x = box.x + box.width / 2;
-  const y = box.y + box.height / 2;
-  await page.mouse.move(x, y);
-  await page.mouse.down();
-  for (let i = 0; i < 40; i++) {
-    await page.mouse.move(x + Math.sin(i / 5) * 160, y + Math.cos(i / 5) * 90);
-    await page.waitForTimeout(16);
+  const on: number[] = [];
+  const off: number[] = [];
+  for (let round = 0; round < 2; round++) {
+    on.push(...(await dragFrames(page, "")));
+    off.push(...(await dragFrames(page, "&layers=milky,lines,names,pictures,grid")));
   }
-  await page.mouse.up();
-  await expect.poll(() => dots(page)).toBeGreaterThan(20);
-  const draws = (await page.evaluate(() => (window as unknown as { drawMs: number[] }).drawMs)).filter((ms) => ms > 1.5).sort((a, b) => a - b);
-  expect(draws.length).toBeGreaterThan(20);
-  const p95 = draws[Math.floor(draws.length * 0.95)]!;
-  // a draw is the whole chart (the faint stars add about a millisecond); software drawing in CI is slower than a laptop, so the bar is a generous 100 ms
-  expect(p95, `the 95th percentile of ${draws.length} draws, ms`).toBeLessThan(100);
+  const withFaint = p95Of(on);
+  const without = p95Of(off);
+  expect(withFaint, `the 95th percentile of ${on.length} frames with the faint stars, against ${without.toFixed(1)} ms without, ms`).toBeLessThanOrEqual(1.3 * without + 10);
+  expect(withFaint, "the 95th percentile with the faint stars, ms").toBeLessThan(250);
 });
 
 test("nothing is drawn and nothing is fetched at rest", async ({ page }) => {
