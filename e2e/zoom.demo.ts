@@ -16,7 +16,19 @@ const number = (page: Page, name: string): number => Number(param(page, name));
 
 for (const where of PAGES) {
   test.describe(where.name, () => {
-    async function open(page: Page, query = "", { scroll = true } = {}): Promise<{ x: number; y: number }> {
+    /**
+     * Opens the page with the map bound and drawn, and gives the point to put the pointer on. With `kept`, for a wheel the page must keep, the map is put in view by a page tall
+     * enough to hold it, never by a scroll: WebKit decides on its scrolling thread whether a wheel may be kept, from the scroll position it last heard of, and on a busy machine
+     * a scroll just before the wheel can still be news there, so the wheel came as one the page could not keep. Without it, a map low on the page is scrolled into view.
+     */
+    async function open(page: Page, query = "", { kept = false } = {}): Promise<{ x: number; y: number }> {
+      if (kept) {
+        await page.goto(`${where.path}${query}`);
+        // the map is at most 640 pixels high, however tall the page
+        const top = await page.locator(where.box).evaluate((box) => box.getBoundingClientRect().top + scrollY);
+        const viewport = page.viewportSize()!;
+        if (top + 640 > viewport.height) await page.setViewportSize({ width: viewport.width, height: Math.ceil(top) + 680 });
+      }
       await page.goto(`${where.path}${query}`);
       // the first drawing can take several seconds on a busy machine
       await expect(page.locator(`${where.target} circle`).first()).toBeVisible({ timeout: 30_000 });
@@ -30,13 +42,15 @@ for (const where of PAGES) {
         addEventListener("wheel", (event) => (window as unknown as { wheels: boolean[] }).wheels.push(event.defaultPrevented));
       });
       let box = (await page.locator(where.box).boundingBox())!;
-      if (scroll && box.y + Math.min(box.height / 2, 300) > page.viewportSize()!.height - 20) {
+      if (!kept && box.y + Math.min(box.height / 2, 300) > page.viewportSize()!.height - 20) {
         await page.locator(where.box).scrollIntoViewIfNeeded();
         // two drawn frames after the scroll: until WebKit has drawn one, a wheel there can come as one the page cannot keep (cancelable false), and the page would scroll too
         await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
         box = (await page.locator(where.box).boundingBox())!;
       }
-      return { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 300) };
+      const at = { x: box.x + box.width / 2, y: box.y + Math.min(box.height / 2, 300) };
+      if (kept) expect(at.y).toBeLessThan(page.viewportSize()!.height);
+      return at;
     }
     const wheels = (page: Page): Promise<boolean[]> => page.evaluate(() => (window as unknown as { wheels: boolean[] }).wheels);
     const circles = (page: Page): Promise<number> => page.locator(`${where.target} circle[r]`).count();
@@ -94,8 +108,7 @@ for (const where of PAGES) {
 
     test("Ctrl and the wheel zoom about the pointer, and the page keeps still", async ({ page, isMobile }) => {
       test.skip(isMobile || page.viewportSize()!.width < 600, "a phone has no wheel");
-      const at = await open(page);
-      // open() scrolls the map into view when it starts low on the page; the wheel must not scroll it from there
+      const at = await open(page, "", { kept: true });
       const before = await page.evaluate(() => scrollY);
       await page.mouse.move(at.x, at.y);
       await page.keyboard.down("Control");
@@ -108,15 +121,7 @@ for (const where of PAGES) {
 
     test("zoomed in, the wheel moves the sky", async ({ page, isMobile }) => {
       test.skip(isMobile, "a phone has no wheel");
-      // The map is put in view by a page tall enough to hold it, never by a scroll just before the wheel: WebKit decides on its scrolling thread whether a wheel may be kept,
-      // from the scroll position it last heard of, and on a busy machine a scroll the page has already drawn can still be news there, so the wheel came as one the page could not keep.
-      const viewport = page.viewportSize()!;
-      await page.goto(where.path);
-      // the map is at most 640 pixels high, however tall the page
-      const top = await page.locator(where.box).evaluate((box) => box.getBoundingClientRect().top + scrollY);
-      if (top + 640 > viewport.height) await page.setViewportSize({ width: viewport.width, height: Math.ceil(top) + 680 });
-      const at = await open(page, "?zoom=8", { scroll: false });
-      expect(at.y).toBeLessThan(page.viewportSize()!.height);
+      const at = await open(page, "?zoom=8", { kept: true });
       await page.mouse.move(at.x, at.y);
       await page.mouse.wheel(0, 200);
       await expect.poll(() => param(page, "dec")).not.toBeNull();
@@ -162,7 +167,12 @@ for (const where of PAGES) {
       for (let i = 0; i < 3; i += 1) await page.getByTestId("zoom-in").click();
       await expect.poll(() => number(page, "zoom")).toBe(8000);
       await page.getByTestId("zoom-in").click();
-      await page.waitForTimeout(300);
+      // one more step: the hands report they are still at the top of their range, so the view and its address stay at 8000
+      const [zoom, top] = await page.locator(where.box).evaluate((box) => {
+        const hands = box as HTMLElement & { state: { zoom: number }; controller: { limits: { zoomMax: number } } };
+        return [hands.state.zoom, hands.controller.limits.zoomMax];
+      });
+      expect(zoom).toBeCloseTo(top!, 6);
       expect(number(page, "zoom")).toBe(8000);
       // Mizar is in the middle of a view 3 arc-minutes across
       expect(await circles(page)).toBeGreaterThanOrEqual(1);
