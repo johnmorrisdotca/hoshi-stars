@@ -87,6 +87,16 @@ test("the scripts that used NED's web pages refuse to ask them: the shapes build
   refused(["scripts/check-deep-sky-ned.py", "--cache", cache, "--write", "OUT/positions.tsv"]);
 });
 
+test("the shapes build stops when --from has no folder of NED's saved answers, and counts the galaxies with none saved", () => {
+  const empty = mkdtempSync(join(tmpdir(), "hoshi-no-ned-"));
+  const out = mkdtempSync(join(tmpdir(), "hoshi-refuse-"));
+  const run = spawnSync("python3", ["-I", "scripts/make-deep-sky-shapes.py", "--from", empty, "--no-rc3", "--out", out], { encoding: "utf8", timeout: 10_000 });
+  assert.equal(run.status, 1, run.stdout + run.stderr);
+  assert.match(run.stderr, /is not a folder of NED's saved answers/);
+  assert.deepEqual(readdirSync(out), [], "nothing is written");
+  assert.match(build([]).log, /no saved NED answer for 0 of 7 galaxies/);
+});
+
 test("no script holds an address of NED's /srs/ or /cgi-bin/ pages, and the black-hole build stops rather than ask NED", () => {
   for (const file of readdirSync("scripts").filter((name) => name.endsWith(".py"))) {
     const code = readFileSync(join("scripts", file), "utf8");

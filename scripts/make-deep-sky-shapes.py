@@ -103,11 +103,16 @@ def ned_name(o):
     return f"{d[0]} {d[1]}{d[2]}"
 
 
+def ned_path(name, folder):
+    """Where NED's saved diameters answer for one object is, in `folder`."""
+    return folder / "ned" / (re.sub(r"[^A-Za-z0-9]+", "-", name) + ".txt")
+
+
 def ned_text(name, folder):
-    """NED's diameters answer for one object as text, from the answers saved in `folder` (empty text where none is saved: NED had no diameters for it). NED itself is never asked."""
+    """NED's diameters answer for one object as text, from the answers saved in `folder` (empty text where none is saved). NED itself is never asked."""
     if folder is None:
         raise SystemExit(REFUSE_NED)
-    path = folder / "ned" / (re.sub(r"[^A-Za-z0-9]+", "-", name) + ".txt")
+    path = ned_path(name, folder)
     return path.read_text(encoding="utf-8") if path.exists() else ""
 
 
@@ -161,6 +166,8 @@ def main():
     use_ned = "--no-ned" not in sys.argv
     if use_ned and folder is None:
         raise SystemExit(REFUSE_NED)
+    if use_ned and not (folder / "ned").is_dir():
+        raise SystemExit(f"{folder / 'ned'} is not a folder of NED's saved answers, so every NED shape would be missing. Give --from the folder that holds ned/, or use --no-ned.")
     only = {x.strip().upper() for x in args_value("--only").split(",")} if args_value("--only") else None
 
     rc3 = {}
@@ -183,6 +190,7 @@ def main():
     if "--reverse" in sys.argv:  # a second run from the other end, to share the asking
         galaxies.reverse()
     texts = {o["id"]: ned_text(ned_name(o), folder) for o in galaxies} if use_ned else {}
+    unsaved = sum(1 for o in galaxies if not ned_path(ned_name(o), folder).exists()) if use_ned else 0
 
     out = {"messier": [], "ngc-ic": []}
     counts = {}
@@ -221,7 +229,7 @@ def main():
         (out_dir / f"deep-sky-shapes-{name}.ts").write_text(HEADER + f"\n/** {note} */\nexport const {constant} = `" + "\n".join(out[name]) + "`;\n", encoding="utf-8")
     angled = sum(1 for rows in out.values() for row in rows if row.split("|")[3] != "")
     ratioed = sum(1 for rows in out.values() for row in rows if row.split("|")[2] != "")
-    print(f"rows: messier {len(out['messier'])}, ngc-ic {len(out['ngc-ic'])}; by source {counts}; with a minor axis {ratioed}; with an angle {angled}; rc3 rows refused for position {rejected}; rc3 {'on' if use_rc3 else 'off'}; ned {'on' if use_ned else 'off'}")
+    print(f"rows: messier {len(out['messier'])}, ngc-ic {len(out['ngc-ic'])}; by source {counts}; with a minor axis {ratioed}; with an angle {angled}; rc3 rows refused for position {rejected}; rc3 {'on' if use_rc3 else 'off'}; ned {'on' if use_ned else 'off'}{f', no saved NED answer for {unsaved} of {len(galaxies)} galaxies' if use_ned else ''}")
 
 
 if __name__ == "__main__":
