@@ -131,3 +131,7 @@
 .ls-table img { display: block; width: 72px; height: 72px; border-radius: 6px; background: var(--rule); }
 .ls-name a { font-weight: 600; color: var(--ink); }
 .ls-table .fam-button { text-decoration: none; }
+
+/* Kana readings over the Chinese sky's group and mansion names (readings.ts): small, but never under 10 pixels, and a card's name keeps its height. */
+rt { font-size: max(10px, .55em); font-weight: 400; }
+.pick-tile ruby, .gl-name ruby { line-height: 1; }

@@ -33,6 +33,7 @@ import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
 import { distanceText, foundKey, kindKey, massText, papersOf, placeText } from "./holes.ts";
 import { makeCard, paintCard } from "./constellation-card.ts";
 import { mountPicker } from "./picker.ts";
+import { mountReadings, writeReadings } from "./readings.ts";
 import { lookNow, onLook } from "./thumbs.ts";
 import { faintFor } from "./faint.ts";
 import { BAND_COLOURS, layersFor, loadDistances, renderLegend, UNCERTAIN_COLOUR } from "./distance-layers.ts";
@@ -297,7 +298,8 @@ function pressed(): void {
   });
   $("embed-what-hint").hidden = starNow !== undefined;
   overlayPressed();
-  $("culture-note").textContent = say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`);
+  readings.refresh(say("readings"));
+  writeReadings($("culture-note"), say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`), readings.on());
   const slider = $<HTMLInputElement>("magnitude");
   slider.value = String(magnitude);
   $("magnitude-out").textContent = magnitude.toFixed(1);
@@ -713,7 +715,11 @@ $("find").addEventListener("submit", (event) => {
 });
 
 // ----- the picker over the map -----
-const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), culture: () => culture.id as CultureId, go: (id) => goTo(`C:${id}`), current: pickedConstellation, say });
+const readings = mountReadings($("readings-row"), $<HTMLButtonElement>("readings"), address, () => lang() === "ja" && culture.id === "chinese", () => {
+  picker.refresh();
+  pressed();
+});
+const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElement>("picker-search"), culture: () => culture.id as CultureId, go: (id) => goTo(`C:${id}`), current: pickedConstellation, readings: readings.on, say });
 
 // ----- what is picked -----
 const SOURCE_WORDS: Record<string, string> = { RC3: "srcRC3", NED: "srcNed", "Catalogue row": "srcRow" };
