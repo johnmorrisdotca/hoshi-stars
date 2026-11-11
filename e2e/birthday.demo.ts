@@ -43,7 +43,9 @@ test.describe("normal motion", () => {
   test.use({ reducedMotion: "no-preference" });
 
   test("it opens moving from today with the date running; Pause holds the day and keeps it in the address", async ({ page }) => {
-    await page.clock.install({ time: new Date("2026-11-10T09:00:00Z") });
+    // the clock held still, so the page steps on only when the test lets time pass
+    await page.clock.install({ time: new Date("2026-11-10T08:59:00Z") });
+    await page.clock.pauseAt(new Date("2026-11-10T09:00:00Z"));
     await page.goto("/hoshi-stars/birthday.html");
     const play = page.getByTestId("bd-play");
     await expect(play).toHaveAttribute("aria-pressed", "true");
@@ -54,8 +56,9 @@ test.describe("normal motion", () => {
     await play.click();
     await expect(play).toHaveAttribute("aria-pressed", "false");
     const held = await page.getByTestId("bd-date").inputValue();
-    await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(held);
+    // the address is written on a short timer (the family's address state), which runs only as the held clock is let on
     await page.clock.runFor(2000);
+    await expect.poll(() => new URL(page.url()).searchParams.get("date")).toBe(held);
     await expect(page.getByTestId("bd-date")).toHaveValue(held);
     await page.reload();
     await expect(page.getByTestId("bd-date")).toHaveValue(held);
@@ -65,7 +68,8 @@ test.describe("normal motion", () => {
 
 test("with reduced motion it opens still on today, with Play ready", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.clock.install({ time: new Date("2026-11-10T09:00:00Z") });
+  await page.clock.install({ time: new Date("2026-11-10T08:59:00Z") });
+  await page.clock.pauseAt(new Date("2026-11-10T09:00:00Z"));
   await page.goto("/hoshi-stars/birthday.html");
   await expect(page.getByTestId("bd-play")).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("bd-play")).toHaveText("Play");
