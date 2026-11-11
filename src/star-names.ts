@@ -445,6 +445,11 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
         if (!project(star.rightAscension, star.declination, spot)) continue;
         if (!(spot.x >= 0 && spot.x <= view.width && spot.y >= 0 && spot.y <= view.height)) continue;
         if (covered !== undefined && covered(spot.x, spot.y)) continue;
+        // its own ring and dot must be clear of every name already placed: a brighter star's name may lie over a fainter star, which then goes unnamed
+        const mark = Math.max(style.ring, radius) + 1;
+        let under = false;
+        for (let j = 0; j < labels.length && !under; j += 1) under = reaches(labels[j]!.x0, labels[j]!.y0, labels[j]!.x1, labels[j]!.y1, spot.x, spot.y, mark);
+        if (under) continue;
         const slot = pool[labels.length] ?? (pool[labels.length] = newLabel());
         const text = texts[i]!;
         const letter = designations[i]!;
