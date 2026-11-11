@@ -133,6 +133,8 @@ console.log(outline.length, outline[0]);
 - A point within a few arc-seconds of a boundary can fall either side: the table is to a hundredth of a second of time and the precession is the modern one, not 1930's.
 - About 7 kB gzipped of data on top of the constellations table, and 100,000 lookups take about 40 ms.
 
+The demo's `birthday.html` puts `constellationAt` to work for one question: which constellation was the Sun really in on a day, such as a birthday? It shows the answer, the days the Sun went in and comes out, a chart of the stars around the Sun with the ecliptic, and the 13 constellations its path crosses that year, Ophiuchus among them. It is real astronomy only: those days are not the traditional signs' dates, and the page says so. It opens moving from today, a day at a time. [The Sun on your birthday](docs/guides/sun-on-a-birthday.md) has the details and how it is tested.
+
 ## Constellation lines
 
 `@johnmorrisdotca/hoshi-stars/lines` is its own import, about 2 kB gzipped, so a chart without lines pays nothing. Each of the 88 constellations has a stick figure: pairs of its bright stars to join with a line. The figures are our own, decided from the star data (`NOTICE.md`); every star of a line lies inside the constellation, so one figure never runs into the next.

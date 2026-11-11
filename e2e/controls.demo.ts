@@ -1,7 +1,7 @@
 // No control is left in the browser's own style, every control of the demo is big enough to touch, and nothing scrolls the page sideways: in light and in dark, in both languages.
 import { expect, test, type Page } from "@playwright/test";
 
-const ADDRESSES = ["/hoshi-stars/", "/hoshi-stars/?lang=ja", "/hoshi-stars/embed.html", "/hoshi-stars/docs/index.html", "/hoshi-stars/docs/ja/index.html", "/hoshi-stars/constellations.html", "/hoshi-stars/constellations.html?lang=ja", "/hoshi-stars/constellation.html?c=Ori", "/hoshi-stars/constellation-list.html", "/hoshi-stars/constellation-list.html?lang=ja"] as const;
+const ADDRESSES = ["/hoshi-stars/", "/hoshi-stars/?lang=ja", "/hoshi-stars/embed.html", "/hoshi-stars/docs/index.html", "/hoshi-stars/docs/ja/index.html", "/hoshi-stars/constellations.html", "/hoshi-stars/constellations.html?lang=ja", "/hoshi-stars/constellation.html?c=Ori", "/hoshi-stars/constellation-list.html", "/hoshi-stars/constellation-list.html?lang=ja", "/hoshi-stars/birthday.html?date=2020-12-01", "/hoshi-stars/birthday.html?date=2020-12-01&lang=ja"] as const;
 const SCHEMES = ["light", "dark"] as const;
 
 /** Visible controls that still look as the browser draws them: the same border, ground and corners as a fresh, unstyled control of the same kind. */

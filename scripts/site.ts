@@ -25,6 +25,7 @@ writeFileSync(join(site, "constellations.html"), renderConstellationPage("galler
 writeFileSync(join(site, "constellation.html"), renderConstellationPage("constellation.html", "cp_title", "cp_description", "constellation"));
 writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.html", "ws_title", "ws_description", "whole-sky"));
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
+writeFileSync(join(site, "birthday.html"), renderConstellationPage("birthday.html", "bd_title", "bd_description", "birthday"));
 writeFileSync(join(site, "constellation-3d.html"), renderSpace());
 writeThumbnails(join(site, "thumbnails"));
 // The pictures of the Chinese asterisms and the traditional Japanese figures: Pages only, never in the npm package (which ships the 88).
@@ -36,7 +37,7 @@ cpSync(join(root, "pictures"), join(site, "pictures"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 for (const file of ["embed.html", "embed-3d.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), birthday: join(root, "demo", "birthday.ts") },
   outdir: join(site, "js"),
   bundle: true,
   splitting: true,

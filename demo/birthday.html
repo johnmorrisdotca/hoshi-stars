@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="bday" aria-labelledby="bd-heading">
+        <h1 id="bd-heading" class="gl-title" data-say="bd_heading"></h1>
+        <p class="lead" data-say="bd_lede"></p>
+        <div class="fam-row bd-pick">
+          <label class="fam-label" for="bd-date" data-say="bd_date"></label>
+          <input id="bd-date" type="date" class="fam-field" data-testid="bd-date" min="1900-01-01" max="2100-12-31" />
+          <button type="button" class="fam-button" id="bd-play" data-testid="bd-play"></button>
+          <button type="button" class="fam-button" id="bd-today" data-testid="bd-today" data-say="bd_today"></button>
+        </div>
+        <p class="bd-answer" id="bd-answer" data-testid="bd-answer" aria-live="polite"></p>
+        <p class="fam-fine" id="bd-stay" data-testid="bd-stay"></p>
+        <div class="bd-sky" id="bd-box" data-testid="bd-box">
+          <svg id="bd-sky" data-testid="bd-sky" role="img"></svg>
+        </div>
+        <p class="fam-fine" data-say="bd_note"></p>
+        <h2 class="bd-year-title" id="bd-year-title" data-testid="bd-year-title"></h2>
+        <div class="bd-year" id="bd-year" data-testid="bd-year" role="group" aria-labelledby="bd-year-title"></div>
+        <p class="fam-fine" data-say="bd_how"></p>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>
