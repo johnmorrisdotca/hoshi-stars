@@ -211,6 +211,13 @@ export interface FigureLines {
    * @returns `true` when the picked figure changed, which is when the page should draw once more; `false` when nothing changed and nothing needs to be drawn.
    */
   point(x?: number, y?: number): boolean;
+  /**
+   * Pick the next figure in view, or the one before (for the keyboard): in the catalogue's order, round from the last to the first, skipping figures with no line in view. With none picked, `1` starts at the first and `-1` at the last.
+   *
+   * @param direction - `1` for the next figure, `-1` for the one before.
+   * @returns `true` when the picked figure changed; `false` when no figure is in view or the strength is 0.
+   */
+  step(direction: 1 | -1): boolean;
 }
 
 /** The steps to either side, in name widths, that a picked figure's name tries in turn. */
@@ -430,6 +437,20 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
       picked = best;
       if (picked >= 0) placeName();
       return true;
+    },
+    step(direction) {
+      if (current.strength === 0) return false;
+      const n = onScreen.length;
+      const from = picked >= 0 ? picked : direction === 1 ? n - 1 : 0;
+      for (let k = 1; k <= n; k += 1) {
+        const i = (((from + direction * k) % n) + n) % n;
+        if (onScreen[i]!.end === onScreen[i]!.start) continue;
+        if (i === picked) return false;
+        picked = i;
+        placeName();
+        return true;
+      }
+      return false;
     },
   };
   return lines;

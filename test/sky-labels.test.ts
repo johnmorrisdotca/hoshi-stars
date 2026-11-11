@@ -556,3 +556,25 @@ test("a fainter named star is named only where its own ring and dot are clear of
   }
   assert.ok(checked > 100);
 });
+
+test("the keyboard steps through the figures in view, round from the last to the first, and skips those out of view", () => {
+  const lines = createFigureLines({ strength: 0.16 });
+  lines.update(project, VIEW);
+  const shown = lines.figures.filter((figure) => figure.end > figure.start);
+  assert.ok(shown.length > 3);
+  assert.equal(lines.step(1), true);
+  assert.equal(lines.picked, shown[0]);
+  assert.ok(lines.name !== undefined && lines.name.text.length > 0);
+  assert.equal(lines.step(1), true);
+  assert.equal(lines.picked, shown[1]);
+  assert.equal(lines.step(-1), true);
+  assert.equal(lines.picked, shown[0]);
+  assert.equal(lines.step(-1), true);
+  assert.equal(lines.picked, shown[shown.length - 1], "round from the first to the last");
+  assert.equal(lines.point(), true, "with nothing, the pick is let go");
+  assert.equal(lines.step(-1), true);
+  assert.equal(lines.picked, shown[shown.length - 1], "with none picked, back starts at the last");
+  const none = createFigureLines({ strength: 0 });
+  none.update(project, VIEW);
+  assert.equal(none.step(1), false, "strength 0 picks nothing");
+});
