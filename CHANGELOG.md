@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-11-11
+
 - **The Sun on your birthday** (MODULES-819). A new demo page, `birthday.html`: pick a day and see which constellation the Sun was really in, on a chart of the stars around it (the constellation bright with its boundary, the ecliptic dotted, the Sun marked), with the days it went in and comes out, and below it the constellations the Sun crosses that year, 13 with Ophiuchus, each a button to its day. The page says plainly that these are not the traditional signs' dates, and nothing about signs beyond that. The Sun's place is the low-precision formula of *The Astronomical Almanac* (section C, about 0.01°); the constellation is `constellationAt` with the place of date; the days are the reader's own. It opens moving from today, four days a second, with the date running; Pause and a picked day write `date=` to the address and hold it; reduced motion opens still with Play ready; nothing is drawn out of sight. New `demo/sun.ts`; `test/sun.test.ts` checks 2020's 13 entries against Guy Ottewell's published table (same order, each within half a day: his edges cross the ecliptic up to 0.33° from Roman's); e2e for the page in both languages, its motion and its address. Docs EN and JA, in the header, the credits and the controls checks.
 
 ## [0.28.0] - 2026-11-11
