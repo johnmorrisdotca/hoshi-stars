@@ -47,8 +47,8 @@ export interface NearStarSources {
   position: NearStarSource;
   /** The parallax and the distance. */
   distance: NearStarDistanceSource;
-  /** The spectral type. */
-  spectralType: NearStarSource;
+  /** The spectral type, or `undefined` where there is none. */
+  spectralType: NearStarSource | undefined;
   /** The V magnitude, or `undefined` where there is none. */
   magnitude: NearStarSource | undefined;
   /** The proper motion, or `undefined` where there is none. */
@@ -97,8 +97,8 @@ export interface NearStarMember {
   declination: number | undefined;
   /** The star's own distance in light-years, or `undefined` as above. */
   lightYears: number | undefined;
-  /** The spectral type. */
-  spectralType: string;
+  /** The spectral type, or `undefined` where the source gives none. */
+  spectralType: string | undefined;
   /** The luminosity class in `spectralType`, or `undefined` where it states none (a white dwarf is `D` only where the type starts with `D`). */
   luminosityClass: LuminosityClass | undefined;
   /** The V magnitude, or `undefined` where there is none. */
@@ -149,8 +149,8 @@ export interface NearStar {
   lightYears: number;
   /** The error of `lightYears`, or `undefined`: the distance times the parallax's relative error. */
   lightYearsError: number | undefined;
-  /** The spectral type of the primary. */
-  spectralType: string;
+  /** The spectral type of the primary, or `undefined` where the source gives none (LPP 731-58). */
+  spectralType: string | undefined;
   /** The luminosity class in `spectralType`, or `undefined`. */
   luminosityClass: LuminosityClass | undefined;
   /** The V magnitude of the primary, or `undefined`. */
@@ -185,7 +185,7 @@ const key = (text: string): string => String(text).trim().toLowerCase().replace(
 
 function member(row: NearStarMemberRow): NearStarMember {
   return Object.freeze({
-    name: row.name, nameJa: row.nameJa, role: row.role, rightAscension: row.ra, declination: row.dec, lightYears: row.ly, spectralType: row.sp, luminosityClass: luminosityClass(row.sp), magnitude: row.mag, source: row.src, note: row.note,
+    name: row.name, nameJa: row.nameJa, role: row.role, rightAscension: row.ra, declination: row.dec, lightYears: row.ly, spectralType: row.sp, luminosityClass: (row.sp === undefined ? undefined : luminosityClass(row.sp)), magnitude: row.mag, source: row.src, note: row.note,
   });
 }
 
@@ -193,7 +193,7 @@ function build(row: NearStarRow): NearStar {
   return Object.freeze({
     id: row.id, name: row.name, nameJa: row.nameJa, designation: row.designation, aliases: Object.freeze([...row.aliases]), constellation: row.constellation, starsAtLeast: row.starsAtLeast,
     rightAscension: row.ra, declination: row.dec, positionErrorArcsec: row.posErr, parallaxMas: row.plx, parallaxErrorMas: row.plxErr, lightYears: row.ly, lightYearsError: row.lyErr,
-    spectralType: row.sp, luminosityClass: luminosityClass(row.sp), magnitude: row.mag, properMotionRaMas: row.pm?.[0] ?? 0, properMotionDecMas: row.pm?.[1] ?? 0,
+    spectralType: row.sp, luminosityClass: (row.sp === undefined ? undefined : luminosityClass(row.sp)), magnitude: row.mag, properMotionRaMas: row.pm?.[0] ?? 0, properMotionDecMas: row.pm?.[1] ?? 0,
     members: Object.freeze(row.members.map(member)), flags: Object.freeze({ coarsePosition: row.flags.includes("coarse-position"), ambiguousMatch: row.flags.includes("ambiguous-match") }),
     sources: Object.freeze({ position: row.posSrc, distance: row.distSrc, spectralType: row.spSrc, magnitude: row.magSrc, properMotion: row.pmSrc }),
   });

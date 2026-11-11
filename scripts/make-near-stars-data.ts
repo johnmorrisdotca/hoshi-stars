@@ -48,14 +48,35 @@ interface Rec {
   ly: number;
   lyErr: number | undefined;
   distSrc: "GCTP" | "BSC" | "dynamical";
-  sp: string;
-  spSrc: Source;
+  sp: string | undefined;
+  spSrc: Source | undefined;
   mag: number | undefined;
   magSrc: Source | undefined;
   pm: [number, number] | undefined;
   pmSrc: Source | undefined;
   flags: string[];
   constellation: string | undefined;
+}
+
+// The Yale catalogue's text columns are fixed-width: names are cut short, a name's space is lost before a number and a spectral type can end in a stray mark. These put back what is certain.
+const TRUNCATED: Record<string, string> = { "Barnard sta": "Barnard's Star", "Kapteyn sta": "Kapteyn's Star", "van Maanen": "van Maanen's Star" };
+function cleanName(text: string): string {
+  if (TRUNCATED[text] !== undefined) return TRUNCATED[text]!;
+  let m = /^(CD|BD|CPD|AC|CoD)([+-]\d{2})(\d{4,})([A-Za-z]?)$/.exec(text);
+  if (m !== null) return `${m[1]}${m[2]} ${m[3]}${m[4]}`;
+  m = /^NSV(\d+)([A-Z]?)$/.exec(text);
+  if (m !== null) return `NSV ${m[1]}${m[2] === "" ? "" : ` ${m[2]}`}`;
+  m = /^(V\d+)([A-Z][a-z]{1,2})$/.exec(text);
+  if (m !== null) return `${m[1]} ${m[2]}`;
+  m = /^CI(\d{2}-\d+)$/.exec(text);
+  if (m !== null) return `CI ${m[1]}`;
+  return text;
+}
+// Two Yale types that are malformed (a doubled mark and a stray comma), set by hand to what the star is (M5.5 V, GJ 1002; M5.5 Ve, G 12-43).
+const SPECTRAL_FIXES: Record<string, string> = { "g9.01": "M5.5 V", g2890: "M5.5 Ve" };
+function cleanSpectral(id: string, text: string): string | undefined {
+  const fixed = SPECTRAL_FIXES[id] ?? text.trim().replace(/[,;:.]+$/, "").trim();
+  return fixed === "" ? undefined : fixed;
 }
 
 const recs = new Map<string, Rec>();
@@ -65,19 +86,21 @@ for (const s of stars()) {
   recs.set(`hr${s.hr}`, {
     id: `hr${s.hr}`, name: s.name, nameJa: s.nameJa, designation: s.designation, aliases: [`HR ${s.hr}`], ra: s.rightAscension, dec: s.declination, posSrc: "BSC", posErr: undefined,
     plx: s.parallaxMas, plxErr: s.parallaxErrorMas, ly, lyErr: s.parallaxErrorMas === undefined ? undefined : ly * s.parallaxErrorMas / s.parallaxMas, distSrc: s.parallaxSource === "dynamical" ? "dynamical" : s.parallaxSource === "BSC" ? "BSC" : "GCTP",
-    sp: s.spectralType, spSrc: "BSC", mag: s.magnitude, magSrc: "BSC", pm: [s.properMotionRaMas, s.properMotionDecMas], pmSrc: "BSC", flags: [], constellation: s.constellation,
+    sp: cleanSpectral(`hr${s.hr}`, s.spectralType), spSrc: "BSC", mag: s.magnitude, magSrc: "BSC", pm: [s.properMotionRaMas, s.properMotionDecMas], pmSrc: "BSC", flags: [], constellation: s.constellation,
   });
 }
 for (const s of nearbyStars()) {
   if (s.lightYears === undefined) continue;
   const flags = [s.flags.coarsePosition ? "coarse-position" : "", s.flags.ambiguousMatch ? "ambiguous-match" : ""].filter((f) => f !== "");
   recs.set(`g${s.gctp}`, {
-    id: `g${s.gctp}`, name: s.name, nameJa: undefined, designation: s.designation, aliases: [...s.aliases, ...(s.gliese === undefined ? [] : [s.gliese]), ...(s.hd === undefined ? [] : [`HD ${s.hd}`])],
+    id: `g${s.gctp}`, name: s.name, nameJa: undefined, designation: s.designation === undefined ? undefined : cleanName(s.designation), aliases: [...s.aliases.map(cleanName), ...(s.gliese === undefined ? [] : [s.gliese]), ...(s.hd === undefined ? [] : [`HD ${s.hd}`])],
     ra: s.rightAscension, dec: s.declination, posSrc: s.positionSource === "2MASS" ? "2MASS" : "GCTP", posErr: s.positionErrorArcsec, plx: s.parallaxMas, plxErr: s.parallaxErrorMas,
-    ly: s.lightYears, lyErr: s.lightYearsError, distSrc: "GCTP", sp: s.spectralType.trim(), spSrc: "GCTP", mag: s.magnitude, magSrc: s.magnitude === undefined ? undefined : "GCTP",
+    ly: s.lightYears, lyErr: s.lightYearsError, distSrc: "GCTP", sp: cleanSpectral(`g${s.gctp}`, s.spectralType), spSrc: "GCTP", mag: s.magnitude, magSrc: s.magnitude === undefined ? undefined : "GCTP",
     pm: s.properMotionSource === undefined ? undefined : [s.properMotionRaMas, s.properMotionDecMas], pmSrc: s.properMotionSource === undefined ? undefined : "GCTP", flags, constellation: undefined,
   });
 }
+// Wolf 1055 is GJ 752 A (HD 180617, V1298 Aql): the Gliese number is an identifier only, no catalogue data is read.
+recs.get("g4494")!.aliases.push("GJ 752 A");
 const constellationOf = (r: { ra: number; dec: number; constellation?: string | undefined }): string => r.constellation ?? constellationAt({ rightAscension: r.ra, declination: r.dec }).abbreviation;
 
 // ---- The Archive ----
@@ -149,6 +172,7 @@ const GROUPS: Group[] = [
   { id: "ross-614", name: "Ross 614", nameJa: "ロス614", members: ["g1509"], starsAtLeast: 2 },
 ];
 const NAMES: Record<string, { name: string; nameJa?: string }> = {
+  g4494: { name: "Wolf 1055" },
   g3278: { name: "Proxima Centauri", nameJa: "プロキシマ・ケンタウリ" },
   g4098: { name: "Barnard's Star", nameJa: "バーナード星" },
   g2553: { name: "Wolf 359", nameJa: "ウォルフ359" },
@@ -231,10 +255,10 @@ for (const g of GROUPS) for (const id of g.members) if (!recs.has(id)) throw new
 const round = (value: number, digits: number): number => Number(value.toFixed(digits));
 const slug = (text: string): string => text.toLowerCase().replace(/['’]/g, "").replace(/\+/g, "p").replace(/[^a-z0-9.]+/g, "-").replace(/^-|-$/g, "");
 const bright = (a: Rec, b: Rec): number => (a.mag ?? 99) - (b.mag ?? 99);
-const designationOf = (r: Rec): string => r.designation ?? r.aliases[0] ?? r.id;
+const designationOf = (r: Rec): string => r.designation ?? r.aliases.find((a) => /^GJ \d/.test(a)) ?? r.aliases[0] ?? r.id;
 const nameOf = (r: Rec): string => NAMES[r.id]?.name ?? r.name ?? (hostOf.get(r.id)?.[0] === undefined ? undefined : prettyHost(hostOf.get(r.id)![0]!)) ?? designationOf(r);
 
-interface MemberRow { name: string; nameJa?: string; role: "primary" | "companion"; ra?: number; dec?: number; ly?: number; sp: string; mag?: number; src: Source; note?: string }
+interface MemberRow { name: string; nameJa?: string; role: "primary" | "companion"; ra?: number; dec?: number; ly?: number; sp?: string; mag?: number; src: Source; note?: string }
 const rowsNear: string[] = [];
 const nearOfRecord = new Map<string, string>();
 systems.sort((a, b) => Math.min(...a.members.map((m) => m.ly)) - Math.min(...b.members.map((m) => m.ly)));
@@ -246,7 +270,7 @@ for (const { group, members } of systems) {
   const id = group?.id ?? slug(name);
   const flags = [...new Set(members.flatMap((m) => m.flags))];
   const memberRows: MemberRow[] = sorted.map((m, i) => {
-    const row: MemberRow = { name: members.length === 1 && group === undefined ? name : (m.name ?? nameOf(m)), role: m.id === primary.id ? "primary" : "companion", ra: round(m.ra, 6), dec: round(m.dec, 6), ly: round(m.ly, 3), sp: m.sp, src: m.spSrc };
+    const row: MemberRow = { name: members.length === 1 && group === undefined ? name : (m.name ?? nameOf(m)), role: m.id === primary.id ? "primary" : "companion", ra: round(m.ra, 6), dec: round(m.dec, 6), ly: round(m.ly, 3), ...(m.sp === undefined ? {} : { sp: m.sp }), src: m.spSrc ?? "GCTP" };
     if (m.mag !== undefined) row.mag = m.mag;
     const ja = NAMES[m.id]?.nameJa ?? m.nameJa;
     if (ja !== undefined && !(members.length === 1 && group === undefined)) row.nameJa = ja;
@@ -260,7 +284,7 @@ for (const { group, members } of systems) {
     id, name, ...(nameJa === undefined ? {} : { nameJa }), designation: (group?.designation ?? primary.designation) ?? designationOf(primary), aliases, constellation: constellationOf(primary), starsAtLeast: group?.starsAtLeast ?? 1,
     ra: round(primary.ra, 6), dec: round(primary.dec, 6), posSrc: primary.posSrc, ...(primary.posErr === undefined ? {} : { posErr: round(primary.posErr, 1) }),
     ly: round(primary.ly, 3), ...(primary.lyErr === undefined ? {} : { lyErr: round(primary.lyErr, 3) }), plx: primary.plx, ...(primary.plxErr === undefined ? {} : { plxErr: primary.plxErr }), distSrc: primary.distSrc,
-    sp: primary.sp, spSrc: primary.spSrc, ...(primary.mag === undefined ? {} : { mag: primary.mag, magSrc: primary.magSrc }),
+    ...(primary.sp === undefined ? {} : { sp: primary.sp, spSrc: primary.spSrc }), ...(primary.mag === undefined ? {} : { mag: primary.mag, magSrc: primary.magSrc }),
     ...(primary.pm === undefined ? {} : { pm: primary.pm, pmSrc: primary.pmSrc }), flags, members: memberRows,
   };
   rowsNear.push(`  ${JSON.stringify(row)},`);
@@ -273,6 +297,8 @@ const planetOf = (p: Record<string, string>): PlanetRow => ({
   name: p.pl_name!, letter: p.pl_letter!, ...(p.pl_orbper === "" ? {} : { periodDays: Number(Number(p.pl_orbper).toPrecision(10)) }), ...(refText(p.pl_orbper_reflink ?? "") === undefined || p.pl_orbper === "" ? {} : { periodRef: refText(p.pl_orbper_reflink!)! }),
   ...(p.disc_year === "" ? {} : { year: Number(p.disc_year) }), method: p.discoverymethod!,
 });
+// Other spellings a reader may search for.
+const HOST_ALIASES: Record<string, string[]> = { hr8729: ["ヘルヴェティオス"] };
 const hostName = (host: string, rec: Rec): string => {
   const base = NAMES[rec.id]?.name ?? rec.name ?? (rec.id.startsWith("hr") ? rec.designation : undefined);
   const component = /\s([A-D])$/.exec(host)?.[1];
@@ -292,9 +318,9 @@ for (const [host, rec] of matched) {
   const component = /\s([A-D])$/.exec(host)?.[1];
   const nameJa = baseJa !== undefined && component !== undefined && (hostOf.get(rec.id)?.length ?? 0) > 1 ? `${baseJa}${component}` : baseJa;
   const row = {
-    id: slug(host), name: hostName(host, rec), ...(nameJa === undefined ? {} : { nameJa }), designation: host, constellation: constellationOf(rec),
+    id: slug(host), name: hostName(host, rec), ...(nameJa === undefined ? {} : { nameJa }), designation: prettyHost(host), archiveName: host, ...(HOST_ALIASES[rec.id] === undefined ? {} : { aliases: HOST_ALIASES[rec.id] }), constellation: constellationOf(rec),
     ra: round(rec.ra, 6), dec: round(rec.dec, 6), posSrc: rec.posSrc, ...(rec.posErr === undefined ? {} : { posErr: round(rec.posErr, 1) }), ly: round(rec.ly, 3), ...(rec.lyErr === undefined ? {} : { lyErr: round(rec.lyErr, 3) }), distSrc: rec.distSrc,
-    sp: rec.sp, spSrc: rec.spSrc, ...(rec.mag === undefined ? {} : { mag: rec.mag, magSrc: rec.magSrc }), ...(nearId === undefined ? {} : { nearStarId: nearId }), why: rec.ly <= HOST_LY ? "near" : "named", planets,
+    ...(rec.sp === undefined ? {} : { sp: rec.sp, spSrc: rec.spSrc }), ...(rec.mag === undefined ? {} : { mag: rec.mag, magSrc: rec.magSrc }), ...(nearId === undefined ? {} : { nearStarId: nearId }), why: rec.ly <= HOST_LY ? "near" : "named", planets,
   };
   if (rec.ly <= HOST_LY) near++; else named++;
   hostRows.push({ sortLy: rec.ly, text: `  ${JSON.stringify(row)},` });
@@ -310,7 +336,7 @@ for (const [host, rec] of matched) {
   const plx = 82.6;
   const ly = (LY_PER_PC * 1000) / plx;
   const row = {
-    id: "trappist-1", name: "TRAPPIST-1", nameJa: "トラピスト1", designation: "TRAPPIST-1", constellation: constellationOf({ ra, dec }), ra: round(ra, 6), dec: round(dec, 6), posSrc: "2MASS", posErr: 1, ly: round(ly, 3), lyErr: round(ly * 2.6 / plx, 3),
+    id: "trappist-1", name: "TRAPPIST-1", nameJa: "トラピスト1", designation: "TRAPPIST-1", archiveName: "TRAPPIST-1", constellation: constellationOf({ ra, dec }), ra: round(ra, 6), dec: round(dec, 6), posSrc: "2MASS", posErr: 1, ly: round(ly, 3), lyErr: round(ly * 2.6 / plx, 3),
     distSrc: "typed", sp: "M8", spSrc: "typed", mag: 18.8, magSrc: "typed", why: "typed", planets,
     references: ["Costa et al. 2006, AJ 132, 1234: parallax 82.6 +- 2.6 mas, as quoted by Gillon et al. 2016, Nature 533, 221", "Gillon et al. 2016, Nature 533, 221: V 18.80, spectral type M8.0 +- 0.5", "2MASS Point Source Catalog (Cutri et al. 2003): J23062928-0502285"],
   };
@@ -345,7 +371,7 @@ export interface NearStarMemberRow {
   ra?: number;
   dec?: number;
   ly?: number;
-  sp: string;
+  sp?: string;
   mag?: number;
   src: NearStarSourceCode;
   note?: string;
@@ -369,8 +395,8 @@ export interface NearStarRow {
   plx: number;
   plxErr?: number;
   distSrc: "GCTP" | "BSC" | "dynamical";
-  sp: string;
-  spSrc: NearStarSourceCode;
+  sp?: string;
+  spSrc?: NearStarSourceCode;
   mag?: number;
   magSrc?: NearStarSourceCode;
   pm?: [number, number];
@@ -406,6 +432,8 @@ export interface ExoplanetHostRow {
   name: string;
   nameJa?: string;
   designation: string;
+  archiveName: string;
+  aliases?: string[];
   constellation: string;
   ra: number;
   dec: number;
@@ -414,8 +442,8 @@ export interface ExoplanetHostRow {
   ly: number;
   lyErr?: number;
   distSrc: "GCTP" | "BSC" | "dynamical" | "typed";
-  sp: string;
-  spSrc: "BSC" | "GCTP" | "2MASS" | "typed";
+  sp?: string;
+  spSrc?: "BSC" | "GCTP" | "2MASS" | "typed";
   mag?: number;
   magSrc?: "BSC" | "GCTP" | "2MASS" | "typed";
   nearStarId?: string;

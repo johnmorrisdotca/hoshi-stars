@@ -75,8 +75,12 @@ export interface ExoplanetHost {
   name: string;
   /** The name in Japanese where known, else `undefined`. */
   nameJa: string | undefined;
-  /** The name the NASA Exoplanet Archive gives the host (`Proxima Cen`, `eps Eri`). */
+  /** The star's designation with Greek letters where it has one (`ε Eri`, `Proxima Cen`), the same form as in `/near-stars`. */
   designation: string;
+  /** The name the NASA Exoplanet Archive gives the host (`eps Eri`, `Proxima Cen`). */
+  archiveName: string;
+  /** Other spellings that find the host (`ヘルヴェティオス` for Helvetios). */
+  aliases: readonly string[];
   /** The IAU three-letter constellation abbreviation the star lies in. */
   constellation: string;
   /** Right ascension in degrees at J2000, 0 up to 360. */
@@ -89,8 +93,8 @@ export interface ExoplanetHost {
   lightYears: number;
   /** The error of `lightYears`. */
   lightYearsError: number;
-  /** The spectral type. */
-  spectralType: string;
+  /** The spectral type, or `undefined` where the source gives none. */
+  spectralType: string | undefined;
   /** The luminosity class in `spectralType`, or `undefined`. */
   luminosityClass: LuminosityClass | undefined;
   /** The V magnitude, or `undefined`. */
@@ -106,7 +110,7 @@ export interface ExoplanetHost {
   /** Papers behind the typed values, empty for the others. */
   references: readonly string[];
   /** Where each value comes from. */
-  sources: { position: ExoplanetHostSource; distance: "GCTP" | "BSC" | "dynamical" | "typed"; spectralType: ExoplanetHostSource; magnitude: ExoplanetHostSource | undefined; planets: "NASA Exoplanet Archive" };
+  sources: { position: ExoplanetHostSource; distance: "GCTP" | "BSC" | "dynamical" | "typed"; spectralType: ExoplanetHostSource | undefined; magnitude: ExoplanetHostSource | undefined; planets: "NASA Exoplanet Archive" };
 }
 
 /**
@@ -144,8 +148,8 @@ function planet(row: ExoplanetRow): Exoplanet {
 
 function build(row: ExoplanetHostRow): ExoplanetHost {
   return Object.freeze({
-    id: row.id, name: row.name, nameJa: row.nameJa, designation: row.designation, constellation: row.constellation, rightAscension: row.ra, declination: row.dec, positionErrorArcsec: row.posErr,
-    lightYears: row.ly, lightYearsError: row.lyErr ?? 0, spectralType: row.sp, luminosityClass: luminosityClass(row.sp), magnitude: row.mag, nearStarId: row.nearStarId, selection: row.why, planetCount: row.planets.length,
+    id: row.id, name: row.name, nameJa: row.nameJa, designation: row.designation, archiveName: row.archiveName, aliases: Object.freeze([...(row.aliases ?? [])]), constellation: row.constellation, rightAscension: row.ra, declination: row.dec, positionErrorArcsec: row.posErr,
+    lightYears: row.ly, lightYearsError: row.lyErr ?? 0, spectralType: row.sp, luminosityClass: row.sp === undefined ? undefined : luminosityClass(row.sp), magnitude: row.mag, nearStarId: row.nearStarId, selection: row.why, planetCount: row.planets.length,
     planets: Object.freeze(row.planets.map(planet)), references: Object.freeze([...(row.references ?? [])]),
     sources: Object.freeze({ position: row.posSrc, distance: row.distSrc, spectralType: row.spSrc, magnitude: row.magSrc, planets: "NASA Exoplanet Archive" as const }),
   });
@@ -156,7 +160,7 @@ function load(): void {
   for (const row of EXOPLANET_HOST_ROWS) {
     const host = build(row);
     stored.push(host);
-    const texts = [host.id, host.name, host.nameJa, host.designation, ...host.planets.map((p) => p.name)];
+    const texts = [host.id, host.name, host.nameJa, host.designation, host.archiveName, ...host.aliases, ...host.planets.map((p) => p.name)];
     for (const text of texts) if (text !== undefined && !byText.has(key(text))) byText.set(key(text), host);
   }
 }

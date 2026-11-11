@@ -81,7 +81,7 @@ test("the table: 73 systems, nearest first, within 20 light-years, each distance
 test("every value has its source, and none is Gaia, Hipparcos or Tycho", () => {
   const allowed = new Set(["BSC", "GCTP", "2MASS", "typed"]);
   for (const s of all) {
-    assert.ok(allowed.has(s.sources.position) && allowed.has(s.sources.spectralType), s.name);
+    assert.ok(allowed.has(s.sources.position) && (s.sources.spectralType === undefined ? s.spectralType === undefined : allowed.has(s.sources.spectralType)), s.name);
     assert.ok(["GCTP", "BSC", "dynamical"].includes(s.sources.distance), s.name);
     assert.equal(s.sources.magnitude === undefined, s.magnitude === undefined, s.name);
     assert.equal(s.sources.properMotion === undefined, s.properMotionRaMas === 0 && s.properMotionDecMas === 0, s.name);
@@ -96,6 +96,7 @@ test("every value has its source, and none is Gaia, Hipparcos or Tycho", () => {
   assert.ok(typed.length >= 6);
   assert.ok(typed.every((m) => m.role === "companion" && m.rightAscension === undefined && m.lightYears === undefined));
   assert.ok(all.every((s) => s.sources.position !== "typed" && s.sources.spectralType !== "typed"));
+  assert.equal(all.filter((s) => s.spectralType === undefined).map((s) => s.name).join(), "LPP 731-58");
   assert.ok(!JSON.stringify(NEAR_STAR_ROWS).toLowerCase().match(/gaia|hipparcos|tycho/));
 });
 
@@ -130,4 +131,39 @@ test("the companions of the well-known multiples", () => {
   assert.equal(nearStarByName("36 Ophiuchi")!.members.length, 3);
   assert.equal(nearStarByName("Achird")!.spectralType, "F9V+dM0");
   assert.ok(all.filter((s) => s.starsAtLeast > 1).length >= 14);
+});
+
+test("the Yale catalogue's cut-off and run-together text is put right", () => {
+  // The catalogue's fixed-width columns cut "Barnard star" to "Barnard sta" and lose the space in "CD-36 15693", "V1216 Sgr" and "NSV 11288 A".
+  assert.equal(nearStarByName("Barnard's Star")!.designation, "GJ 699");
+  assert.equal(nearStarByName("Kapteyn's Star")!.designation, "GJ 191");
+  assert.ok(nearStarByName("Kapteyn's Star")!.aliases.includes("CD-45 1841"));
+  assert.ok(nearStarByName("Ross 154")!.aliases.includes("V1216 Sgr"));
+  assert.ok(all.some((s) => s.aliases.includes("CD-36 15693")));
+  assert.ok(all.some((s) => s.aliases.includes("NSV 11288 A")));
+  for (const s of all) {
+    for (const text of [s.designation, ...s.aliases]) {
+      assert.ok(!/ sta$/.test(text) && text !== "van Maanen" && !/^(CD|BD|CPD)[+-]\d{2}\d{4,}/.test(text) && !/^NSV\d/.test(text) && !/^V\d+[A-Z][a-z]/.test(text), `${s.name}: ${text}`);
+    }
+    if (s.spectralType !== undefined) assert.ok(!/[,;:.]$/.test(s.spectralType) && !/-\d\./.test(s.spectralType) && s.spectralType.trim() === s.spectralType, `${s.name}: ${s.spectralType}`);
+  }
+  assert.equal(nearStarByName("GJ 1002")!.spectralType, "M5.5 V");
+  assert.equal(nearStarByName("G 012-043")!.spectralType, "M5.5 Ve");
+  assert.equal(nearStarByName("LPP 731-58")!.spectralType, undefined);
+  assert.equal(nearStarByName("LPP 731-58")!.luminosityClass, undefined);
+  assert.equal(nearStarByName("LPP 731-58")!.sources.spectralType, undefined);
+});
+
+test("Wolf 1055 is GJ 752 A and HD 180617, 19.1 light-years away", () => {
+  const star = nearStarByName("GJ 752 A")!;
+  assert.equal(star.name, "Wolf 1055");
+  assert.equal(nearStarByName("HD 180617"), star);
+  assert.equal(star.designation, "GJ 752 A");
+  assert.ok(Math.abs(star.lightYears - 19.1) < 0.3);
+});
+
+test("coarse positions are flagged: eight systems must not be drawn as precise", () => {
+  const coarse = all.filter((s) => s.flags.coarsePosition);
+  assert.equal(coarse.length, 8);
+  assert.ok(coarse.every((s) => s.sources.position === "GCTP"));
 });

@@ -46,6 +46,18 @@ test("Proxima Centauri has its two planets, at the distance and place of the nea
   assert.equal(exoplanetHostByName("Proxima Cen b"), host);
 });
 
+test("a host has one designation, the same as in the near-star table, and is found by the Archive's name and by other spellings", () => {
+  const eri = exoplanetHostByName("eps Eri")!;
+  assert.equal(eri.designation, "ε Eri");
+  assert.equal(eri.archiveName, "eps Eri");
+  assert.equal(exoplanetHostByName("ε Eri"), eri);
+  assert.equal(nearStarByName(eri.nearStarId!)!.designation, eri.designation);
+  assert.equal(exoplanetHostByName("ヘルヴェティオス")!.name, "Helvetios");
+  assert.equal(exoplanetHostByName("ヘルウェティオス")!.name, "Helvetios");
+  assert.equal(exoplanetHostByName("Wolf 1055")!.designation, "HD 180617");
+  assert.ok(all.every((h) => !/^[a-z]{3}\d? /.test(h.designation)), "no host keeps the Archive's abbreviated Greek letter");
+});
+
 test("the rule: within 50 light-years or an IAU-named star, distance known to 10%, at least one planet, nearest first", () => {
   assert.equal(EXOPLANET_HOST_LIMIT_LY, 50);
   assert.equal(all.length, 80);
