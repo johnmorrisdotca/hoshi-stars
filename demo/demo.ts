@@ -35,6 +35,8 @@ import { makeCard, paintCard } from "./constellation-card.ts";
 import { mountPicker } from "./picker.ts";
 import { lookNow, onLook } from "./thumbs.ts";
 import { faintFor } from "./faint.ts";
+import { BAND_COLOURS, layersFor, loadDistances, renderLegend, UNCERTAIN_COLOUR } from "./distance-layers.ts";
+import { DISTANCE_LIMITS, limitAtSlider, limitFromText, limitText, sliderOfLimit, stepLimit } from "../src/distance.ts";
 import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileView } from "./profile-panel.ts";
 import { starProfile } from "../src/profile.ts";
 import { starComparison, starPortrait } from "../src/portrait.ts";
@@ -74,6 +76,8 @@ let starNames: StarNamesSettings | undefined;
 let lineStrength: number | undefined;
 let labelLook: LookId = "display";
 const overlay = createOverlay();
+/** The sky out to this many light-years (Infinity for all), or undefined for the sky as it was. */
+let limit: number | undefined;
 
 function read(): void {
   const kind = address.get("proj") ?? "";
@@ -95,6 +99,8 @@ function read(): void {
   starNames = starNamesFromAttributes(address.get(STAR_NAMES_ATTRIBUTES.count), address.get(STAR_NAMES_ATTRIBUTES.magnitude));
   lineStrength = lineStrengthFromAttribute(address.get(CONSTELLATION_LINES_ATTRIBUTE));
   labelLook = lookIdOf(address.get("label-look"));
+  limit = limitFromText(address.get("dist"));
+  if (limit !== undefined) loadDistances(() => everything());
   by = address.get("by") === "space" ? "space" : "sky";
   galaxyOrder = address.get("gal") === "near" ? "near" : address.get("gal") === "far" ? "far" : null;
   from = viewpointOf(address.get("from"));
@@ -161,7 +167,8 @@ function draw(): void {
   };
   const keepClear = clear();
   overlay.update(projector, { width, height }, keepClear);
-  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: overlay.names } : undefined, width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
+  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
   faintNote(out.faint, faint?.state);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame while the browser decodes it again
@@ -276,7 +283,8 @@ function pressed(): void {
   const slider = $<HTMLInputElement>("magnitude");
   slider.value = String(magnitude);
   $("magnitude-out").textContent = magnitude.toFixed(1);
-  $("shown").textContent = `${(sky === undefined ? stars({ magnitude }).length : sky.filter((star) => star.magnitude <= magnitude).length).toLocaleString(lang())} ${say("sampleCount")}`;
+  distancePanel();
+  $("shown").textContent = limit !== undefined && sky === undefined && layersFor(limit) !== undefined ? say("distShown").replace("{n}", layersFor(limit)!.things.length.toLocaleString(lang())).replace("{limit}", limit === Infinity ? say("distAllWords") : say("distLimitText").replace("{n}", limit.toLocaleString(lang()))) : `${(sky === undefined ? stars({ magnitude }).length : sky.filter((star) => star.magnitude <= magnitude).length).toLocaleString(lang())} ${say("sampleCount")}`;
   fromChoices();
 }
 /** The names and lines row: which choice is on in each group. */
@@ -293,6 +301,32 @@ function setNames(count: number | undefined, magnitude?: number): void {
   address.setMany({ [STAR_NAMES_ATTRIBUTES.count]: count === undefined ? null : String(count), [STAR_NAMES_ATTRIBUTES.magnitude]: magnitude === undefined ? null : String(magnitude) });
   everything();
 }
+/** The distance row: which limit is chosen, the slider and its readout, the legend and the note about what is left out. */
+function distancePanel(): void {
+  const on = limit !== undefined && sky === undefined;
+  $("seg-dist").querySelectorAll("button").forEach((b) => {
+    const value = b.dataset.value!;
+    b.setAttribute("aria-pressed", String(value === "off" ? limit === undefined : value === "all" ? limit === Infinity : limit === Number(value)));
+  });
+  $("dist-more").hidden = !on;
+  const legend = $("dist-legend");
+  const note = $("dist-note");
+  legend.hidden = !on;
+  note.hidden = !on;
+  if (!on) return;
+  const slider = $<HTMLInputElement>("dist-slider");
+  slider.value = String(Math.round(sliderOfLimit(limit!) * 1000));
+  $("dist-out").textContent = limit === Infinity ? say("distAll") : say("distLimitText").replace("{n}", (limit! >= 100 ? Math.round(limit!) : Number(limit!.toPrecision(2))).toLocaleString(lang()));
+  const layers = layersFor(limit!);
+  renderLegend(legend, layers, lang());
+  note.textContent = layers === undefined ? say("distLoading") : say("distNote").replace("{n}", layers.unknown.toLocaleString(lang()));
+}
+function setLimit(next: number | undefined): void {
+  limit = next;
+  address.set("dist", next === undefined ? null : limitText(next));
+  if (next !== undefined) loadDistances(() => everything());
+  everything();
+}
 function words(): void {
   seg("seg-names", [["off", say("olOff")], ["6", "6"], ["12", "12"], ["24", "24"], ["bright", say("olBright")]], (value) => (value === "off" ? setNames(undefined) : value === "bright" ? setNames(undefined, 1.5) : setNames(Number(value))));
   seg("seg-lines-strength", [["off", say("olOff")], ["0.16", say("olFaint")], ["0.4", say("olMedium")], ["1", say("olFull")]], (value) => {
@@ -305,6 +339,7 @@ function words(): void {
     address.set("label-look", labelLook === "display" ? null : labelLook);
     everything();
   });
+  seg("seg-dist", [["off", say("distOff")], ...DISTANCE_LIMITS.map((n) => [String(n), n.toLocaleString(lang())] as const), ["all", say("distAll")]], (value) => setLimit(value === "off" ? undefined : value === "all" ? Infinity : Number(value)));
   $("wide-toggle").setAttribute("lang", lang());
   seg("seg-projection", PROJECTIONS.map((kind) => [kind, say(kind)] as const), (kind) => {
     setView({ ...view, projection: kind as Projection, ...(address.get("zoom") === null ? { zoom: defaultZoom(kind as Projection, width, height) } : {}) });
@@ -333,6 +368,9 @@ function words(): void {
     everything();
   });
 }
+$("dist-nearer").addEventListener("click", () => limit !== undefined && setLimit(stepLimit(limit, -1)));
+$("dist-farther").addEventListener("click", () => limit !== undefined && setLimit(stepLimit(limit, 1)));
+$<HTMLInputElement>("dist-slider").addEventListener("input", () => setLimit(limitAtSlider(Number($<HTMLInputElement>("dist-slider").value) / 1000)));
 $("magnitude").addEventListener("input", () => {
   magnitude = Number($<HTMLInputElement>("magnitude").value);
   address.set("mag", String(magnitude));
@@ -1021,7 +1059,7 @@ function galaxiesPanel(): void {
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(starNames === undefined || sky !== undefined ? {} : { starNames }), ...(lineStrength === undefined || sky !== undefined ? {} : { lineStrength }), ...(labelLook === "display" || starNames === undefined ? {} : { labelLook }), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null || picked.startsWith("B:") ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(starNames === undefined || sky !== undefined ? {} : { starNames }), ...(lineStrength === undefined || sky !== undefined ? {} : { lineStrength }), ...(labelLook === "display" || starNames === undefined ? {} : { labelLook }), ...(limit === undefined || sky !== undefined ? {} : { limit }), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null || picked.startsWith("B:") ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 /** The picked star as a choice for the star's code, or `undefined` where no star with a catalogue number is picked (the Sun, a constellation, nothing). */
 function starChoiceNow(): StarChoice | undefined {

@@ -3,6 +3,7 @@
 import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
 import { fitScale, growOf } from "./chart.ts";
 import { frameQuery, type Choice } from "./choice.ts";
+import { BAND_COLOURS, UNCERTAIN_COLOUR } from "./distance-layers.ts";
 
 declare const __HOSHI_VERSION__: string | undefined;
 
@@ -22,10 +23,13 @@ interface Import {
 export function chartLines(choice: Choice, width: number): { imports: Import[]; body: string } {
   const height = heightFor(width);
   const withLines = choice.layers.has("lines");
+  // a limit in light-years: the bright stars within it, each in the colour of its band, an uncertain one as a ring (the demo adds the nearby stars and the galaxies, which are separate tables)
+  const layered = choice.limit !== undefined && choice.from === undefined;
   const hr = choice.from === undefined ? undefined : Number(choice.from.slice(2));
   const culture = choice.cultureId === "japanese" || choice.cultureId === "chinese" ? choice.cultureId : undefined;
   const imports: Import[] = [
-    hr === undefined ? { names: "starColour, stars", sub: "" } : { names: "blackBodyColour, starByHr, starTemperatureK", sub: "" },
+    hr === undefined ? { names: layered ? "stars" : "starColour, stars", sub: "" } : { names: "blackBodyColour, starByHr, starTemperatureK", sub: "" },
+    ...(layered ? [{ names: "layersByDistance, starInput", sub: "/distance" }] : []),
     ...(hr === undefined ? [] : [{ names: "skyFrom", sub: "/sky-from" }]),
     ...(withLines ? [{ names: "figures", sub: "/lines" }] : []),
     ...(withLines && culture !== undefined ? [{ names: culture, sub: `/cultures/${culture}` }] : []),
@@ -53,7 +57,17 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
           `  svg += \`<path d="\${d}" fill="none" stroke="#6f93e0" stroke-width="1.2" stroke-opacity=".8"/>\`;`,
         ]
       : []),
-    ...(hr === undefined
+    ...(layered
+      ? [
+          `  const layers = layersByDistance(stars().map(starInput), { limit: ${Number.isFinite(choice.limit!) ? choice.limit : "Infinity"} });`,
+          `  const colours = ${JSON.stringify(BAND_COLOURS)};`,
+          `  for (const thing of layers.things) {`,
+          `    const at = place(thing);`,
+          `    const r = (Math.max(1.8, (6 - Math.max(thing.magnitude, -2)) * 0.5 + 1.3) * ${growOf(choice.zoom)}).toFixed(1);`,
+          `    if (at) svg += thing.uncertain ? \`<circle cx="\${at[0].toFixed(1)}" cy="\${at[1].toFixed(1)}" r="\${(Number(r) + 1).toFixed(1)}" fill="none" stroke="${UNCERTAIN_COLOUR}"/>\` : \`<circle cx="\${at[0].toFixed(1)}" cy="\${at[1].toFixed(1)}" r="\${r}" fill="\${colours[thing.band]}"/>\`;`,
+          `  }`,
+        ]
+      : hr === undefined
       ? [
           `  for (const star of stars({ magnitude: ${choice.magnitude} })) {`,
           `    const at = place(star);`,

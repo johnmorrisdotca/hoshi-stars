@@ -7,6 +7,7 @@
 //   &from=HR5459        the sky seen from a star (Bright Star Catalogue number: Alpha Centauri; it needs a distance)
 //   &star-names=12      names on the 12 brightest stars in view (&star-names-magnitude=1.5 names those brighter than 1.5)   &constellation-lines=0.2  faint constellation lines, the one under the pointer at full strength
 //   &label-size=14&label-case=upper  the look of those names: label-font, -size, -weight, -colour, -halo, -halo-width, -case, -letter-spacing, -leader, -leader-colour, -offset (or the page's --hoshi-label-* custom properties)
+//   &dist=100            the sky out to 100 light-years only (10, 50, 100, 500, 1000, any number, or all), each distance band in its own colour, with a legend
 //   &near=S:2491         ring what is near a star (S:<HR number>), a Messier object (D:M31) or a constellation (C:Ori)   &by=space  measure the stars' nearness in space
 import { chart, defaultZoom, pictureZoomCap, toScreen, ZOOM_MAX, type View } from "./chart.ts";
 import { choiceOf } from "./choice.ts";
@@ -20,6 +21,7 @@ import { frameCredit } from "./frame-credit.ts";
 import { lookOf } from "./sky-labels-svg.ts";
 import { createOverlay, lookIdOf } from "./sky-overlay.ts";
 import type { SkyProjector } from "../src/sky-labels.ts";
+import { BAND_COLOURS, layersFor, loadDistances, renderLegend, UNCERTAIN_COLOUR } from "./distance-layers.ts";
 
 const frame = document.getElementById("frame")!;
 const sky = document.getElementById("sky")!;
@@ -59,6 +61,12 @@ const projector: SkyProjector = (ra, dec, out) => {
 };
 const configureOverlay = (): void => overlay.configure({ names: choice.starNames, strength: choice.lineStrength, look: lookIdOf(query.get("label-look")), style: lookOf(document.documentElement, query), lang: choice.lang, maxLength: WIDE.includes(choice.projection) ? width / 2 : undefined });
 configureOverlay();
+const legend = document.createElement("ul");
+legend.className = "dist-legend";
+legend.dataset["testid"] = "dist-legend";
+legend.hidden = choice.limit === undefined;
+frame.append(legend);
+if (choice.limit !== undefined) loadDistances(() => schedule());
 
 const fetcher = createDeepFetcher("./", () => schedule());
 
@@ -72,7 +80,9 @@ function draw(): void {
   if (choice.layers.has("deep") && view.zoom >= TIER_ZOOM) void fetcher.loadTier();
   const room = { width, height };
   if (seen === undefined) overlay.update(projector, room, keepClear);
-  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: overlay.names } : undefined, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  const layers = choice.limit === undefined || seen !== undefined ? undefined : layersFor(choice.limit);
+  if (choice.limit !== undefined) renderLegend(legend, layers, ja ? "ja" : "en");
+  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: layers === undefined ? overlay.names : undefined } : undefined, distance: layers === undefined ? undefined : { layers, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR }, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame
   const kept = new Map<string, Element>();
   sky.querySelectorAll("image[data-pic]").forEach((node) => kept.set(node.getAttribute("data-pic")!, node));

@@ -5,6 +5,7 @@ import { fromText, viewpointOf } from "./from.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
 import { lookIdOf, type LookId } from "./sky-overlay.ts";
 import { CONSTELLATION_LINES_ATTRIBUTE, lineStrengthFromAttribute, STAR_NAMES_ATTRIBUTES, starNamesFromAttributes, type StarNamesSettings } from "../src/sky-labels.ts";
+import { limitFromText, limitText } from "../src/distance.ts";
 
 export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "pictures", "faint", "grid"];
 export const DEFAULT_MAGNITUDE = 5;
@@ -28,6 +29,8 @@ export interface Choice extends View {
   lineStrength?: number | undefined;
   /** The look of the names (`label-look`): `display` when left out. */
   labelLook?: LookId | undefined;
+  /** The sky out to this distance, in light-years (`Infinity` for all the things that have one); left out for the sky as it was, with no layers. */
+  limit?: number | undefined;
 }
 
 const number = (text: string | null, fallback: number, low: number, high: number): number => {
@@ -57,6 +60,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
   const culture = cultureOf(query.get("culture"));
   const starNames = starNamesFromAttributes(query.get(STAR_NAMES_ATTRIBUTES.count), query.get(STAR_NAMES_ATTRIBUTES.magnitude));
   const lineStrength = lineStrengthFromAttribute(query.get(CONSTELLATION_LINES_ATTRIBUTE));
+  const limit = limitFromText(query.get("dist"));
   return {
     projection,
     ra: ((number(query.get("ra"), DEFAULT_VIEW.ra, -1e6, 1e6) % 360) + 360) % 360,
@@ -73,6 +77,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
     ...(starNames === undefined ? {} : { starNames }),
     ...(lineStrength === undefined ? {} : { lineStrength }),
     ...(lookIdOf(query.get("label-look")) === "display" ? {} : { labelLook: lookIdOf(query.get("label-look")) }),
+    ...(limit === undefined ? {} : { limit }),
   };
 }
 
@@ -89,5 +94,6 @@ export function frameQuery(choice: Choice): string {
   if (choice.starNames?.magnitude !== undefined) q.set("star-names-magnitude", String(choice.starNames.magnitude));
   if (choice.lineStrength !== undefined) q.set("constellation-lines", String(choice.lineStrength));
   if (choice.labelLook !== undefined) q.set("label-look", choice.labelLook);
+  if (choice.limit !== undefined) q.set("dist", limitText(choice.limit));
   return q.toString();
 }
