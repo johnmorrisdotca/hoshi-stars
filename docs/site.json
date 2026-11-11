@@ -155,6 +155,11 @@
       "ja": "いちばん明るい星の名前と、うすい星座の線 (自分で描く空のために。個数か等級で選べます。ポインターが乗っている星座は濃く表示でき、空をおおうものにも対応し、見た目は設定だけで変えられます)",
       "platform": "neutral"
     },
+    "./distance": {
+      "en": "The sky out to a distance, in layers: the stars and galaxies nearer than 10, 50, 100, 500 or 1,000 light-years, each distance band its own colour, the ones with an uncertain distance kept apart, and none placed at a guess",
+      "ja": "距離で見る空 (10・50・100・500・1,000光年より近い星や銀河を層に分けて、距離の帯ごとに色分けします。距離がはっきりしないものは別にし、推測で置くことはしません)",
+      "platform": "neutral"
+    },
     "./sky-from": {
       "en": "The sky seen from another star: positions, distances and brightness from there, with the Sun among the stars",
       "ja": "ほかの星から見た空 (そこから見た位置・距離・明るさ。太陽も星のひとつ)",
