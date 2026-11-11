@@ -53,8 +53,8 @@ import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
 
 const canopy = chinese.find("華蓋");
 console.log(canopy.names.en, canopy.partOf);
-// Canopy of the Emperor purple-forbidden
 console.log(chinese.asterisms().filter((a) => a.partOf === "heavenly-market").map((a) => a.name).slice(0, 4).join(" "));
+// Canopy of the Emperor purple-forbidden
 // 七公 列肆 天市左垣 天紀
 ```
 
@@ -165,7 +165,7 @@ The pictures of the Chinese and Japanese figures are files of the Pages site onl
 
 ## In the demo
 
-The demo's Sky culture choice (Western, Japanese, Chinese) is kept in the address as `culture=` (nothing for the Western sky): `?culture=chinese`. Picking one redraws the figures and the names on the same stars. Tap a figure, or search for it by any of its names, for its card: its names and reading, what it is, the quarter of the sky, the constellations it lies in, its bright stars, and, where stars are fainter than the catalogue goes, a note that only the stars we have are drawn. The embed page takes the same `culture=`.
+The demo's Sky culture choice (Western, Japanese, Chinese) is kept in the address as `culture=` (nothing for the Western sky): `?culture=chinese`. Picking one redraws the figures and the names on the same stars. Tap a figure, or search for it by any of its names, for its card: its names and reading, what it is, the quarter of the sky, the enclosure or mansion it belongs to where Wikidata says, the constellations it lies in, its bright stars, and, where stars are fainter than the catalogue goes, a note that only the stars we have are drawn. The embed page takes the same `culture=`.
 
 ## Where the data comes from
 
