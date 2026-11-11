@@ -7,21 +7,30 @@ const PAGES = [
   { name: "embed", path: "/hoshi-stars/embed.html", target: "#frame", box: "#frame" },
 ] as const;
 
+// a failure keeps its trace: the wheel tests have raced the browser before (webkit-phone under load), and the trace shows when each event arrived
+test.use({ trace: "retain-on-failure" });
+
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
 const sessions = new WeakMap<Page, CDPSession>();
 const number = (page: Page, name: string): number => Number(param(page, name));
 
 for (const where of PAGES) {
   test.describe(where.name, () => {
-    async function open(page: Page, query = ""): Promise<{ x: number; y: number }> {
+    async function open(page: Page, query = "", { scroll = true } = {}): Promise<{ x: number; y: number }> {
       await page.goto(`${where.path}${query}`);
-      await expect(page.locator(`${where.target} circle`).first()).toBeVisible();
+      // the first drawing can take several seconds on a busy machine
+      await expect(page.locator(`${where.target} circle`).first()).toBeVisible({ timeout: 30_000 });
+      // the hands are bound and set to the view the address asked for: the page reports its controller's zoom on the box (1 is the opening view)
+      const asked = Number(new URLSearchParams(query).get("zoom") ?? 0);
+      await expect
+        .poll(() => page.locator(where.box).evaluate((box) => (box as HTMLElement & { state?: { zoom: number } }).state?.zoom ?? 0), { timeout: 30_000 })
+        .toBeGreaterThan(asked > 1 ? 1.05 : 0);
       await page.evaluate(() => {
         (window as unknown as { wheels: boolean[] }).wheels = [];
         addEventListener("wheel", (event) => (window as unknown as { wheels: boolean[] }).wheels.push(event.defaultPrevented));
       });
       let box = (await page.locator(where.box).boundingBox())!;
-      if (box.y + Math.min(box.height / 2, 300) > page.viewportSize()!.height - 20) {
+      if (scroll && box.y + Math.min(box.height / 2, 300) > page.viewportSize()!.height - 20) {
         await page.locator(where.box).scrollIntoViewIfNeeded();
         // two drawn frames after the scroll: until WebKit has drawn one, a wheel there can come as one the page cannot keep (cancelable false), and the page would scroll too
         await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
@@ -99,7 +108,15 @@ for (const where of PAGES) {
 
     test("zoomed in, the wheel moves the sky", async ({ page, isMobile }) => {
       test.skip(isMobile, "a phone has no wheel");
-      const at = await open(page, "?zoom=8");
+      // The map is put in view by a page tall enough to hold it, never by a scroll just before the wheel: WebKit decides on its scrolling thread whether a wheel may be kept,
+      // from the scroll position it last heard of, and on a busy machine a scroll the page has already drawn can still be news there, so the wheel came as one the page could not keep.
+      const viewport = page.viewportSize()!;
+      await page.goto(where.path);
+      // the map is at most 640 pixels high, however tall the page
+      const top = await page.locator(where.box).evaluate((box) => box.getBoundingClientRect().top + scrollY);
+      if (top + 640 > viewport.height) await page.setViewportSize({ width: viewport.width, height: Math.ceil(top) + 680 });
+      const at = await open(page, "?zoom=8", { scroll: false });
+      expect(at.y).toBeLessThan(page.viewportSize()!.height);
       await page.mouse.move(at.x, at.y);
       await page.mouse.wheel(0, 200);
       await expect.poll(() => param(page, "dec")).not.toBeNull();
