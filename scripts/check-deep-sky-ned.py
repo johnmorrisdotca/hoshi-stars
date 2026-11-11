@@ -1,33 +1,29 @@
 #!/usr/bin/env python3
 """Compare the deep-sky positions with NASA/IPAC NED's, object by object, and list the ones more than 1 arc-minute apart.
 
-NED (https://ned.ipac.caltech.edu, funded by NASA and operated by Caltech) answers an object-name lookup with the object's preferred position:
-https://ned.ipac.caltech.edu/srs/ObjectLookup. Each object is looked up by its NGC or IC name (its Messier name if it has neither); an answer counts only when NED
-understood the name as that very object (`Interpreted.Name`).
+NED (https://ned.ipac.caltech.edu, funded by NASA and operated by Caltech) answered an object-name lookup (its /srs/ObjectLookup) with the object's preferred position, on 2026-11-08.
+Each object was looked up by its NGC or IC name (its Messier name if it has neither); an answer counts only when NED understood the name as that very object (`Interpreted.Name`).
+Those lookups, one request an object, went to a part of NED's site that its robots.txt asks scripts not to use (/srs/ and /cgi-bin/, with a 10 s crawl delay), so this script never asks
+NED again: it reads the answers saved earlier in a cache file, and refuses to run when the file is missing or lacks an answer it needs.
 
-    python3 -I scripts/check-deep-sky-ned.py                          # the 110 Messier objects and 500 random others (seed 1)
-    python3 -I scripts/check-deep-sky-ned.py --sample 200 --seed 7
-    python3 -I scripts/check-deep-sky-ned.py --all --write scripts/deep-sky-ned-positions.tsv
-                                                                      # every object (an hour); writes NED's position for each one that is over 1 arc-minute away
-    python3 -I scripts/check-deep-sky-ned.py --cache FILE             # keeps the answers in FILE and reads them from it on the next run
+    python3 -I scripts/check-deep-sky-ned.py --cache FILE             # the 110 Messier objects and 500 random others (seed 1), from the answers in FILE
+    python3 -I scripts/check-deep-sky-ned.py --cache FILE --sample 200 --seed 7
+    python3 -I scripts/check-deep-sky-ned.py --cache FILE --all --write scripts/deep-sky-ned-positions.tsv
+                                                                      # every object; writes NED's position for each one that is over 1 arc-minute away
 
 Run it on the rows `scripts/make-deep-sky-data.py --no-ned` writes, so the Wikidata positions are what is compared; then run the generator again and it applies the file.
-Needs the network and does not run in the test.
+Does not run in the test, except the refusal.
 """
 import json
 import math
 import random
 import re
 import sys
-import time
-import urllib.request
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-LOOKUP = "https://ned.ipac.caltech.edu/srs/ObjectLookup"
-USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
 DATA = Path(__file__).resolve().parent.parent / "src" / "data"
-WORKERS = 4
+REFUSE_NED = ("check-deep-sky-ned.py does not ask NASA/IPAC NED's web pages (MODULES-839): its lookups went to /srs/, which NED's robots.txt keeps scripts out of (with /cgi-bin/ "
+              "and a 10 s crawl delay). Pass --cache FILE holding every answer, saved earlier.")
 
 
 def rows(name: str, constant: str):
@@ -66,43 +62,20 @@ def key(o) -> str:
     return f"M{o['messier']}" if o["messier"] else designation(o)
 
 
-def understood(asked: str, interpreted: str) -> bool:
-    """Did NED read `NGC 296` as NGC 296 (it says `NGC 0296`) and `M45` as Messier 45?"""
-    a, b = re.match(r"^(M|NGC|IC) ?(\d+)([A-Za-z]?)$", asked), re.match(r"^(MESSIER|NGC|IC) ?0*(\d+)([A-Za-z]?)$", interpreted.strip().upper())
-    return a is not None and b is not None and a.group(1)[0] == b.group(1)[0] and a.group(2) == b.group(2) and a.group(3).upper() == b.group(3).upper()
-
-
-def lookup(name: str):
-    request = urllib.request.Request(LOOKUP, data=json.dumps({"name": {"v": name}}).encode(), headers={"Content-Type": "application/json", "User-Agent": USER_AGENT})
-    for attempt in range(3):
-        try:
-            with urllib.request.urlopen(request, timeout=60) as response:
-                answer = json.load(response)
-            found = answer.get("Preferred")
-            if found is None or not understood(name, answer["Interpreted"]["Name"]):
-                return None
-            return [found["Position"]["RA"], found["Position"]["Dec"], (found.get("ObjType") or {}).get("Value") or ""]
-        except Exception:
-            time.sleep(3)
-    return None
-
-
 def separation_arcmin(a, b) -> float:
     ra1, dec1, ra2, dec2 = map(math.radians, (a[0], a[1], b[0], b[1]))
     h = math.sin((dec2 - dec1) / 2) ** 2 + math.cos(dec1) * math.cos(dec2) * math.sin((ra2 - ra1) / 2) ** 2
     return math.degrees(2 * math.asin(min(1.0, math.sqrt(h)))) * 60
 
 
-def ask(names, cache_path):
-    cache = json.loads(cache_path.read_text()) if cache_path is not None and cache_path.exists() else {}
-    todo = [n for n in names if n not in cache]
-    with ThreadPoolExecutor(WORKERS) as pool:
-        for i, (name, found) in enumerate(zip(todo, pool.map(lookup, todo))):
-            cache[name] = found
-            if cache_path is not None and i % 200 == 199:
-                cache_path.write_text(json.dumps(cache))
-    if cache_path is not None:
-        cache_path.write_text(json.dumps(cache))
+def saved(names, cache_path):
+    """The answers saved in the cache file for these names (an answer is NED's [ra, dec, type], or null where NED did not know the name). Refuses if any is missing."""
+    if cache_path is None or not cache_path.exists():
+        raise SystemExit(REFUSE_NED)
+    cache = json.loads(cache_path.read_text())
+    missing = [n for n in names if n not in cache]
+    if missing:
+        raise SystemExit(f"{REFUSE_NED} {len(missing)} names have no saved answer, the first {missing[0]}.")
     return cache
 
 
@@ -121,6 +94,8 @@ def report(label: str, results: list) -> None:
 
 def main() -> None:
     cache_path = Path(sys.argv[sys.argv.index("--cache") + 1]) if "--cache" in sys.argv else None
+    if cache_path is None or not cache_path.exists():
+        raise SystemExit(REFUSE_NED)
     messier = list(rows("messier.ts", "MESSIER_ROWS"))
     others = list(rows("ngc-ic.ts", "NGC_IC_ROWS"))
     if "--all" in sys.argv:
@@ -130,7 +105,7 @@ def main() -> None:
         seed = int(sys.argv[sys.argv.index("--seed") + 1]) if "--seed" in sys.argv else 1
         random.seed(seed)
         chosen, label = messier + random.sample(others, min(sample, len(others))), f"the Messier objects and {sample} random others (seed {seed})"
-    cache = ask(sorted({n for o in chosen for n in designations(o)}), cache_path)
+    cache = saved(sorted({n for o in chosen for n in designations(o)}), cache_path)
     results, fixes = [], []
     for o in chosen:
         found = best(o, cache)
