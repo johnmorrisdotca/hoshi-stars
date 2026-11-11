@@ -122,6 +122,10 @@ export interface StarNamesSettings {
   magnitude?: number;
   /** The language of the names; `en` by default. */
   lang?: NameLanguage;
+  /** Which stars' dots a name must not cover: every star brighter than this magnitude, 3 by default (about 170 stars). Lower it for a page that draws only the brightest. */
+  dotMagnitude?: number;
+  /** The radius in pixels of a star's dot, which a name must not cover, 3 by default. */
+  dotRadius?: number;
   /** The look of the names (`labelStyle`); a quiet plain default. */
   style?: Partial<LabelStyle>;
 }
@@ -147,10 +151,10 @@ export interface StarNameLabel {
   /** Where the star is on the screen. */
   x: number;
   y: number;
-  /** Where to draw the text: its baseline start (`anchor` `start`) or end (`end`). */
+  /** Where to draw the text: its baseline start (`anchor` `start`), end (`end`) or middle (`middle`, for a name above or below its star). */
   textX: number;
   textY: number;
-  anchor: "start" | "end";
+  anchor: "start" | "end" | "middle";
   /** The catalogue letter to write under the name (`α Ori`), or an empty text when the look leaves it out or the star has none; where its baseline starts (`anchor` as for the name). */
   designation: string;
   designationX: number;
@@ -252,7 +256,33 @@ function newLabel(): StarNameLabel {
 }
 
 /**
- * Put a name beside a star, to its right, or to its left if the right would leave the view, with the star's catalogue letter under it when `designation` is true. Writes into `out` and answers whether the whole block, and its line, are inside the view.
+ * The places a name may take, in the order they are tried: right of its star, left, above, below.
+ *
+ * @example
+ * ```ts
+ * import { LABEL_SIDES } from "@johnmorrisdotca/hoshi-stars/sky-labels";
+ *
+ * console.log(LABEL_SIDES.join(", "));
+ * ```
+ */
+export const LABEL_SIDES = ["right", "left", "above", "below"] as const;
+
+/**
+ * A place for a name.
+ *
+ * @example
+ * ```ts
+ * import { LABEL_SIDES, type LabelSide } from "@johnmorrisdotca/hoshi-stars/sky-labels";
+ *
+ * const first: LabelSide = LABEL_SIDES[0];
+ * console.log(first);
+ * ```
+ */
+export type LabelSide = (typeof LABEL_SIDES)[number];
+
+/**
+ * Put a name on one side of a star: right, left, above (centred over it) or below (centred under it), with the star's catalogue letter under the name when `designation` is true. Writes into `out` and answers whether the whole block, and its line, are inside the view.
+ * `createStarNames` tries the four sides in order and takes the first that covers no other name and no star.
  *
  * @param x - The star's x on the screen.
  * @param y - The star's y on the screen.
@@ -261,6 +291,7 @@ function newLabel(): StarNameLabel {
  * @param view - The part of the screen names may use.
  * @param out - Where the answer is written.
  * @param designation - True when a line for the catalogue letter goes under the name.
+ * @param side - Which side; `right` by default. A leader line (the look's `leader`) goes with `right` and `left` only.
  * @returns `true` when it fits.
  *
  * @example
@@ -269,45 +300,60 @@ function newLabel(): StarNameLabel {
  *
  * const style = labelStyle({ leader: 14 });
  * const out = {} as StarNameLabel;
- * console.log(placeLabel(100, 100, labelWidth("Rigel", style), style, { width: 400, height: 300 }, out), out.anchor);
+ * console.log(placeLabel(395, 100, labelWidth("Rigel", style), style, { width: 400, height: 300 }, out), placeLabel(395, 100, labelWidth("Rigel", style), style, { width: 400, height: 300 }, out, false, "left"), out.anchor);
  * ```
  */
-export function placeLabel(x: number, y: number, width: number, style: LabelStyle, view: SkyView, out: StarNameLabel, designation = false): boolean {
+export function placeLabel(x: number, y: number, width: number, style: LabelStyle, view: SkyView, out: StarNameLabel, designation = false, side: LabelSide = "right"): boolean {
   const margin = view.margin ?? 4;
   const line = labelHeight(style);
   const second = designation ? Math.ceil(style.designationSize * 1.2) : 0;
   const h = line + second;
-  const lead = style.leader > 0;
   const gap = style.offset + style.ring;
-  for (let side = 1; side >= -1; side -= 2) {
-    const edgeX = lead ? x + side * (gap + style.leader) * SQRT_HALF : x + side * gap;
-    const edgeY = lead ? y - (gap + style.leader) * SQRT_HALF : y;
+  const across = side === "right" || side === "left";
+  const lead = across && style.leader > 0;
+  const dir = side === "left" ? -1 : 1;
+  let left: number;
+  let top: number;
+  let edgeX = 0;
+  let edgeY = 0;
+  if (across) {
+    edgeX = lead ? x + dir * (gap + style.leader) * SQRT_HALF : x + dir * gap;
+    edgeY = lead ? y - (gap + style.leader) * SQRT_HALF : y;
     const pad = lead ? 2 : 0;
-    const left = side === 1 ? edgeX + pad : edgeX - pad - width;
-    const right = left + width;
-    const top = edgeY - h / 2;
-    const bottom = edgeY + h / 2;
-    if (left < margin || right > view.width - margin || top < margin || bottom > view.height - margin) continue;
-    out.x0 = left;
-    out.x1 = right;
-    out.y0 = top;
-    out.y1 = bottom;
-    out.anchor = side === 1 ? "start" : "end";
-    out.textX = side === 1 ? left : right;
-    out.textY = top + line * 0.8;
-    out.designationX = out.textX;
-    out.designationY = top + line + style.designationSize * 0.9;
-    out.leader = lead;
-    if (lead) {
-      out.leaderX0 = x + side * gap * SQRT_HALF;
-      out.leaderY0 = y - gap * SQRT_HALF;
-      out.leaderX1 = edgeX;
-      out.leaderY1 = edgeY;
-    }
-    return true;
+    left = side === "right" ? edgeX + pad : edgeX - pad - width;
+    top = edgeY - h / 2;
+  } else {
+    left = x - width / 2;
+    top = side === "above" ? y - gap - h : y + gap;
   }
-  return false;
+  const right = left + width;
+  const bottom = top + h;
+  if (left < margin || right > view.width - margin || top < margin || bottom > view.height - margin) return false;
+  out.x0 = left;
+  out.x1 = right;
+  out.y0 = top;
+  out.y1 = bottom;
+  out.anchor = across ? (side === "right" ? "start" : "end") : "middle";
+  out.textX = across ? (side === "right" ? left : right) : x;
+  out.textY = top + line * 0.8;
+  out.designationX = out.textX;
+  out.designationY = top + line + style.designationSize * 0.9;
+  out.leader = lead;
+  if (lead) {
+    out.leaderX0 = x + dir * gap * SQRT_HALF;
+    out.leaderY0 = y - gap * SQRT_HALF;
+    out.leaderX1 = edgeX;
+    out.leaderY1 = edgeY;
+  }
+  return true;
 }
+
+/** Whether the box reaches into a disc. */
+const reaches = (x0: number, y0: number, x1: number, y1: number, cx: number, cy: number, r: number): boolean => {
+  const dx = cx < x0 ? x0 - cx : cx > x1 ? cx - x1 : 0;
+  const dy = cy < y0 ? y0 - cy : cy > y1 ? cy - y1 : 0;
+  return dx * dx + dy * dy < r * r;
+};
 
 /**
  * The names of the brightest stars for a sky of your own. It names only stars that have a name (the 335 of the IAU Working Group on Star Names that the catalogue holds), only those inside the view and not behind a body that covers them, never two names on each other, and
@@ -341,6 +387,10 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
   const pool: StarNameLabel[] = [];
   const labels: StarNameLabel[] = [];
   const spot: ScreenPoint = { x: 0, y: 0 };
+  // the dots a name must not cover: every star brighter than `dotMagnitude`, projected afresh by each update into reused arrays
+  let dots: Star[] = [];
+  let dotX = new Float32Array(0);
+  let dotY = new Float32Array(0);
 
   const prepare = (): Star[] => {
     if (named === undefined) named = stars().filter((star) => star.name !== undefined).sort((a, b) => a.magnitude - b.magnitude || a.hr - b.hr);
@@ -351,6 +401,7 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
     style = labelStyle(next.style ?? DEFAULT_LABEL_STYLE);
     texts = [];
     designations = [];
+    dots = [];
   };
   set(settings);
 
@@ -374,6 +425,19 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
         texts = list.map((star) => labelText((ja ? star.nameJa : undefined) ?? star.name!, style));
         designations = list.map((star) => (style.designation === "none" ? "" : star.designation ?? ""));
       }
+      if (dots.length === 0) {
+        dots = stars().filter((star) => star.magnitude <= (current.dotMagnitude ?? 3));
+        dotX = new Float32Array(dots.length);
+        dotY = new Float32Array(dots.length);
+      }
+      for (let d = 0; d < dots.length; d += 1) {
+        const dot = dots[d]!;
+        if (project(dot.rightAscension, dot.declination, spot)) {
+          dotX[d] = spot.x;
+          dotY[d] = spot.y;
+        } else dotX[d] = Number.NaN;
+      }
+      const radius = current.dotRadius ?? 3;
       for (let i = 0; i < list.length && labels.length < limit; i += 1) {
         const star = list[i]!;
         if (star.magnitude > faintest) break;
@@ -383,17 +447,24 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
         const slot = pool[labels.length] ?? (pool[labels.length] = newLabel());
         const text = texts[i]!;
         const letter = designations[i]!;
-        if (!placeLabel(spot.x, spot.y, Math.max(labelWidth(text, style), designationWidth(letter, style)), style, view, slot, letter !== "")) continue;
-        if (covered !== undefined && (covered((slot.x0 + slot.x1) / 2, (slot.y0 + slot.y1) / 2) || covered(slot.x0, (slot.y0 + slot.y1) / 2) || covered(slot.x1, (slot.y0 + slot.y1) / 2))) continue;
-        let clear = true;
-        for (let j = 0; j < labels.length; j += 1) {
-          const other = labels[j]!;
-          if (slot.x0 < other.x1 + 2 && slot.x1 > other.x0 - 2 && slot.y0 < other.y1 + 1 && slot.y1 > other.y0 - 1) {
-            clear = false;
-            break;
+        const width = Math.max(labelWidth(text, style), designationWidth(letter, style));
+        // right of the star, then left, above, below: the first place that covers no other name, no ring and no star's dot
+        let found = false;
+        for (let k = 0; k < LABEL_SIDES.length && !found; k += 1) {
+          if (!placeLabel(spot.x, spot.y, width, style, view, slot, letter !== "", LABEL_SIDES[k]!)) continue;
+          if (covered !== undefined && (covered((slot.x0 + slot.x1) / 2, (slot.y0 + slot.y1) / 2) || covered(slot.x0, (slot.y0 + slot.y1) / 2) || covered(slot.x1, (slot.y0 + slot.y1) / 2))) continue;
+          let clear = true;
+          for (let j = 0; j < labels.length && clear; j += 1) {
+            const other = labels[j]!;
+            if ((slot.x0 < other.x1 + 2 && slot.x1 > other.x0 - 2 && slot.y0 < other.y1 + 1 && slot.y1 > other.y0 - 1) || (other.ring > 0 && reaches(slot.x0, slot.y0, slot.x1, slot.y1, other.x, other.y, other.ring + 1))) clear = false;
           }
+          for (let d = 0; d < dots.length && clear; d += 1) {
+            const x = dotX[d]!;
+            if (x === x && dots[d]!.hr !== star.hr && reaches(slot.x0, slot.y0, slot.x1, slot.y1, x, dotY[d]!, radius)) clear = false;
+          }
+          found = clear;
         }
-        if (!clear) continue;
+        if (!found) continue;
         slot.hr = star.hr;
         slot.text = text;
         slot.designation = letter;

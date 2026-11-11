@@ -49,7 +49,7 @@ for (const [id, label] of [["zoom-in", ja ? "拡大" : "Zoom in"], ["zoom-out", 
 
 const WIDE: readonly string[] = ["equirectangular", "mollweide", "hammer"];
 const look = lookOf(document.documentElement, new URLSearchParams(location.search));
-const names = choice.starNames === undefined ? undefined : createStarNames({ ...choice.starNames, lang: choice.lang, style: look });
+const names = choice.starNames === undefined ? undefined : createStarNames({ dotMagnitude: 3.5, dotRadius: 4, ...choice.starNames, lang: choice.lang, style: look });
 const lineSettings = (): FigureLinesSettings => ({ strength: choice.lineStrength, lang: choice.lang, style: look, reach: matchMedia("(pointer: coarse)").matches ? 28 : 14, ...(WIDE.includes(choice.projection) ? { maxLength: width / 2 } : {}) });
 const lines = choice.lineStrength === undefined ? undefined : createFigureLines(lineSettings());
 const projector: SkyProjector = (ra, dec, out) => {

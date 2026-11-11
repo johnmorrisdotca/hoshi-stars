@@ -10,6 +10,7 @@ import {
   DEFAULT_LABEL_STYLE,
   DEFAULT_LINE_STRENGTH,
   discCover,
+  LABEL_SIDES,
   LABEL_STYLE_PROPERTIES,
   labelHeight,
   labelStyle,
@@ -97,7 +98,9 @@ test("a mask covers a whole name's room, not only its star", () => {
   const middle = (first.x0 + first.x1) / 2;
   const names = createStarNames({ count: 1 });
   names.update(project, VIEW, (x, y) => Math.abs(x - middle) < 2 && Math.abs(y - (first.y0 + first.y1) / 2) < 2);
-  assert.notEqual(names.labels[0]?.text, first.text);
+  const moved = names.labels[0]!;
+  assert.ok(moved.hr !== first.hr || moved.x0 !== first.x0, "the name is set elsewhere, or the next star is named");
+  assert.ok(!(moved.x0 <= middle && middle <= moved.x1 && moved.y0 <= (first.y0 + first.y1) / 2 && (first.y0 + first.y1) / 2 <= moved.y1), "and it is not over the mask");
 });
 
 test("a disc covers a point inside it and none outside it", () => {
@@ -127,16 +130,70 @@ test("every name lies wholly inside the view, none on another", () => {
   }
 });
 
-test("a star at the right edge has its name set on its left, and one that fits neither side is left out", () => {
+test("a name goes on the side asked for, and a side that leaves the view does not fit", () => {
   const style = labelStyle({ size: 12 });
+  const view = { width: 400, height: 300 };
   const out = {} as StarNameLabel;
-  assert.equal(placeLabel(100, 100, labelWidth("Rigel", style), style, { width: 400, height: 300 }, out), true);
+  const width = labelWidth("Rigel", style);
+  assert.equal(placeLabel(100, 100, width, style, view, out), true);
   assert.equal(out.anchor, "start");
-  assert.equal(placeLabel(30, 100, labelWidth("Rigel", style), style, { width: 60, height: 300 }, out), false, "a name 33 pixels wide has no room either side of a star in a view 60 pixels wide");
-  assert.equal(placeLabel(360, 100, labelWidth("Rigel", style), style, { width: 400, height: 300 }, out), true);
+  assert.equal(placeLabel(360, 100, width, style, view, out), false, "no room on the right of a star near the right edge");
+  assert.equal(placeLabel(360, 100, width, style, view, out, false, "left"), true);
   assert.equal(out.anchor, "end");
   assert.equal(out.textX, out.x1);
-  assert.equal(placeLabel(200, 2, 30, style, { width: 400, height: 300 }, out), false, "above the top edge");
+  assert.equal(placeLabel(200, 100, width, style, view, out, false, "above"), true);
+  assert.equal(out.anchor, "middle");
+  assert.ok(out.y1 <= 100 - style.ring && Math.abs((out.x0 + out.x1) / 2 - 200) < 1e-9, "centred over the star, clear of its ring");
+  assert.equal(placeLabel(200, 100, width, style, view, out, false, "below"), true);
+  assert.ok(out.y0 >= 100 + style.ring);
+  assert.equal(placeLabel(200, 2, width, style, view, out, false, "above"), false, "above the top edge");
+  assert.equal(placeLabel(30, 100, width, style, { width: 60, height: 300 }, out), false);
+  assert.equal(placeLabel(30, 100, width, style, { width: 60, height: 300 }, out, false, "left"), false, "a name 33 pixels wide has no room either side of a star in a view 60 pixels wide");
+  assert.deepEqual([...LABEL_SIDES], ["right", "left", "above", "below"]);
+});
+
+/** Orion's belt, Alnitak, Alnilam and Mintaka, a degree and a half apart, at `pixels` to the degree: where no name may lie on another or cover a star. */
+function belt(pixels: number) {
+  const centre = { ra: 84.05, dec: -1.2 };
+  const here: SkyProjector = (ra, dec, out) => {
+    out.x = 400 - (ra - centre.ra) * pixels;
+    out.y = 300 - (dec - centre.dec) * pixels;
+    return Math.abs(ra - centre.ra) < 60;
+  };
+  const names = createStarNames({ count: 60 });
+  names.update(here, { width: 800, height: 600 });
+  const dots: Array<{ hr: number; x: number; y: number }> = [];
+  const spot: ScreenPoint = { x: 0, y: 0 };
+  for (const star of stars()) if (star.magnitude <= 3 && here(star.rightAscension, star.declination, spot)) dots.push({ hr: star.hr, x: spot.x, y: spot.y });
+  return { names: names.labels, dots };
+}
+
+test("in Orion's belt no two names overlap and none covers a star's dot, at any zoom", () => {
+  for (const pixels of [4, 8, 12, 20, 40, 80]) {
+    const { names, dots } = belt(pixels);
+    for (let i = 0; i < names.length; i += 1) {
+      const a = names[i]!;
+      for (let j = i + 1; j < names.length; j += 1) {
+        const b = names[j]!;
+        assert.ok(a.x1 <= b.x0 || b.x1 <= a.x0 || a.y1 <= b.y0 || b.y1 <= a.y0, `${a.text} and ${b.text} overlap at ${pixels} px a degree`);
+      }
+      for (const dot of dots) {
+        if (dot.hr === a.hr) continue;
+        const dx = dot.x < a.x0 ? a.x0 - dot.x : dot.x > a.x1 ? dot.x - a.x1 : 0;
+        const dy = dot.y < a.y0 ? a.y0 - dot.y : dot.y > a.y1 ? dot.y - a.y1 : 0;
+        assert.ok(dx * dx + dy * dy >= 9, `${a.text} covers the dot of star ${dot.hr} at ${pixels} px a degree`);
+      }
+    }
+  }
+});
+
+test("in Orion's belt the names take other sides when the right is taken, and a name with no free place is left out", () => {
+  const wide = belt(80).names.map((label) => label.text);
+  assert.ok(["Alnitak", "Alnilam", "Mintaka"].every((name) => wide.includes(name)), "far enough in, all three are named");
+  const sides = new Set(belt(20).names.filter((label) => ["Alnitak", "Alnilam", "Mintaka"].includes(label.text)).map((label) => label.anchor));
+  assert.ok(sides.size >= 2, "at 20 px a degree the three names do not all take the right side");
+  const tight = belt(8).names.map((label) => label.text);
+  assert.ok(!tight.includes("Alnilam") && tight.includes("Alnitak") && tight.includes("Mintaka"), "at 8 px a degree Alnilam, boxed in by its two neighbours' dots, has no free place and is left out");
 });
 
 test("the names come in Japanese, in katakana, with the English where a star has none", () => {

@@ -4,10 +4,12 @@ export { DEFAULT_LABEL_STYLE, designationWidth, LABEL_STYLE_PROPERTIES, labelHei
 export {
   createStarNames,
   discCover,
+  LABEL_SIDES,
   placeLabel,
   STAR_NAMES_ATTRIBUTES,
   starNamesFromAttributes,
   type CoverMask,
+  type LabelSide,
   type NameLanguage,
   type ScreenPoint,
   type SkyProjector,
