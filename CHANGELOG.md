@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The data scripts no longer ask NASA/IPAC NED's web pages** (MODULES-839). `scripts/make-deep-sky-shapes.py` and `scripts/check-deep-sky-ned.py` fetched one page an object (about 10,000) from NED's `/cgi-bin/` and `/srs/`, which NED's robots.txt asks scripts not to use, with a 10-second crawl delay. They, and `scripts/make-black-hole-data.py`, now read only NED's answers saved earlier and otherwise stop with an error that says why; a test runs each refusal with no network. NOTICE.md marks NED's galaxy diameters "confirmation requested 2026-11-10". A fallback without NED is ready behind one flag and not used: `make-deep-sky-shapes.py --no-ned` keeps RC3's 7,013 galaxy shapes and draws the 2,706 that had NED's as the dotted symbol (7,089 of the 11,898 objects with a size). The shipped data does not change. Guide in English and Japanese.
+
 ## [0.30.0] - 2026-11-11
 
 - **CI installs Playwright's browsers in bounded, cached steps** (KAZOKU-UI-100). A slow package mirror held `playwright install --with-deps` for the whole job limit on 2026-11-09 and 2026-11-10, so no test ran and the failure read as a test failure. `.github/actions/playwright` (the family's, kazoku-ui's copy is canonical) caches the browsers by Playwright's version, then installs the system libraries in a step of their own: two tries, each cut off after 7 minutes, and a failure that says it is the runner's package mirror and that nothing was run. Free: GitHub-hosted Linux runners and the cache.
