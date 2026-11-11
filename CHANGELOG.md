@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Laid-over pictures fade softly at their edges** (MODULES-881). The photographs in true colour and the finer ESA/Hubble pictures now fade out to an oval inside their frame as well as from the edge of their data, so no straight side or corner shows against what lies under them: the Hubble strip over Andromeda at the closest zoom, M17's square on the bright Milky Way, M42's bottom and left sides (`oval_window` in `scripts/make-natural-pictures.py`; Andromeda's panorama, which the galaxy fills from end to end, fades from the edge of its data only). The card says the edges are faded. The photographs are now at most 90 kB, like every other picture, and the demo asks for at most five pictures at once, so a view costs at most 450 kB of pictures, back within the 500 kB budget (it had grown to about 650 kB with the photographs). NGC 3242 and NGC 7009 still have no picture: NOIRLab's are narrowband or pseudo-colour, ESO's MUSE view is emission-line maps, and ESA/Hubble's is a gallery tile with no position.
+
 ## [0.30.0] - 2026-11-11
 
 - **CI installs Playwright's browsers in bounded, cached steps** (KAZOKU-UI-100). A slow package mirror held `playwright install --with-deps` for the whole job limit on 2026-11-09 and 2026-11-10, so no test ran and the failure read as a test failure. `.github/actions/playwright` (the family's, kazoku-ui's copy is canonical) caches the browsers by Playwright's version, then installs the system libraries in a step of their own: two tries, each cut off after 7 minutes, and a failure that says it is the runner's package mirror and that nothing was run. Free: GitHub-hosted Linux runners and the cache.
