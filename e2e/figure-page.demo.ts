@@ -70,6 +70,9 @@ test("a Chinese asterism opens with its names, says what its sky does not record
   await expect(facts).toContainText("not in our data");
   await expect(page.getByTestId("cp-stars").locator("a")).toHaveCount(7);
   await expect(page.getByTestId("cp-stars")).toContainText("Dubhe · UMa");
+  await open(page, "c=hua2-gai4&culture=chinese");
+  await expect(facts).toContainText("Canopy of the Emperor");
+  await expect(facts).toContainText("Purple Forbidden Enclosure (紫微垣)");
 });
 
 test("a Western constellation opens as it always has, with no culture in its address", async ({ page }) => {

@@ -916,6 +916,7 @@ function details(): void {
       if (a.names.ja !== undefined && culture.id !== "chinese") fact(list, "fieldJapanese", a.readings.ja === undefined || a.readings.ja === a.names.ja ? a.names.ja : `${a.names.ja} (${a.readings.ja})`);
       if (a.about !== "") fact(list, "fieldAbout", a.about);
       if (a.group !== undefined) fact(list, "fieldQuarter", say(a.group));
+      if (a.partOf !== undefined) fact(list, "fieldEnclosure", culture.find(a.partOf)?.name ?? say(a.partOf));
       const lies = [...new Set(figure.stars.map((star) => constellation(star.constellation)).filter((one): one is Constellation => one !== undefined))];
       if (lies.length > 0) fact(list, "fieldLiesIn", lies.map(nameOf).join(", "));
     }
