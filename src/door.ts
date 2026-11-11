@@ -84,7 +84,7 @@ export const OWN_SOURCES: readonly SourceInfo[] = freeze([
       en: "Faint stars: UCAC4, N. Zacharias et al. (2013), U.S. Naval Observatory, via NASA/IPAC IRSA; magnitudes and colours from APASS",
       ja: "暗い星：UCAC4（N. Zacharias ほか、2013年、米国海軍天文台、NASA/IPAC IRSA提供、等級と色はAPASS）",
     },
-    licence: { name: "UCAC4 terms of use", url: "https://irsa.ipac.caltech.edu/data/USNO/UCAC4/overview.html" },
+    licence: { name: "UCAC4 terms of use", nameJa: "UCAC4の利用条件", url: "https://irsa.ipac.caltech.edu/data/USNO/UCAC4/overview.html" },
     url: "https://irsa.ipac.caltech.edu/data/USNO/UCAC4/overview.html",
     retrieved: "2026-11-09",
   },
