@@ -179,8 +179,10 @@ test.describe("pointers", () => {
     await send(page, "pointermove", "touch", { x: spot.x + 40, y: spot.y + 30 });
     await send(page, "pointerup", "touch", { x: spot.x + 40, y: spot.y + 30 });
     await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
-    await send(page, "pointerdown", "touch", spot);
-    await send(page, "pointerup", "touch", spot);
+    // the pan moved the chart, so the line is not where it was: find it again
+    const again = await onALine(page);
+    await send(page, "pointerdown", "touch", again);
+    await send(page, "pointerup", "touch", again);
     await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
     await send(page, "pointerleave", "touch", { x: 0, y: 0 });
     await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
