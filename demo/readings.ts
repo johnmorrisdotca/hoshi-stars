@@ -1,6 +1,6 @@
 // Small kana readings (ruby) over the Chinese sky's group names, 三垣 (the Three Enclosures), 二十八宿 (the Twenty-Eight Mansions) and 星官 (asterisms), and over the 28 mansions' names,
-// for a child or anyone still learning kanji on the Japanese page. Off by default. On with `readings=on` in the address, or with the Readings switch, which only the Japanese page of the
-// Chinese sky shows; the switch's choice is kept on this device and written to the address.
+// for a child or anyone still learning kanji on the Japanese page. Off by default. On with the Readings switch, which only the Japanese page of the Chinese sky shows and whose choice is
+// kept on this device and written to the address, or for one visit with `readings=on` in the address.
 import type { AddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 
 const STORE = "hoshi-stars.readings";
@@ -62,7 +62,9 @@ export function writeReadings(host: Element, text: string, on: boolean): void {
     if (plain !== "") parts.push(plain);
     plain = "";
     const ruby = document.createElement("ruby");
-    ruby.append(found[0], Object.assign(document.createElement("rt"), { textContent: found[1] }));
+    // the brackets show only where a browser cannot set the reading above the word
+    const bracket = (text: string): HTMLElement => Object.assign(document.createElement("rp"), { textContent: text });
+    ruby.append(found[0], bracket("("), Object.assign(document.createElement("rt"), { textContent: found[1] }), bracket(")"));
     parts.push(ruby);
     at += found[0].length;
   }
@@ -71,30 +73,26 @@ export function writeReadings(host: Element, text: string, on: boolean): void {
 }
 
 /**
- * The Readings switch: `button` turns the readings on and off, and `row`, which holds it, is shown while `show` says so (the readings are on only then). The choice, from the switch
- * or from an address with `readings=on`, is kept on this device; kept and missing from the address, it is written to the address now. `changed` runs after a press, so the page draws again.
+ * The Readings switch: `button` turns the readings on and off, and `row`, which holds it, is shown while `show` says so (the readings are on only then). Only a press of the switch
+ * is kept on this device; `readings=on` in the address (a link from the sheets page) turns them on for that visit and leaves what is kept alone. While the switch is shown, a
+ * choice kept on and missing from the address is written to it; `refresh`, called after a change of language or sky, does that. `changed` runs after a press, so the page draws again.
  */
 export function mountReadings(row: HTMLElement, button: HTMLButtonElement, address: AddressState, show: () => boolean, changed: () => void): { on: () => boolean; refresh: (label: string) => void } {
-  const keep = (on: boolean): void => {
-    try {
-      localStorage.setItem(STORE, on ? "on" : "off");
-    } catch {
-      // Not kept; the address still has it.
-    }
-  };
   let kept: string | null = null;
   try {
     kept = localStorage.getItem(STORE);
   } catch {
     // A browser that keeps nothing starts with the readings off.
   }
-  // an address that asks for them (a link from the sheets page) is a choice too, so a tile that opens the map keeps them
-  if (address.get("readings") === "on") keep(true);
-  else if (!address.has("readings") && kept === "on") address.set("readings", "on");
-  const asked = (): boolean => address.get("readings") === "on";
+  const asked = (): boolean => address.get("readings") === "on" || (!address.has("readings") && kept === "on");
   button.addEventListener("click", () => {
     const next = !asked();
-    keep(next);
+    kept = next ? "on" : "off";
+    try {
+      localStorage.setItem(STORE, kept);
+    } catch {
+      // Not kept; the address still has it.
+    }
     address.set("readings", next ? "on" : null);
     changed();
   });
@@ -102,6 +100,7 @@ export function mountReadings(row: HTMLElement, button: HTMLButtonElement, addre
     on: () => show() && asked(),
     refresh(label) {
       row.hidden = !show();
+      if (show() && !address.has("readings") && kept === "on") address.set("readings", "on");
       button.textContent = label;
       button.setAttribute("aria-pressed", String(asked()));
     },
