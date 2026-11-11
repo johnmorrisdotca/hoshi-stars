@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Laid-over pictures fade softly at their edges** (MODULES-881). The photographs in true colour and the finer ESA/Hubble pictures now fade out to an oval inside their frame as well as from the edge of their data, so no straight side or corner shows against what lies under them: the Hubble strip over Andromeda at the closest zoom, M17's square on the bright Milky Way, M42's bottom and left sides (`oval_window` in `scripts/make-natural-pictures.py`; Andromeda's panorama, which the galaxy fills from end to end, fades from the edge of its data only). The card says the edges are faded. The photographs are now at most 90 kB, like every other picture, and the demo asks for at most five pictures at once, so a view costs at most 450 kB of pictures, back within the 500 kB budget (it had grown to about 650 kB with the photographs). NGC 3242 and NGC 7009 still have no picture: NOIRLab's are narrowband or pseudo-colour, ESO's MUSE view is emission-line maps, and ESA/Hubble's is a gallery tile with no position.
+
 ## [0.32.0] - 2026-11-11
 
 - **Kana readings on the Chinese sky's names for learners** (MODULES-871). On the Japanese page of the Chinese sky, the strip above the map, the gallery and the list can put small kana readings (`<ruby>`) over 三垣, 二十八宿, 星官 and the 28 mansions' names. Off by default; on with the Readings switch (ふりがな), which only that page shows, or `readings=on` in the address for one visit; a press of the switch is kept on the device and written to the address. The sheets page links to the gallery with them on. Readings are at least 10 pixels high at a phone's width.

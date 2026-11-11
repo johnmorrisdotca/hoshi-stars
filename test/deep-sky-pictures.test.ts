@@ -104,7 +104,7 @@ test("pictureUrl joins a base and the file with one slash", () => {
   assert.equal(pictureUrl(picture, "./"), "./pictures/M31.webp");
 });
 
-test("every picture file is here, is a WebP within 90 kB (110 kB for a photograph in true colour), and the folder holds nothing else", () => {
+test("every picture file is here, is a WebP within 90 kB (a photograph in true colour too), and the folder holds nothing else", () => {
   const files = readdirSync(new URL("pictures/", root)).sort();
   assert.deepEqual(files, deepSkyPictures().map((p) => p.file.replace("pictures/", "")).sort());
   assert.equal(new Set(deepSkyPictures().map((p) => p.id)).size, deepSkyPictures().length, "ids are unique");
@@ -115,7 +115,7 @@ test("every picture file is here, is a WebP within 90 kB (110 kB for a photograp
     const bytes = readFileSync(path);
     assert.equal(bytes.subarray(0, 4).toString("latin1"), "RIFF");
     assert.equal(bytes.subarray(8, 12).toString("latin1"), "WEBP");
-    assert.ok(statSync(path).size <= (natural[picture.id] !== undefined ? 110_000 : 90_000), `${picture.file} is ${statSync(path).size} bytes`);
+    assert.ok(statSync(path).size <= 90_000, `${picture.file} is ${statSync(path).size} bytes`);
     total += statSync(path).size;
   }
   assert.ok(total < 12_000_000, `all the pictures are ${total} bytes`);

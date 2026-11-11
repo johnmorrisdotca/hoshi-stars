@@ -15,8 +15,8 @@ type Place = (point: SkyPoint) => Spot | undefined;
 
 export const DEEP_COLOURS = { deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4", member: "#f2c887" };
 
-/** The most pictures asked for, and drawn, at once: the budget that keeps a page's picture bytes down (each file is under 90 kB). */
-export const MAX_PICTURES = 6;
+/** The most pictures asked for, and drawn, at once: the budget that keeps a page's picture bytes down (each file is at most 90 kB, so a view asks for at most 450 kB, within 500 kB). */
+export const MAX_PICTURES = 5;
 /** A picture is asked for once its field is this wide on the screen, in pixels; it starts to show at `SHOW_FROM` and is fully there at `SHOW_FULL`. */
 export const LOAD_FROM = 90;
 export const SHOW_FROM = 130;

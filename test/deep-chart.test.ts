@@ -1,4 +1,4 @@
-// The deep-sky part of the demo's chart: every object at its true size, in each of the seven projections; pictures asked for only when big enough, laid in the right place, kept to six; a mark
+// The deep-sky part of the demo's chart: every object at its true size, in each of the seven projections; pictures asked for only when big enough, laid in the right place, kept to five; a mark
 // dotted where no size is measured; the layers; the bright stars inside a cluster.
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -50,7 +50,8 @@ test("a mark is dotted where no size is measured, and solid where it is", () => 
   assert.ok(none.includes("stroke-dasharray"), "M40, which has no size, is a dotted symbol");
 });
 
-test("a picture is asked for only when its field is wide enough, never more than six, and the widest first", () => {
+test("a picture is asked for only when its field is wide enough, never more than five (at most 90 kB each, so within a 500 kB budget), and the widest first", () => {
+  assert.ok(MAX_PICTURES * 90_000 <= 500_000);
   assert.deepEqual(chart(options({ ...DEFAULT_VIEW, zoom: 3 })).wanted, []);
   const seen = chart(options({ ...at("M51"), zoom: 300 }));
   assert.ok(seen.wanted.includes("M51"), seen.wanted.join(","));
