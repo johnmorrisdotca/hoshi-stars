@@ -91,8 +91,8 @@ test("the data rows are all well-formed, with a Wikidata item, a median between 
 test("every distance is a galaxy's, and the table covers about six in ten of the galaxies", () => {
   const galaxies = deepSky({ type: "galaxy" });
   const withDistance = galaxies.filter((g) => galaxyDistance(g) !== null);
-  assert.equal(galaxies.length, 10282);
-  assert.equal(withDistance.length, 6202, "6,202 of 10,282 galaxies");
+  assert.equal(galaxies.length, 10231);
+  assert.equal(withDistance.length, 6201, "6,201 of 10,231 galaxies");
   assert.equal(deepSky().filter((o) => o.type !== "galaxy" && galaxyDistance(o) !== null).length, 0);
   assert.equal(withDistance.filter((g) => galaxyDistance(g)!.disagree).length, 22);
   assert.equal(messierObject("M31") !== undefined && messierDistance(messierObject("M31")!) !== null, true);

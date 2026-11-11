@@ -110,6 +110,22 @@ NOT_OBJECTS = {"Q4167410", "Q17362920"}
 # them: one line `id<TAB>ra<TAB>dec<TAB>wikidata ra<TAB>wikidata dec<TAB>arc-minutes apart`. The id is `M45`, or the NGC or IC name for an object with no Messier number.
 NED_POSITIONS = ROOT / "scripts" / "deep-sky-ned-positions.tsv"
 
+# Objects whose Wikidata classes say galaxy but which are star clusters, nebulae or parts of the Magellanic Clouds, each checked against its own item and the paper its distance is
+# stated in: one line `designation<TAB>id<TAB>Wikidata item<TAB>type<TAB>evidence`, lines starting with # are notes. Applied by item, only where the classes gave galaxy.
+TYPE_FIXES = ROOT / "scripts" / "deep-sky-types.tsv"
+
+
+def type_fixes() -> dict[str, str]:
+    fixes = {}
+    for line in TYPE_FIXES.read_text(encoding="utf-8").splitlines():
+        if line.strip() == "" or line.startswith("#"):
+            continue
+        _designation, _id, item, kind, _evidence = line.split("\t")
+        if kind not in TYPES:
+            raise SystemExit(f"{TYPE_FIXES.name}: unknown type {kind!r} for {item}")
+        fixes[item] = kind
+    return fixes
+
 # A name must be a name: no digits, except a leading star number (`47 Tucanae`), so catalogue labels (`Messier 2`, `Arp 87`) are not names.
 NAME_OK = re.compile(r"^(?:\d+ )?[^\d]+$")
 HAS_LETTERS = re.compile(r"[A-Za-zÀ-ɏ]{4}")
@@ -258,6 +274,9 @@ def main() -> None:
         preferred = [c for c, p in found if p and c in class_types]
         chosen = set().union(*(class_types[c] for c in (preferred or [c for c, _ in found if c in class_types])))
         kinds[item] = next((t for t in TYPE_PRIORITY if t in chosen), "other")
+    for item, kind in type_fixes().items():
+        if kinds.get(item) == "galaxy":
+            kinds[item] = kind
 
     # Magnitudes: the V band; the brightest of the statements that are not deprecated.
     visual = {}

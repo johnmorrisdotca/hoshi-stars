@@ -20,7 +20,7 @@ Every deep-sky object the package has can be drawn at its true angular size, and
 | `positionAngle` | the angle of the major axis, 0 up to 180 degrees from north through east, where it is measured |
 | `source` | where the numbers come from: `RC3`, `NED` or `Catalogue row` |
 
-Nothing is guessed. For a galaxy the numbers are RC3's (the Third Reference Catalogue of Bright Galaxies: the diameter at the 25th magnitude isophote, the axis ratio and the angle) or, where RC3 has none, NASA/IPAC NED's diameters table (the same isophote from the ESO-Uppsala and UGC catalogues, else the 2MASS total diameter): 9,719 of the 10,282 galaxies get a shape, 7,013 from RC3 and 2,706 from NED. For every other object (the clusters, the nebulae, the galaxies neither has) the only size is the one diameter the object's own row carries (`Catalogue row`), with no ratio and no angle, and no object outside the galaxies has an angle. In all 9,795 of the 11,898 objects have a size and 7,293 an angle; the rest are drawn as a symbol of fixed size, dotted. `measuredParts(shape)` says which parts are there, and an object whose minor axis or angle is missing is drawn as a circle across its major diameter, never as an ellipse that nobody measured.
+Nothing is guessed. For a galaxy the numbers are RC3's (the Third Reference Catalogue of Bright Galaxies: the diameter at the 25th magnitude isophote, the axis ratio and the angle) or, where RC3 has none, NASA/IPAC NED's diameters table (the same isophote from the ESO-Uppsala and UGC catalogues, else the 2MASS total diameter): 9,711 of the 10,231 galaxies get a shape, 7,013 from RC3 and 2,698 from NED. For every other object (the clusters, the nebulae, the galaxies neither has) the only size is the one diameter the object's own row carries (`Catalogue row`), with no ratio and no angle, and no object outside the galaxies has an angle. In all 9,787 of the 11,898 objects have a size and 7,286 an angle; the rest are drawn as a symbol of fixed size, dotted. `measuredParts(shape)` says which parts are there, and an object whose minor axis or angle is missing is drawn as a circle across its major diameter, never as an ellipse that nobody measured.
 
 RC3's terms are being confirmed (`NOTICE.md`), so the shapes can be built without it: `python3 -I scripts/make-deep-sky-shapes.py --no-rc3` gives the NED-only build (9,572 galaxies, 8,439 with an angle). NGC 2000.0 and the Sky Catalog are not used.
 
@@ -175,7 +175,7 @@ const ranked = deepSky({ type: "galaxy" })
   .map((galaxy) => ({ id: galaxy.id, distance: galaxyDistance(galaxy) }))
   .filter((one) => one.distance !== null)
   .sort((a, b) => a.distance!.parsecs - b.distance!.parsecs);
-console.log(ranked.length, ranked[0]?.id, ranked[ranked.length - 1]?.id);  // 6202 NGC 292 IC 4059
+console.log(ranked.length, ranked[0]?.id, ranked[ranked.length - 1]?.id);  // 6201 NGC 292 IC 4059
 ```
 
 ## In the demo

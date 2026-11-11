@@ -47,13 +47,13 @@ test("M45 has the 110 arc-minutes its row carries, and M40 has no size at all", 
   assert.deepEqual(measuredParts(m40), { size: false, ratio: false, angle: false, oval: false });
 });
 
-test("the large table gives 9,795 of the 11,898 objects a size and 7,293 an angle: RC3's for 7,013 galaxies, NED's for 2,706 more, and no angle for anything that is not a galaxy", () => {
+test("the large table gives 9,787 of the 11,898 objects a size and 7,286 an angle: RC3's for 7,013 galaxies, NED's for 2,698 more, and no angle for anything that is not a galaxy", () => {
   const all = deepSky();
   const shapes = all.map((o) => deepSkyShapeAll(o));
-  assert.equal(shapes.filter((x) => x.majorArcmin !== undefined).length, 9795);
-  assert.equal(shapes.filter((x) => x.positionAngle !== undefined).length, 7293);
+  assert.equal(shapes.filter((x) => x.majorArcmin !== undefined).length, 9787);
+  assert.equal(shapes.filter((x) => x.positionAngle !== undefined).length, 7286);
   assert.equal(shapes.filter((x) => x.source === "RC3").length, 7013);
-  assert.equal(shapes.filter((x) => x.source === "NED").length, 2706);
+  assert.equal(shapes.filter((x) => x.source === "NED").length, 2698);
   assert.deepEqual([...new Set(shapes.map((x) => x.source))].sort(), ["Catalogue row", "NED", "RC3", undefined].sort());
   const ngc253 = deepSkyShapeAll(deepSkyObject("NGC 253")!);
   assert.equal(ngc253.source, "RC3");
