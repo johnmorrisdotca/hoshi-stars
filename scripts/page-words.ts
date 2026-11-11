@@ -573,7 +573,7 @@ export const WORDS = {
     "purple-forbidden": "紫微垣 (しびえん)",
     "supreme-palace": "太微垣 (たいびえん)",
     "heavenly-market": "天市垣 (てんしえん)",
-    fieldEnclosure: "三垣か二十八宿",
+    fieldEnclosure: "三垣・二十八宿",
     noteMissing: "6.0等より暗い星が少なくとも{missing}個あり、カタログにはありません。描くのは手元にある{held}個だけです。",
     noteChineseLines: "線は私たちがつないだもので、昔の絵そのままではありません。",
     fieldType: "種類",

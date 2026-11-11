@@ -46,15 +46,15 @@ console.log(horn.asterism.names.en, horn.asterism.group, horn.asterism.readings.
 
 スピカは角宿一(かくしゅくいち)、つまり角宿の1番目の星です。中国の星の名前は「星官の名前 + その中の番号」なので、星の名前がデータの第一歩です。
 
-ほかの星官のうち42には英語の名前があり、41には`partOf`があります。`partOf`は、その星官が入る垣(`purple-forbidden` 紫微垣、`supreme-palace` 太微垣、`heavenly-market` 天市垣)か、宿のidです。どちらもWikidataに書いてあるときだけ使います。書いていないものには、何も作りません。
+ほかの星官のうち42には英語の名前があり、41には`partOf`があります。`partOf`は、その星官が入っている垣か宿のidです(垣は`purple-forbidden` 紫微垣、`supreme-palace` 太微垣、`heavenly-market` 天市垣)。どちらもWikidataに書かれているときだけ入れます。書かれていないときは、こちらで考えて足すことはしません。
 
 ```js
 import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
 
 const canopy = chinese.find("華蓋");
 console.log(canopy.names.en, canopy.partOf);
-// Canopy of the Emperor purple-forbidden
 console.log(chinese.asterisms().filter((a) => a.partOf === "heavenly-market").map((a) => a.name).slice(0, 4).join(" "));
+// Canopy of the Emperor purple-forbidden
 // 七公 列肆 天市左垣 天紀
 ```
 
@@ -165,7 +165,7 @@ console.log(svg.includes("stroke-dasharray"), svg.includes("data-hr"), ringed.in
 
 ## デモでは
 
-デモの「星座の文化」(西洋・日本・中国)は、アドレスに`culture=`として残ります(西洋のときは何もつきません)。例: `?culture=chinese`。選ぶと、同じ星の上に、その文化の図と名前が描き直されます。図をタップするか、どれかの名前で検索すると、カードが出ます。名前と読み、どんなものか、空の方角、あるいは星座、明るい星、そしてカタログにない星があるときは「手元の星だけを描いています」という注意です。埋めこみページも同じ`culture=`を使います。
+デモの「星座の文化」(西洋・日本・中国)は、アドレスに`culture=`として残ります(西洋のときは何もつきません)。例: `?culture=chinese`。選ぶと、同じ星の上に、その文化の図と名前が描き直されます。図をタップするか、どれかの名前で検索すると、カードが出ます。名前と読み、どんなものか、空の方角、あるいは星座、明るい星、そしてカタログにない星があるときは「手元の星だけを描いています」という注意です。Wikidataに書かれているときは、その星官が入っている垣か宿も出ます。埋めこみページも同じ`culture=`を使います。
 
 ## データのもと
 
