@@ -14,11 +14,12 @@ test("pictureCredits: nothing drawn, no line", () => {
   assert.deepEqual(pictureCredits(["not a picture"], false), []);
 });
 
-test("pictureCredits: the photograph of M42 and its Hubble picture, each credit word for word with CC BY 4.0 linked, the change said, and a link to every credit", () => {
+test("pictureCredits: the photograph of M42 and its Hubble picture, each credit word for word with CC BY 4.0 linked, in a fixed order, the change said, and a link to every credit", () => {
+  assert.equal(text(["M42"]), "Pictures: ESO/G. Beccari (CC BY 4.0). Resized, with the edges faded. All credits");
   const pieces = pictureCredits(["M42", "M42-heic0601a"], false);
   const line = text(["M42", "M42-heic0601a"]);
-  assert.ok(line.startsWith("Pictures: ESO/G. Beccari (CC BY 4.0); "), line);
-  assert.ok(line.includes(`${credit("M42-heic0601a")} (CC BY 4.0)`), line);
+  assert.equal(line, `Pictures: ${credit("M42-heic0601a")} (CC BY 4.0); ESO/G. Beccari (CC BY 4.0). Resized, with the edges faded. All credits`);
+  assert.equal(text(["M42-heic0601a", "M42"]), line, "the order does not follow which picture shows most, so panning does not reshuffle the line");
   assert.ok(line.includes("Resized, with the edges faded."), line);
   assert.deepEqual(pieces.filter((piece) => piece.text === "CC BY 4.0").map((piece) => piece.href), ["https://creativecommons.org/licenses/by/4.0/", "https://creativecommons.org/licenses/by/4.0/"]);
   assert.equal(pieces.at(-1)!.text, "All credits");
@@ -29,15 +30,14 @@ test("pictureCredits: a credit shared by two pictures is given once; a survey pi
   assert.equal(text(["M8", "M16"]).match(/ESO \(CC BY 4\.0\)/g)?.length, 1);
   const sdss = text(["M13"]);
   assert.ok(sdss.includes(`${credit("M13")} (CC BY)`), sdss);
-  assert.ok(!sdss.includes("Resized"), sdss);
+  assert.ok(sdss.includes("Resized, with the edges faded."), "a survey picture is resampled and made clear too");
+  assert.equal(pictureCredits(["M13"], false).find((piece) => piece.text === "CC BY")?.href, "https://www.sdss.org/collaboration/image-use-policy/");
   const twoMass = text(["M2"]);
-  assert.ok(twoMass.includes(credit("M2")) && !twoMass.includes("(CC"), twoMass);
+  assert.ok(twoMass.includes(credit("M2")) && !twoMass.includes("(CC") && twoMass.includes("Resized"), twoMass);
 });
 
 test("pictureCredits: in Japanese the words around the credits are Japanese and the credits stay word for word", () => {
-  const line = text(["M42"], true);
-  assert.ok(line.startsWith("写真: ESO/G. Beccari (CC BY 4.0). "), line);
-  assert.ok(line.endsWith("大きさを変え、縁をぼかしています。出典一覧"), line);
+  assert.equal(text(["M42"], true), "写真：ESO/G. Beccari (CC BY 4.0)。大きさを変え、縁をぼかしています。出典一覧");
 });
 
 test("every picture's credit can be given, and every CC BY one names its licence", () => {

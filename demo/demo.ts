@@ -181,6 +181,8 @@ function clear(): Box[] {
 
 function draw(): void {
   queued = false;
+  // the credit line sits above the zoom tools however many rows they wrap to
+  $("picture-credits").style.bottom = `${Math.round($("zoom-in").parentElement!.getBoundingClientRect().height) + 14}px`;
   const shown = view.zoom / opening();
   // from a thousand on, whole numbers with a thousands separator: "2,837×" is the width of "177.3×"
   $("zoom-readout").textContent = shown >= 1000 ? `${Math.round(shown).toLocaleString(lang())}×` : zoomText(shown);
@@ -192,7 +194,8 @@ function draw(): void {
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
   const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
   chosenPictures = new Set(out.wanted);
-  showPictureCredits($("picture-credits"), out.pictures, lang() === "ja");
+  // names were kept clear of the line as it was: when it changes, draw once more so that they keep clear of it as it is now
+  if (showPictureCredits($("picture-credits"), out.pictures, lang() === "ja")) schedule();
   faintNote(out.faint, faint?.state);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame while the browser decodes it again
@@ -460,7 +463,7 @@ function setView(next: View): void {
   hands.sync();
 }
 box.addEventListener("pointerdown", (event) => {
-  if ((event.pointerType === "mouse" && event.button !== 0) || (event.target as Element).closest("button") !== null) return;
+  if ((event.pointerType === "mouse" && event.button !== 0) || (event.target as Element).closest("button, a, .picture-credits") !== null) return;
   touches.set(event.pointerId, local(event));
   moved = touches.size > 1 ? 99 : 0;
 });

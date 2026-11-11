@@ -36,7 +36,7 @@ frameCredit(ja);
 const pictureCreditLine = document.createElement("p");
 pictureCreditLine.dataset["testid"] = "picture-credits";
 pictureCreditLine.hidden = true;
-pictureCreditLine.style.cssText = "position:fixed;left:6px;bottom:60px;z-index:5;max-width:calc(100% - 12px);margin:0;padding:1px 6px;border-radius:4px;background:rgba(11,16,32,.8);color:#c9d1ec;font:.7rem/1.4 system-ui,sans-serif";
+pictureCreditLine.style.cssText = "position:fixed;left:6px;bottom:60px;z-index:5;max-width:calc(100% - 12px);margin:0;padding:1px 6px;border-radius:4px;background:rgba(11,16,32,.8);color:#c9d1ec;font:.8rem/1.4 system-ui,sans-serif";
 document.body.append(pictureCreditLine);
 const seen = skyOf(viewpointOf(choice.from));
 const near = nearbyOf(choice.nearTo, choice.nearBy ?? "sky", seen);
@@ -82,6 +82,7 @@ let chosenPictures: ReadonlySet<string> = new Set();
 function draw(): void {
   const frameBox = frame.getBoundingClientRect();
   const at = tools.getBoundingClientRect();
+  pictureCreditLine.style.bottom = `${Math.round(at.height) + 16}px`;
   const keepClear = [{ x0: at.left - frameBox.left - 4, y0: at.top - frameBox.top - 4, x1: at.right - frameBox.left + 4, y1: at.bottom - frameBox.top + 4 }];
   const credit = document.querySelector("[data-testid='frame-credit']")?.getBoundingClientRect();
   if (credit !== undefined) keepClear.push({ x0: credit.left - frameBox.left - 4, y0: credit.top - frameBox.top - 4, x1: credit.right - frameBox.left + 4, y1: credit.bottom - frameBox.top + 4 });
@@ -107,7 +108,8 @@ function draw(): void {
     node.replaceWith(old);
   });
   fetcher.want(drawn.wanted);
-  showPictureCredits(pictureCreditLine, drawn.pictures, ja);
+  // names were kept clear of the line as it was: when it changes, draw once more so that they keep clear of it as it is now
+  if (showPictureCredits(pictureCreditLine, drawn.pictures, ja)) schedule();
   document.documentElement.dataset.ready = "true";
 }
 

@@ -23,8 +23,8 @@
 .proj-seg { flex-wrap: wrap; }
 .proj-seg button { display: inline-grid; justify-items: center; align-content: center; gap: 2px; min-width: 76px; padding: 6px 8px; font-size: .72rem; line-height: 1.1; }
 .proj-seg svg { display: block; width: 34px; height: 34px; }
-/* the credits of the pictures drawn, on the chart above its buttons while they show */
-.picture-credits { position: absolute; left: 8px; bottom: 62px; max-width: calc(100% - 16px); margin: 0; padding: 2px 6px; border-radius: 4px; background: rgba(11, 16, 32, .8); color: #c9d1ec; font: .7rem/1.4 system-ui, sans-serif; }
+/* the credits of the pictures drawn, on the chart above its buttons while they show (the page sets `bottom` from the buttons' height) */
+.picture-credits { position: absolute; left: 8px; bottom: 62px; max-width: calc(100% - 16px); margin: 0; padding: 2px 6px; border-radius: 4px; background: rgba(11, 16, 32, .8); color: #c9d1ec; font: .8rem/1.4 system-ui, sans-serif; }
 .picture-credits[hidden] { display: none; }
 .picture-credits a { color: inherit; }
 .under { position: absolute; left: 12px; top: 10px; margin: 0; color: #ffe49a; font-weight: 600; font-size: .95rem; pointer-events: none; text-shadow: 0 1px 3px #000; }
