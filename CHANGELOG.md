@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-11-11
+
 - **One figure page for the three skies** (MODULES-828). `constellation.html` served only the 88 Western constellations; it now serves a figure of any culture, by `?c=<id>` and, for the other skies, `&culture=japanese` or `&culture=chinese` (the address keeps the sky; an old `?c=Ori` link still opens as before, and an id or a sky that do not match, such as `?c=Ori&culture=chinese`, open the figure that sky has for the same stars). A Chinese mansion or asterism shows its Traditional and Simplified characters, pinyin, English name (the mansions have one in our data, the asterisms do not, and the page says so), quarter of the sky and a mansion's number; a Japanese figure its kanji, kana, romaji, other names and what it is (in Japanese too); every figure the Western stars it uses, each a link to the map, and **the same stars in the other two skies side by side** (stacked on a phone), the figures of each that share most of them as the one card look, each a link to its page. The sky is three links at the top, each to the figure that stands for this one. Neighbours are the figure's own sky's cards. The limits are written where they apply: our own joins, the count of faint stars missing, and Wikidata as the source of the Chinese names. The enclosure an asterism belongs to is not in our data and is shown as such. New pure `demo/figure-sky.ts` with its test; e2e for one figure of each sky, the side-by-side links, the sky in the address and 390 wide. Docs EN and JA.
 
 ## [0.26.0] - 2026-11-10
