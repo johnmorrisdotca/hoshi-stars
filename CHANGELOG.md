@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The picture credits: no share-alike licence named as CC BY, no credit twice, and a failed picture asked for once** (MODULES-1076). The chart's credit line named a licence by the start of its words, so "CC BY-SA 4.0" or "CC BY-NC 4.0" would have read as plain CC BY; it now names only plain CC BY (with its version) and refuses the rest (`licenceName`, with a test; the package takes no picture under them, and the data test holds that). M1's Hubble picture was credited "… (ESA/Hubble) (ESA/Hubble)": its release's own credit already ends with ESA/Hubble, and both picture scripts added it again; they now add it only where it is missing, the data and NOTICE.md carry it once, and a test refuses a credit that ends with the same parenthesis twice. A picture that could be had neither by fetch nor as an image was forgotten and asked for again at the next draw; the fetcher now remembers it as failed (`failed`) and never asks again on that page, with a test.
+
 ## [0.33.0] - 2026-11-11
 
 - **A visible credit wherever a picture is drawn** (MODULES-1057). The deep-sky pictures from ESA/Hubble, ESO and NSF NOIRLab are CC BY 4.0, which asks for the credit wherever a picture is shown; it was only in the object's card. Now a small line on the chart, above its buttons, gives the credit of every picture drawn word for word, its licence (CC BY 4.0 linked to the licence, SDSS's CC BY to its image use policy), that the pictures are resized and faded at the edges, and a link to every credit, in a fixed order so that panning does not reshuffle it, on the demo and the embed page, in English and Japanese, and goes when no picture is drawn. The chart reports the pictures it drew (`pictures`); `demo/picture-credits.ts` makes the line.

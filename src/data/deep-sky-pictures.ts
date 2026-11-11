@@ -128,7 +128,7 @@ NGC 6397|NGC 6397|26517540|-5367430|518|518|541|0|1|https://skyview.gsfc.nasa.go
 NGC 6752|NGC 6752|28771710|-5998460|612|612|369|0|1|https://skyview.gsfc.nasa.gov/current/cgi/runquery.pl?Survey=2MASS-J&Position=287.71710%2C-59.98460&Size=0.62800&Pixels=720&Projection=Tan&Coordinates=J2000&Sampler=Clip&Return=FITS|
 M51-heic0506a|M51|20246807|4721317|768|533|75|919|3|https://esahubble.org/images/heic0506a/|NASA, ESA, S. Beckwith (STScI), and The Hubble Heritage Team (STScI/AURA) (ESA/Hubble)
 M42-heic0601a|M42|8379053|-541398|768|768|235|0|3|https://esahubble.org/images/heic0601a/|NASA, ESA, M. Robberto ( Space Telescope Science Institute/ESA) and the Hubble Space Telescope Orion Treasury Project Team (ESA/Hubble)
-M1-heic0515a|M1|8363553|2201524|653|653|59|0|3|https://esahubble.org/images/heic0515a/|NASA, ESA and Allison Loll/Jeff Hester (Arizona State University). Acknowledgement: Davide De Martin (ESA/Hubble) (ESA/Hubble)
+M1-heic0515a|M1|8363553|2201524|653|653|59|0|3|https://esahubble.org/images/heic0515a/|NASA, ESA and Allison Loll/Jeff Hester (Arizona State University). Acknowledgement: Davide De Martin (ESA/Hubble)
 M16-heic1501a|M16|27471966|-1383944|736|768|37|3250|3|https://esahubble.org/images/heic1501a/|NASA, ESA/Hubble and the Hubble Heritage Team (ESA/Hubble)
 M82-heic0604a|M82|14897915|6968171|768|598|62|3099|3|https://esahubble.org/images/heic0604a/|NASA, ESA and the Hubble Heritage Team (STScI/AURA). Acknowledgment: J. Gallagher (University of Wisconsin), M. Mountain (STScI) and P. Puxley (NSF). (ESA/Hubble)
 M104-opo0328a|M104|18999703|-1162275|768|430|75|50|3|https://esahubble.org/images/opo0328a/|NASA/ESA and The Hubble Heritage Team (STScI/AURA) (ESA/Hubble)

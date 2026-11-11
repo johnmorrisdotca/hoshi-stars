@@ -334,7 +334,7 @@ def make_release(object_id, release):
     rgba = np.dstack([colour, alpha])
     credit = " ".join(html.unescape(tags["credit"] or "").split())
     return {"id": f"{object_id}-{release}", "kind": "esahubble", "image": Image.fromarray((np.clip(rgba, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA"), "pixels": width, "height": height, "field": scale * width / 60, "scale": scale,
-            "ra": tags["value"][0], "dec": tags["value"][1], "rotation": (-tags["rotation"]) % 360, "address": page, "credit": f"{credit} ({'ESA/Hubble'})", "object": {"id": object_id}}
+            "ra": tags["value"][0], "dec": tags["value"][1], "rotation": (-tags["rotation"]) % 360, "address": page, "credit": credit if credit.endswith("(ESA/Hubble)") else f"{credit} (ESA/Hubble)", "object": {"id": object_id}}
 
 
 def file_of(ident):

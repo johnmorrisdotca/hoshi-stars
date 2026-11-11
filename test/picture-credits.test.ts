@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { chart, DEFAULT_VIEW } from "../demo/chart.ts";
-import { pictureCredits } from "../demo/picture-credits.ts";
+import { licenceName, pictureCredits } from "../demo/picture-credits.ts";
 import { deepSkyPictures } from "../src/deep-sky-pictures.ts";
 
 const text = (ids: string[], ja = false): string => pictureCredits(ids, ja).map((piece) => piece.text).join("");
@@ -55,4 +55,12 @@ test("the chart reports the pictures it drew with some of them in view, and none
   assert.ok(drawn.pictures.includes("M42"), drawn.pictures.join(","));
   assert.ok(drawn.pictures.every((id) => drawn.svg.includes(`data-pic="${id}"`)));
   assert.deepEqual(chart({ ...view, layers: new Set(["deep"] as const), readyPictures: new Set(["M42"]) }).pictures, [], "the Pictures layer off");
+});
+
+test("licenceName: plain CC BY is named, with its version; share-alike and non-commercial ones are refused, not named as CC BY", () => {
+  assert.equal(licenceName("CC BY 4.0 (Creative Commons Attribution 4.0 International)"), "CC BY 4.0");
+  assert.equal(licenceName("CC BY (Creative Commons Attribution), per SDSS's image use policy"), "CC BY");
+  assert.equal(licenceName("licensed CC BY 4.0."), "CC BY 4.0");
+  for (const refused of ["CC BY-SA 4.0", "CC BY-SA", "CC BY-NC 4.0", "CC BY-NC-SA 2.0", "CC BY-NC-ND 4.0", "CC BY-ND 4.0", "CC BYSA"]) assert.equal(licenceName(refused), undefined, refused);
+  assert.equal(licenceName("a US government work"), undefined);
 });

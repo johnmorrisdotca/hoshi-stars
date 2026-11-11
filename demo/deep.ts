@@ -14,6 +14,8 @@ export const TIER_ZOOM = 8;
 export interface DeepFetcher {
   /** The ids of the pictures that have arrived. */
   readonly ready: Set<string>;
+  /** The ids of the pictures that could not be had, by fetch or as an image: never asked for again on this page, so a view that keeps wanting one does not ask the server at every draw. */
+  readonly failed: Set<string>;
   /** The whole table of objects and its shapes once fetched, else `undefined`. */
   catalogue(): readonly DeepSkyObject[] | undefined;
   shapeOf(): ((object: DeepSkyObject) => DeepSkyShape) | undefined;
@@ -32,6 +34,7 @@ const pictureById = (): Map<string, ReturnType<typeof drawnPictures>[number]> =>
 
 export function createDeepFetcher(base: string, changed: () => void): DeepFetcher {
   const ready = new Set<string>();
+  const failed = new Set<string>();
   const asked = new Set<string>();
   let objects: readonly DeepSkyObject[] | undefined;
   let shape: ((object: DeepSkyObject) => DeepSkyShape) | undefined;
@@ -40,6 +43,7 @@ export function createDeepFetcher(base: string, changed: () => void): DeepFetche
   let tier: Promise<void> | undefined;
   return {
     ready,
+    failed,
     catalogue: () => objects,
     shapeOf: () => shape,
     distanceOf: () => distance,
@@ -69,7 +73,8 @@ export function createDeepFetcher(base: string, changed: () => void): DeepFetche
             ready.add(id);
             changed();
           };
-          image.onerror = () => asked.delete(id);
+          // both ways failed: it stays asked, and is not asked for again
+          image.onerror = () => failed.add(id);
           image.src = url;
         };
         // fetched once and held as a blob, so every later draw shows it without asking the server again

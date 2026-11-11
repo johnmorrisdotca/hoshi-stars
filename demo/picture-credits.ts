@@ -15,10 +15,15 @@ export interface CreditPiece {
 
 let byId: Map<string, DeepSkyPicture> | undefined;
 
-/** The short name of a picture's licence where it is a Creative Commons one (`CC BY 4.0`, `CC BY`), else nothing: a US government work or the public domain needs no licence named. */
-function licenceOf(picture: DeepSkyPicture): string | undefined {
-  return /\bCC BY(?: \d\.\d)?/.exec(picture.source.licence)?.[0];
+/**
+ * The short name of a licence where it is plain Creative Commons Attribution (`CC BY 4.0`, `CC BY`), else nothing: a US government work or the public domain needs no licence named, and a share-alike or
+ * non-commercial one (`CC BY-SA`, `CC BY-NC`) is refused rather than named as plain CC BY (the package takes no picture under one; the data test holds that).
+ */
+export function licenceName(licence: string): string | undefined {
+  return /\bCC BY(?: \d\.\d)?(?![-\w])/.exec(licence)?.[0];
 }
+
+const licenceOf = (picture: DeepSkyPicture): string | undefined => licenceName(picture.source.licence);
 
 /**
  * The credit line for the pictures drawn (the chart's `pictures`), in pieces: each credit once and word for word, in a fixed order (by source, then credit) so that panning does not reshuffle it, with its

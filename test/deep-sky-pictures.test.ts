@@ -142,6 +142,10 @@ test("the sources are all ones whose terms allow it, and none is one the package
   }
 });
 
+test("a credit names its source once: no credit ends with the same parenthesis twice, as '(ESA/Hubble) (ESA/Hubble)' did", () => {
+  for (const picture of deepSkyPictures()) assert.doesNotMatch(picture.credit, /(\([^()]+\))\s*\1$/, `${picture.id}: ${picture.credit}`);
+});
+
 test("every finer picture lies inside its survey picture, where the object has one: its middle is on it (a wide Hubble field may reach past the survey's edge)", () => {
   let checked = 0;
   for (const finer of deepSkyPictures().filter((p) => p.id !== p.object)) {

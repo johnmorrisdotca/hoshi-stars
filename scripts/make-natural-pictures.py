@@ -507,7 +507,8 @@ def make(spec, objects, cache):
     tags = avm(jpeg)
     # the credit line is the one in the image's own metadata where it has one (the same words as the page's, without the page's spacing), else the page's; ESA/Hubble's carry the release's name after it
     credit = re.sub(r"\)(?=[A-Z])", ") ", re.sub(r"\s*/\s*$", "", " ".join(html.unescape(tags["credit"] or "").split())))
-    credit = (credit + " (ESA/Hubble)") if credit and spec["site"] == "hubble" else (credit or page_credit)
+    # a release whose own credit already names ESA/Hubble last keeps it once
+    credit = (credit if credit.endswith("(ESA/Hubble)") else credit + " (ESA/Hubble)") if credit and spec["site"] == "hubble" else (credit or page_credit)
     if tags["projection"] != "TAN":
         raise RuntimeError(f"{spec['image']}: not a tangent-plane image")
     image = Image.open(io.BytesIO(jpeg)).convert("RGB")
