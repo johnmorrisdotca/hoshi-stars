@@ -168,6 +168,24 @@ const onALine = (page: Page) =>
     return { x: x!, y: y! };
   });
 
+/** Where the first line starts once the chart has stopped moving: the page draws on the next frame and a pan may glide on after the finger lifts, so two reads two frames apart must agree. */
+async function settledLine(page: Page): Promise<{ x: number; y: number }> {
+  let last = await onALine(page);
+  await expect
+    .poll(
+      async () => {
+        await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+        const now = await onALine(page);
+        const still = now.x === last.x && now.y === last.y;
+        last = now;
+        return still;
+      },
+      { message: "the chart came to rest after the pan" },
+    )
+    .toBe(true);
+  return last;
+}
+
 test.describe("pointers", () => {
   test.beforeEach(async ({ page }) => {
     await open(page, "constellation-lines=0.16&layers=none");
@@ -179,8 +197,9 @@ test.describe("pointers", () => {
     await send(page, "pointermove", "touch", { x: spot.x + 40, y: spot.y + 30 });
     await send(page, "pointerup", "touch", { x: spot.x + 40, y: spot.y + 30 });
     await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
-    // the pan moved the chart, so the line is not where it was: find it again
-    const again = await onALine(page);
+    // the pan moved the chart, so the line is not where it was: find it again once the chart is at rest
+    const again = await settledLine(page);
+    expect(again, "the pan moved the chart").not.toEqual(spot);
     await send(page, "pointerdown", "touch", again);
     await send(page, "pointerup", "touch", again);
     await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
