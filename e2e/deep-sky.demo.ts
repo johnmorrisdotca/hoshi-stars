@@ -299,6 +299,33 @@ test("every laid-over picture fades to nothing at its corners and the middle of 
   for (const [file, alpha] of Object.entries(edges)) expect(alpha, `${file}: the most opaque corner or side middle`).toBeLessThanOrEqual(3);
 });
 
+test("on a phone the picture credits take at most three lines of the chart and scroll within themselves, every word kept, on the page and in the embed", async ({ page }, info) => {
+  test.skip(!info.project.name.endsWith("phone"), "the long line is a phone's");
+  // Orion close in: the photograph, its Hubble picture and the survey picture of M43, three credits of 345 characters, which wrapped to eight lines on a phone and covered a quarter of the chart
+  const VIEW = "layers=milky,deep,names,pictures&ra=83.8&dec=-5.45&zoom=300";
+  const credits = deepSkyPictures().filter((p) => ["M42", "M42-heic0601a", "M43"].includes(p.id)).map((p) => p.credit);
+  for (const [address, box] of [[`/hoshi-stars/?${VIEW}`, "#chart-box"], [`/hoshi-stars/embed.html?${VIEW}`, "#frame"]] as const) {
+    await page.goto(address);
+    await page.locator(box).scrollIntoViewIfNeeded();
+    await expect(page.locator("[data-pic='M42-heic0601a']")).toHaveCount(1, { timeout: 20_000 });
+    const line = page.getByTestId("picture-credits");
+    await expect(line).toBeVisible();
+    for (const credit of credits) await expect(line, `${address}: word for word`).toContainText(credit);
+    const sizes = await line.evaluate((el) => ({ height: el.getBoundingClientRect().height, client: el.clientHeight, scroll: el.scrollHeight, lineHeight: parseFloat(getComputedStyle(el).lineHeight) }));
+    expect(sizes.height, `${address}: at most three lines and its padding`).toBeLessThanOrEqual(3 * sizes.lineHeight + 6);
+    expect(sizes.scroll, `${address}: the rest is there, to scroll to`).toBeGreaterThan(sizes.client);
+    // the last words, the link to every credit, come into the line when it is scrolled to its end
+    await line.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+    const all = line.getByRole("link", { name: "All credits" });
+    const inside = await all.evaluate((link) => {
+      const a = link.getBoundingClientRect();
+      const b = link.parentElement!.getBoundingClientRect();
+      return a.top >= b.top - 0.5 && a.bottom <= b.bottom + 0.5;
+    });
+    expect(inside, `${address}: scrolled to its end, the line shows its last link`).toBe(true);
+  }
+});
+
 test("a picture drawn with nothing picked has its credit on the chart, with its licence, clear of the buttons and of every name, on the page, in wide mode and in the embed, and the credit goes when the picture does", async ({ page }) => {
   const VIEW = "layers=milky,deep,names,pictures&ra=83.82&dec=-5.39&zoom=150";
   const overlaps = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }): boolean =>

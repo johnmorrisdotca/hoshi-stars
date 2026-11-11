@@ -36,7 +36,8 @@ frameCredit(ja);
 const pictureCreditLine = document.createElement("p");
 pictureCreditLine.dataset["testid"] = "picture-credits";
 pictureCreditLine.hidden = true;
-pictureCreditLine.style.cssText = "position:fixed;left:6px;bottom:60px;z-index:5;max-width:calc(100% - 12px);margin:0;padding:1px 6px;border-radius:4px;background:rgba(11,16,32,.8);color:#c9d1ec;font:.8rem/1.4 system-ui,sans-serif";
+// at most three lines, the rest scrolled to within the line (every word kept), as on the demo page
+pictureCreditLine.style.cssText = "position:fixed;left:6px;bottom:60px;z-index:5;max-width:calc(100% - 12px);max-height:calc(4.2em + 2px);overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;margin:0;padding:1px 6px;border-radius:4px;background:rgba(11,16,32,.8);color:#c9d1ec;font:.8rem/1.4 system-ui,sans-serif";
 document.body.append(pictureCreditLine);
 const seen = skyOf(viewpointOf(choice.from));
 const near = nearbyOf(choice.nearTo, choice.nearBy ?? "sky", seen);
