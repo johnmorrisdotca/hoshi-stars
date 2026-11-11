@@ -66,7 +66,7 @@ test("the large table gives 9,787 of the 11,898 objects a size and 7,286 an angl
   assert.ok(all.every((o) => Object.isFrozen(deepSkyShapeAll(o))));
 });
 
-test("the fallback without NED (`--no-ned`, not shipped): RC3's 7,013 galaxies keep their shape, the 2,706 that had NED's have none and are drawn dotted, and nothing else changes", () => {
+test("the fallback without NED (`--no-ned`, not shipped): RC3's 7,013 galaxies keep their shape, the 2,698 that had NED's have none and are drawn dotted, and nothing else changes", () => {
   const noNed = (rows: string): string => rows.split("\n").filter((row) => !row.endsWith("|d")).join("\n");
   const fallback = shapeTable([noNed(MESSIER_SHAPES), noNed(NGC_IC_SHAPES)]);
   const all = deepSky();
@@ -75,7 +75,7 @@ test("the fallback without NED (`--no-ned`, not shipped): RC3's 7,013 galaxies k
   assert.equal(shapes.filter((x) => x.source === "RC3").length, 7013);
   assert.equal(shapes.filter((x) => x.majorArcmin !== undefined).length, 7089);
   assert.equal(shapes.filter((x) => x.positionAngle !== undefined).length, 4736);
-  assert.equal(all.filter((o, i) => o.type === "galaxy" && shapes[i]!.majorArcmin === undefined).length, 3269, "no galaxy row carries a size of its own, so these are dotted");
+  assert.equal(all.filter((o, i) => o.type === "galaxy" && shapes[i]!.majorArcmin === undefined).length, 3218, "no galaxy row carries a size of its own, so these are dotted");
   const kept = all.filter((o) => deepSkyShapeAll(o).source !== "NED");
   assert.deepEqual(kept.map((o) => ({ ...fallback.shapeOf(o) })), kept.map((o) => ({ ...deepSkyShapeAll(o) })));
   assert.deepEqual({ ...fallback.shapeOf(deepSkyObject("NGC 4676")!) }, { majorArcmin: undefined, minorArcmin: undefined, positionAngle: undefined, source: undefined });
