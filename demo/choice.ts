@@ -3,6 +3,7 @@ import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, t
 import { cultureOf, DEFAULT_CULTURE } from "./cultures.ts";
 import { fromText, viewpointOf } from "./from.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";
+import { lookIdOf, type LookId } from "./sky-overlay.ts";
 import { CONSTELLATION_LINES_ATTRIBUTE, lineStrengthFromAttribute, STAR_NAMES_ATTRIBUTES, starNamesFromAttributes, type StarNamesSettings } from "../src/sky-labels.ts";
 
 export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "pictures", "faint", "grid"];
@@ -25,6 +26,8 @@ export interface Choice extends View {
   starNames?: StarNamesSettings | undefined;
   /** Faint constellation lines at this strength, 0 to 1 (`constellation-lines=0.2`); left out for none. */
   lineStrength?: number | undefined;
+  /** The look of the names (`label-look`): `display` when left out. */
+  labelLook?: LookId | undefined;
 }
 
 const number = (text: string | null, fallback: number, low: number, high: number): number => {
@@ -69,6 +72,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
     ...(near !== undefined && query.get("by") === "space" ? { nearBy: "space" as const } : {}),
     ...(starNames === undefined ? {} : { starNames }),
     ...(lineStrength === undefined ? {} : { lineStrength }),
+    ...(lookIdOf(query.get("label-look")) === "display" ? {} : { labelLook: lookIdOf(query.get("label-look")) }),
   };
 }
 
@@ -81,5 +85,9 @@ export function frameQuery(choice: Choice): string {
   if (choice.cultureId !== undefined && choice.cultureId !== DEFAULT_CULTURE) q.set("culture", choice.cultureId);
   if (choice.nearTo !== undefined) q.set("near", choice.nearTo);
   if (choice.nearTo !== undefined && choice.nearBy === "space") q.set("by", "space");
+  if (choice.starNames?.count !== undefined) q.set("star-names", String(choice.starNames.count));
+  if (choice.starNames?.magnitude !== undefined) q.set("star-names-magnitude", String(choice.starNames.magnitude));
+  if (choice.lineStrength !== undefined) q.set("constellation-lines", String(choice.lineStrength));
+  if (choice.labelLook !== undefined) q.set("label-look", choice.labelLook);
   return q.toString();
 }

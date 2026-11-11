@@ -60,6 +60,18 @@ test("the default look: a ring round each named star and its catalogue letter un
   await expect(page.locator("#sky [data-star-name-ring]")).toHaveCount(0);
 });
 
+test("a chosen look is kept, and a part named in the address wins over it", async ({ page }) => {
+  await open(page, "star-names=8&layers=none&label-look=plain");
+  await expect(page.locator("#sky [data-star-name-ring]")).toHaveCount(0);
+  await expect(page.locator("#sky [data-star-designation]")).toHaveCount(0);
+  await expect(names(page).first()).not.toHaveAttribute("font-variant", "small-caps");
+  await open(page, "star-names=8&layers=none&label-look=plain&label-ring=9");
+  expect(await page.locator("#sky [data-star-name-ring]").count()).toBeGreaterThan(3);
+  await expect(page.locator("#sky [data-star-name-ring]").first()).toHaveAttribute("r", "9");
+  await open(page, "star-names=8&layers=none&label-look=capitals");
+  expect(await names(page).first().textContent()).toBe((await names(page).first().textContent())!.toUpperCase());
+});
+
 test("the look is a setting: case, size, letter spacing and a leader line come from the address", async ({ page }) => {
   await open(page, "star-names=6&layers=none&label-case=upper&label-size=16&label-letter-spacing=0.1&label-leader=18&label-weight=700");
   const first = names(page).first();
@@ -135,4 +147,118 @@ test("constellation-lines draws faint lines, and the figure under the pointer ri
   } else {
     await expect(picked).toHaveCount(1);
   }
+});
+
+/** A pointer event on the embed's frame, as a finger, a pen or a mouse would send it. */
+async function send(page: Page, type: string, pointerType: "touch" | "pen" | "mouse", at: { x: number; y: number }, extra: { buttons?: number; id?: number } = {}): Promise<void> {
+  await page.evaluate(
+    ({ type, pointerType, at, extra }) => {
+      const frame = document.getElementById("frame")!;
+      const box = frame.getBoundingClientRect();
+      frame.dispatchEvent(new PointerEvent(type, { bubbles: true, cancelable: true, pointerId: extra.id ?? 7, pointerType, isPrimary: true, clientX: box.left + at.x, clientY: box.top + at.y, buttons: extra.buttons ?? 0 }));
+    },
+    { type, pointerType, at, extra },
+  );
+}
+
+/** Where the first line of the first figure drawn starts, in the frame's pixels. */
+const onALine = (page: Page) =>
+  page.locator("#sky [data-faint-lines]").evaluate((node) => {
+    const [x, y] = node.getAttribute("d")!.match(/-?\d+(\.\d+)?/g)!.slice(0, 2).map(Number);
+    return { x: x!, y: y! };
+  });
+
+test.describe("pointers", () => {
+  test.beforeEach(async ({ page }) => {
+    await open(page, "constellation-lines=0.16&layers=none");
+  });
+
+  test("a finger that pans picks nothing, and a tap picks and keeps the pick until the next tap", async ({ page }) => {
+    const spot = await onALine(page);
+    await send(page, "pointerdown", "touch", spot);
+    await send(page, "pointermove", "touch", { x: spot.x + 40, y: spot.y + 30 });
+    await send(page, "pointerup", "touch", { x: spot.x + 40, y: spot.y + 30 });
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
+    await send(page, "pointerdown", "touch", spot);
+    await send(page, "pointerup", "touch", spot);
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
+    await send(page, "pointerleave", "touch", { x: 0, y: 0 });
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
+    await send(page, "pointerdown", "touch", { x: 3, y: 3 });
+    await send(page, "pointerup", "touch", { x: 3, y: 3 });
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
+  });
+
+  test("a finger the browser takes for a scroll or a pinch (pointercancel) picks nothing", async ({ page }) => {
+    const spot = await onALine(page);
+    await send(page, "pointerdown", "touch", spot);
+    await send(page, "pointercancel", "touch", spot);
+    await send(page, "pointerup", "touch", spot);
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
+  });
+
+  test("a pen hovering picks like a mouse and lets go when it leaves; a pen pressing and dragging picks nothing", async ({ page }) => {
+    const spot = await onALine(page);
+    await send(page, "pointermove", "pen", spot);
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(1);
+    await send(page, "pointerleave", "pen", { x: 0, y: 0 });
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
+    await send(page, "pointermove", "pen", spot, { buttons: 1 });
+    await expect(page.locator("#sky [data-figure-picked]")).toHaveCount(0);
+  });
+
+  test("the picked figure's name is announced to a screen reader and withdrawn with the pick", async ({ page }) => {
+    const live = page.getByTestId("figure-announce");
+    await expect(live).toHaveAttribute("aria-live", "polite");
+    await expect(live).toHaveText("");
+    const spot = await onALine(page);
+    await send(page, "pointermove", "mouse", spot);
+    await expect(live).not.toHaveText("");
+    expect(await live.textContent()).toBe(await page.locator("#sky [data-figure-name]").textContent());
+    await send(page, "pointerleave", "mouse", { x: 0, y: 0 });
+    await expect(live).toHaveText("");
+  });
+});
+
+test.describe("the demo's own controls", () => {
+  const HOME = "/hoshi-stars/";
+  const row = (page: Page) => page.getByTestId("overlay-row");
+  const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
+  const names = (page: Page) => page.locator("#chart [data-star-name]");
+
+  test("names, lines and the look are off until chosen, in one row, and each choice is kept in the address", async ({ page }) => {
+    await page.goto(HOME);
+    await expect(page.locator("#chart circle").first()).toBeVisible();
+    await expect(row(page)).toBeVisible();
+    expect(await names(page).count()).toBe(0);
+    await expect(page.locator("#chart [data-faint-lines]")).toHaveCount(0);
+    await page.getByTestId("names-seg").getByRole("button", { name: "12", exact: true }).click();
+    await expect(names(page)).toHaveCount(12);
+    await expect.poll(() => param(page, "star-names")).toBe("12");
+    await page.getByTestId("lines-seg").getByRole("button", { name: "Faint" }).click();
+    await expect(page.locator("#chart [data-faint-lines]")).toHaveAttribute("stroke-opacity", "0.16");
+    await expect.poll(() => param(page, "constellation-lines")).toBe("0.16");
+    await page.getByTestId("look-seg").getByRole("button", { name: "Plain" }).click();
+    await expect(page.locator("#chart [data-star-name-ring]")).toHaveCount(0);
+    await expect.poll(() => param(page, "label-look")).toBe("plain");
+    await page.getByTestId("names-seg").getByRole("button", { name: "Brightest" }).click();
+    await expect.poll(() => param(page, "star-names-magnitude")).toBe("1.5");
+    await expect.poll(() => param(page, "star-names")).toBeNull();
+    await page.reload();
+    await expect(page.locator("#chart [data-faint-lines]")).toHaveAttribute("stroke-opacity", "0.16");
+    expect(await names(page).count()).toBeGreaterThan(0);
+    await page.getByTestId("names-seg").getByRole("button", { name: "Off" }).click();
+    await page.getByTestId("lines-seg").getByRole("button", { name: "Off" }).click();
+    await expect(page.locator("#chart [data-star-name]")).toHaveCount(0);
+    await expect(page.locator("#chart [data-faint-lines]")).toHaveCount(0);
+    await expect.poll(() => param(page, "constellation-lines")).toBeNull();
+  });
+
+  test("the row is in Japanese on the Japanese page", async ({ page }) => {
+    await page.goto(`${HOME}?lang=ja&star-names=6`);
+    await expect(page.locator("#chart circle").first()).toBeVisible();
+    await expect(page.getByTestId("lines-seg").getByRole("button", { name: "うすい" })).toBeVisible();
+    await expect(names(page).first()).toBeVisible();
+    expect(await names(page).filter({ hasText: /[ァ-ヶ]/ }).count()).toBeGreaterThan(0);
+  });
 });

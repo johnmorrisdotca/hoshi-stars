@@ -39,6 +39,9 @@ import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileV
 import { starProfile } from "../src/profile.ts";
 import { starComparison, starPortrait } from "../src/portrait.ts";
 import { starCode, starFrameCode, starHeightFor, starQuery, type StarChoice } from "./star-code.ts";
+import { lookOf } from "./sky-labels-svg.ts";
+import { createOverlay, LOOK_IDS, lookIdOf, type LookId } from "./sky-overlay.ts";
+import { CONSTELLATION_LINES_ATTRIBUTE, lineStrengthFromAttribute, STAR_NAMES_ATTRIBUTES, starNamesFromAttributes, type SkyProjector, type StarNamesSettings } from "../src/sky-labels.ts";
 
 const wideStyle = document.createElement("style");
 wideStyle.textContent = wideCss({ side: "340px" });
@@ -66,6 +69,11 @@ let nearKeys: string[] = [];
 let hover: string | undefined;
 let profileView: ProfileView = "portrait";
 let embedWhat: "chart" | "star" = "chart";
+/** Names on the brightest stars, faint constellation lines and their look: each off until chosen. */
+let starNames: StarNamesSettings | undefined;
+let lineStrength: number | undefined;
+let labelLook: LookId = "display";
+const overlay = createOverlay();
 
 function read(): void {
   const kind = address.get("proj") ?? "";
@@ -84,6 +92,9 @@ function read(): void {
   const pview = address.get("pview");
   profileView = pview === "compare" || pview === "3d" ? pview : "portrait";
   embedWhat = address.get("ew") === "star" ? "star" : "chart";
+  starNames = starNamesFromAttributes(address.get(STAR_NAMES_ATTRIBUTES.count), address.get(STAR_NAMES_ATTRIBUTES.magnitude));
+  lineStrength = lineStrengthFromAttribute(address.get(CONSTELLATION_LINES_ATTRIBUTE));
+  labelLook = lookIdOf(address.get("label-look"));
   by = address.get("by") === "space" ? "space" : "sky";
   galaxyOrder = address.get("gal") === "near" ? "near" : address.get("gal") === "far" ? "far" : null;
   from = viewpointOf(address.get("from"));
@@ -139,7 +150,18 @@ function draw(): void {
   $("zoom-readout").textContent = shown >= 1000 ? `${Math.round(shown).toLocaleString(lang())}×` : zoomText(shown);
   const faint = sky === undefined ? faintFor(view, width, height, magnitude, layers, schedule) : undefined;
   if ((layers.has("deep") && view.zoom >= TIER_ZOOM) || (picked?.startsWith("D:") === true && deepSkyObject(picked.slice(2)) === undefined)) void fetcher.loadTier();
-  const out = chart({ ...view, width, height, magnitude, layers, lang: lang(), keepClear: clear(), highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  const sky3 = sky === undefined;
+  overlay.configure({ names: sky3 ? starNames : undefined, strength: sky3 ? lineStrength : undefined, look: labelLook, style: lookOf(document.documentElement, new URLSearchParams(location.search)), lang: lang(), maxLength: view.projection === "equirectangular" || view.projection === "mollweide" || view.projection === "hammer" ? width / 2 : undefined });
+  const projector: SkyProjector = (ra, dec, o) => {
+    const at = toScreen(view, width, height, { rightAscension: ra, declination: dec });
+    if (at === undefined) return false;
+    o.x = at[0];
+    o.y = at[1];
+    return true;
+  };
+  const keepClear = clear();
+  overlay.update(projector, { width, height }, keepClear);
+  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: overlay.names } : undefined, width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
   faintNote(out.faint, faint?.state);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame while the browser decodes it again
@@ -176,6 +198,7 @@ function schedule(): void {
   queued = true;
   requestAnimationFrame(draw);
 }
+overlay.attach(box, schedule);
 new ResizeObserver(() => {
   width = Math.max(200, Math.round(box.clientWidth));
   height = Math.max(200, Math.round(box.clientHeight));
@@ -248,6 +271,7 @@ function pressed(): void {
     if (b.dataset.value === "star") (b as HTMLButtonElement).disabled = starNow === undefined;
   });
   $("embed-what-hint").hidden = starNow !== undefined;
+  overlayPressed();
   $("culture-note").textContent = say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`);
   const slider = $<HTMLInputElement>("magnitude");
   slider.value = String(magnitude);
@@ -255,7 +279,32 @@ function pressed(): void {
   $("shown").textContent = `${(sky === undefined ? stars({ magnitude }).length : sky.filter((star) => star.magnitude <= magnitude).length).toLocaleString(lang())} ${say("sampleCount")}`;
   fromChoices();
 }
+/** The names and lines row: which choice is on in each group. */
+function overlayPressed(): void {
+  const names = starNames === undefined ? "off" : starNames.count !== undefined ? String(starNames.count) : "bright";
+  $("seg-names").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === names)));
+  const strength = lineStrength === undefined ? "off" : String(lineStrength);
+  $("seg-lines-strength").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === strength)));
+  $("seg-look").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === labelLook)));
+  $("seg-look").querySelectorAll("button").forEach((b) => ((b as HTMLButtonElement).disabled = starNames === undefined && lineStrength === undefined));
+}
+function setNames(count: number | undefined, magnitude?: number): void {
+  starNames = count === undefined && magnitude === undefined ? undefined : { ...(count === undefined ? {} : { count }), ...(magnitude === undefined ? {} : { magnitude }) };
+  address.setMany({ [STAR_NAMES_ATTRIBUTES.count]: count === undefined ? null : String(count), [STAR_NAMES_ATTRIBUTES.magnitude]: magnitude === undefined ? null : String(magnitude) });
+  everything();
+}
 function words(): void {
+  seg("seg-names", [["off", say("olOff")], ["6", "6"], ["12", "12"], ["24", "24"], ["bright", say("olBright")]], (value) => (value === "off" ? setNames(undefined) : value === "bright" ? setNames(undefined, 1.5) : setNames(Number(value))));
+  seg("seg-lines-strength", [["off", say("olOff")], ["0.16", say("olFaint")], ["0.4", say("olMedium")], ["1", say("olFull")]], (value) => {
+    lineStrength = value === "off" ? undefined : Number(value);
+    address.set(CONSTELLATION_LINES_ATTRIBUTE, lineStrength === undefined ? null : String(lineStrength));
+    everything();
+  });
+  seg("seg-look", LOOK_IDS.map((id) => [id, say(`look${id[0]!.toUpperCase()}${id.slice(1)}`)] as const), (id) => {
+    labelLook = id as LookId;
+    address.set("label-look", labelLook === "display" ? null : labelLook);
+    everything();
+  });
   $("wide-toggle").setAttribute("lang", lang());
   seg("seg-projection", PROJECTIONS.map((kind) => [kind, say(kind)] as const), (kind) => {
     setView({ ...view, projection: kind as Projection, ...(address.get("zoom") === null ? { zoom: defaultZoom(kind as Projection, width, height) } : {}) });
@@ -972,7 +1021,7 @@ function galaxiesPanel(): void {
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null || picked.startsWith("B:") ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(starNames === undefined || sky !== undefined ? {} : { starNames }), ...(lineStrength === undefined || sky !== undefined ? {} : { lineStrength }), ...(labelLook === "display" || starNames === undefined ? {} : { labelLook }), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null || picked.startsWith("B:") ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 /** The picked star as a choice for the star's code, or `undefined` where no star with a catalogue number is picked (the Sun, a constellation, nothing). */
 function starChoiceNow(): StarChoice | undefined {

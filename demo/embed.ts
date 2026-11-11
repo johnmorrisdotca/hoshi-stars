@@ -17,9 +17,9 @@ import { nearbyOf } from "./nearby.ts";
 import { faintFor } from "./faint.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { frameCredit } from "./frame-credit.ts";
-import { loadBodyLabelFont } from "@johnmorrisdotca/kazoku-ui/body-label";
 import { lookOf } from "./sky-labels-svg.ts";
-import { createFigureLines, createStarNames, type FigureLinesSettings, type SkyProjector } from "../src/sky-labels.ts";
+import { createOverlay, lookIdOf } from "./sky-overlay.ts";
+import type { SkyProjector } from "../src/sky-labels.ts";
 
 const frame = document.getElementById("frame")!;
 const sky = document.getElementById("sky")!;
@@ -48,10 +48,8 @@ for (const [id, label] of [["zoom-in", ja ? "拡大" : "Zoom in"], ["zoom-out", 
 }
 
 const WIDE: readonly string[] = ["equirectangular", "mollweide", "hammer"];
-const look = lookOf(document.documentElement, new URLSearchParams(location.search));
-const names = choice.starNames === undefined ? undefined : createStarNames({ dotMagnitude: 3.5, dotRadius: 4, ...choice.starNames, lang: choice.lang, style: look });
-const lineSettings = (): FigureLinesSettings => ({ strength: choice.lineStrength, lang: choice.lang, style: look, reach: matchMedia("(pointer: coarse)").matches ? 28 : 14, ...(WIDE.includes(choice.projection) ? { maxLength: width / 2 } : {}) });
-const lines = choice.lineStrength === undefined ? undefined : createFigureLines(lineSettings());
+const query = new URLSearchParams(location.search);
+const overlay = createOverlay();
 const projector: SkyProjector = (ra, dec, out) => {
   const at = toScreen(view, width, height, { rightAscension: ra, declination: dec });
   if (at === undefined) return false;
@@ -59,8 +57,8 @@ const projector: SkyProjector = (ra, dec, out) => {
   out.y = at[1];
   return true;
 };
-
-if (names !== undefined || lines !== undefined) void loadBodyLabelFont(new URL("fonts/Michroma-Regular.ttf", location.href)).then(() => schedule()).catch(() => undefined);
+const configureOverlay = (): void => overlay.configure({ names: choice.starNames, strength: choice.lineStrength, look: lookIdOf(query.get("label-look")), style: lookOf(document.documentElement, query), lang: choice.lang, maxLength: WIDE.includes(choice.projection) ? width / 2 : undefined });
+configureOverlay();
 
 const fetcher = createDeepFetcher("./", () => schedule());
 
@@ -73,9 +71,8 @@ function draw(): void {
   const faint = seen === undefined ? faintFor(view, width, height, choice.magnitude, choice.layers, schedule) : undefined;
   if (choice.layers.has("deep") && view.zoom >= TIER_ZOOM) void fetcher.loadTier();
   const room = { width, height };
-  if (names !== undefined) names.update(projector, room, (x, y) => keepClear.some((box) => x >= box.x0 && x <= box.x1 && y >= box.y0 && y <= box.y1));
-  if (lines !== undefined) lines.update(projector, room, names?.labels);
-  const drawn = chart({ ...choice, ...view, overlay: { lines, names }, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
+  if (seen === undefined) overlay.update(projector, room, keepClear);
+  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: overlay.names } : undefined, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./" });
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame
   const kept = new Map<string, Element>();
   sky.querySelectorAll("image[data-pic]").forEach((node) => kept.set(node.getAttribute("data-pic")!, node));
@@ -139,26 +136,11 @@ document.getElementById("reset")!.addEventListener("click", () => {
   writeAddress();
 });
 
-if (lines !== undefined) {
-  // a mouse picks the figure it rests on and lets go when it leaves; a finger picks what it touches and the pick stays until the next touch
-  const pick = (event: PointerEvent): void => {
-    const box = frame.getBoundingClientRect();
-    if (lines.point(event.clientX - box.left, event.clientY - box.top)) schedule();
-  };
-  frame.addEventListener("pointermove", (event) => {
-    if (event.pointerType === "mouse" && event.buttons === 0) pick(event);
-  });
-  frame.addEventListener("pointerdown", (event) => {
-    if (event.pointerType !== "mouse") pick(event);
-  });
-  frame.addEventListener("pointerleave", (event) => {
-    if (event.pointerType === "mouse" && lines.point()) schedule();
-  });
-}
+overlay.attach(frame, schedule);
 
 addEventListener("resize", () => {
   ({ width, height } = sizeOf());
-  lines?.set(lineSettings());
+  configureOverlay();
   if (!new URLSearchParams(location.search).has("zoom")) view = { ...view, zoom: opening() };
   hands.sync();
   draw();
