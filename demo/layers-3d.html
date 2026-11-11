@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
+    <link rel="stylesheet" href="space.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="space layers" aria-labelledby="ly-heading">
+        <h1 id="ly-heading" class="gl-title" data-say="ly_heading"></h1>
+        <p class="lead" data-say="ly_lede"></p>
+        <div class="fam-row sp-row dist-row">
+          <span class="fam-label" data-say="distLabel"></span>
+          <span class="fam-seg" id="seg-dist" data-testid="dist-seg" role="group" data-say-label="distLabel"></span>
+          <button type="button" class="fam-button" id="dist-nearer" data-testid="dist-nearer" data-say="distNearer"></button>
+          <button type="button" class="fam-button" id="dist-farther" data-testid="dist-farther" data-say="distFarther"></button>
+        </div>
+        <div class="fam-row sp-row dist-row">
+          <label class="fam-label" for="dist-slider" data-say="distSlider"></label>
+          <input id="dist-slider" class="fam-range" data-testid="dist-slider" type="range" min="0" max="1000" step="1" value="500" />
+          <output id="dist-out" class="fam-chip" for="dist-slider" data-testid="dist-out"></output>
+          <button type="button" class="fam-button" id="sp-front" data-testid="sp-front" data-say="sp_front"></button>
+          <a class="fam-button" id="ly-open" data-testid="ly-open" href="./" data-say="ly_open"></a>
+        </div>
+        <div class="sp-grid">
+          <div class="sp-main">
+            <div class="sp-stage" id="sp-stage" data-testid="sp-stage" data-state="loading" data-look="night">
+              <div class="sp-view" id="sp-view" data-testid="sp-view" role="group" tabindex="0"></div>
+              <div class="sp-labels" id="sp-labels" data-testid="sp-labels" aria-hidden="true"></div>
+              <div class="sp-fallback" id="sp-fallback" data-testid="sp-fallback" hidden>
+                <p data-say="ly_noGl"></p>
+              </div>
+              <p class="sp-loading" data-say="ly_loading"></p>
+            </div>
+            <kazoku-view-controls id="sp-controls" data-testid="sp-controls" for="sp-view" tilt-max="85" zoom-min="0.5" zoom-max="10" address></kazoku-view-controls>
+            <p class="fam-fine sp-note" id="ly-scale" data-testid="ly-scale" role="status"></p>
+            <p class="fam-fine" data-say="ly_streak"></p>
+          </div>
+          <aside class="sp-side" aria-labelledby="ly-key-heading">
+            <h2 id="ly-key-heading" data-say="ly_keyHeading"></h2>
+            <ul class="dist-legend" id="dist-legend" data-testid="dist-legend"></ul>
+            <p class="fam-fine" id="ly-summary" data-testid="ly-summary" aria-live="polite"></p>
+            <p class="fam-fine" data-say="ly_method"></p>
+          </aside>
+        </div>
+      </section>
+      <section class="more" aria-labelledby="code-heading">
+        <h2 id="code-heading" data-say="codeHeading"></h2>
+        <kazoku-embed-panel id="embed-panel" data-testid="embed-panel" sizes="320 480 640" size="480"></kazoku-embed-panel>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

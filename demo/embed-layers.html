@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <title>Hoshi Stars by distance in 3D embed</title>
+    <meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="space.css" />
+    <style>
+      html, body { margin: 0; height: 100%; background: #0b1020; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+      [hidden] { display: none !important; }
+      #frame { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+      #frame .sp-stage { position: absolute; inset: 0; height: auto; border: 0; border-radius: 0; }
+      #tools { position: absolute; right: 8px; bottom: 8px; left: 8px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+      #tools button { min-width: 44px; height: 44px; padding: 0 12px; border: 1px solid #46578c; border-radius: 8px; background: rgba(11, 16, 32, .85); color: #e8ecff; font: 600 1rem system-ui, sans-serif; cursor: pointer; }
+      #tools button:hover { border-color: #e8ecff; }
+      #tools button:focus-visible { outline: 3px solid #ffd86b; outline-offset: 2px; }
+      .dist-legend { position: absolute; left: 8px; bottom: 60px; margin: 0; padding: 6px 10px; list-style: none; background: rgba(11, 16, 32, .82); border: 1px solid #25304f; border-radius: 8px; color: #dfe5fa; font: .72rem/1.5 system-ui, sans-serif; pointer-events: none; max-width: calc(100% - 16px); }
+      .dist-legend li { display: flex; align-items: center; gap: 6px; }
+      .dist-legend .dist-count { margin-left: auto; padding-left: 10px; color: #9aa6c9; font-variant-numeric: tabular-nums; }
+      .dist-swatch { width: 9px; height: 9px; border-radius: 50%; background: var(--swatch); flex: none; }
+      .dist-swatch.ring { background: none; border: 1.5px solid var(--swatch); box-sizing: border-box; }
+      .dist-unknown { color: #9aa6c9; }
+      @media (max-width: 400px), (max-height: 300px) { .dist-legend { display: none; } }
+    </style>
+  </head>
+  <body>
+    <div id="frame" data-testid="frame">
+      <div class="sp-stage" id="sp-stage" data-testid="sp-stage" data-state="loading" data-look="night">
+        <div class="sp-view" id="sp-view" data-testid="sp-view" role="group" tabindex="0"></div>
+        <div class="sp-labels" id="sp-labels" data-testid="sp-labels" aria-hidden="true"></div>
+        <div class="sp-fallback" id="sp-fallback" data-testid="sp-fallback" hidden><p id="sp-nogl"></p></div>
+      </div>
+      <ul class="dist-legend" id="dist-legend" data-testid="dist-legend"></ul>
+      <div id="tools" role="group">
+        <button type="button" id="spin" data-testid="spin"></button>
+        <button type="button" id="nearer" data-testid="nearer"></button>
+        <button type="button" id="farther" data-testid="farther"></button>
+        <button type="button" id="zoom-in" data-testid="zoom-in">+</button>
+        <button type="button" id="zoom-out" data-testid="zoom-out">&minus;</button>
+      </div>
+    </div>
+    <script type="module" src="js/embed-layers.js"></script>
+  </body>
+</html>

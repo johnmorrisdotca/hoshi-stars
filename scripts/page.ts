@@ -11,7 +11,7 @@ const NOTICE = "https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.
 
 /** The family's footer, with a link to every data credit beside the one-line credit, so a reader need not open anything to find the sources. */
 const footer = (): string => familyFooter({ id }).replace('<span data-say="foot"></span>', `<span><span data-say="foot"></span> <a href="${NOTICE}" data-say="creditsAll"></a></span>`);
-const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
+const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "layers-3d.html", say: "pageDistance" }, { href: "kids.html", say: "pageKids" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
 export function renderIndex(): string {
@@ -57,6 +57,18 @@ export function renderSpace(): string {
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
     .replace("<!--family:footer-->", footer())
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/constellation-3d.js"></script>`);
+}
+
+/** The sky by distance in 3D page. */
+export function renderLayers(): string {
+  const html = readFileSync(new URL("../demo/layers-3d.html", import.meta.url), "utf8");
+  const words = ALL_WORDS.en as Record<string, string>;
+  return html
+    .replace("<!--family:head-->", familyHead({ id, title: words["ly_title"]!, description: words["ly_description"]! }))
+    .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
+    .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
+    .replace("<!--family:footer-->", footer())
+    .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/layers-3d.js"></script>`);
 }
 
 /** The classic script that defines familyLanguage and fills the header. An external file, so the page's script policy stays 'self'. It tells the page's own script when the language changes. */
