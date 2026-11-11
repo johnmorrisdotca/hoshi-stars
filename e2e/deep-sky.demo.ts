@@ -298,3 +298,36 @@ test("every laid-over picture fades to nothing at its corners and the middle of 
   }, laid.map((p) => p.file));
   for (const [file, alpha] of Object.entries(edges)) expect(alpha, `${file}: the most opaque corner or side middle`).toBeLessThanOrEqual(3);
 });
+
+test("a picture drawn with nothing picked has its credit on the chart, with its licence, clear of the buttons, on the page and in the embed, and the credit goes when the picture does", async ({ page }) => {
+  const clearOf = async (a: string, b: string): Promise<boolean> => {
+    const one = (await page.locator(a).first().boundingBox())!;
+    const two = (await page.locator(b).first().boundingBox())!;
+    return one.x + one.width <= two.x || two.x + two.width <= one.x || one.y + one.height <= two.y || two.y + two.height <= one.y;
+  };
+  for (const [address, box, tools] of [
+    ["/hoshi-stars/?layers=milky,deep,pictures&ra=83.82&dec=-5.39&zoom=150", "#chart-box", ".chart-tools"],
+    ["/hoshi-stars/embed.html?layers=milky,deep,pictures&ra=83.82&dec=-5.39&zoom=150", "#frame", "#tools"],
+  ] as const) {
+    await page.goto(address);
+    await expect(page.locator("[data-pic='M42']")).toHaveCount(1, { timeout: 20_000 });
+    const credits = page.getByTestId("picture-credits");
+    await expect(credits).toBeVisible();
+    await expect(credits).toContainText("ESO/G. Beccari (CC BY 4.0)");
+    await expect(credits.getByRole("link", { name: "CC BY 4.0" }).first()).toHaveAttribute("href", "https://creativecommons.org/licenses/by/4.0/");
+    await expect(credits.getByRole("link", { name: "All credits" })).toHaveAttribute("href", /NOTICE\.md$/);
+    expect(await clearOf("[data-testid='picture-credits']", tools), `${address}: clear of the buttons`).toBe(true);
+    const inside = await page.evaluate(([c, b]) => {
+      const one = document.querySelector(c)!.getBoundingClientRect();
+      const two = document.querySelector(b)!.getBoundingClientRect();
+      return one.left >= two.left && one.right <= two.right + 0.5 && one.top >= two.top && one.bottom <= two.bottom + 0.5;
+    }, ["[data-testid='picture-credits']", box] as const);
+    expect(inside, `${address}: on the chart`).toBe(true);
+  }
+  // zoomed out until no picture is drawn (M42's field is then under 90 pixels across), the line is gone
+  await page.goto("/hoshi-stars/?layers=milky,deep,pictures&ra=83.82&dec=-5.39&zoom=150");
+  await expect(page.getByTestId("picture-credits")).toBeVisible({ timeout: 20_000 });
+  for (let i = 0; i < 7; i += 1) await page.getByTestId("zoom-out").click();
+  await expect(page.locator("#chart image[data-pic]")).toHaveCount(0);
+  await expect(page.getByTestId("picture-credits")).toBeHidden();
+});

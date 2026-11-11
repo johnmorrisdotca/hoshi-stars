@@ -18,6 +18,7 @@ import { nearbyOf } from "./nearby.ts";
 import { faintFor } from "./faint.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { frameCredit } from "./frame-credit.ts";
+import { showPictureCredits } from "./picture-credits.ts";
 import { lookOf } from "./sky-labels-svg.ts";
 import { createOverlay, lookIdOf } from "./sky-overlay.ts";
 import type { SkyProjector } from "../src/sky-labels.ts";
@@ -31,6 +32,12 @@ let { width, height } = sizeOf();
 const choice = choiceOf(new URLSearchParams(location.search), width, height);
 const ja = choice.lang === "ja";
 frameCredit(ja);
+/** The credits of the pictures drawn, at the bottom of the frame above the buttons while they show. */
+const pictureCreditLine = document.createElement("p");
+pictureCreditLine.dataset["testid"] = "picture-credits";
+pictureCreditLine.hidden = true;
+pictureCreditLine.style.cssText = "position:fixed;left:6px;bottom:60px;z-index:5;max-width:calc(100% - 12px);margin:0;padding:1px 6px;border-radius:4px;background:rgba(11,16,32,.8);color:#c9d1ec;font:.7rem/1.4 system-ui,sans-serif";
+document.body.append(pictureCreditLine);
 const seen = skyOf(viewpointOf(choice.from));
 const near = nearbyOf(choice.nearTo, choice.nearBy ?? "sky", seen);
 const nearKeys = near === undefined ? [] : near.rows.map((row) => row.key);
@@ -78,6 +85,8 @@ function draw(): void {
   const keepClear = [{ x0: at.left - frameBox.left - 4, y0: at.top - frameBox.top - 4, x1: at.right - frameBox.left + 4, y1: at.bottom - frameBox.top + 4 }];
   const credit = document.querySelector("[data-testid='frame-credit']")?.getBoundingClientRect();
   if (credit !== undefined) keepClear.push({ x0: credit.left - frameBox.left - 4, y0: credit.top - frameBox.top - 4, x1: credit.right - frameBox.left + 4, y1: credit.bottom - frameBox.top + 4 });
+  const pictured = pictureCreditLine.hidden ? undefined : pictureCreditLine.getBoundingClientRect();
+  if (pictured !== undefined) keepClear.push({ x0: pictured.left - frameBox.left - 4, y0: pictured.top - frameBox.top - 4, x1: pictured.right - frameBox.left + 4, y1: pictured.bottom - frameBox.top + 4 });
   const faint = seen === undefined ? faintFor(view, width, height, choice.magnitude, choice.layers, schedule) : undefined;
   if (choice.layers.has("deep") && view.zoom >= TIER_ZOOM) void fetcher.loadTier();
   const room = { width, height };
@@ -98,6 +107,7 @@ function draw(): void {
     node.replaceWith(old);
   });
   fetcher.want(drawn.wanted);
+  showPictureCredits(pictureCreditLine, drawn.pictures, ja);
   document.documentElement.dataset.ready = "true";
 }
 

@@ -42,6 +42,7 @@ import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileV
 import { starProfile } from "../src/profile.ts";
 import { starComparison, starPortrait } from "../src/portrait.ts";
 import { starCode, starFrameCode, starHeightFor, starQuery, type StarChoice } from "./star-code.ts";
+import { showPictureCredits } from "./picture-credits.ts";
 import { lookOf } from "./sky-labels-svg.ts";
 import { createOverlay, LOOK_IDS, lookIdOf, type LookId } from "./sky-overlay.ts";
 import { CONSTELLATION_LINES_ATTRIBUTE, lineStrengthFromAttribute, STAR_NAMES_ATTRIBUTES, starNamesFromAttributes, type SkyProjector, type StarNamesSettings } from "../src/sky-labels.ts";
@@ -172,7 +173,7 @@ const pickedConstellation = (): string | undefined => {
 /** The chart's corners that hold buttons (the zoom tools, the Wide toggle): no label is drawn under them. */
 function clear(): Box[] {
   const at = svg.getBoundingClientRect();
-  return [$("zoom-in").parentElement!, $("wide-toggle")]
+  return [$("zoom-in").parentElement!, $("wide-toggle"), $("picture-credits")]
     .map((element) => element.getBoundingClientRect())
     .filter((box) => box.width > 0)
     .map((box) => ({ x0: box.left - at.left - 4, y0: box.top - at.top - 4, x1: box.right - at.left + 4, y1: box.bottom - at.top + 4 }));
@@ -191,6 +192,7 @@ function draw(): void {
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
   const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
   chosenPictures = new Set(out.wanted);
+  showPictureCredits($("picture-credits"), out.pictures, lang() === "ja");
   faintNote(out.faint, faint?.state);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame while the browser decodes it again

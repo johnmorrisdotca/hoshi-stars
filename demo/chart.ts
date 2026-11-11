@@ -408,6 +408,8 @@ export interface Chart {
   faint?: { drawn: number; depth: number };
   /** The deep-sky pictures the view needs and has not been given: the page fetches them and draws again. */
   wanted: string[];
+  /** The deep-sky pictures drawn with some of them on the chart (`DeepSkyPicture.id`): the page shows their credits beside the chart (`pictureCredits`). */
+  pictures: string[];
 }
 
 /** A polygon of (longitude from the view's centre, declination) cut to the map's width, in pieces: Sutherland-Hodgman against the two edges, on the polygon and on its copies a turn to either side. */
@@ -712,7 +714,7 @@ export function chart(o: ChartOptions): Chart {
   if (o.overlay?.names !== undefined) body += starNamesSvg(o.overlay.names);
   if (o.overlay?.lines !== undefined) body += figureNameSvg(o.overlay.lines);
 
-  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, wanted: deep.wanted, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
+  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, wanted: deep.wanted, pictures: deep.pictures, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
 }
 
 /** The key a seen star has on the chart and in a pick: the HR number as text, or `sun`. */
