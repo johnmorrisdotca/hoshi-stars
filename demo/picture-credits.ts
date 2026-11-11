@@ -56,7 +56,9 @@ export function showPictureCredits(host: HTMLElement, ids: readonly string[], ja
   host.replaceChildren(
     ...pieces.map((piece) => {
       if (piece.href === undefined) return document.createTextNode(piece.text);
-      return Object.assign(document.createElement("a"), { href: piece.href, target: "_blank", rel: "noopener", textContent: piece.text });
+      const link = Object.assign(document.createElement("a"), { href: piece.href, target: "_blank", rel: "noopener", textContent: piece.text });
+      link.style.color = "inherit";
+      return link;
     }),
   );
 }
