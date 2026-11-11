@@ -42,6 +42,10 @@ jobs:
     # One job a Playwright project: the four are the same tests at a desk's and a phone's width in Chromium and in WebKit.
     name: demo (${{ matrix.project }})
     runs-on: ubuntu-latest
+    # In the Playwright image at the lockfile's version, which has the browsers' system libraries: no apt mirror (down on 2026-11-11).
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     # The job has room for a slow apt mirror (on 2026-11-09 installing WebKit's system libraries took 12 to 15 minutes); the tests keep their own 15 minutes.
     timeout-minutes: 40
     strategy:
@@ -64,6 +68,10 @@ jobs:
         timeout-minutes: 15
   usage:
     runs-on: ubuntu-latest
+    # In the Playwright image at the lockfile's version, which has the browsers' system libraries: no apt mirror (down on 2026-11-11).
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
@@ -126,6 +134,10 @@ jobs:
     # The constellation in 3D is WebGL: this plays it in Chromium, drawn in software, and fails on more than one frame asked for at a time, a draw when nothing moves, GPU objects that grow, or a canvas past its budget.
     name: freeze (WebGL)
     runs-on: ubuntu-latest
+    # In the Playwright image at the lockfile's version, which has the browsers' system libraries: no apt mirror (down on 2026-11-11).
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.0-noble
+      options: --ipc=host
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
