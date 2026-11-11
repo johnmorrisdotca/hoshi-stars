@@ -9,24 +9,45 @@ export interface Box {
   y1: number;
 }
 
+let pen: CanvasRenderingContext2D | null | undefined;
+const measured = new Map<string, TextMetrics>();
+
 /**
- * The room a text takes, from its length and size: a letter of Latin text is about 0.6 of the size wide and a Japanese letter the whole size.
+ * The room a text takes. From its length and size a letter of Latin text is about 0.6 of the size wide and a Japanese letter the whole size, and a line reaches 0.85 of the size
+ * above its baseline and 0.3 below. In a browser the text is also measured in the chart's own font (system-ui), which is the reader's, and the larger of the two is taken: a
+ * font that is wider or taller than the estimate (a Linux machine whose only sans-serif is a Chinese font draws a Latin line 1.26 of the size tall) still gets the room it draws in.
  *
  * @param text - The text.
  * @param size - The font size in pixels.
- * @returns The width and height in pixels.
+ * @param weight - The font weight, 400 by default.
+ * @returns The width and height in pixels, and how far the text reaches above and below its baseline.
  *
  * @example
  * ```ts
  * import { textSize } from "./labels.ts";
  *
- * console.log(textSize("シリウス", 11), textSize("Sirius", 11));
+ * console.log(textSize("シリウス", 11), textSize("Sirius", 11, 700));
  * ```
  */
-export function textSize(text: string, size: number): { w: number; h: number } {
+export function textSize(text: string, size: number, weight = 400): { w: number; h: number; above: number; below: number } {
   let w = 0;
   for (const ch of text) w += ch.charCodeAt(0) > 0x2e7f ? size : size * 0.6;
-  return { w: Math.ceil(w), h: Math.ceil(size * 1.2) };
+  let above = size * 0.85;
+  let below = size * 0.3;
+  if (pen === undefined) pen = typeof document === "undefined" ? null : document.createElement("canvas").getContext("2d");
+  if (pen !== null) {
+    const key = `${weight} ${size} ${text}`;
+    let metrics = measured.get(key);
+    if (metrics === undefined) {
+      pen.font = `${weight} ${size}px system-ui, sans-serif`;
+      metrics = pen.measureText(text);
+      measured.set(key, metrics);
+    }
+    w = Math.max(w, metrics.width);
+    above = Math.max(above, metrics.fontBoundingBoxAscent || 0);
+    below = Math.max(below, metrics.fontBoundingBoxDescent || 0);
+  }
+  return { w: Math.ceil(w), h: Math.ceil(size * 1.2), above, below };
 }
 
 /** Whether two boxes share any area. */

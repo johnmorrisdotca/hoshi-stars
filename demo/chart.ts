@@ -385,10 +385,10 @@ interface Label {
 
 /** A label for a marker at (`x`, `y`): to its right, else its left, above or below, else at a corner, `gap` pixels clear of it. */
 function besideMarker(text: string, size: number, x: number, y: number, gap: number, fill: string, opacity: number): Omit<Label, "rank"> {
-  const { w } = textSize(text, size);
-  const top = (base: number): number => base - size * 0.85;
-  const row = (base: number, left: number, anchor: Place["anchor"]): Place => ({ x: anchor === "middle" ? left + w / 2 : anchor === "end" ? left + w : left, y: base, anchor, box: { x0: left - 1, y0: top(base), x1: left + w + 1, y1: base + size * 0.3 } });
-  const places = [row(y + 4, x + gap, "start"), row(y + 4, x - gap - w, "end"), row(y - gap - 2, x - w / 2, "middle"), row(y + gap + size * 0.85, x - w / 2, "middle"), row(y - gap, x + gap * 0.6, "start"), row(y - gap, x - gap * 0.6 - w, "end"), row(y + gap + size * 0.85, x + gap * 0.6, "start"), row(y + gap + size * 0.85, x - gap * 0.6 - w, "end")];
+  const { w, above, below } = textSize(text, size);
+  const top = (base: number): number => base - above;
+  const row = (base: number, left: number, anchor: Place["anchor"]): Place => ({ x: anchor === "middle" ? left + w / 2 : anchor === "end" ? left + w : left, y: base, anchor, box: { x0: left - 1, y0: top(base), x1: left + w + 1, y1: base + below } });
+  const places = [row(y + 4, x + gap, "start"), row(y + 4, x - gap - w, "end"), row(y - gap - 2, x - w / 2, "middle"), row(y + gap + above, x - w / 2, "middle"), row(y - gap, x + gap * 0.6, "start"), row(y - gap, x - gap * 0.6 - w, "end"), row(y + gap + above, x + gap * 0.6, "start"), row(y + gap + above, x - gap * 0.6 - w, "end")];
   return { places, text, size, weight: 400, fill, opacity };
 }
 
@@ -677,14 +677,15 @@ export function chart(o: ChartOptions): Chart {
       const small = figure.asterism.kind === "asterism" && culture.id !== "chinese";
       const size = on ? 15 : small ? 12 : 13;
       const text = labelOf(figure, culture, lang);
-      const { w, h } = textSize(text, size);
+      const weight = on || isNear ? 700 : 400;
+      const { w, h, above, below } = textSize(text, size, weight);
       const places = [[0, 0], [0, -h], [0, h], [-w * 0.6, 0], [w * 0.6, 0], [0, -2 * h], [0, 2 * h], [-w * 0.6, -h], [w * 0.6, -h], [-w * 0.6, h], [w * 0.6, h], [0, -3 * h], [0, 3 * h]].map(([dx, dy]) => {
         const x = at[0] + dx!;
         const y = at[1] + dy!;
-        return { x, y, anchor: "middle" as const, box: { x0: x - w / 2 - 1, y0: y - size * 0.85, x1: x + w / 2 + 1, y1: y + size * 0.3 } };
+        return { x, y, anchor: "middle" as const, box: { x0: x - w / 2 - 1, y0: y - above, x1: x + w / 2 + 1, y1: y + below } };
       });
       const rank = (small ? 1003.5 : 1001.8) + 1.2 * (1 - Math.min(1, reachOfConstellation(id, culture) / 50)) - (figure.asterism.kind === "mansion" ? 0.8 : 0);
-      nameLabels.push({ rank: on ? -1 : isNear ? 899 : rank, places, text, size, weight: on || isNear ? 700 : 400, fill: on ? COLOURS.nameOn : isNear ? COLOURS.near : small ? COLOURS.asterismName : COLOURS.name, opacity: on || isNear ? 1 : 0.75 });
+      nameLabels.push({ rank: on ? -1 : isNear ? 899 : rank, places, text, size, weight, fill: on ? COLOURS.nameOn : isNear ? COLOURS.near : small ? COLOURS.asterismName : COLOURS.name, opacity: on || isNear ? 1 : 0.75 });
     }
   }
   let members = "";
