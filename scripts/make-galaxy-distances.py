@@ -24,6 +24,7 @@ What it keeps
 
 None of this runs in the test.
 """
+from __future__ import annotations
 import json
 import re
 import statistics
