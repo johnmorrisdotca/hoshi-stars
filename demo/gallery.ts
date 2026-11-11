@@ -3,6 +3,7 @@
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { cardAnswers, cardsOf, faceOf, mixOf, pictureOf, type FigureCard } from "./culture-cards.ts";
 import { cultureIn, mountCultureButtons } from "./culture-buttons.ts";
+import { mountReadings, writeReadings } from "./readings.ts";
 import { langNow, lookNow, onLook } from "./thumbs.ts";
 import { say } from "./words.ts";
 
@@ -13,7 +14,7 @@ const address = createAddressState({ defaults: { q: "", page: "1" } });
 /** Where a tile leads: the constellation's own page in the Western sky, else the sky map in the culture, opened on the figure. */
 const hrefOf = (card: FigureCard): string => (card.culture === "western" ? `constellation.html?c=${card.id}` : `./?culture=${card.culture}&go=${encodeURIComponent(card.id)}`);
 
-function tile(card: FigureCard, lang: "en" | "ja", look: "light" | "dark"): HTMLLIElement {
+function tile(card: FigureCard, lang: "en" | "ja", look: "light" | "dark", ruby: boolean): HTMLLIElement {
   const face = faceOf(card, lang);
   const item = document.createElement("li");
   const link = document.createElement("a");
@@ -26,7 +27,8 @@ function tile(card: FigureCard, lang: "en" | "ja", look: "light" | "dark"): HTML
   image.height = 240;
   image.loading = "lazy";
   image.alt = "";
-  const name = Object.assign(document.createElement("span"), { className: "gl-name", textContent: face.name });
+  const name = Object.assign(document.createElement("span"), { className: "gl-name" });
+  writeReadings(name, face.name, ruby);
   const sub = Object.assign(document.createElement("span"), { className: "gl-sub", textContent: face.sub });
   link.append(image, name, sub);
   link.setAttribute("aria-label", face.label);
@@ -47,22 +49,24 @@ function render(): void {
   if (search.value !== (address.get("q") ?? "") && document.activeElement !== search) search.value = address.get("q") ?? "";
   // the page says which sky it shows, in its heading, its title and its words
   const western = culture === "western";
+  readings.refresh(say("readings"));
+  const ruby = readings.on();
   const n = all.length;
   const heading = western ? say("gl_heading") : say(`gl_heading_${culture}`, { n });
   $("gl-heading").textContent = heading;
   document.title = western ? say("gl_title") : say(`gl_title_${culture}`, { n });
-  $("gl-lede").textContent = say(western ? "gl_lede" : `gl_lede_${culture}`);
+  writeReadings($("gl-lede"), say(western ? "gl_lede" : `gl_lede_${culture}`), ruby);
   $("gl-search-label").textContent = say(western ? "gl_search" : "gl_search_figures");
   search.placeholder = western ? say("gl_placeholder") : say(`pk_placeholder_${culture}`);
   $("gl-count").textContent = say("gl_count", { n: found.length, total: n });
   const mix = mixOf(culture);
   const mixText = $("gl-mix");
   mixText.hidden = mix === undefined;
-  mixText.textContent = mix === undefined ? "" : say(`gl_mix_${culture}`, { a: mix[0], b: mix[1] });
+  writeReadings(mixText, mix === undefined ? "" : say(`gl_mix_${culture}`, { a: mix[0], b: mix[1] }), ruby);
   $("gl-none").textContent = say(western ? "gl_none" : "gl_none_figures");
   $("gl-none").hidden = found.length > 0;
   cultures.refresh();
-  $("gl-grid").replaceChildren(...found.slice((page - 1) * PAGE, page * PAGE).map((card) => tile(card, lang, look)));
+  $("gl-grid").replaceChildren(...found.slice((page - 1) * PAGE, page * PAGE).map((card) => tile(card, lang, look, ruby)));
   const pager = $("gl-pager");
   pager.hidden = pages === 1;
   const buttons: HTMLButtonElement[] = [];
@@ -88,6 +92,7 @@ function render(): void {
 }
 
 const cultures = mountCultureButtons($("gl-cultures"), address, () => render());
+const readings = mountReadings($("gl-readings-row"), $<HTMLButtonElement>("gl-readings"), address, () => langNow() === "ja" && cultureIn(address) === "chinese", () => render());
 $("gl-find").addEventListener("submit", (event) => event.preventDefault());
 $<HTMLInputElement>("gl-search").addEventListener("input", (event) => {
   const text = (event.target as HTMLInputElement).value;

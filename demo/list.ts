@@ -8,6 +8,7 @@ import { cardAnswers, cardsOf, faceOf, mixOf, pictureOf, type FigureCard } from 
 import type { CultureId } from "./cultures.ts";
 import { inOrder, langNow, lookNow, nameIn, onLook, thumbSrc } from "./thumbs.ts";
 import { mountFilterBar, type FilterGroup } from "./list-filters.ts";
+import { mountReadings, writeReadings } from "./readings.ts";
 import { monthName, say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -116,7 +117,7 @@ function western(table: HTMLElement, lang: "en" | "ja", look: "light" | "dark"):
 }
 
 /** The table of a Japanese or Chinese sky: a picture, the name in its own writing, the reading, English, the kind, the stars held and the faint ones missing, and the way to the map. */
-function figures(table: HTMLElement, lang: "en" | "ja", look: "light" | "dark", culture: CultureId): number {
+function figures(table: HTMLElement, lang: "en" | "ja", look: "light" | "dark", culture: CultureId, ruby: boolean): number {
   const shown = shownFigures();
   const body = document.createElement("tbody");
   for (const card of shown) {
@@ -129,7 +130,8 @@ function figures(table: HTMLElement, lang: "en" | "ja", look: "light" | "dark", 
     picture.setAttribute("aria-hidden", "true");
     picture.tabIndex = -1;
     picture.append(image);
-    const name = Object.assign(document.createElement("a"), { href, textContent: face.name });
+    const name = Object.assign(document.createElement("a"), { href });
+    writeReadings(name, face.name, ruby);
     const map = Object.assign(document.createElement("a"), { href, className: "fam-button", textContent: say("ls_map") });
     map.setAttribute("aria-label", `${say("ls_map")}: ${face.name}`);
     const kind = card.kind === "mansion" ? `${say("mansionKind")}${card.asterism?.group === undefined ? "" : `, ${say(card.asterism.group)}`}` : say(card.culture === "japanese" && card.kind === "asterism" ? "ls_traditional" : `${card.kind}Kind`);
@@ -144,20 +146,22 @@ function render(): void {
   const lang = langNow();
   const look = lookNow();
   const culture = cultureNow();
-  const key = `${lang}|${culture}`;
+  readings.refresh(say("readings"));
+  const ruby = readings.on();
+  const key = `${lang}|${culture}|${ruby}`;
   const rebuilt = builtFor !== key;
   if (rebuilt) {
     builtFor = key;
     const plain = culture === "western";
     $("ls-heading").textContent = say(plain ? "ls_heading" : `ls_heading_${culture}`);
     if (plain) fillLede();
-    else $("ls-lede").textContent = say(`ls_lede_${culture}`);
+    else writeReadings($("ls-lede"), say(`ls_lede_${culture}`), ruby);
     document.title = say(plain ? "ls_title" : `ls_title_${culture}`);
     $("ls-empty").textContent = say(plain ? "ls_empty" : "ls_empty_figures");
     $("ls-scroll").setAttribute("aria-label", plain ? say("ls_table") : say("ls_table_figures"));
     const mix = mixOf(culture);
     $("ls-mix").hidden = mix === undefined;
-    $("ls-mix").textContent = mix === undefined ? "" : say(`gl_mix_${culture}`, { a: mix[0], b: mix[1] });
+    writeReadings($("ls-mix"), mix === undefined ? "" : say(`gl_mix_${culture}`, { a: mix[0], b: mix[1] }), ruby);
     $("ls-find").hidden = plain;
     $<HTMLInputElement>("ls-search").placeholder = plain ? "" : say(`pk_placeholder_${culture}`);
     bar.rebuild();
@@ -166,7 +170,7 @@ function render(): void {
   if (search.value !== (address.get("q") ?? "") && document.activeElement !== search) search.value = address.get("q") ?? "";
   cultures.refresh();
   bar.refresh();
-  const count = culture === "western" ? western($("ls-table"), lang, look) : figures($("ls-table"), lang, look, culture);
+  const count = culture === "western" ? western($("ls-table"), lang, look) : figures($("ls-table"), lang, look, culture, ruby);
   $("ls-count").textContent = say("ls_count", { n: count, total: cardsOf(culture).length });
   $<HTMLButtonElement>("ls-clear").disabled = groupsNow().every((group) => chosen(group).length === 0) && (address.get("q") ?? "") === "";
   $("ls-empty").hidden = count > 0;
@@ -187,6 +191,7 @@ const bar = mountFilterBar($("ls-chips"), $<HTMLDialogElement>("ls-sheet"), $<HT
   showWord: () => (cultureNow() === "western" ? "ls_show" : "ls_show_figures"),
 });
 const cultures = mountCultureButtons($("ls-cultures"), address, () => render());
+const readings = mountReadings($("ls-readings-row"), $<HTMLButtonElement>("ls-readings"), address, () => langNow() === "ja" && cultureNow() === "chinese", () => render());
 $<HTMLInputElement>("ls-search").addEventListener("input", (event) => {
   const text = (event.target as HTMLInputElement).value;
   address.set("q", text === "" ? null : text);

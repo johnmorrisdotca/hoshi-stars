@@ -14,6 +14,8 @@ export interface PickerOptions {
   go: (abbreviation: string) => void;
   /** The id of the figure picked now, if one is. */
   current: () => string | undefined;
+  /** Whether the cards' names carry kana readings (readings.ts). */
+  readings?: () => boolean;
   /** The page's words by key (`pk_all`, `pk_placeholder` and the `pk_…_japanese` and `pk_…_chinese` ones). */
   say: (key: string) => string;
 }
@@ -60,7 +62,7 @@ export function mountPicker(o: PickerOptions): { refresh: () => void } {
       const show = cardAnswers(card, o.search.value);
       button.hidden = !show;
       if (show) shown.push(id);
-      paintCard(button, card, lang, look);
+      paintCard(button, card, lang, look, o.readings?.() ?? false);
       button.setAttribute("aria-pressed", String(id === here));
     }
     words();
