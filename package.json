@@ -245,6 +245,16 @@
       "import": "./dist/constellation-facts.js",
       "default": "./dist/constellation-facts.js"
     },
+    "./near-stars": {
+      "types": "./dist/near-stars.d.ts",
+      "import": "./dist/near-stars.js",
+      "default": "./dist/near-stars.js"
+    },
+    "./exoplanet-hosts": {
+      "types": "./dist/exoplanet-hosts.d.ts",
+      "import": "./dist/exoplanet-hosts.js",
+      "default": "./dist/exoplanet-hosts.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
