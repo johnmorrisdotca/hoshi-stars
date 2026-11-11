@@ -20,12 +20,28 @@ async function turnsUntouched(stage: Locator): Promise<void> {
   await expect.poll(async () => !(await stage.screenshot()).equals(first), { timeout: 10_000 }).toBe(true);
 }
 
-/** The picture stays the same for a second and a half, once the view's own easing (under a second) has settled. */
+/**
+ * Once the view has eased into its last pose it draws nothing more, and the picture stays the same for a second and a half. The easing is a few frames, which on a slow runner drawing
+ * in software can take longer than a second and a half (WebKit on CI did), so the wait is for the draw count to stop rising, not a fixed time.
+ */
 async function holdsStill(stage: Locator): Promise<void> {
   const page = stage.page();
-  await page.waitForTimeout(1500);
+  let before = -1;
+  await expect
+    .poll(
+      async () => {
+        const now = await draws(page);
+        const same = now === before;
+        before = now;
+        return same;
+      },
+      { timeout: 30_000, intervals: [700] },
+    )
+    .toBe(true);
+  const drawn = await draws(page);
   const first = await stage.screenshot();
   await page.waitForTimeout(1500);
+  expect(await draws(page)).toBe(drawn);
   expect((await stage.screenshot()).equals(first)).toBe(true);
 }
 
