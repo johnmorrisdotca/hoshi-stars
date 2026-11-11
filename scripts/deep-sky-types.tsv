@@ -1,0 +1,54 @@
+# Deep-sky objects that Wikidata (P31) types as galaxies but are not: each checked on 2026-11-11 against the item's own statements (its other classes, its English description,
+# what it is part of) and the paper its distance is stated in, read through Wikidata's SPARQL endpoint (CC0). make-deep-sky-data.py applies these after it maps the classes.
+# designation	id	wikidata	type	evidence
+NGC 6400	N6400	Q1145556	open cluster	Wikidata describes it as "open cluster in Scorpius"; distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 7281	N7281	Q1159824	open cluster	Wikidata describes it as "open cluster"; distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6469	N6469	Q961593	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6546	N6546	Q678269	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6568	N6568	Q1146508	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6639	N6639	Q1146837	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6716	N6716	Q1147246	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6728	N6728	Q1147293	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6800	N6800	Q1147755	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6828	N6828	Q1147909	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6883	N6883	Q1148302	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 7039	N7039	Q1149200	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 7438	N7438	Q1167538	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6322	N6322	Q1432278	open cluster	distance stated in an open-cluster catalogue (Kharchenko et al. 2005, A&A 438, 1163, DOI 10.1051/0004-6361:20042523)
+NGC 6583	N6583	Q1146580	open cluster	distance stated in a study of Galactic star clusters (Buckner and Froebrich 2014, MNRAS 444, 290, DOI 10.1093/mnras/stu1440)
+NGC 7419	N7419	Q1167444	open cluster	Wikidata describes it as "star cluster"; distance stated in a study of Galactic star clusters (Buckner and Froebrich 2014, MNRAS 444, 290, DOI 10.1093/mnras/stu1440)
+NGC 6192	N6192	Q1432318	open cluster	distance stated in a study of three open clusters (A&A 2006, DOI 10.1051/0004-6361:20054716)
+NGC 6535	N6535	Q1146349	globular cluster	Wikidata describes it as "globular cluster"; distance stated in a study of globular clusters (MNRAS 2008, DOI 10.1111/j.1365-2966.2008.13739.x)
+NGC 2167	N2167	Q1047275	other	Wikidata describes it as "star"; its distance is a Gaia DR2 star's
+NGC 346	N346	Q1036219	open cluster	Wikidata describes it as "open cluster in the constellation Tucana", class star cluster, part of the Small Magellanic Cloud
+IC 1624	I1624	Q3694079	other	Wikidata class star cluster (no kind stated), part of the Small Magellanic Cloud
+NGC 265	N265	Q913067	other	Wikidata describes it as "star cluster" (class star cluster, no kind stated); it lies inside the Small Magellanic Cloud
+NGC 1676	N1676	Q1044670	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1704	N1704	Q599942	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1789	N1789	Q742005	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1791	N1791	Q1045356	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1795	N1795	Q1045368	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1810	N1810	Q1045433	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1815	N1815	Q1045460	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1822	N1822	Q1045503	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1823	N1823	Q1045509	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1852	N1852	Q1045707	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1867	N1867	Q1045771	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 1887	N1887	Q1045865	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2006	N2006	Q1046425	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2053	N2053	Q1046651	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2100	N2100	Q629111	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2121	N2121	Q1047015	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2127	N2127	Q682838	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2133	N2133	Q1047081	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2136	N2136	Q1047099	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 2157	N2157	Q1047216	other	Wikidata class star cluster (no kind stated), part of the Large Magellanic Cloud
+NGC 395	N395	Q1036414	other	Wikidata class stellar association and asterism, inside the Magellanic Clouds
+NGC 1923	N1923	Q1046046	other	Wikidata class stellar association and asterism, inside the Magellanic Clouds
+NGC 2015	N2015	Q1046472	other	Wikidata class stellar association, part of the Large Magellanic Cloud
+NGC 1945	N1945	Q1046142	nebula	Wikidata describes it as "Emission nebulae", inside the Large Magellanic Cloud
+NGC 1934	N1934	Q763685	nebula	Wikidata class interstellar medium, inside the Large Magellanic Cloud
+NGC 2037	N2037	Q1046577	nebula	Wikidata class interstellar medium, inside the Large Magellanic Cloud
+NGC 2069	N2069	Q1046740	nebula	Wikidata class interstellar medium, inside the Large Magellanic Cloud
+NGC 1715	N1715	Q1044864	other	Wikidata: part of the Large Magellanic Cloud, so not a galaxy of its own; no kind stated
+NGC 1833	N1833	Q1045581	other	Wikidata: part of the Large Magellanic Cloud, so not a galaxy of its own; no kind stated

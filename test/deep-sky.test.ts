@@ -321,7 +321,7 @@ test("the large table's lookups and options behave as the small one's", () => {
 test("the large table's counts by type", () => {
   const counts: Record<string, number> = {};
   for (const o of everything) counts[o.type] = (counts[o.type] ?? 0) + 1;
-  assert.deepEqual(counts, { galaxy: 10282, "globular cluster": 149, "open cluster": 346, nebula: 220, "planetary nebula": 131, "supernova remnant": 8, other: 762 });
+  assert.deepEqual(counts, { galaxy: 10231, "globular cluster": 150, "open cluster": 364, nebula: 224, "planetary nebula": 131, "supernova remnant": 8, other: 790 });
 });
 
 // A random sample of the NGC and IC objects: NED's position for each of 100 chosen with a fixed seed from the 11,599 that NED knew, fixed here the same way.
