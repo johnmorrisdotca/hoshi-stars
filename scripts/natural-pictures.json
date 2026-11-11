@@ -10,7 +10,7 @@
   "avmRotation": 3.5400000000000014,
   "avmScale": 0.6186777393910353,
   "avmShiftArcsec": 0.0,
-  "bytes": 109770,
+  "bytes": 86646,
   "catalogue": 1,
   "centre": [
    210.7987,
@@ -26,15 +26,15 @@
    "cataloguePositionAngle": null,
    "catalogueRa": 210.8024,
    "centreOffsetArcmin": 0.14,
-   "measuredDec": 54.34751,
-   "measuredPositionAngle": 61.0,
-   "measuredRa": 210.80559
+   "measuredDec": 54.3475,
+   "measuredPositionAngle": 83.5,
+   "measuredRa": 210.80562
   },
   "height": 549,
   "image": "heic0602a",
   "matched": 0,
   "placement": "avm",
-  "quality": 58,
+  "quality": 65,
   "rotation": 3.5,
   "site": "hubble",
   "wcsCorners": [
@@ -68,7 +68,7 @@
   "avmRotation": 359.8654883121,
   "avmScale": 0.90365625,
   "avmShiftArcsec": 0.43680606295911883,
-  "bytes": 69822,
+  "bytes": 69208,
   "catalogue": 19,
   "centre": [
    10.09316,
@@ -82,7 +82,7 @@
   "image": "noao-m110",
   "matched": 6,
   "placement": "shift",
-  "quality": 65,
+  "quality": 72,
   "rmsArcsec": 0.3492786691743966,
   "rmsPixels": 0.38651718413323277,
   "rotation": 359.8,
@@ -115,11 +115,11 @@
    "medianPixels": 0.23723667069920668,
    "near": 44
   },
-  "arcsecPerPixel": 3.44,
+  "arcsecPerPixel": 2.41,
   "avmRotation": 359.99456698621,
   "avmScale": 1.5035400274500001,
   "avmShiftArcsec": 0.3691884530999703,
-  "bytes": 105586,
+  "bytes": 89524,
   "catalogue": 106,
   "centre": [
    274.70578,
@@ -129,11 +129,11 @@
   "detected": 500,
   "fitRotation": 0.0031644389907512505,
   "fitScale": 1.5034912051749763,
-  "height": 560,
+  "height": 800,
   "image": "eso0926a",
   "matched": 36,
   "placement": "fit",
-  "quality": 65,
+  "quality": 58,
   "rmsArcsec": 0.3433021020106641,
   "rmsPixels": 0.22833662134439328,
   "rotation": 0.0,
@@ -157,7 +157,7 @@
     -14.031032
    ]
   ],
-  "width": 560
+  "width": 800
  },
  "M17": {
   "address": "https://www.eso.org/public/images/eso1119a/",
@@ -166,11 +166,11 @@
    "medianPixels": 0.2358639891620787,
    "near": 144
   },
-  "arcsecPerPixel": 6.46,
+  "arcsecPerPixel": 5.72,
   "avmRotation": 0.14000000000000454,
   "avmScale": 2.5033356152919968,
   "avmShiftArcsec": 3.511212411876136,
-  "bytes": 107888,
+  "bytes": 87888,
   "catalogue": 329,
   "centre": [
    275.24494,
@@ -180,7 +180,7 @@
   "detected": 500,
   "fitRotation": 0.12505851478965724,
   "fitScale": 2.501983389303137,
-  "height": 496,
+  "height": 560,
   "image": "eso1119a",
   "matched": 120,
   "placement": "fit",
@@ -208,7 +208,7 @@
     -16.5938
    ]
   ],
-  "width": 496
+  "width": 560
  },
  "M20": {
   "address": "https://www.eso.org/public/images/eso0930a/",
@@ -221,7 +221,7 @@
   "avmRotation": 359.8434608703364,
   "avmScale": 0.6504218945181323,
   "avmShiftArcsec": 3.111657224027396,
-  "bytes": 90458,
+  "bytes": 87890,
   "catalogue": 55,
   "centre": [
    270.57748,
@@ -235,7 +235,7 @@
   "image": "eso0930a",
   "matched": 7,
   "placement": "shift",
-  "quality": 65,
+  "quality": 72,
   "rmsArcsec": 0.4293945407020554,
   "rmsPixels": 0.6601784846436852,
   "rotation": 359.9,
@@ -272,7 +272,7 @@
   "avmRotation": 357.94,
   "avmScale": 0.4173773406892032,
   "avmShiftArcsec": 0.0,
-  "bytes": 100324,
+  "bytes": 62772,
   "catalogue": 3,
   "centre": [
    299.90378,
@@ -320,7 +320,7 @@
   "avmRotation": 125.82000000000001,
   "avmScale": 3.2642342921736582,
   "avmShiftArcsec": 5.17005975928034,
-  "bytes": 95492,
+  "bytes": 89314,
   "catalogue": 884,
   "centre": [
    10.7054,
@@ -344,7 +344,7 @@
   "image": "noao-m31lgs_ubvIha",
   "matched": 125,
   "placement": "fit",
-  "quality": 65,
+  "quality": 58,
   "rmsArcsec": 0.6005229268086599,
   "rmsPixels": 0.18409171893866352,
   "rotation": 125.8,
@@ -381,7 +381,7 @@
   "avmRotation": 269.9999999999998,
   "avmScale": 3.1880164591225664,
   "avmShiftArcsec": 2.674787924528566,
-  "bytes": 106728,
+  "bytes": 80650,
   "catalogue": 80,
   "centre": [
    23.46714,
@@ -398,14 +398,14 @@
    "catalogueRa": 23.4621,
    "centreOffsetArcmin": 0.43,
    "measuredDec": 30.66209,
-   "measuredPositionAngle": 23.5,
-   "measuredRa": 23.4702
+   "measuredPositionAngle": 21.5,
+   "measuredRa": 23.47013
   },
   "height": 671,
   "image": "eso1424a",
   "matched": 38,
   "placement": "fit",
-  "quality": 58,
+  "quality": 65,
   "rmsArcsec": 0.671118508579941,
   "rmsPixels": 0.21071179722937394,
   "rotation": 270.0,
@@ -442,7 +442,7 @@
   "avmRotation": 359.82,
   "avmScale": 2.8103239590835445,
   "avmShiftArcsec": 4.2269163982385365,
-  "bytes": 100656,
+  "bytes": 70418,
   "catalogue": 128,
   "centre": [
    83.78489,
@@ -493,7 +493,7 @@
   "avmRotation": 90.69909386,
   "avmScale": 3.2191874999999994,
   "avmShiftArcsec": 1.030086705927134,
-  "bytes": 102830,
+  "bytes": 69036,
   "catalogue": 149,
   "centre": [
    56.58104,
@@ -540,25 +540,25 @@
    "medianPixels": 0.26318179949969445,
    "near": 226
   },
-  "arcsecPerPixel": 8.91,
+  "arcsecPerPixel": 7.99,
   "avmRotation": 359.99552615775,
   "avmScale": 4.3824751974,
   "avmShiftArcsec": 2.0674931287571026,
-  "bytes": 104226,
+  "bytes": 88698,
   "catalogue": 588,
   "centre": [
    270.95123,
-   -24.13774
+   -24.13749
   ],
   "credit": "ESO",
   "detected": 500,
   "fitRotation": 0.0061508439277133675,
   "fitScale": 4.383110824954297,
-  "height": 422,
+  "height": 470,
   "image": "eso0936a",
   "matched": 187,
   "placement": "fit",
-  "quality": 58,
+  "quality": 65,
   "rmsArcsec": 1.1477630342293452,
   "rmsPixels": 0.2618603727048843,
   "rotation": 360.0,
@@ -574,15 +574,15 @@
     -23.613688
    ],
    [
-    270.094009,
-    -24.657442
+    270.094012,
+    -24.656934
    ],
    [
-    271.808689,
-    -24.657073
+    271.808685,
+    -24.656566
    ]
   ],
-  "width": 630
+  "width": 702
  },
  "M81": {
   "address": "https://noirlab.edu/public/images/noao-m81/",
@@ -595,7 +595,7 @@
   "avmRotation": 359.6597497464,
   "avmScale": 1.0870453125,
   "avmShiftArcsec": 0.0,
-  "bytes": 78366,
+  "bytes": 86670,
   "catalogue": 17,
   "centre": [
    148.88824,
@@ -619,7 +619,7 @@
   "image": "noao-m81",
   "matched": 4,
   "placement": "avm",
-  "quality": 65,
+  "quality": 72,
   "rotation": 359.8,
   "site": "noirlab",
   "wcsCorners": [
@@ -653,7 +653,7 @@
   "avmRotation": 0.0682818894999991,
   "avmScale": 0.30348223812864,
   "avmShiftArcsec": 0.0,
-  "bytes": 59344,
+  "bytes": 48918,
   "catalogue": 1,
   "centre": [
    50.67588,
@@ -701,7 +701,7 @@
   "avmRotation": 359.72,
   "avmScale": 1.35455353215179,
   "avmShiftArcsec": 0.7373360620098599,
-  "bytes": 95236,
+  "bytes": 67618,
   "catalogue": 17,
   "centre": [
    114.21077,
@@ -712,14 +712,14 @@
   "fitRotation": 359.72,
   "fitScale": 1.3545535321517899,
   "galaxy": {
-   "brightShare": 0.078,
+   "brightShare": 0.079,
    "catalogueDec": 65.6025,
    "cataloguePositionAngle": 127,
    "catalogueRa": 114.2142,
    "centreOffsetArcmin": 0.05,
    "measuredDec": 65.60174,
-   "measuredPositionAngle": 122.5,
-   "measuredRa": 114.21335
+   "measuredPositionAngle": 121.5,
+   "measuredRa": 114.21333
   },
   "height": 562,
   "image": "iotw2221a",
@@ -758,11 +758,11 @@
    "medianPixels": 0.21509119123370452,
    "near": 131
   },
-  "arcsecPerPixel": 6.16,
+  "arcsecPerPixel": 5.45,
   "avmRotation": 359.99948826939,
   "avmScale": 2.3848234560000003,
   "avmShiftArcsec": 1.9720178014408984,
-  "bytes": 107610,
+  "bytes": 87776,
   "catalogue": 426,
   "centre": [
    201.69007,
@@ -772,11 +772,11 @@
   "detected": 500,
   "fitRotation": 0.0010447774888291406,
   "fitScale": 2.385276841467472,
-  "height": 496,
+  "height": 560,
   "image": "eso1119b",
   "matched": 109,
   "placement": "fit",
-  "quality": 65,
+  "quality": 50,
   "rmsArcsec": 0.5309046263422753,
   "rmsPixels": 0.2225756847643948,
   "rotation": 0.0,
@@ -800,6 +800,6 @@
     -47.889891
    ]
   ],
-  "width": 496
+  "width": 560
  }
 }
