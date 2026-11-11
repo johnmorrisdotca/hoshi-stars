@@ -252,16 +252,30 @@ function abbreviations(): string[] {
   return constellations().map((c) => c.abbreviation);
 }
 
-test("one query over all 5,080 stars takes a few milliseconds", () => {
-  const time = (run: () => void): number => {
+test("one query over all 5,080 stars costs no more than four plain passes over them", () => {
+  const time = (run: () => unknown): number => {
     for (let i = 0; i < 5; i++) run();
-    const started = performance.now();
-    for (let i = 0; i < 50; i++) run();
-    return (performance.now() - started) / 50;
+    let fastest = Number.POSITIVE_INFINITY;
+    for (let round = 0; round < 5; round++) {
+      const started = performance.now();
+      for (let i = 0; i < 10; i++) run();
+      fastest = Math.min(fastest, (performance.now() - started) / 10);
+    }
+    return fastest;
   };
-  const sky = time(() => nearest(sirius, { count: 10 }));
-  const space = time(() => nearest(sirius, { count: 10, by: "space" }));
-  const dated = time(() => nearest(sirius, { count: 10, date: Date.UTC(2100, 0, 1) }));
-  console.log(`nearest over ${stars().length} stars: by sky ${sky.toFixed(2)} ms, by space ${space.toFixed(2)} ms, by sky at a date ${dated.toFixed(2)} ms`);
-  assert.ok(sky < 25 && space < 25 && dated < 50, `${sky} ${space} ${dated}`);
+  // The yardstick, timed on the same machine at the same moment: the angle to every star, sorted, the first ten kept.
+  const all = stars();
+  const radians = Math.PI / 180;
+  const plain = (): number[] => {
+    const ra = sirius.rightAscension * radians;
+    const dec = sirius.declination * radians;
+    const angles = all.map((s) => Math.acos(Math.min(1, Math.sin(dec) * Math.sin(s.declination * radians) + Math.cos(dec) * Math.cos(s.declination * radians) * Math.cos(s.rightAscension * radians - ra))));
+    return angles.sort((a, b) => a - b).slice(0, 10);
+  };
+  const ratio = (run: () => unknown): number => time(run) / time(plain);
+  const sky = ratio(() => nearest(sirius, { count: 10 }));
+  const space = ratio(() => nearest(sirius, { count: 10, by: "space" }));
+  const dated = ratio(() => nearest(sirius, { count: 10, date: Date.UTC(2100, 0, 1) }));
+  console.log(`nearest over ${all.length} stars, in plain passes: by sky ${sky.toFixed(2)}, by space ${space.toFixed(2)}, by sky at a date ${dated.toFixed(2)}`);
+  assert.ok(sky < 4 && space < 4 && dated < 4, `in plain passes (fastest of 5 rounds each): by sky ${sky}, by space ${space}, at a date ${dated}`);
 });
