@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-11-11
+
 - **Kana readings on the Chinese sky's names for learners** (MODULES-871). On the Japanese page of the Chinese sky, the strip above the map, the gallery and the list can put small kana readings (`<ruby>`) over 三垣, 二十八宿, 星官 and the 28 mansions' names. Off by default; on with the Readings switch (ふりがな), which only that page shows, or `readings=on` in the address for one visit; a press of the switch is kept on the device and written to the address. The sheets page links to the gallery with them on. Readings are at least 10 pixels high at a phone's width.
 - **Chinese asterisms: Wikidata's English names and the enclosure or mansion they belong to** (MODULES-901). Only the 28 mansions had an English name; the other 210 asterisms had neither a name nor their place in the Three Enclosures. `scripts/make-culture-data.py` now also reads Wikidata's asterism items (instance of "Chinese constellation", Q1074076) with their English labels and "part of" (P361) statements, keeping only what is stated: 42 more asterisms have an English name (labels that only spell out the pinyin are not kept), and 41 have the new optional `partOf` on `Asterism` (`purple-forbidden`, `supreme-palace`, `heavenly-market`, or a mansion's id). The mansions' English names now come from Wikidata too (all 28 the same as before). The figure page and the map's card show the enclosure or mansion; the cards and the gallery show the English name. Credit in NOTICE.md.
 
