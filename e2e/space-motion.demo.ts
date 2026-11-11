@@ -21,11 +21,15 @@ async function turnsUntouched(stage: Locator): Promise<void> {
 }
 
 /**
- * Once the view has eased into its last pose it draws nothing more, and the picture stays the same for a second and a half. The easing is a few frames, which on a slow runner drawing
- * in software can take longer than a second and a half (WebKit on CI did), so the wait is for the draw count to stop rising, not a fixed time.
+ * Once the view has eased into its last pose it draws nothing more, and the picture stays the same for a second and a half. The easing, and the two or three draws a page makes as it
+ * loads, are a few frames, which on a slow runner drawing in software can be more than a second apart (WebKit and the phones on CI were), so the wait is for the draw count to hold for
+ * a second and a half between two reads: a view still turning draws many times in that.
  */
 async function holdsStill(stage: Locator): Promise<void> {
   const page = stage.page();
+  // in sight first: on a phone the screenshot would scroll it into view, and the view rightly draws when it comes into sight
+  await stage.scrollIntoViewIfNeeded();
+  await expect.poll(() => draws(page), { timeout: 30_000 }).toBeGreaterThan(0);
   let before = -1;
   await expect
     .poll(
@@ -35,7 +39,7 @@ async function holdsStill(stage: Locator): Promise<void> {
         before = now;
         return same;
       },
-      { timeout: 30_000, intervals: [700] },
+      { timeout: 30_000, intervals: [1500] },
     )
     .toBe(true);
   const drawn = await draws(page);
