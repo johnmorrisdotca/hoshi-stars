@@ -3,244 +3,245 @@
 // English names and part of statements from Wikidata's asterism items, read 2026-11-11.
 // One row an asterism: id | name in Traditional characters | name in Simplified characters | pinyin | English name (blank where Wikidata has none) | the Symbol a mansion belongs to (blank for any other asterism) |
 // the enclosure (purple-forbidden, supreme-palace, heavenly-market) or the id of the mansion Wikidata says it is part of (blank where it says neither) |
-// stars of the asterism that are fainter than magnitude 6.0 and so not held (at least) | chains of HR numbers, each chain a run of stars joined one to the next, chains separated by ;.
+// stars of the asterism that are not held (at least: fainter than magnitude 6.0, which the catalogue does not hold, or not named with an HR number in Wikidata) |
+// chains of HR numbers, each chain a run of stars joined one to the next, chains separated by ; | each held star's number in the asterism (角宿一 is 1), in the order the stars first come in the chains, 0 for none, space-separated.
 
 /** The asterism rows, one per line. */
-export const CHINESE_ROWS = `jiao3-xiu4|角宿|角宿|jiǎo xiù|Horn|azure-dragon||0|5056-5107
-kang4-xiu4|亢宿|亢宿|kàng xiù|Neck|azure-dragon||0|5359-5315-5338-5409
-di1-xiu4|氐宿|氐宿|dī xiù|Root|azure-dragon||3|5685
-fang2-xiu4|房宿|房宿|fáng xiù|Room|azure-dragon||0|5928-5944-5953
-xin1-xiu4|心宿|心宿|xīn xiù|Heart|azure-dragon||0|6084-6134-6165
-wei3-xiu4|尾宿|尾宿|wěi xiù|Tail|azure-dragon||0|6241-6247-6262-6380-6553-6615-6580-6527-6508
-ji1-xiu4|箕宿|箕宿|jī xiù|Winnowing Basket|azure-dragon||0|6742-6859-6879-6832
-dou3-xiu4|斗宿|斗宿|dǒu xiù|Dipper|black-tortoise||0|6812-6913-7039-7121-7234-7194
-niu2-xiu4|牛宿|牛宿|niú xiù|Ox|black-tortoise||2|7715-7754-7822-7814
-nu3-xiu4|女宿|女宿|nǚ xiù|Girl|black-tortoise||0|7950-7990-7982-7951
-xu1-xiu4|虛宿|虚宿|xū xiù|Emptiness|black-tortoise||0|8131-8232
-wei1-xiu4|危宿|危宿|wēi xiù|Roof|black-tortoise||0|8308-8450-8414
-shi4-xiu4|室宿|室宿|shì xiù|Encampment|black-tortoise||0|8775-8781
-bi4-xiu4|壁宿|壁宿|bì xiù|Wall|black-tortoise||0|15-39
-kui2-xiu4|奎宿|奎宿|kuí xiù|Legs|white-tiger||2|154-165-163-215-271-310-351-360-383-389-352-337-269-226
-lou2-xiu4|婁宿|娄宿|lóu xiù|Bond|white-tiger||1|553-617
-wei4-xiu4|胃宿|胃宿|wèi xiù|Stomach|white-tiger||0|824-801-838
-mao3-xiu4|昴宿|昴宿|mǎo xiù|Hairy Head|white-tiger||1|1145-1149-1142-1156-1165-1178
-bi4-xiu4-2|畢宿|毕宿|bì xiù|Net|white-tiger||1|1239-1346;1409-1389-1373-1346;1457-1394-1346
-zi1-xiu4|觜宿|觜宿|zī xiù|Turtle Beak|white-tiger||1|1876-1907
-shen1-xiu4|參宿|参宿|shēn xiù|Three Stars|white-tiger||1|2004-1713-1903-1852-1790-2061
-jing3-xiu4|井宿|井宿|jǐng xiù|Well|vermilion-bird||0|2484-2421-2343-2286-2473-2529-2650-2763
-gui3-xiu4|鬼宿|鬼宿|guǐ xiù|Ghost|vermilion-bird||1|3357-3461-3449
-liu3-xiu4|柳宿|柳宿|liǔ xiù|Willow|vermilion-bird||0|3454-3418-3410-3482-3492-3547-3613-3665
-xing1-xiu4|星宿|星宿|xīng xiù|Star|vermilion-bird||2|3706-3709-3748-3845
-zhang1-xiu4|張宿|张宿|zhāng xiù|Extended Net|vermilion-bird||0|3849-3903;3994-3903;4094-3963-3903
-yi4-xiu4|翼宿|翼宿|yì xiù|Wings|vermilion-bird||4|4232-4287-4382
-zhen3-xiu4|軫宿|轸宿|zhěn xiù|Chariot|vermilion-bird||0|4757-4662-4630-4786
-qi1-gong1|七公|七公|qī gōng|||heavenly-market|0|5681-5733-5763-5914-6023-6092-6200
-zhang4-ren2|丈人|丈人|zhàng rén||||0|1862-1956
-san1-tai2|三臺|三台|sān tái||||0|3569-3594-4033-4069-4377-4374
-san1-shi1|三師|三师|sān shī|Three Top Instructors||purple-forbidden|0|3576
-san1-jiao3-xing2|三角形|三角形|sān jiǎo xíng||||2|6217
-dong1-xian2|東咸|东咸|dōng xián||||0|6147-6118-6104-6153
-jiu3-qing1|九卿|九卿|jiǔ qīng||||0|4828
-jiu3-kan3|九坎|九坎|jiǔ kǎn||||1|7943-8069-8048
-jiu3-zhou1-shu1-kou3|九州殊口|九州殊口|jiǔ zhōu shū kǒu||||1|1318-1383-1463-1508
-jiu3-you2|九斿|九斿|jiǔ yóu|Imperial Military Flag||bi4-xiu4-2|2|1496-1532-1549-1611-1608-1520
-yun2-yu3|雲雨|云雨|yún yǔ||||1|8911-8984-9022
-wu3-zhu1-hou2|五諸侯|五诸侯|wǔ zhū hóu||||0|2540-2697-2821-2905
-wu3-zhu1-hou2-2|五諸侯|五诸侯|wǔ zhū hóu||||1|4663-4851-4920-4946
-wu3-che1|五車|五车|wǔ chē|Five Chariots|||0|1577-1791-2095-2088-1708
-kang4-chi2|亢池|亢池|kàng chí||||1|5323-5365-5370
-ren2|人|人|rén||||0|8173-8225-8321-8313
-cong2-guan1|從官|从官|cóng guān|Retinue||supreme-palace|1|5883
-dai4|代|代|dài||||0|8167
-fa2|伐|伐|fá||||0|1892-1897-1899
-chuan2-she4|傳舍|传舍|chuán shè|Guest House||purple-forbidden|3|860-9013-8822
-ba1-gu3|八穀|八谷|bā gǔ|Eight Kinds of Crops||purple-forbidden|1|1637-1568-1622-1969;2027-1969;2077-2029-1969
-ba1-kui2|八魁|八魁|bā kuí||||2|48-9098-33-9103
-liu4-jia3|六甲|六甲|liù jiǎ|Six Jia||purple-forbidden|1|1523-2401-2742-3082
-nei4-chu2|內廚|内厨|nèi chú|Inner Kitchen||purple-forbidden|0|4863-4916
-nei4-ping2|內平|内平|nèi píng||||1|3974
-nei4-jie1|內階|内阶|nèi jiē|Inner Steps||purple-forbidden|2|3323-3531-3757-3660
-jun1-jing3|軍井|军井|jūn jǐng||||0|1696-1705-1756-1757
-jun1-shi4|軍市|军市|jūn shì||||0|2294
-chu2-hao1|芻蒿|刍蒿|chú hāo||||1|666-692-708-781-752
-lie4-si4|列肆|列肆|liè sì|Jewel Market||heavenly-market|0|6093-6149
-shi4|勢|势|shì|Eunuch||purple-forbidden|3|4247
-gou1-chen2|勾陳|勾陈|gōu chén|Curved Array||purple-forbidden|0|5903-6322-6789-424-285-8748
-bei3-dou3|北斗|北斗|běi dǒu||||0|4301-4295-4554-4660-4905-5054-5191
-bei3-ji2|北極|北极|běi jí|Northern Pole||purple-forbidden|0|5321-5430-5563-5735
-bei3-he2|北河|北河|běi hé||||1|2852-2990
-shi2-zi4-jia4|十字架|十字架|shí zì jià|Crux|||1|4656-4763-4853
-hua2-gai4|華蓋|华盖|huá gài|Canopy of the Emperor||purple-forbidden|2|336-399-478-548-456
-nan2-he2|南河|南河|nán hé||||0|2828-2845-2943
-nan2-chuan2|南船|南船|nán chuán||||0|3685-4037-4199-4140-4050
-nan2-men2|南門|南门|nán mén||||0|5132
-juan3-she2|捲舌|卷舌|juǎn shé||||1|1135-1220-1228-1123-1203
-ce4|廁|厕|cè||||0|1865-1829-1983-2035
-can1-qi2|參旗|参旗|cān qí||||3|1556-1569-1543-1552-1567
-you4-yuan2|右垣|右垣|yòu yuán||||2|4399
-you4-she4-ti2|右攝提|右摄提|yòu shè tí||||1|5200-5235
-you4-qi2|右旗|右旗|yòu qí||||2|7429-7474-7387-7447-7460-7446
-you4-geng1|右更|右更|yòu gēng||||0|413-437-463-510
-si1-wei1|司危|司危|sī wēi||||0|8163-8178
-si1-guai4|司怪|司怪|sī guài||||0|2047-2135-2134-2084
-si1-lu4|司祿|司禄|sī lù||||0|8328
-si1-fei1|司非|司非|sī fēi||||0|8097-8123
-zhou1|周|周|zhōu||||0|8060
-zhou1-ding3|周鼎|周鼎|zhōu dǐng||||0|4924-4954-4983
-xian2-chi2|咸池|咸池|xián chí||||1|1729-1749
-ku1|哭|哭|kū||||0|8351
-si4-du2|四瀆|四渎|sì dú||||0|2649
-si4-fu3|四輔|四辅|sì fǔ|Four Advisors||purple-forbidden|1|4062-4084
-tu3-gong1|土公|土公|tǔ gōng||||0|9093
-tu3-gong1-li4|土公吏|土公吏|tǔ gōng lì||||0|8520-8562
-fen2-mu4|墳墓|坟墓|fén mù||||1|8518-8539-8597
-lei3-bi4-zhen4|壘壁陣|垒壁阵|lěi bì zhèn||||1|3-9089-9067;8260-8288-8278-8322-8418-8698-8834-9067;9087-9067
-wai4-chu2|外廚|外厨|wài chú||||0|3321
-wai4-ping2|外屏|外屏|wài píng||||0|224-294-361-434-489-549
-da4-jiao3|大角|大角|dà jiǎo||||0|5340
-da4-ling2|大陵|大陵|dà líng||||1|788-840-921-936-941-937-854
-tian1-cang1|天倉|天仓|tiān cāng||||1|74-334-402-509-583
-tian1-ce4|天廁|天厕|tiān cè||||0|1865
-tian1-chu2|天廚|天厨|tiān chú|Celestial Kitchen||purple-forbidden|1|7371-7310-7462-7582-7685
-tian1-jiu4|天廄|天厩|tiān jiù||||0|63-82-68
-tian1-you4|天右|天右|tiān yòu||||4|5867
-tian1-yuan2|天園|天园|tiān yuán||||5|440-566-674-721-794-897-1464
-tian1-qun1|天囷|天囷|tiān qūn||||5|639-691-739-779-754;813-754;911-754
-tian1-lei3-cheng2|天壘城|天垒城|tiān lěi chéng||||3|8093-8187;8128-8187;8264-8311-8318-8319-8187
-tian1-da4-jiang1-jun1|天大將軍|天大将军|tiān dà jiāng jūn||||0|496-464-430-469-458-477;603-477;664-660-622-557-477
-tian1-shi4-you4-yuan2|天市右垣|天市右垣|tiān shì yòu yuán||||3|6148-5933-5867-5854-5892-6056-6075-6175
-tian1-shi4-zuo3-yuan2|天市左垣|天市左垣|tiān shì zuǒ yuán|Left Wall of the Heavenly Market Enclosure||heavenly-market|7|6561-6698-6869
-tian1-chuang2|天床|天床|tiān chuáng|Celestial Bed||purple-forbidden|1|5334-5589-5691-5886
-tian1-lin3|天廩|天廪|tiān lǐn||||1|1030-1038-1066
-tian1-bian4|天弁|天弁|tiān biàn||||5|7020-7236
-tian1-qiang1|天槍|天枪|tiān qiāng|Celestial Spear||purple-forbidden|1|5350
-tian1-zhu4|天柱|天柱|tiān zhù|Celestial Pillar||purple-forbidden|2|7312-8002
-tian1-fu2|天桴|天桴|tiān fú||||2|7570-7667
-tian1-bang4|天棓|天棓|tiān bàng|Celestial Flail||purple-forbidden|1|6536-6705;6588-6705;6688-6705
-tian1-zun1|天樽|天樽|tiān zūn||||0|2630-2777-2808
-tian1-jiang1|天江|天江|tiān jiāng||||2|6453-6486
-tian1-jin1|天津|天津|tiān jīn||||1|7730-7924;7796-7924;7949-8146;8115-8146;7924-8028-8130-8146
-tian1-yuan1|天淵|天渊|tiān yuān||||2|7348
-tian1-hun4|天溷|天溷|tiān hùn||||3|194
-tian1-huang2|天潢|天潢|tiān huáng||||0|1689-1773-1805-1740-1706
-tian1-lao2|天牢|天牢|tiān láo|Celestial Prison||purple-forbidden|0|4288-4277-4248-4392-4431-4422
-tian1-gou3|天狗|天狗|tiān gǒu||||1|3426-3477-3438-3468-3518-3556
-tian1-lang2|天狼|天狼|tiān láng||||0|2491
-tian1-li3|天理|天理|tiān lǐ|Judge for Nobility||purple-forbidden|1|4407-4566
-tian1-tian2|天田|天田|tiān tián||||0|5105-5264
-tian1-tian2-2|天田|天田|tiān tián||||1|7936-7980-8080
-tian1-xiang1|天相|天相|tiān xiāng||||1|3981
-tian1-she4|天社|天社|tiān shè||||1|3207-3445-3485-3734-3803
-tian1-ji4|天紀|天纪|tiān jì|Celestial Discipline||heavenly-market|3|6103-6212-6324-6332-6431-6695
-tian1-chuan2|天船|天船|tiān chuán|Celestial Boat|||1|834-915-1017-1087-1122-1273-1330-1314
-tian1-jie2|天節|天节|tiān jié||||2|1351-1396-1444-1473-1458-1381
-tian1-yuan4|天苑|天苑|tiān yuàn||||2|1003-818-811-874-984-1084-1136-1162-1231
-tian1-jie1|天街|天街|tiān jiē||||1|1329
-tian1-fu2-2|天輻|天辐|tiān fú||||1|5812
-tian1-gou1|天鉤|天钩|tiān gōu||||1|7945-7850-7957-8162-8417-8561-8694-8872
-tian1-men2|天門|天门|tiān mén||||1|5068
-tian1-yin1|天陰|天阴|tiān yīn||||1|951-972-1015
-tian1-gao1|天高|天高|tiān gāo||||1|1547-1620-1739
-tian1-yue4|天龠|天龠|tiān yuè||||4|6519-6595
-tai4-wei1-you4-yuan2|太微右垣|太微右垣|tài wēi yòu yuán||||2|4399
-jia1-bai2|夾白|夹白|jiā bái||||0|1336-1744
-xi1-zhong4|奚仲|奚仲|xī zhòng||||0|7328-7420-7469
-nu3-chuang2|女床|女床|nǚ chuáng|Woman's Bed||heavenly-market|0|6418-6436-6485
-zi3|子|子|zǐ||||0|2040-2056
-kong3-que4|孔雀|孔雀|kǒng què||||9|7665-7790
-sun1|孫|孙|sūn||||0|2177-2256
-zong1|宗|宗|zōng|Patriarchal Clan||heavenly-market|0|7061-7069
-zong1-ren2|宗人|宗人|zōng rén|Official of Religious Ceremonies||heavenly-market|0|6712-6714-6752-6723
-zong1-zheng4|宗正|宗正|zōng zhèng|Official for the Royal Clan||heavenly-market|0|6603-6629
-huan4-zhe3|宦者|宦者|huàn zhě|||heavenly-market|2|6355-6393
-xiao3-dou3|小斗|小斗|xiǎo dǒu||||1|3340-3543-3795-3860-4174-4583-4674
-shang4-shu1|尚書|尚书|shàng shū|Royal Secretary||purple-forbidden|0|6126-6161-6223-6315-6566
-ping2|屏|屏|píng||||0|1654-1702
-tu2-si4|屠肆|屠肆|tú sì|Butcher's Shops||heavenly-market|0|6765-6895
-zuo3-she4-ti2|左攝提|左摄提|zuǒ shè tí||||0|5475-5502
-zuo3-qi2|左旗|左旗|zuǒ qí||||4|7488-7479-7536-7635-7724
-zuo3-geng1|左更|左更|zuǒ gēng||||0|773-793-836-809-847
-shi4-lou2|市樓|市楼|shì lóu|Municipal Office||heavenly-market|1|6446-6581-6567
-bo2-du4|帛度|帛度|bó dù|Textile Ruler||heavenly-market|0|6729-6787
-di4-xi2|帝席|帝席|dì xí||||1|5247-5304
-chang2-chen2|常陳|常陈|cháng chén|Imperial Guards||supreme-palace|4|4594-4785-4915
-ping2-2|平|平|píng||||0|5020-5287
-ping2-dao4|平道|平道|píng dào||||0|4963-5150
-ku4-lou2|庫樓|库楼|kù lóu||||0|4652-4802;4743-4802;5089-5192-5288-5440-5231-4940-4819-4802
-jian4|建|建|jiàn||||2|7217-7264-7340-7342
-yi4-que4|異雀|异雀|yì què||||1|5339-5303-5470-6020-6102-6163-6411
-hu2-shi3|弧矢|弧矢|hú shǐ||||3|2618-2693-2827;3017-2773-2827;3034-2827
-yu4-nu3|御女|御女|yù nǚ||||1|6927-7124-7352
-fu2-kuang1|扶筐|扶筐|fú kuāng||||0|6923-6978-7049-7218;7125-7175-7218;7251-7218
-zhe2-wei1|折威|折威|zhé wēi||||4|5312-5548-5603
-wen2-chang1|文昌|文昌|wén chāng|||purple-forbidden|1|3775-3894-3888
-dou3|斗|斗|dǒu||||3|6159
-hu2|斛|斛|hú|Dipper for Solids||heavenly-market|0|6250-6299-6281
-gang4|槓|杠|gàng|Canopy Support||purple-forbidden|3|427-480-575-592-932-1148
-chu3|杵|杵|chǔ||||1|6510
-chu3-2|杵|杵|chǔ||||0|8454-8498
-zhu4|柱|柱|zhù||||0|1605-1641;1612-1641;1914-1843-2011-2012-1995-1641
-zhu4-2|柱|柱|zhù||||8|5028-5367-5354
-geng3-he2|梗河|梗河|gěng hé||||0|5429-5447-5506
-shui3-wei4|水位|水位|shuǐ wèi||||0|2864
-shui3-wei3|水委|水委|shuǐ wěi||||1|191-472
-shui3-fu3|水府|水府|shuǐ fǔ||||0|2199-2159-2198-2223
-he2-gu3|河鼓|河鼓|hé gǔ||||1|7525-7557
-bo1-si1|波斯|波斯|bō sī||||1|7869
-qi4|泣|泣|qì||||0|8499-8512
-hai3-shan1|海山|海山|hǎi shān||||3|3999-4467-4520
-hai3-shi2|海石|海石|hǎi shí||||0|3307-3699-3825-3884
-jian4-tai2|漸臺|渐台|jiàn tái||||0|7178-7106-7139-7262
-huo3-niao3|火鳥|火鸟|huǒ niǎo||||2|99-100;429-322-180-100;8937-8949-25-100
-guan4|爟|爟|guàn||||0|3191-3268
-gou3-guo2|狗國|狗国|gǒu guó||||0|7618-7597-7604-7650
-yu4-jing3|玉井|玉井|yù jǐng||||0|1666-1617-1679
-wang2-liang2|王良|王良|wáng liáng||||0|123-168;130-21-168;219-168
-li2-yu2|璃瑜|璃瑜|lí yú||||1|8135
-hu4-gua1|瓠瓜|瓠瓜|hù guā||||1|7871-7882-7928-7948
-gai4-wu1|蓋屋|盖屋|gài wū||||0|8402
-li4-shi2|礪石|砺石|lì shí||||0|1269-1287-1348-1369
-li2-gong1|離宮|离宫|lí gōng||||0|8650-8641-8684-8667
-li2-zhu1|離珠|离珠|lí zhū||||1|7831-7873-7884
-qin2|秦|秦|qín||||0|8075-8137
-ji1-zu2|積卒|积卒|jī zú||||0|5987
-zhi1-nu3|織女|织女|zhī nǚ||||1|7001-7056
-luo2-yan4|羅堰|罗堰|luó yàn||||1|7900-7937
-yu3-lin2-jun1|羽林軍|羽林军|yǔ lín jūn||||32|8439-8670;8478-8628-8670;8841-8679-8709-8670
-lao3-ren2|老人|老人|lǎo rén||||0|2326
-jiu4|臼|臼|jiù||||1|8315-8430-8522
-she2-wei3|蛇尾|蛇尾|shé wěi||||0|98-8471-8254-8021
-she2-fu4|蛇腹|蛇腹|shé fù||||0|570-705-806-837
-she2-shou3|蛇首|蛇首|shé shǒu||||0|591-1175
-mi4-feng1|蜜蜂|蜜蜂|mì fēng||||1|4798-4844
-teng2-she2|螣蛇|螣蛇|téng shé|Flying Serpent|||4|8281-8371-8494-8538-8613;8541-8585-8613;8926-9008-9045-9071-8860;8965-8976-8961;9003-8961;8613-8780-8830-8860;8860-8961
-heng2|衡|衡|héng||||1|5193-5248-5285
-zhu1-wang2|諸王|诸王|zhū wáng||||1|1497-1586-1659-1928-2034
-bai4-gua1|敗瓜|败瓜|bài guā||||0|7892-7858-7852-7883-7896
-bai4-jiu4|敗臼|败臼|bài jiù||||2|8695
-guan4-suo3|貫索|贯索|guàn suǒ|Coiled Thong||heavenly-market|3|5747-5793-5849-5889-5947-5968
-che1-fu3|車府|车府|chē fǔ||||0|8047-8079-8252;8266-8252;8699-8632-8523-8252
-che1-si4|車肆|车肆|chē sì|Commodity Market||heavenly-market|0|6129-6243
-che1-ji4|車騎|车骑|chē jì||||0|5453-5649
-xuan1-yuan2|軒轅|轩辕|xuān yuán||||5|3612-3690-3705-3731-3873-3905-4031-3975-3982
-nian3-dao4|輦道|辇道|niǎn dào||||0|7157-7298-7314-7395-7534
-jin4-fu4-bai2|近附白|近附白|jìn fù bái||||0|2261
-zao4-fu4|造父|造父|zào fù||||0|8334-8316-8465;8469-8465;8571-8465
-lang2-wei4|郎位|郎位|láng wèi|Officers of the Imperial Guard||supreme-palace|1|4602-4643-4667-4707-4717-4738;4737-4733-4738;4756-4789;4815-4789;4738-4752-4766-4753-4789
-jin1-yu2|金魚|金鱼|jīn yú||||0|1338-1465-1922-2015-2221
-ge2-dao4|閣道|阁道|gé dào||||0|193-223-321-403-542-707
-yang2-men2|陽門|阳门|yáng mén||||1|5485
-yin1-de2|陰德|阴德|yīn dé|Hidden Virtue||purple-forbidden|1|4126
-fu4-bai2|附白|附白|fù bái||||0|872-1208
-lei2-dian4|雷電|雷电|léi diàn||||0|8634-8665-8697-8795-8893-8923
-pi1-li4|霹靂|霹雳|pī lì||||0|8773-8852-8916-8969-9072
-qing1-qiu1|青丘|青丘|qīng qiū||||3|4449-4450-4494-4552
-dun4-wan2|頓頑|顿顽|dùn wán||||1|5660
-fei1-yu2|飛魚|飞鱼|fēi yú||||0|2803-2736-3024-3301-3347-3615
-ma3-wei3|馬尾|马尾|mǎ wěi||||0|4621-4638-4732
-ma3-fu4|馬腹|马腹|mǎ fù||||0|5041-5267
-qi2-guan1|騎官|骑官|qí guān||||1|5469-5528-5571;5576-5571;5683-5626;5776-5695-5708-5626;5571-5626
-bie1|鱉|鳖|biē||||1|6897-7188
-niao3-hui4|鳥喙|鸟喙|niǎo huì||||0|126-77;187-77;8502-8540-9076;9060-9076;77-9076
-he4|鶴|鹤|hè||||7|8425-8560-8636-8848
-gui1|龜|龟|guī||||1|6462`;
+export const CHINESE_ROWS = `jiao3-xiu4|角宿|角宿|jiǎo xiù|Horn|azure-dragon||0|5056-5107|1 2
+kang4-xiu4|亢宿|亢宿|kàng xiù|Neck|azure-dragon||0|5359-5315-5338-5409|4 1 2 3
+di1-xiu4|氐宿|氐宿|dī xiù|Root|azure-dragon||3|5685|4
+fang2-xiu4|房宿|房宿|fáng xiù|Room|azure-dragon||0|5928-5944-5953|2 1 3
+xin1-xiu4|心宿|心宿|xīn xiù|Heart|azure-dragon||0|6084-6134-6165|1 2 3
+wei3-xiu4|尾宿|尾宿|wěi xiù|Tail|azure-dragon||0|6241-6247-6262-6380-6553-6615-6580-6527-6508|2 1 3 4 5 6 7 8 9
+ji1-xiu4|箕宿|箕宿|jī xiù|Winnowing Basket|azure-dragon||0|6742-6859-6879-6832|1 2 3 4
+dou3-xiu4|斗宿|斗宿|dǒu xiù|Dipper|black-tortoise||0|6812-6913-7039-7121-7234-7194|1 2 1 4 5 6
+niu2-xiu4|牛宿|牛宿|niú xiù|Ox|black-tortoise||2|7715-7754-7822-7814|3 2 6 4
+nu3-xiu4|女宿|女宿|nǚ xiù|Girl|black-tortoise||0|7950-7990-7982-7951|1 2 3 4
+xu1-xiu4|虛宿|虚宿|xū xiù|Emptiness|black-tortoise||0|8131-8232|2 1
+wei1-xiu4|危宿|危宿|wēi xiù|Roof|black-tortoise||0|8308-8450-8414|3 2 1
+shi4-xiu4|室宿|室宿|shì xiù|Encampment|black-tortoise||0|8775-8781|2 1
+bi4-xiu4|壁宿|壁宿|bì xiù|Wall|black-tortoise||0|15-39|2 1
+kui2-xiu4|奎宿|奎宿|kuí xiù|Legs|white-tiger||2|154-165-163-215-271-310-351-360-383-389-352-337-269-226|6 5 4 2 1 16 15 14 13 12 11 9 8 7
+lou2-xiu4|婁宿|娄宿|lóu xiù|Bond|white-tiger||1|553-617|1 3
+wei4-xiu4|胃宿|胃宿|wèi xiù|Stomach|white-tiger||0|824-801-838|2 1 3
+mao3-xiu4|昴宿|昴宿|mǎo xiù|Hairy Head|white-tiger||1|1145-1149-1142-1156-1165-1178|2 4 1 5 6 7
+bi4-xiu4-2|畢宿|毕宿|bì xiù|Net|white-tiger||1|1239-1346;1409-1389-1373-1346;1457-1394-1346|8 4 1 2 3 5 7
+zi1-xiu4|觜宿|觜宿|zī xiù|Turtle Beak|white-tiger||1|1876-1907|2 3
+shen1-xiu4|參宿|参宿|shēn xiù|Three Stars|white-tiger||1|2004-1713-1903-1852-1790-2061|6 7 2 3 5 4
+jing3-xiu4|井宿|井宿|jǐng xiù|Well|vermilion-bird||0|2484-2421-2343-2286-2473-2529-2650-2763|4 3 2 1 5 6 7 8
+gui3-xiu4|鬼宿|鬼宿|guǐ xiù|Ghost|vermilion-bird||1|3357-3461-3449|1 4 3
+liu3-xiu4|柳宿|柳宿|liǔ xiù|Willow|vermilion-bird||0|3454-3418-3410-3482-3492-3547-3613-3665|3 2 1 5 4 6 7 8
+xing1-xiu4|星宿|星宿|xīng xiù|Star|vermilion-bird||2|3706-3709-3748-3845|6 5 1 4
+zhang1-xiu4|張宿|张宿|zhāng xiù|Extended Net|vermilion-bird||0|3849-3903;3994-3903;4094-3963-3903|5 1 2 3 4
+yi4-xiu4|翼宿|翼宿|yì xiù|Wings|vermilion-bird||4|4232-4287-4382|5 1 7
+zhen3-xiu4|軫宿|轸宿|zhěn xiù|Chariot|vermilion-bird||0|4757-4662-4630-4786|3 1 2 4
+qi1-gong1|七公|七公|qī gōng|||heavenly-market|0|5681-5733-5763-5914-6023-6092-6200|7 6 5 4 3 2 1
+zhang4-ren2|丈人|丈人|zhàng rén||||0|1862-1956|2 1
+san1-tai2|三臺|三台|sān tái||||0|3569-3594-4033-4069-4377-4374|1 2 1 2 1 2
+san1-shi1|三師|三师|sān shī|Three Top Instructors||purple-forbidden|0|3576|1
+san1-jiao3-xing2|三角形|三角形|sān jiǎo xíng||||2|6217|3
+dong1-xian2|東咸|东咸|dōng xián||||0|6147-6118-6104-6153|1 2 3 4
+jiu3-qing1|九卿|九卿|jiǔ qīng||||0|4828|1
+jiu3-kan3|九坎|九坎|jiǔ kǎn||||1|7943-8069-8048|3 2 4
+jiu3-zhou1-shu1-kou3|九州殊口|九州殊口|jiǔ zhōu shū kǒu||||1|1318-1383-1463-1508|1 3 4 5
+jiu3-you2|九斿|九斿|jiǔ yóu|Imperial Military Flag||bi4-xiu4-2|2|1496-1532-1549-1611-1608-1520|8 7 6 5 4 2
+yun2-yu3|雲雨|云雨|yún yǔ||||1|8911-8984-9022|1 4 3
+wu3-zhu1-hou2|五諸侯|五诸侯|wǔ zhū hóu||||0|2540-2697-2821-2905|1 2 3 4
+wu3-zhu1-hou2-2|五諸侯|五诸侯|wǔ zhū hóu||||1|4663-4851-4920-4946|5 3 2 1
+wu3-che1|五車|五车|wǔ chē|Five Chariots|||0|1577-1791-2095-2088-1708|1 5 4 3 2
+kang4-chi2|亢池|亢池|kàng chí||||1|5323-5365-5370|3 4 1
+ren2|人|人|rén||||0|8173-8225-8321-8313|2 1 3 4
+cong2-guan1|從官|从官|cóng guān|Retinue||supreme-palace|1|5883|2
+dai4|代|代|dài||||0|8167|1
+fa2|伐|伐|fá||||0|1892-1897-1899|1 2 3
+chuan2-she4|傳舍|传舍|chuán shè|Guest House||purple-forbidden|3|860-9013-8822|6 1 2
+ba1-gu3|八穀|八谷|bā gǔ|Eight Kinds of Crops||purple-forbidden|1|1637-1568-1622-1969;2027-1969;2077-2029-1969|6 5 7 3 8 1 2
+ba1-kui2|八魁|八魁|bā kuí||||2|48-9098-33-9103|6 2 1 4
+liu4-jia3|六甲|六甲|liù jiǎ|Six Jia||purple-forbidden|1|1523-2401-2742-3082|5 1 4 3
+nei4-chu2|內廚|内厨|nèi chú|Inner Kitchen||purple-forbidden|0|4863-4916|1 2
+nei4-ping2|內平|内平|nèi píng||||1|3974|2
+nei4-jie1|內階|内阶|nèi jiē|Inner Steps||purple-forbidden|2|3323-3531-3757-3660|1 3 4 6
+jun1-jing3|軍井|军井|jūn jǐng||||0|1696-1705-1756-1757|1 2 3 4
+jun1-shi4|軍市|军市|jūn shì||||0|2294|1
+chu2-hao1|芻蒿|刍蒿|chú hāo||||1|666-692-708-781-752|3 5 1 6 2
+lie4-si4|列肆|列肆|liè sì|Jewel Market||heavenly-market|0|6093-6149|1 2
+shi4|勢|势|shì|Eunuch||purple-forbidden|3|4247|4
+gou1-chen2|勾陳|勾陈|gōu chén|Curved Array||purple-forbidden|0|5903-6322-6789-424-285-8748|4 3 2 1 5 6
+bei3-dou3|北斗|北斗|běi dǒu||||0|4301-4295-4554-4660-4905-5054-5191|1 2 3 4 5 6 7
+bei3-ji2|北極|北极|běi jí|Northern Pole||purple-forbidden|0|5321-5430-5563-5735|4 3 2 1
+bei3-he2|北河|北河|běi hé||||1|2852-2990|1 3
+shi2-zi4-jia4|十字架|十字架|shí zì jià|Crux|||1|4656-4763-4853|4 1 3
+hua2-gai4|華蓋|华盖|huá gài|Canopy of the Emperor||purple-forbidden|2|336-399-478-548-456|4 5 6 7 2
+nan2-he2|南河|南河|nán hé||||0|2828-2845-2943|1 2 3
+nan2-chuan2|南船|南船|nán chuán||||0|3685-4037-4199-4140-4050|5 4 3 2 1
+nan2-men2|南門|南门|nán mén||||0|5132|1
+juan3-she2|捲舌|卷舌|juǎn shé||||1|1135-1220-1228-1123-1203|1 2 3 6 4
+ce4|廁|厕|cè||||0|1865-1829-1983-2035|1 2 3 4
+can1-qi2|參旗|参旗|cān qí||||3|1556-1569-1543-1552-1567|1 3 6 7 8
+you4-yuan2|右垣|右垣|yòu yuán||||2|4399|3
+you4-she4-ti2|右攝提|右摄提|yòu shè tí||||1|5200-5235|3 1
+you4-qi2|右旗|右旗|yòu qí||||2|7429-7474-7387-7447-7460-7446|1 2 4 5 7 8
+you4-geng1|右更|右更|yòu gēng||||0|413-437-463-510|1 2 3 4
+si1-wei1|司危|司危|sī wēi||||0|8163-8178|2 1
+si1-guai4|司怪|司怪|sī guài||||0|2047-2135-2134-2084|4 3 2 1
+si1-lu4|司祿|司禄|sī lù||||0|8328|1
+si1-fei1|司非|司非|sī fēi||||0|8097-8123|1 2
+zhou1|周|周|zhōu||||0|8060|1
+zhou1-ding3|周鼎|周鼎|zhōu dǐng||||0|4924-4954-4983|2 3 1
+xian2-chi2|咸池|咸池|xián chí||||1|1729-1749|3 1
+ku1|哭|哭|kū||||0|8351|1
+si4-du2|四瀆|四渎|sì dú||||0|2649|1
+si4-fu3|四輔|四辅|sì fǔ|Four Advisors||purple-forbidden|1|4062-4084|2 3
+tu3-gong1|土公|土公|tǔ gōng||||0|9093|1
+tu3-gong1-li4|土公吏|土公吏|tǔ gōng lì||||0|8520-8562|1 2
+fen2-mu4|墳墓|坟墓|fén mù||||1|8518-8539-8597|2 4 3
+lei3-bi4-zhen4|壘壁陣|垒壁阵|lěi bì zhèn||||1|3-9089-9067;8260-8288-8278-8322-8418-8698-8834-9067;9087-9067|11 12 9 2 1 3 4 5 7 8 10
+wai4-chu2|外廚|外厨|wài chú||||0|3321|1
+wai4-ping2|外屏|外屏|wài píng||||0|224-294-361-434-489-549|1 2 3 4 5 6
+da4-jiao3|大角|大角|dà jiǎo||||0|5340|1
+da4-ling2|大陵|大陵|dà líng||||1|788-840-921-936-941-937-854|8 7 6 5 4 3 2
+tian1-cang1|天倉|天仓|tiān cāng||||1|74-334-402-509-583|1 2 3 5 6
+tian1-ce4|天廁|天厕|tiān cè||||0|1865|1
+tian1-chu2|天廚|天厨|tiān chú|Celestial Kitchen||purple-forbidden|1|7371-7310-7462-7582-7685|6 1 2 3 4
+tian1-jiu4|天廄|天厩|tiān jiù||||0|63-82-68|1 2 3
+tian1-you4|天右|天右|tiān yòu||||4|5867|5
+tian1-yuan2|天園|天园|tiān yuán||||5|440-566-674-721-794-897-1464|1 2 3 4 4 6 12
+tian1-qun1|天囷|天囷|tiān qūn||||5|639-691-739-779-754;813-754;911-754|12 11 10 9 7 4 1
+tian1-lei3-cheng2|天壘城|天垒城|tiān lěi chéng||||3|8093-8187;8128-8187;8264-8311-8318-8319-8187|10 6 7 1 2 3 4
+tian1-da4-jiang1-jun1|天大將軍|天大将军|tiān dà jiāng jūn||||0|496-464-430-469-458-477;603-477;664-660-622-557-477|2 3 4 5 6 7 1 10 11 9 8
+tian1-shi4-you4-yuan2|天市右垣|天市右垣|tiān shì yòu yuán||||3|6148-5933-5867-5854-5892-6056-6075-6175|1 4 5 7 8 9 10 11
+tian1-shi4-zuo3-yuan2|天市左垣|天市左垣|tiān shì zuǒ yuán|Left Wall of the Heavenly Market Enclosure||heavenly-market|7|6561-6698-6869|10 9 8
+tian1-chuang2|天床|天床|tiān chuáng|Celestial Bed||purple-forbidden|1|5334-5589-5691-5886|1 5 2 3
+tian1-lin3|天廩|天廪|tiān lǐn||||1|1030-1038-1066|4 3 1
+tian1-bian4|天弁|天弁|tiān biàn||||5|7020-7236|2 7
+tian1-qiang1|天槍|天枪|tiān qiāng|Celestial Spear||purple-forbidden|1|5350|2
+tian1-zhu4|天柱|天柱|tiān zhù|Celestial Pillar||purple-forbidden|2|7312-8002|4 1
+tian1-fu2|天桴|天桴|tiān fú||||2|7570-7667|4 2
+tian1-bang4|天棓|天棓|tiān bàng|Celestial Flail||purple-forbidden|1|6536-6705;6588-6705;6688-6705|3 4 5 1
+tian1-zun1|天樽|天樽|tiān zūn||||0|2630-2777-2808|3 2 1
+tian1-jiang1|天江|天江|tiān jiāng||||2|6453-6486|3 4
+tian1-jin1|天津|天津|tiān jīn||||1|7730-7924;7796-7924;7949-8146;8115-8146;7924-8028-8130-8146|3 4 1 9 7 8 5 6
+tian1-yuan1|天淵|天渊|tiān yuān||||2|7348|3
+tian1-hun4|天溷|天溷|tiān hùn||||3|194|4
+tian1-huang2|天潢|天潢|tiān huáng||||0|1689-1773-1805-1740-1706|5 4 2 1 3
+tian1-lao2|天牢|天牢|tiān láo|Celestial Prison||purple-forbidden|0|4288-4277-4248-4392-4431-4422|5 3 1 6 4 2
+tian1-gou3|天狗|天狗|tiān gǒu||||1|3426-3477-3438-3468-3518-3556|1 2 4 5 6 7
+tian1-lang2|天狼|天狼|tiān láng||||0|2491|1
+tian1-li3|天理|天理|tiān lǐ|Judge for Nobility||purple-forbidden|1|4407-4566|2 3
+tian1-tian2|天田|天田|tiān tián||||0|5105-5264|1 2
+tian1-tian2-2|天田|天田|tiān tián||||1|7936-7980-8080|4 2 3
+tian1-xiang1|天相|天相|tiān xiāng||||1|3981|2
+tian1-she4|天社|天社|tiān shè||||1|3207-3445-3485-3734-3803|1 2 3 5 6
+tian1-ji4|天紀|天纪|tiān jì|Celestial Discipline||heavenly-market|3|6103-6212-6324-6332-6431-6695|1 2 3 4 6 9
+tian1-chuan2|天船|天船|tiān chuán|Celestial Boat|||1|834-915-1017-1087-1122-1273-1330-1314|1 2 3 4 5 6 8 9
+tian1-jie2|天節|天节|tiān jié||||2|1351-1396-1444-1473-1458-1381|3 1 2 5 7 8
+tian1-yuan4|天苑|天苑|tiān yuàn||||2|1003-818-811-874-984-1084-1136-1162-1231|11 8 7 6 5 4 3 2 1
+tian1-jie1|天街|天街|tiān jiē||||1|1329|2
+tian1-fu2-2|天輻|天辐|tiān fú||||1|5812|2
+tian1-gou1|天鉤|天钩|tiān gōu||||1|7945-7850-7957-8162-8417-8561-8694-8872|1 3 4 5 6 7 8 9
+tian1-men2|天門|天门|tiān mén||||1|5068|2
+tian1-yin1|天陰|天阴|tiān yīn||||1|951-972-1015|4 2 3
+tian1-gao1|天高|天高|tiān gāo||||1|1547-1620-1739|2 1 4
+tian1-yue4|天龠|天龠|tiān yuè||||4|6519-6595|6 3
+tai4-wei1-you4-yuan2|太微右垣|太微右垣|tài wēi yòu yuán||||2|4399|3
+jia1-bai2|夾白|夹白|jiā bái||||0|1336-1744|2 1
+xi1-zhong4|奚仲|奚仲|xī zhòng||||0|7328-7420-7469|1 2 3
+nu3-chuang2|女床|女床|nǚ chuáng|Woman's Bed||heavenly-market|0|6418-6436-6485|1 2 3
+zi3|子|子|zǐ||||0|2040-2056|2 1
+kong3-que4|孔雀|孔雀|kǒng què||||9|7665-7790|6 11
+sun1|孫|孙|sūn||||0|2177-2256|2 1
+zong1|宗|宗|zōng|Patriarchal Clan||heavenly-market|0|7061-7069|1 2
+zong1-ren2|宗人|宗人|zōng rén|Official of Religious Ceremonies||heavenly-market|0|6712-6714-6752-6723|1 2 4 3
+zong1-zheng4|宗正|宗正|zōng zhèng|Official for the Royal Clan||heavenly-market|0|6603-6629|1 2
+huan4-zhe3|宦者|宦者|huàn zhě|||heavenly-market|2|6355-6393|3 4
+xiao3-dou3|小斗|小斗|xiǎo dǒu||||1|3340-3543-3795-3860-4174-4583-4674|8 7 6 5 3 2 1
+shang4-shu1|尚書|尚书|shàng shū|Royal Secretary||purple-forbidden|0|6126-6161-6223-6315-6566|4 2 3 5 1
+ping2|屏|屏|píng||||0|1654-1702|2 1
+tu2-si4|屠肆|屠肆|tú sì|Butcher's Shops||heavenly-market|0|6765-6895|2 1
+zuo3-she4-ti2|左攝提|左摄提|zuǒ shè tí||||0|5475-5502|2 1
+zuo3-qi2|左旗|左旗|zuǒ qí||||4|7488-7479-7536-7635-7724|2 1 3 5 9
+zuo3-geng1|左更|左更|zuǒ gēng||||0|773-793-836-809-847|1 2 5 3 4
+shi4-lou2|市樓|市楼|shì lóu|Municipal Office||heavenly-market|1|6446-6581-6567|4 2 1
+bo2-du4|帛度|帛度|bó dù|Textile Ruler||heavenly-market|0|6729-6787|1 2
+di4-xi2|帝席|帝席|dì xí||||1|5247-5304|3 1
+chang2-chen2|常陳|常陈|cháng chén|Imperial Guards||supreme-palace|4|4594-4785-4915|7 4 1
+ping2-2|平|平|píng||||0|5020-5287|1 2
+ping2-dao4|平道|平道|píng dào||||0|4963-5150|1 2
+ku4-lou2|庫樓|库楼|kù lóu||||0|4652-4802;4743-4802;5089-5192-5288-5440-5231-4940-4819-4802|9 8 10 5 4 3 2 1 6 7
+jian4|建|建|jiàn||||2|7217-7264-7340-7342|2 3 5 6
+yi4-que4|異雀|异雀|yì què||||1|5339-5303-5470-6020-6102-6163-6411|5 7 8 6 4 3 2
+hu2-shi3|弧矢|弧矢|hú shǐ||||3|2618-2693-2827;3017-2773-2827;3034-2827|7 1 2 3 9 5
+yu4-nu3|御女|御女|yù nǚ||||1|6927-7124-7352|4 2 1
+fu2-kuang1|扶筐|扶筐|fú kuāng||||0|6923-6978-7049-7218;7125-7175-7218;7251-7218|3 2 1 6 4 5 7
+zhe2-wei1|折威|折威|zhé wēi||||4|5312-5548-5603|1 6 7
+wen2-chang1|文昌|文昌|wén chāng|||purple-forbidden|1|3775-3894-3888|4 3 2
+dou3|斗|斗|dǒu||||3|6159|4
+hu2|斛|斛|hú|Dipper for Solids||heavenly-market|0|6250-6299-6281|3 2 1
+gang4|槓|杠|gàng|Canopy Support||purple-forbidden|3|427-480-575-592-932-1148|9 8 7 3 2 1
+chu3|杵|杵|chǔ||||1|6510|2
+chu3-2|杵|杵|chǔ||||0|8454-8498|2 1
+zhu4|柱|柱|zhù||||0|1605-1641;1612-1641;1914-1843-2011-2012-1995-1641|1 3 2 8 7 4 5 6
+zhu4-2|柱|柱|zhù||||8|5028-5367-5354|11 6 3
+geng3-he2|梗河|梗河|gěng hé||||0|5429-5447-5506|3 2 1
+shui3-wei4|水位|水位|shuǐ wèi||||0|2864|1
+shui3-wei3|水委|水委|shuǐ wěi||||1|191-472|3 1
+shui3-fu3|水府|水府|shuǐ fǔ||||0|2199-2159-2198-2223|2 1 4 3
+he2-gu3|河鼓|河鼓|hé gǔ||||1|7525-7557|3 2
+bo1-si1|波斯|波斯|bō sī||||1|7869|2
+qi4|泣|泣|qì||||0|8499-8512|2 1
+hai3-shan1|海山|海山|hǎi shān||||3|3999-4467-4520|1 5 6
+hai3-shi2|海石|海石|hǎi shí||||0|3307-3699-3825-3884|1 2 3 4
+jian4-tai2|漸臺|渐台|jiàn tái||||0|7178-7106-7139-7262|3 2 1 4
+huo3-niao3|火鳥|火鸟|huǒ niǎo||||2|99-100;429-322-180-100;8937-8949-25-100|6 5 10 9 7 1 2 4
+guan4|爟|爟|guàn||||0|3191-3268|1 2
+gou3-guo2|狗國|狗国|gǒu guó||||0|7618-7597-7604-7650|2 1 4 3
+yu4-jing3|玉井|玉井|yù jǐng||||0|1666-1617-1679|3 2 1
+wang2-liang2|王良|王良|wáng liáng||||0|123-168;130-21-168;219-168|5 4 2 1 3
+li2-yu2|璃瑜|璃瑜|lí yú||||1|8135|2
+hu4-gua1|瓠瓜|瓠瓜|hù guā||||1|7871-7882-7928-7948|5 4 3 2
+gai4-wu1|蓋屋|盖屋|gài wū||||0|8402|1
+li4-shi2|礪石|砺石|lì shí||||0|1269-1287-1348-1369|1 2 4 3
+li2-gong1|離宮|离宫|lí gōng||||0|8650-8641-8684-8667|4 3 2 1
+li2-zhu1|離珠|离珠|lí zhū||||1|7831-7873-7884|4 1 2
+qin2|秦|秦|qín||||0|8075-8137|1 2
+ji1-zu2|積卒|积卒|jī zú||||0|5987|1
+zhi1-nu3|織女|织女|zhī nǚ||||1|7001-7056|1 3
+luo2-yan4|羅堰|罗堰|luó yàn||||1|7900-7937|2 3
+yu3-lin2-jun1|羽林軍|羽林军|yǔ lín jūn||||32|8439-8670;8478-8628-8670;8841-8679-8709-8670|2 12 6 8 39 24 26
+lao3-ren2|老人|老人|lǎo rén||||0|2326|1
+jiu4|臼|臼|jiù||||1|8315-8430-8522|2 3 4
+she2-wei3|蛇尾|蛇尾|shé wěi||||0|98-8471-8254-8021|1 2 3 4
+she2-fu4|蛇腹|蛇腹|shé fù||||0|570-705-806-837|4 3 2 1
+she2-shou3|蛇首|蛇首|shé shǒu||||0|591-1175|1 2
+mi4-feng1|蜜蜂|蜜蜂|mì fēng||||1|4798-4844|3 1
+teng2-she2|螣蛇|螣蛇|téng shé|Flying Serpent|||4|8281-8371-8494-8538-8613;8541-8585-8613;8926-9008-9045-9071-8860;8965-8976-8961;9003-8961;8613-8780-8830-8860;8860-8961|7 8 9 10 15 2 1 14 13 12 11 18 22 21 19 20 16 17
+heng2|衡|衡|héng||||1|5193-5248-5285|2 3 4
+zhu1-wang2|諸王|诸王|zhū wáng||||1|1497-1586-1659-1928-2034|6 5 4 2 1
+bai4-gua1|敗瓜|败瓜|bài guā||||0|7892-7858-7852-7883-7896|3 2 1 4 5
+bai4-jiu4|敗臼|败臼|bài jiù||||2|8695|3
+guan4-suo3|貫索|贯索|guàn suǒ|Coiled Thong||heavenly-market|3|5747-5793-5849-5889-5947-5968|3 4 5 6 7 9
+che1-fu3|車府|车府|chē fǔ||||0|8047-8079-8252;8266-8252;8699-8632-8523-8252|5 6 4 7 1 2 3
+che1-si4|車肆|车肆|chē sì|Commodity Market||heavenly-market|0|6129-6243|1 2
+che1-ji4|車騎|车骑|chē jì||||0|5453-5649|2 1
+xuan1-yuan2|軒轅|轩辕|xuān yuán||||5|3612-3690-3705-3731-3873-3905-4031-3975-3982|2 3 4 7 9 10 11 13 14
+nian3-dao4|輦道|辇道|niǎn dào||||0|7157-7298-7314-7395-7534|1 2 3 4 5
+jin4-fu4-bai2|近附白|近附白|jìn fù bái||||0|2261|1
+zao4-fu4|造父|造父|zào fù||||0|8334-8316-8465;8469-8465;8571-8465|5 4 2 3 1
+lang2-wei4|郎位|郎位|láng wèi|Officers of the Imperial Guard||supreme-palace|1|4602-4643-4667-4707-4717-4738;4737-4733-4738;4756-4789;4815-4789;4738-4752-4766-4753-4789|15 14 10 7 6 4 1 3 13 11 12 5 8 9
+jin1-yu2|金魚|金鱼|jīn yú||||0|1338-1465-1922-2015-2221|1 2 3 4 5
+ge2-dao4|閣道|阁道|gé dào||||0|193-223-321-403-542-707|6 5 4 3 2 1
+yang2-men2|陽門|阳门|yáng mén||||1|5485|2
+yin1-de2|陰德|阴德|yīn dé|Hidden Virtue||purple-forbidden|1|4126|2
+fu4-bai2|附白|附白|fù bái||||0|872-1208|2 1
+lei2-dian4|雷電|雷电|léi diàn||||0|8634-8665-8697-8795-8893-8923|1 2 3 4 5 6
+pi1-li4|霹靂|霹雳|pī lì||||0|8773-8852-8916-8969-9072|1 2 3 4 5
+qing1-qiu1|青丘|青丘|qīng qiū||||3|4449-4450-4494-4552|4 5 7 1
+dun4-wan2|頓頑|顿顽|dùn wán||||1|5660|2
+fei1-yu2|飛魚|飞鱼|fēi yú||||0|2803-2736-3024-3301-3347-3615|5 2 6 4 3 1
+ma3-wei3|馬尾|马尾|mǎ wěi||||0|4621-4638-4732|3 2 1
+ma3-fu4|馬腹|马腹|mǎ fù||||0|5041-5267|2 1
+qi2-guan1|騎官|骑官|qí guān||||1|5469-5528-5571;5576-5571;5683-5626;5776-5695-5708-5626;5571-5626|10 9 4 3 7 5 1 2 6
+bie1|鱉|鳖|biē||||1|6897-7188|1 3
+niao3-hui4|鳥喙|鸟喙|niǎo huì||||0|126-77;187-77;8502-8540-9076;9060-9076;77-9076|4 6 5 1 2 7 3
+he4|鶴|鹤|hè||||7|8425-8560-8636-8848|1 11 2 5
+gui1|龜|龟|guī||||1|6462|2`;

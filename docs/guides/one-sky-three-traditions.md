@@ -80,7 +80,7 @@ The West sees a scorpion, with red Antares at its heart. China sees part of a mu
 ## Three limits to tell your class
 
 - **The Chinese lines are our own joins.** The sources say which stars carry each Chinese name, not how the old star maps joined them. The lines in the demo are drawn by this package, and an old map may join the same stars another way.
-- **Faint stars are missing.** The package holds the stars to magnitude 6.0, about as faint as an eye can just see on a dark night. Many Chinese figures have fainter stars, and those are not drawn; a figure's card says when it lacks some (參, 昴, 織女 and 河鼓 each lack at least one).
+- **Some stars are not in our data.** The package holds the stars to magnitude 6.0, about as faint as an eye can just see on a dark night. Many Chinese figures have fainter stars, and our source (Wikidata) does not give every bright one a catalogue number, so some stars of a figure are not drawn; a figure's card says when it lacks some (參, 昴, 織女 and 河鼓 each lack at least one), as "not in our data", since we cannot always tell which reason it is.
 - **The Chinese names come from Wikidata.** Which star carries which Chinese name was read from Wikidata, a database anyone may edit, and has not been checked star by star against the old catalogues. The Japanese names come from one published list of traditional names. Treat both as a good start, not the last word.
 
 The names, readings and figures of the three skies, and where each came from, are in [Sky cultures](sky-cultures.md) and [Data and licences](data-and-licences.md).

@@ -63,6 +63,11 @@ export interface Asterism {
    * named with a catalogue number in that source, so we cannot tell which. The figure draws only the stars we have. 0 where all are held or none is known to be missing.
    */
   readonly missing: number;
+  /**
+   * Each held star's number in the figure, by Bright Star Catalogue number, where the culture numbers its stars: the Chinese sky's names do (角宿一 is star 1 of 角宿, and a mansion's star 1 is its
+   * determinative star, 距星). `{ 5056: 1, 5107: 2 }` for 角宿; absent where the culture does not number them, and a star the source gives no number has none.
+   */
+  readonly numbers?: Readonly<Record<number, number>>;
   /** The stars as HR numbers: chains, each a run of stars joined one to the next; a chain of one is a single star. */
   readonly chains: ReadonlyArray<readonly number[]>;
 }

@@ -12,7 +12,7 @@
 
 <p align="center"><img alt="The same patch of sky, side by side: on the left Orion with its Western figure, on the right the same stars under the Chinese mansion 參宿 (Shēn, the Three Stars) and its neighbours" src="docs/images/sky-cultures.webp" width="820"></p>
 
-The limits of that picture, in plain words: the lines of the Chinese figures are our own joins, not the traditional drawings; a figure with stars fainter than magnitude 6.0 is drawn short, and its card says how many stars are missing; and the Chinese asterisms are read from Wikidata. More in [Sky cultures](#sky-cultures) and [Limits](#limits).
+The limits of that picture, in plain words: the lines of the Chinese figures are our own joins, not the traditional drawings; a figure with stars not in our data (fainter than magnitude 6.0, or given no catalogue number in Wikidata) is drawn short, and its card says how many stars are missing; and the Chinese asterisms are read from Wikidata. More in [Sky cultures](#sky-cultures) and [Limits](#limits).
 
 ## Who it is for
 
@@ -177,7 +177,7 @@ console.log(figureOf("すばる", japanese).asterism.names.en, figureOf("羽林�
 | `CultureFigure` (`/lines`) | an `Asterism` with its `stars` and `segments`: only the stars of the figure that the catalogue holds |
 | `defineCulture(id, names, make)` (`/culture`) | a culture of your own |
 
-A Chinese asterism with stars fainter than magnitude 6.0 draws only the stars we have, and `missing` says at least how many it lacks. The lines of the Chinese figures are our own joins, not the traditional drawing. The Chinese asterisms are read from Wikidata (CC0); Stellarium's sky-culture files (GPL, CC BY-SA) are not used (`NOTICE.md`). The demo has a **Sky culture** choice, kept in the address as `culture=chinese`, and picking a figure shows its card. For learners, the Japanese page of the Chinese sky puts kana readings over 三垣, 二十八宿, 星官 and the mansions' names with its Readings switch (ふりがな) or `readings=on` in the address. [Sky cultures](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+A Chinese asterism with stars not in our data (fainter than magnitude 6.0, or given no catalogue number in Wikidata) draws only the stars we have, and `missing` says at least how many it lacks. The lines of the Chinese figures are our own joins, not the traditional drawing. The Chinese asterisms are read from Wikidata (CC0); Stellarium's sky-culture files (GPL, CC BY-SA) are not used (`NOTICE.md`). The demo has a **Sky culture** choice, kept in the address as `culture=chinese`, and picking a figure shows its card. For learners, the Japanese page of the Chinese sky puts kana readings over 三垣, 二十八宿, 星官 and the mansions' names with its Readings switch (ふりがな) or `readings=on` in the address. [Sky cultures](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 Docs: https://johnmorrisdotca.github.io/hoshi-stars/docs/ , with a Japanese page for every guide. The embed page is https://johnmorrisdotca.github.io/hoshi-stars/embed.html .
 
@@ -680,7 +680,7 @@ Hoshi Stars is made for learning, teaching, comparing and drawing charts. It is 
 - **Bright stars only, by default.** The main import holds the 5,080 stars of the Yale Bright Star Catalogue to visual magnitude 6.0. Fainter stars, to magnitude 12 from UCAC4, are a separate tiled import.
 - **Positions.** `/sky` gives a star's altitude and azimuth to about an arc-minute; nutation, aberration and parallax are left out, and a star's own proper motion is added only if you ask (`starPosition(star, when)`).
 - **Distances and sizes.** A distance is worked out from the parallax and comes with its error; for many far stars the error is as large as the parallax. A star's size, temperature and luminosity are estimates with their uncertainty, and the one-standard-error range holds the measured disc for 33 of 43 stars the CHARA Array resolved, so about one in four is off (the [star profile guide](docs/guides/star-profile.md) says which).
-- **Sky cultures.** The lines of the Chinese figures are our own joins, not the traditional drawings; a figure with stars fainter than magnitude 6.0 is drawn short, and `missing` says how many are lacking; the Chinese asterisms are read from Wikidata. They are for learning and comparing, not an authority on any tradition.
+- **Sky cultures.** The lines of the Chinese figures are our own joins, not the traditional drawings; a figure with stars not in our data (fainter than magnitude 6.0, or given no catalogue number in Wikidata) is drawn short, and `missing` says how many are lacking; the Chinese asterisms are read from Wikidata. They are for learning and comparing, not an authority on any tradition.
 - **Data terms.** [NOTICE.md](NOTICE.md) gives the terms of every source. A few state no licence; NOTICE.md says which, that John Morris wrote to their owners on 2026-11-10 to confirm the terms, and what is used until they answer.
 
 ## How to cite
