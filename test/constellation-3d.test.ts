@@ -31,6 +31,7 @@ test("distanceQuality: good under 5%, fair to 20%, rough above it or with no err
   assert.equal(distanceQuality({ parallaxMas: 100, parallaxErrorMas: undefined, parallaxSource: "dynamical" }), "fair");
   assert.equal(distanceQuality(starByName("Alnilam")!), "none");
   assert.equal(distanceQuality(starByName("Rigel")!), "rough");
+  assert.equal(distanceQuality(starByName("Betelgeuse")!), "fair");
   assert.equal(distanceQuality(starByName("Sirius")!), "good");
 });
 
@@ -161,7 +162,7 @@ test("distanceQualityTable: one row for each of the 88, and the counts add up to
     assert.equal(Object.values(row.counts).reduce((a, b) => a + b, 0), row.stars, row.abbreviation);
   }
   const orion = table.find((row) => row.abbreviation === "Ori")!;
-  assert.deepEqual(orion.counts, { good: 0, fair: 0, rough: 7, none: 1 });
+  assert.deepEqual(orion.counts, { good: 0, fair: 1, rough: 6, none: 1 });
   assert.ok(table.reduce((total, row) => total + row.counts.good, 0) > 0);
   assert.equal(table.every((row) => row.stars > 0), true);
 });

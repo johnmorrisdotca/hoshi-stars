@@ -54,7 +54,7 @@ console.log(sky.skipped > 2500);
 
 It also holds only the stars of the table: a star too faint to be in it from the Earth is missing from every other sky, even one it would shine in. The options are `magnitude` (the faintest to include, as seen from the viewpoint) and `among` (the list to move instead of the 5,080). An answer is a list of `SeenStar`, brightest first; each has `id` (`hr-2491`, `gctp-3278`, or `sun`), `name`, `designation`, `rightAscension`, `declination`, `lightYears`, `parsecs`, `magnitude`, `absoluteMagnitude`, `colourIndex` and `star`, the catalogue's own star. The list is a `SeenSky`.
 
-Distances have errors, and the further a star is, the worse. Betelgeuse's parallax is 9.8 milliarcseconds with an error of 4.7: seen from it, the sky is as uncertain as that. `starDistance(star)` gives the error and the range; the viewpoint is only as good as its distance.
+Distances have errors, and the further a star is, the worse. Betelgeuse's distance, 548 light-years from a published paper, is known to about 15%: seen from it, the sky is as uncertain as that. `starDistance(star)` gives the error and the range; the viewpoint is only as good as its distance.
 
 ## With the nearby stars
 

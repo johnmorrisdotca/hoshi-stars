@@ -3,6 +3,7 @@
 import { J2000_MS } from "./when.ts";
 import { STAR_NAMES, STAR_ROWS } from "./data/stars.ts";
 import { STAR_NAMES_JA } from "./data/star-names-ja.ts";
+import { STAR_DISTANCE_NOTES } from "./data/star-distances.ts";
 import { moment, type When } from "./when.ts";
 import { luminosityClass, type LuminosityClass } from "./spectral.ts";
 import { blackBodyColour, starTemperatureK } from "./colour.ts";
@@ -49,12 +50,14 @@ export interface Star {
   properMotionRaMas: number;
   /** Proper motion in declination, in milliarcseconds a year. */
   properMotionDecMas: number;
-  /** The annual parallax in milliarcseconds, to a tenth where `parallaxSource` is `"GCTP"` and to a whole milliarcsecond otherwise; 0 where there is none (the distance is then unknown). */
+  /** The annual parallax in milliarcseconds, to a tenth where `parallaxSource` is `"GCTP"` (to a hundredth where it is `"literature"`) and to a whole milliarcsecond otherwise; 0 where there is none (the distance is then unknown). */
   parallaxMas: number;
-  /** The standard error of `parallaxMas` in milliarcseconds, or `undefined` where there is none: the Bright Star Catalogue states no error, so it is only given for a parallax from the Yale parallax catalogue. */
+  /** The standard error of `parallaxMas` in milliarcseconds, or `undefined` where there is none: the Bright Star Catalogue states no error, so it is only given for a parallax from the Yale parallax catalogue or a published paper (`"literature"`). For the stars with a `parallaxNote` that says the error was widened, it is at least the parallax. */
   parallaxErrorMas: number | undefined;
-  /** Where the parallax is from: `"GCTP"` the Yale General Catalogue of Trigonometric Stellar Parallaxes (a measurement with an error), `"BSC"` the Bright Star Catalogue's trigonometric one, `"dynamical"` the Bright Star Catalogue's dynamical one (from the orbit of a binary); `undefined` where there is none. */
-  parallaxSource: "GCTP" | "BSC" | "dynamical" | undefined;
+  /** Where the parallax is from: `"GCTP"` the Yale General Catalogue of Trigonometric Stellar Parallaxes (a measurement with an error), `"BSC"` the Bright Star Catalogue's trigonometric one, `"dynamical"` the Bright Star Catalogue's dynamical one (from the orbit of a binary), `"literature"` a distance typed from a published paper for a star whose catalogue parallax is poor (Betelgeuse, Rigel, Polaris; `parallaxNote` names it); `undefined` where there is none. */
+  parallaxSource: "GCTP" | "BSC" | "dynamical" | "literature" | undefined;
+  /** Said of the few stars whose catalogue parallax is poor: the paper the distance is typed from (`parallaxSource` is `"literature"`), or that the error was widened because no clear-licence figure replaces it; `undefined` for every other star. */
+  parallaxNote: string | undefined;
 }
 
 /**
@@ -78,6 +81,14 @@ export interface StarDistance {
 }
 
 const SOURCES: Readonly<Record<string, Star["parallaxSource"]>> = { g: "GCTP", b: "BSC", d: "dynamical" };
+
+/** The parallax, its error, its source and its note: the catalogue's, unless `STAR_DISTANCE_NOTES` holds the star. */
+function parallaxOf(hr: number, mas: number, error: number | undefined, source: Star["parallaxSource"]): Pick<Star, "parallaxMas" | "parallaxErrorMas" | "parallaxSource" | "parallaxNote"> {
+  const note = STAR_DISTANCE_NOTES[hr];
+  if (note === undefined) return { parallaxMas: mas, parallaxErrorMas: error, parallaxSource: source, parallaxNote: undefined };
+  if (note.kind === "paper") return { parallaxMas: note.parallaxMas, parallaxErrorMas: note.parallaxErrorMas, parallaxSource: "literature", parallaxNote: note.note };
+  return { parallaxMas: mas, parallaxErrorMas: error === undefined ? mas : Math.max(error, mas), parallaxSource: source, parallaxNote: note.note };
+}
 const stored: Star[] = [];
 const byHr = new Map<number, Star>();
 const byText = new Map<string, Star>();
@@ -108,9 +119,7 @@ function load(): void {
       luminosityClass: luminosityClass(spectralType),
       properMotionRaMas: Number(p[6]),
       properMotionDecMas: Number(p[7]),
-      parallaxMas: Number(p[11]) / 10,
-      parallaxErrorMas: error,
-      parallaxSource: SOURCES[p[13]!],
+      ...parallaxOf(hr, Number(p[11]) / 10, error, SOURCES[p[13]!]),
     });
     stored.push(star);
     byHr.set(hr, star);
@@ -220,7 +229,7 @@ export function starDistanceLightYears(star: Star): number | undefined {
 }
 
 /**
- * A star's distance with its uncertainty, from the parallax and its error. Sirius is 8.5 light-years, to within 0.05; Betelgeuse's parallax is 9.8 milliarcseconds with an error of 4.7, so its distance is anywhere from 225 to 640 light-years.
+ * A star's distance with its uncertainty, from the parallax and its error. Sirius is 8.5 light-years, to within 0.05; Betelgeuse's distance is a published paper's (168 parsecs, 548 light-years), so it is anywhere from 480 to 640 light-years. Rigel is rougher: from 590 to 1,480 light-years.
  *
  * @param star - A star, or anything with a parallax in milliarcseconds and its error (a nearby star from `/nearby`).
  * @returns The distance, its error and its range in light-years, or `undefined` where there is no parallax (or a non-positive one).

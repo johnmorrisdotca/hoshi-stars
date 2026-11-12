@@ -98,7 +98,7 @@ test("distance comes from parallax, and is unknown without one", () => {
   assert.equal(starDistanceLightYears({ ...sirius, parallaxMas: 0 }), undefined);
 });
 
-test("a distance has its uncertainty: Sirius is 8.6 light-years within its error, not 8.7; Betelgeuse's range is wide", () => {
+test("a distance has its uncertainty: Sirius is 8.6 light-years within its error, not 8.7; Betelgeuse's range is the paper's", () => {
   const sirius = starDistance(starByName("Sirius")!)!;
   assert.equal(sirius.lightYears, starDistanceLightYears(starByName("Sirius")!));
   assert.ok(Math.abs(sirius.lightYears - 8.6) < 2 * sirius.lightYearsError!, "the modern 8.60 is within two standard errors");
@@ -106,7 +106,7 @@ test("a distance has its uncertainty: Sirius is 8.6 light-years within its error
   assert.ok(sirius.lightYearsError! < 0.1 && sirius.lightYearsRange![0] < sirius.lightYears && sirius.lightYears < sirius.lightYearsRange![1]);
   const betelgeuse = starDistance(starByName("Betelgeuse")!)!;
   const [near, far] = betelgeuse.lightYearsRange!;
-  assert.ok(near < 250 && far > 600 && far / near > 2.5, `${near} to ${far}`);
+  assert.ok(near > 450 && far < 700 && far / near < 1.5, `${near} to ${far}`);
   assert.equal(starDistance({ parallaxMas: 0, parallaxErrorMas: 1 }), undefined);
   assert.equal(starDistance({ parallaxMas: -3, parallaxErrorMas: undefined }), undefined);
   assert.deepEqual(starDistance({ parallaxMas: 100, parallaxErrorMas: undefined }), { lightYears: 3261.563777 / 100, lightYearsError: undefined, lightYearsRange: undefined });
@@ -120,9 +120,10 @@ test("every star has its whole spectral type and a parallax with a source; the e
   assert.ok(all.every((s) => s.spectralType !== "" && s.spectralType === s.spectralType.trim()));
   assert.ok(all.every((s) => /^[OBAFGKMCRNS][0-9]?/.test(s.spectralType) ? s.spectralClass === /^[OBAFGKMCRNS][0-9]?/.exec(s.spectralType)![0] : s.spectralClass === ""));
   assert.ok(all.every((s) => (s.parallaxMas > 0) === (s.parallaxSource !== undefined)));
-  assert.ok(all.every((s) => (s.parallaxErrorMas !== undefined) === (s.parallaxSource === "GCTP") && (s.parallaxErrorMas === undefined || s.parallaxErrorMas > 0)));
+  assert.ok(all.every((s) => (s.parallaxErrorMas !== undefined) === (s.parallaxSource === "GCTP" || s.parallaxSource === "literature") && (s.parallaxErrorMas === undefined || s.parallaxErrorMas > 0)));
   assert.equal(all.filter((s) => s.parallaxMas > 0).length, 2563);
-  assert.equal(all.filter((s) => s.parallaxSource === "GCTP").length, 2329);
+  assert.equal(all.filter((s) => s.parallaxSource === "GCTP").length, 2326);
+  assert.equal(all.filter((s) => s.parallaxSource === "literature").length, 3);
   assert.equal(all.filter((s) => s.parallaxSource === "dynamical").length, 163);
   assert.ok(all.filter((s) => s.parallaxSource === "GCTP").some((s) => !Number.isInteger(s.parallaxMas)));
   assert.equal(all.filter((s) => s.luminosityClass === undefined).length, 265);
@@ -137,7 +138,7 @@ test("Sirius, Betelgeuse, Vega and Rigel: the whole spectral type, the luminosit
   assert.equal(betelgeuse.spectralType, "M1-2Ia-Iab");
   assert.equal(betelgeuse.spectralClass, "M1");
   assert.ok(betelgeuse.luminosityClass === "Ia" || betelgeuse.luminosityClass === "Iab");
-  assert.deepEqual([betelgeuse.parallaxMas, betelgeuse.parallaxErrorMas], [9.8, 4.7]);
+  assert.deepEqual([betelgeuse.parallaxMas, betelgeuse.parallaxErrorMas, betelgeuse.parallaxSource], [5.95, 0.85, "literature"]);
   const vega = starByName("Vega")!;
   assert.ok(vega.spectralType.startsWith("A0"));
   assert.equal(vega.luminosityClass, "V");
@@ -216,4 +217,41 @@ test("the well-known stars have their usual Japanese names, found by starByName"
     assert.equal(starByName(name)?.nameJa, ja, name);
     assert.equal(starByName(ja)?.name, name, ja);
   }
+});
+
+test("the supergiants whose catalogue parallax is poor: a published distance where a clear source gives one, a widened range where none does", () => {
+  const LY_PER_PC = 3.261563777;
+  const get = (name: string): NonNullable<ReturnType<typeof starDistance>> => starDistance(starByName(name)!)!;
+  const within = (value: number, wanted: number, tolerance: number): boolean => Math.abs(value - wanted) <= tolerance;
+  // Betelgeuse: Joyce et al. 2020, ApJ 902, 63: 168 (+27/-15) pc. The range holds the paper's 153 to 195 pc, and the best value is the paper's, not the old 333 light-years.
+  const betelgeuse = get("Betelgeuse");
+  assert.ok(within(betelgeuse.lightYears, 168 * LY_PER_PC, 2), String(betelgeuse.lightYears));
+  assert.ok(betelgeuse.lightYearsRange![0] <= 153 * LY_PER_PC && betelgeuse.lightYearsRange![1] >= 195 * LY_PER_PC - 4, String(betelgeuse.lightYearsRange));
+  assert.equal(starByName("Betelgeuse")!.parallaxSource, "literature");
+  assert.match(starByName("Betelgeuse")!.parallaxNote!, /Joyce et al\. 2020, ApJ 902, 63/);
+  // Rigel: de Almeida et al. 2022: 0.26 +/- 0.02 kpc, or 0.42 +/- 0.03 kpc for a higher luminosity; the range holds 0.24 to 0.45 kpc.
+  const rigel = get("Rigel");
+  assert.ok(within(rigel.lightYears, 260 * LY_PER_PC, 5), String(rigel.lightYears));
+  assert.ok(rigel.lightYearsRange![0] <= 240 * LY_PER_PC && rigel.lightYearsRange![1] >= 450 * LY_PER_PC - 5, String(rigel.lightYearsRange));
+  assert.equal(starByName("Rigel")!.parallaxSource, "literature");
+  assert.match(starByName("Rigel")!.parallaxNote!, /de Almeida et al\. 2022/);
+  // Polaris: Bond et al. 2018, ApJ 853, 55: the Hubble parallax of Polaris B, 6.26 +/- 0.24 mas, with the error widened so the range reaches 430 light-years.
+  const polaris = starByName("Polaris")!;
+  assert.deepEqual([polaris.parallaxMas, polaris.parallaxErrorMas, polaris.parallaxSource], [6.26, 1.33, "literature"]);
+  assert.match(polaris.parallaxNote!, /Bond et al\. 2018, ApJ 853, 55/);
+  const polarisRange = get("Polaris");
+  assert.ok(within(polarisRange.lightYears, 521, 1) && polarisRange.lightYearsRange![0] <= 430 && polarisRange.lightYearsRange![1] >= 541, String(polarisRange.lightYearsRange));
+  // Antares, Canopus and Mu Cephei: no clear-licence figure replaces the Yale parallax, so its error is at least the parallax itself: rough, with no upper limit.
+  for (const hr of [6134, 2326, 8316]) {
+    const star = starByHr(hr)!;
+    const distance = starDistance(star)!;
+    assert.equal(star.parallaxSource, "GCTP", star.name);
+    assert.ok(star.parallaxErrorMas! >= star.parallaxMas, star.name);
+    assert.equal(distance.lightYearsRange![1], Number.POSITIVE_INFINITY, star.name);
+    assert.match(star.parallaxNote!, /Yale parallax/, star.name);
+  }
+  // Deneb has no parallax in the catalogue and is given none.
+  assert.equal(starDistance(starByName("Deneb")!), undefined);
+  // Only these six stars carry a note; every other star's distance is the catalogue's.
+  assert.deepEqual(stars().filter((s) => s.parallaxNote !== undefined).map((s) => s.hr).sort((a, b) => a - b), [424, 1713, 2061, 2326, 6134, 8316]);
 });

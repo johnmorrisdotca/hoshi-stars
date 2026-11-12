@@ -23,8 +23,8 @@ test("the copied lines make the picture the demo previews, for several constella
 test("Orion: Alnilam is a dotted line of sight, the other seven are streaks with no dot in the middle", () => {
   const svg = run(orion, 480);
   assert.equal((svg.match(/stroke-dasharray="2 4"/g) ?? []).length, 1, "one star with no distance");
-  assert.equal((svg.match(/<circle /g) ?? []).length, 0, "every other star of Orion has an error bar wider than its distance");
-  assert.equal((svg.match(/stroke-width="5"/g) ?? []).length, 7);
+  assert.equal((svg.match(/<circle /g) ?? []).length, 1, "Betelgeuse's paper distance is known to 15%: one dot; every other star of Orion has an error bar wider than its distance");
+  assert.equal((svg.match(/stroke-width="5"/g) ?? []).length, 6);
 });
 
 test("a star with a good distance has a dot and a thin bar", () => {

@@ -54,7 +54,7 @@ test("a near star shifts a lot and a far one barely; brightness follows distance
   assert.ok(shift("Sirius") > 20, String(shift("Sirius")));
   assert.ok(shift("Procyon") > 10);
   assert.ok(shift("Rigel") < 1, String(shift("Rigel")));
-  assert.ok(shift("Polaris") < 0.2, String(shift("Polaris")));
+  assert.ok(shift("Polaris") < 0.4, String(shift("Polaris")));
   assert.ok(shift("Sirius") > shift("Procyon") && shift("Procyon") > shift("Arcturus") && shift("Arcturus") > shift("Rigel"));
   // Deneb has no parallax in the table, so it is not in the sky from there
   assert.equal(sky.some((star) => star.name === "Deneb"), false);

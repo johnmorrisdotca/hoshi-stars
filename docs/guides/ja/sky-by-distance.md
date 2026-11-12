@@ -38,16 +38,16 @@ for (let step = 0; step < 6; step += 1) {
 }
 
 // A star whose distance is uncertain is in no band: it is kept apart, with the range its error allows.
-const betelgeuse = layersByDistance(everything, { limit: 300 }).things.find((thing) => thing.name === "Betelgeuse");
-console.log(betelgeuse.uncertain, Math.round(betelgeuse.low), Math.round(betelgeuse.high));
+const rigel = layersByDistance(everything, { limit: 700 }).things.find((thing) => thing.name === "Rigel");
+console.log(rigel.uncertain, Math.round(rigel.low), Math.round(rigel.high));
 
 // 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance
 // 50: 897 things; bands 9 665 0 0 0 0; 223 uncertain; 3083 with no distance
-// 100: 4128 things; bands 9 665 870 0 0 0; 2584 uncertain; 3083 with no distance
-// 500: 7500 things; bands 9 665 870 329 0 0; 5627 uncertain; 3083 with no distance
-// 1000: 7568 things; bands 9 665 870 329 9 0; 5686 uncertain; 3083 with no distance
-// Infinity: 7672 things; bands 9 665 870 329 9 37; 5753 uncertain; 3083 with no distance
-// true 225 640
+// 100: 4130 things; bands 9 665 870 0 0 0; 2586 uncertain; 3083 with no distance
+// 500: 7497 things; bands 9 665 870 329 0 0; 5624 uncertain; 3083 with no distance
+// 1000: 7568 things; bands 9 665 870 329 11 0; 5684 uncertain; 3083 with no distance
+// Infinity: 7672 things; bands 9 665 870 329 11 37; 5751 uncertain; 3083 with no distance
+// true 593 1483
 ```
 
 `stepLimit(limit, 1)`は、10、50、100、500、1,000、そしてすべて（`Infinity`）と進みます。`-1`で戻ります。自由に動かせるスライダーには、`limitAtSlider(position)`と`sliderOfLimit(limit)`を使います。`SLIDER_RANGE`（4光年から300万光年）の対数の目もりで、いちばん端が「すべて」です。上限はアドレスの`dist`に残ります（`limitFromText`が読みます。光年の数か`all`です。ないとき、`off`のとき、数でないときは、層なしです。`limitText`が書きます）。属性として使うページでは、`distance-limit`という名前です（`DISTANCE_ATTRIBUTE`）。最初はオフで、使うときに指定します。

@@ -33,7 +33,7 @@ for (const name of ["Sirius", "Arcturus", "Betelgeuse", "Deneb"]) {
 //   radius not known: no-parallax
 ```
 
-5,080個の星すべてに、温度・視直径・周縁減光があります。ベテルギウスの半径が150〜990太陽半径と幅広いのは、年周視差が9.8ミリ秒角で誤差が4.7もあり、距離がほとんど決まらないためです。値が求められないときは`undefined`で、`unknown`が理由を示します（`Unknown`：`"no-parallax"`、`"poor-parallax"`、`"implausible-parallax"`、`"no-typical-radius"`、`"no-class"`、`"odd-type"`、`"no-colour-or-type"`）。ページは推測せずに、はっきりそう表示できます。半径が分かる星は、約4分の3です。
+5,080個の星すべてに、温度・視直径・周縁減光があります。ベテルギウスの半径が320〜990太陽半径と幅広いのは、論文から得た距離（548光年）の精度がまだ約15%にとどまり、そこに温度の目盛りの誤差が加わるためです。値が求められないときは`undefined`で、`unknown`が理由を示します（`Unknown`：`"no-parallax"`、`"poor-parallax"`、`"implausible-parallax"`、`"no-typical-radius"`、`"no-class"`、`"odd-type"`、`"no-colour-or-type"`）。ページは推測せずに、はっきりそう表示できます。半径が分かる星は、約4分の3です。
 
 視直径は距離がなくても求められます。明るさと温度だけから決まり、干渉計が測るのもこれなので、半径が分からない星でも分かります。その`range`を見れば、この方法がどれだけ当たるかが正直に分かります。下の数字は、どれもこの方法が実際にその程度ずれた例です。
 
