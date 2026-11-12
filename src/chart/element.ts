@@ -90,6 +90,9 @@ const number = (text: string | null, fallback: number): number => {
   return text !== null && text.trim() !== "" && Number.isFinite(n) ? n : fallback;
 };
 
+// On a server (a framework's render, or Node) there is no HTMLElement: the class still loads, as a stand-in nothing defines, so importing the chart never throws there.
+const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
+
 /**
  * The sky chart as an element: `<hoshi-chart constellation="Ori"></hoshi-chart>`. It fills its box (16 by 10 unless the page sizes it) and draws the bright stars with the layers asked for.
  *
@@ -104,7 +107,7 @@ const number = (text: string | null, fallback: number): number => {
  * <hoshi-chart constellation="Ori" layers="milky lines names boundaries"></hoshi-chart>
  * ```
  */
-export class HoshiChartElement extends HTMLElement {
+export class HoshiChartElement extends Base {
   static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls"];
 
   #svg: SVGSVGElement | undefined;

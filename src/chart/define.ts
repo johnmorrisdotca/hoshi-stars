@@ -2,7 +2,7 @@
 import { CHART_TAG, HoshiChartElement } from "./element.ts";
 
 /**
- * Define `<hoshi-chart>` in `registry` (the page's `customElements` by default) unless the name is taken.
+ * Define `<hoshi-chart>` in `registry` (the page's `customElements` by default) unless the name is taken. On a server, where there is no registry, it does nothing.
  *
  * @param registry - Where to define it.
  * @returns Whether this call defined it.
@@ -15,8 +15,8 @@ import { CHART_TAG, HoshiChartElement } from "./element.ts";
  * document.body.insertAdjacentHTML("beforeend", '<hoshi-chart constellation="Ori"></hoshi-chart>');
  * ```
  */
-export function defineChart(registry: CustomElementRegistry = customElements): boolean {
-  if (registry.get(CHART_TAG) !== undefined) return false;
+export function defineChart(registry: CustomElementRegistry | undefined = globalThis.customElements): boolean {
+  if (registry === undefined || registry.get(CHART_TAG) !== undefined) return false;
   registry.define(CHART_TAG, HoshiChartElement);
   return true;
 }
