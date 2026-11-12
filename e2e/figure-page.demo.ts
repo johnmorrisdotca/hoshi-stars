@@ -194,7 +194,7 @@ test("the limits that apply are said: our own joins, the faint stars missing, an
   await expect(limits).toContainText("our own joins");
   await expect(limits).toContainText("Wikidata (CC0)");
   await open(page, "c=yu3-lin2-jun1&culture=chinese");
-  await expect(page.getByTestId("cp-limits")).toContainText(/At least \d+ of its stars are fainter than magnitude 6\.0/);
+  await expect(page.getByTestId("cp-limits")).toContainText(/At least \d+ of its stars are not in our data/);
   await open(page, "c=Ori");
   await expect(page.getByTestId("cp-limits")).toContainText("our own joins");
   await expect(page.getByTestId("cp-limits")).not.toContainText("Wikidata");

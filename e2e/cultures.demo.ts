@@ -72,11 +72,11 @@ test("a figure is found by its name in any language, and picking it shows its ca
   await expect(page.getByTestId("picked")).toContainText("天龍座 / 天龙座");
 });
 
-test("a figure with stars fainter than the catalogue goes says so on its card, and draws only the stars it has", async ({ page }) => {
+test("a figure with stars not in our data says so on its card, and draws only the stars it has", async ({ page }) => {
   await open(page, "?culture=chinese&pick=C:yu3-lin2-jun1");
-  await expect(page.getByTestId("figure-note").first()).toContainText(/At least \d+ of its stars are fainter than magnitude 6\.0/);
+  await expect(page.getByTestId("figure-note").first()).toContainText(/At least \d+ of its stars are not in our data \(fainter than magnitude 6\.0, which the catalogue does not hold, or not named in our source\)/);
   await open(page, "?culture=chinese&pick=C:bei3-dou3");
-  await expect(page.getByTestId("picked")).not.toContainText("fainter than magnitude 6.0");
+  await expect(page.getByTestId("picked")).not.toContainText("not in our data");
 });
 
 test("a pick that is not in the new culture is dropped when the culture changes", async ({ page }) => {
