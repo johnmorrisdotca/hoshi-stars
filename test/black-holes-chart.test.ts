@@ -18,7 +18,7 @@ const symbols = (svg: string): string[] => [...svg.matchAll(/data-hole="([^"]+)"
 const say = (key: string): string => (WORDS.en as Record<string, string>)[key] ?? key;
 
 test("holes is a layer, after the deep sky and before the faint stars and the grid, and is kept in an address only when it is on", () => {
-  assert.deepEqual([...LAYERS], ["milky", "lines", "boundaries", "names", "deep", "pictures", "holes", "faint", "grid"]);
+  assert.deepEqual([...LAYERS], ["milky", "lines", "boundaries", "mansions", "names", "deep", "pictures", "holes", "faint", "grid"]);
   assert.equal(layersText(layersOf("milky,lines,names,pictures,faint,grid")), null);
   assert.equal(layersText(layersOf("milky,lines,names,pictures,holes,faint,grid")), "milky,lines,names,pictures,holes,faint,grid");
   assert.equal(layersText(layersOf("holes")), "holes");

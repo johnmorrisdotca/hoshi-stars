@@ -142,3 +142,25 @@ test("the names of the figures in Japanese and Chinese are at least 12 pixels, s
     }
   }
 });
+
+test("the Chinese sky has a Mansions switch: hour circles through the determinative stars, dashed, kept in the address, and the switch is there only in that sky", async ({ page }) => {
+  const mansions = page.locator('#seg-layers button[data-value="mansions"]');
+  const circles = () => page.locator('#chart path[data-layer="mansions"]').count();
+  await open(page, "?ra=225&dec=-12&zoom=3");
+  await expect(mansions).toBeHidden();
+  await open(page, "?culture=chinese&ra=225&dec=-12&zoom=3");
+  await expect(mansions).toBeVisible();
+  await expect(mansions).toHaveText("Mansions");
+  await expect(mansions).toHaveAttribute("aria-pressed", "false");
+  expect(await circles()).toBe(0);
+  await mansions.click();
+  await expect(mansions).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(circles).toBe(1);
+  await expect.poll(() => param(page, "layers")).toContain("mansions");
+  // the circles of 角, 亢, 房 and 心 are in view round Libra and Scorpius
+  const lines = await page.locator('#chart path[data-layer="mansions"]').evaluate((path) => (path.getAttribute("d")!.match(/M/g) ?? []).length);
+  expect(lines).toBeGreaterThanOrEqual(4);
+  await open(page, "?culture=chinese&lang=ja&layers=milky,lines,mansions,names");
+  await expect(mansions).toHaveText("二十八宿");
+  await expect.poll(circles).toBe(1);
+});
