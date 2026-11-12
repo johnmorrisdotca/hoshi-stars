@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.37.1] - 2026-11-12
+
 - **The CDS's answer on data licences is in `NOTICE.md`** (MODULES-777). On 2026-11-12 the CDS (Strasbourg) answered the question about VizieR I/238A (Yale parallaxes), VI/42 (the boundary table) and VII/155 (RC3): redistribution terms are set catalogue by catalogue, the original producers' terms come first, and any reuse must cite both VizieR and the original authors. None of the three ReadMes assigns a licence (RC3's asks for credit); the values used are facts. `NOTICE.md`, the README and the data-and-licences guide (English and Japanese) now give the VizieR citation (Ochsenbein, Bauer and Marcout 2000, A&AS 143, 23) beside the authors' credit, and a test holds it. The "confirmation requested" notes for these three catalogues are replaced by what the CDS said; no data changed.
 
 ## [0.37.0] - 2026-11-12
