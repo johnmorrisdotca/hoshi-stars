@@ -39,7 +39,7 @@ export interface Figure {
  * ```
  */
 export interface CultureFigure {
-  /** The figure: its names, reading, kind and how many of its stars are fainter than the catalogue goes (`missing`). */
+  /** The figure: its names, reading, kind and how many of its stars we do not hold (`missing`: fainter than the catalogue goes, or not numbered in the source). */
   asterism: Asterism;
   /** The stars the figure uses, each once, in the order the figure first reaches them. */
   stars: Star[];

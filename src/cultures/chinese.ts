@@ -3,8 +3,20 @@
 import { defineCulture, type Asterism } from "../culture.ts";
 import { CHINESE_ROWS } from "../data/culture-chinese.ts";
 
+/** Each star's number, from the row's numbers in the order the stars first come in its chains (0 for a star with none). */
+function numbersOf(chains: string, numbered: string): Record<number, number> {
+  const order = [...new Set(chains.split(/[;-]/).map(Number))];
+  const numbers = numbered.split(" ").map(Number);
+  const out: Record<number, number> = {};
+  order.forEach((hr, i) => {
+    if (numbers[i]! > 0) out[hr] = numbers[i]!;
+  });
+  return out;
+}
+
 /**
- * The traditional Chinese sky as a culture: about 240 asterisms, the 28 mansions first. Each lists the stars of it the Bright Star Catalogue holds; where the asterism has more stars than that (fainter than magnitude 6.0) `missing` says
+ * The traditional Chinese sky as a culture: about 240 asterisms, the 28 mansions first. Each lists the stars of it the Bright Star Catalogue holds, with each star's number in it (`numbers`: 角宿一 is 1); where the asterism has
+ * more stars than we hold (fainter than magnitude 6.0, or not named with a catalogue number in Wikidata: the data cannot tell which) `missing` says
  * at least how many, and the figure draws only the stars we have. The English name and `partOf` (the enclosure or mansion) are Wikidata's, where it states them. The lines are our own joins of those stars, not the traditional drawing. Pass it to `constellations`, `constellation`, `starsIn`, `figures` or `figureOf`.
  *
  * @example
@@ -19,7 +31,7 @@ import { CHINESE_ROWS } from "../data/culture-chinese.ts";
  */
 export const chinese = defineCulture("chinese", { en: "Traditional Chinese (Three Enclosures, Twenty-Eight Mansions)", ja: "中国の伝統 (三垣二十八宿)" }, (): Asterism[] =>
   CHINESE_ROWS.split("\n").map((row): Asterism => {
-    const [id, hant, hans, pinyin, english, group, part, missing, chains] = row.split("|") as [string, string, string, string, string, string, string, string, string];
+    const [id, hant, hans, pinyin, english, group, part, missing, chains, numbered] = row.split("|") as [string, string, string, string, string, string, string, string, string, string];
     return {
       id,
       name: hant,
@@ -32,6 +44,7 @@ export const chinese = defineCulture("chinese", { en: "Traditional Chinese (Thre
       ...(part === "" ? {} : { partOf: part }),
       missing: Number(missing),
       chains: chains.split(";").map((chain) => chain.split("-").map(Number)),
+      numbers: numbersOf(chains, numbered),
     };
   }),
 );

@@ -62,6 +62,8 @@ console.log(chinese.asterisms().filter((a) => a.partOf === "heavenly-market").ma
 
 Most Chinese asterisms have stars fainter than magnitude 6.0, which the Bright Star Catalogue does not hold, and some have stars our source does not name with a catalogue number. A figure draws only the stars we have, and `missing` says at least how many it lacks: the largest star number found in the asterism, less the stars held. We cannot always tell which of the two a missing star is, so the demo says "not in our data".
 
+Each star of a Chinese asterism also has its number in it, as its name has it: `numbers` maps a star's HR number to it (`{ 5056: 1, 5107: 2 }` for 角宿, Spica being 角宿一). A mansion's star 1 is its determinative star (距星), which our source names for 24 of the 28. The numbers are the source's, repeats and all: 斗宿 has two stars numbered 1 and 天園 two numbered 4, and 三台's pairs share theirs by design. The stars known by a proper name (the Northern Dipper's, 天狼) are numbered by their place in the package's list. The Western and Japanese skies have no `numbers`.
+
 ```js
 import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
 import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
@@ -165,7 +167,7 @@ The pictures of the Chinese and Japanese figures are files of the Pages site onl
 
 ## In the demo
 
-The demo's Sky culture choice (Western, Japanese, Chinese) is kept in the address as `culture=` (nothing for the Western sky): `?culture=chinese`. Picking one redraws the figures and the names on the same stars. Tap a figure, or search for it by any of its names, for its card: its names and reading, what it is, the quarter of the sky, the enclosure or mansion it belongs to where Wikidata says, the constellations it lies in, its bright stars, and, where stars are fainter than the catalogue goes, a note that only the stars we have are drawn. The embed page takes the same `culture=`.
+The demo's Sky culture choice (Western, Japanese, Chinese) is kept in the address as `culture=` (nothing for the Western sky): `?culture=chinese`. Picking one redraws the figures and the names on the same stars. Tap a figure, or search for it by any of its names, for its card: its names and reading, what it is, the quarter of the sky, the enclosure or mansion it belongs to where Wikidata says, the constellations it lies in, its bright stars, and, where stars are not in our data, a note that only the stars we have are drawn. The embed page takes the same `culture=`.
 
 For a child or anyone still learning kanji, the Japanese page of the Chinese sky can put small kana readings (furigana) over 三垣 (the Three Enclosures), 二十八宿 (the Twenty-Eight Mansions), 星官 (asterisms) and the 28 mansions' names, on the strip above the map, the gallery and the list. They are off by default. Turn them on with the Readings switch (ふりがな), shown beside the page's other choices: a press is kept on the device and written to the address. `readings=on` in the address turns them on for that visit only and leaves what the device keeps alone: `constellations.html?culture=chinese&lang=ja&readings=on`. The sheets page links to the gallery that way. The English page has no switch, since each card already carries the pinyin and the English.
 

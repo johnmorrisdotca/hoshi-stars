@@ -230,3 +230,35 @@ test("without a culture nothing changes: 88 constellations and 88 figures", () =
   assert.equal(figureOf("Ori").constellation.abbreviation, "Ori");
   assert.equal(constellation("天龍座"), undefined, "Chinese names are looked up through a culture");
 });
+
+test("a Chinese star keeps its number in its asterism, so a mansion's determinative star (its 1) is known where the source names it", () => {
+  assert.deepEqual(chinese.find("角宿")!.numbers, { 5056: 1, 5107: 2 });
+  assert.equal(chinese.find("角宿")!.numbers![5107], 2, "角宿二 is HR 5107");
+  // a star known by a proper name is numbered by its place in the package's list, not by Wikidata: 天樞 (Dubhe) is the Dipper's first
+  assert.equal(chinese.find("北斗")!.numbers![4301], 1, "Dubhe is 天樞, the Dipper's first");
+  for (const asterism of chinese.asterisms()) {
+    const held = new Set(asterism.chains.flat());
+    for (const [hr, n] of Object.entries(asterism.numbers ?? {})) {
+      assert.ok(held.has(Number(hr)), `${asterism.id}: HR ${hr} is one of its stars`);
+      assert.ok(Number.isInteger(n) && n >= 1 && n <= 40, `${asterism.id}: number ${n}`);
+    }
+    // a star's number is never above what missing allows: the largest number is at most the stars held plus those missing
+    const largest = Math.max(0, ...Object.values(asterism.numbers ?? {}));
+    assert.ok(largest <= held.size + asterism.missing, `${asterism.id}: ${largest} against ${held.size} held and ${asterism.missing} missing`);
+  }
+  const mansions = chinese.asterisms().filter((asterism) => asterism.kind === "mansion");
+  const withFirst = mansions.filter((asterism) => Object.values(asterism.numbers ?? {}).includes(1));
+  // Wikidata names star 1 of 24 of the 28: 氐, 牛, 觜 and 參 lack it there
+  assert.equal(withFirst.length, 24);
+  assert.equal(japanese.find("昴")!.numbers, undefined, "the Japanese sky does not number its stars");
+});
+
+test("the numbers are Wikidata's, repeats and all: 斗宿 has two stars numbered 1, so a number alone does not pick its determinative star", () => {
+  // Wikidata names both HR 6812 and HR 7039 斗宿一; when it is put right, this test fails and says so
+  const dou = chinese.find("斗宿")!.numbers!;
+  assert.equal(dou[6812], 1);
+  assert.equal(dou[7039], 1);
+  assert.deepEqual(Object.values(chinese.find("天園")!.numbers!).filter((n) => n === 4).length, 2, "天園 has two stars numbered 4 (HR 721 and 794)");
+  // 三台 is three pairs, 上台, 中台 and 下台, each numbered 1 and 2: shared by design
+  assert.deepEqual(Object.values(chinese.find("三台")!.numbers!).sort(), [1, 1, 1, 2, 2, 2]);
+});
