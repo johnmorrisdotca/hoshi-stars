@@ -1,7 +1,7 @@
 // The faint stars on the demo's map and the embed page: zooming into Orion draws more of them and says how deep the map is there, a layer button turns them off and the address keeps it,
 // a view never draws more than the cap, panning with them costs little more than without, and at rest nothing is drawn and nothing is fetched. Tiles are read from the site's own faint-tiles/.
 import { expect, test, type Page } from "@playwright/test";
-import { FAINT_DOT_CAP } from "../demo/faint-layer.ts";
+import { FAINT_DOT_CAP } from "../src/chart/faint-layer.ts";
 
 const ORION = "ra=83.8&dec=-5.4";
 const CYGNUS = "ra=305&dec=38";
