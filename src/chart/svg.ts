@@ -3,6 +3,7 @@
 import type { Culture } from "../culture.ts";
 import type { Projection } from "../projection.ts";
 import { chart, defaultZoom, type Hit, type Language, type Layer } from "./chart.ts";
+import type { MarkerRange, SkyMarker } from "./markers.ts";
 
 /**
  * The layers a published chart draws: the Milky Way, the figures' lines, the constellation boundaries, the names, the deep-sky objects, the black holes and the grid.
@@ -71,6 +72,12 @@ export interface ChartSvgOptions {
   constellation?: string | undefined;
   /** The star (its HR number, `2491` for Sirius) or Messier object (`M42`) to mark as picked. */
   picked?: string | undefined;
+  /** Your own points, each with a place and, if you like, a date, a name, a colour, a size and a group (`SkyMarker`). They are drawn over the stars and their names are placed clear of the stars and of each other. */
+  markers?: readonly SkyMarker[] | undefined;
+  /** Show only the markers dated inside it (`{ from, to, fade? }`, ISO texts, milliseconds or `Date`s); a marker with no date is always shown. Every marker when left out. */
+  timeRange?: MarkerRange | undefined;
+  /** Join a group of markers with a line in date order: `true` for every group, or the groups' names (`["Comet"]`). No lines when left out. */
+  tracks?: boolean | readonly string[] | undefined;
   /** The SVG's accessible name: "Star chart" (星図 in Japanese) when left out. */
   label?: string | undefined;
   /**
@@ -97,6 +104,9 @@ export function chartInput(o: ChartSvgOptions): Parameters<typeof chart>[0] {
     culture: o.culture,
     highlight: o.constellation,
     picked: o.picked,
+    markers: o.markers,
+    timeRange: o.timeRange,
+    tracks: o.tracks,
     measure: o.measure,
   };
 }

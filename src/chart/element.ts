@@ -6,6 +6,8 @@ import type { Projection } from "../projection.ts";
 import { western } from "../cultures/western.ts";
 import { chart, constellationUnder, defaultZoom, figureById, figureUnder, type Hit, type View } from "./chart.ts";
 import { attachHands, type Hands } from "./hands.ts";
+import { normaliseMarkers, type MarkerRange, type MarkerWhen, type SkyMarker } from "./markers.ts";
+import type { MarkerHit } from "./markers-draw.ts";
 import { CHART_BACKGROUND, CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAULT_CHART_MAGNITUDE, type ChartLayer } from "./svg.ts";
 
 /**
@@ -75,9 +77,37 @@ export interface ChartViewDetail {
   final: boolean;
 }
 
+/**
+ * What `hoshi-marker` says: a marker was clicked, tapped, or chosen with Enter or Space while it had the focus.
+ *
+ * @example
+ * ```ts no-run
+ * import type { ChartMarkerDetail } from "@johnmorrisdotca/hoshi-stars/chart/element";
+ *
+ * document.querySelector("hoshi-chart")!.addEventListener("hoshi-marker", (event) => {
+ *   const { marker, id, source } = (event as CustomEvent<ChartMarkerDetail>).detail;
+ *   console.log(id, marker.label ?? "", source);
+ * });
+ * ```
+ */
+export interface ChartMarkerDetail {
+  /** The marker, as the page gave it (the same object when it was set as a property). */
+  marker: SkyMarker;
+  /** The marker's `id`, or `m<position>` when it has none. */
+  id: string;
+  /** Its position in `markers`. */
+  index: number;
+  /** `pointer` for a click or a tap, `key` for Enter or Space on a marker that has the focus. */
+  source: "pointer" | "key";
+}
+
+/** At most this many markers are reached with the Tab key (the first drawn, in the order given); every marker can still be clicked. */
+const TAB_STOPS = 40;
+
 const STYLE = `:host{display:block;position:relative;aspect-ratio:16/10;min-height:160px;background:${CHART_BACKGROUND};border-radius:8px;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;outline:none}
 :host(:focus-visible){box-shadow:0 0 0 3px var(--hoshi-focus,#8fb3ff)}:host([theme="light"]:focus-visible){box-shadow:0 0 0 3px var(--hoshi-focus,#1d4ed8)}
-svg{position:absolute;inset:0;width:100%;height:100%;display:block}`;
+svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+[data-marker]{cursor:pointer;outline:none}[data-marker]:focus-visible circle{stroke:var(--hoshi-focus,#8fb3ff);stroke-width:3}`;
 
 const number = (text: string | null, fallback: number): number => {
   const n = Number(text);
@@ -106,7 +136,7 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * ```
  */
 export class HoshiChartElement extends Base {
-  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls"];
+  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls", "markers", "time-from", "time-to", "time-fade", "tracks"];
 
   #svg: SVGSVGElement | undefined;
   #hands: Hands | undefined;
@@ -123,6 +153,11 @@ export class HoshiChartElement extends Base {
   #highlight: string | undefined;
   #langWatch: MutationObserver | undefined;
   #langNow: "en" | "ja" | undefined;
+  #attributesRead = false;
+  #markers: readonly SkyMarker[] = [];
+  #markerHits: MarkerHit[] = [];
+  #range: MarkerRange | undefined;
+  #tracks: boolean | readonly string[] = false;
 
   connectedCallback(): void {
     const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
@@ -137,6 +172,19 @@ export class HoshiChartElement extends Base {
     this.addEventListener("pointermove", this.#move);
     this.addEventListener("pointerup", this.#up);
     this.addEventListener("pointercancel", this.#cancel);
+    this.addEventListener("keydown", this.#key);
+    // markers and their time range given as attributes before the element was connected, and properties set before it was defined (they hide the accessors: take them back)
+    if (!this.#attributesRead) {
+      this.#attributesRead = true;
+      this.#readMarkerAttributes();
+    }
+    for (const name of ["markers", "timeRange", "tracks"] as const) {
+      if (Object.hasOwn(this, name)) {
+        const value = Reflect.get(this, name);
+        Reflect.deleteProperty(this, name);
+        Reflect.set(this, name, value);
+      }
+    }
     // a lang set or changed above the element (the page's <html lang>, a section's) is watched: the names follow it
     this.#langWatch = new MutationObserver(() => {
       if (this.#lang() !== this.#langNow) this.#schedule();
@@ -158,6 +206,7 @@ export class HoshiChartElement extends Base {
     this.removeEventListener("pointermove", this.#move);
     this.removeEventListener("pointerup", this.#up);
     this.removeEventListener("pointercancel", this.#cancel);
+    this.removeEventListener("keydown", this.#key);
     this.#langWatch?.disconnect();
     this.#langWatch = undefined;
     this.#hands?.destroy();
@@ -165,6 +214,7 @@ export class HoshiChartElement extends Base {
   }
 
   attributeChangedCallback(name: string): void {
+    if (name === "markers" || name === "time-from" || name === "time-to" || name === "time-fade" || name === "tracks") this.#readMarkerAttributes(name);
     if (this.#svg === undefined) return;
     if (name === "culture") {
       void this.#loadCulture();
@@ -179,6 +229,69 @@ export class HoshiChartElement extends Base {
       this.#hands?.sync();
     }
     this.#schedule();
+  }
+
+  /**
+   * The page's own points on the chart (`SkyMarker`: `ra`, `dec`, and if you like `date`, `label`, `color`, `size`, `group`, `id`). Set as a property (any array) or as the `markers` attribute (JSON text); the last one set wins.
+   * A marker whose `ra` or `dec` is not a finite number is not drawn. Their names are placed clear of the stars and of each other, and nothing is drawn at rest: it redraws when markers, range or view change.
+   */
+  get markers(): readonly SkyMarker[] {
+    return this.#markers;
+  }
+
+  set markers(value: readonly SkyMarker[] | null | undefined) {
+    this.#markers = Array.isArray(value) ? value : [];
+    this.#schedule();
+  }
+
+  /**
+   * The moments to show: `{ from, to, fade? }` with ISO texts, milliseconds or `Date`s. A marker dated outside it is not drawn, one with no date always is; `fade` is the days over which a marker comes in from the edge
+   * of the range. `undefined` shows every marker. The attributes `time-from`, `time-to` and `time-fade` set the same; the last one set wins.
+   */
+  get timeRange(): MarkerRange | undefined {
+    return this.#range === undefined ? undefined : { ...this.#range };
+  }
+
+  set timeRange(value: MarkerRange | null | undefined) {
+    this.#range = value === null || value === undefined ? undefined : { ...value };
+    this.#schedule();
+  }
+
+  /** Join a group of markers with a line in date order: `true` for every group or the groups' names. The `tracks` attribute sets it (empty or `all` for every group, else names separated by commas). */
+  get tracks(): boolean | readonly string[] {
+    return this.#tracks;
+  }
+
+  set tracks(value: boolean | readonly string[] | null | undefined) {
+    this.#tracks = value === undefined || value === null ? false : value;
+    this.#schedule();
+  }
+
+  #readMarkerAttributes(only?: string): void {
+    if (only === undefined || only === "markers") {
+      const text = this.getAttribute("markers");
+      if (text !== null) {
+        try {
+          this.#markers = normaliseMarkers(JSON.parse(text));
+        } catch {
+          this.#markers = [];
+        }
+      } else if (only === "markers") this.#markers = [];
+    }
+    if (only === undefined || only === "time-from" || only === "time-to" || only === "time-fade") {
+      const from = this.getAttribute("time-from");
+      const to = this.getAttribute("time-to");
+      const fade = this.getAttribute("time-fade");
+      if (from !== null || to !== null || fade !== null) {
+        const when = (text: string | null): MarkerWhen | undefined => (text === null || text.trim() === "" ? undefined : /^\s*-?\d+(\.\d+)?\s*$/.test(text) ? Number(text) : text);
+        this.#range = { from: when(from), to: when(to), fade: fade === null ? undefined : number(fade, 0) };
+      } else if (only !== undefined) this.#range = undefined;
+    }
+    if (only === undefined || only === "tracks") {
+      const text = this.getAttribute("tracks");
+      if (text !== null) this.#tracks = text.trim() === "" || text.trim().toLowerCase() === "all" || text.trim().toLowerCase() === "true" ? true : text.split(",").map((name) => name.trim()).filter((name) => name !== "");
+      else if (only === "tracks") this.#tracks = false;
+    }
   }
 
   /** Where the chart looks now. */
@@ -286,13 +399,52 @@ export class HoshiChartElement extends Base {
     if (svg === undefined || view === undefined || width === 0 || height === 0) return;
     const lang = this.#lang();
     this.#langNow = lang;
-    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined });
+    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined, markers: this.#markers, timeRange: this.#range, tracks: this.#tracks });
     const out = chart(input);
     this.#hits = out.hits;
+    this.#markerHits = out.markerHits;
+    // a marker that has the focus keeps it through the redraw
+    const focused = (this.shadowRoot?.activeElement as Element | null | undefined)?.getAttribute?.("data-marker") ?? undefined;
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     svg.setAttribute("aria-label", this.getAttribute("aria-label") ?? (lang === "ja" ? "星図" : "Star chart"));
     svg.innerHTML = out.svg;
+    this.#decorateMarkers(svg, focused);
     this.#draws += 1;
+  }
+
+  /** Each marker drawn is a button for a keyboard and a screen reader: named, reachable with Tab (the first `TAB_STOPS`) and chosen with Enter or Space. */
+  #decorateMarkers(svg: SVGSVGElement, focused: string | undefined): void {
+    let stops = 0;
+    let again: SVGGElement | undefined;
+    const hits = new Map(this.#markerHits.map((h) => [h.id, h]));
+    for (const g of Array.from(svg.querySelectorAll<SVGGElement>("g[data-marker]"))) {
+      const id = g.getAttribute("data-marker")!;
+      const hit = hits.get(id);
+      const marker = hit === undefined ? undefined : this.#markers[hit.index];
+      g.setAttribute("role", "button");
+      g.setAttribute("aria-label", marker?.label ?? id);
+      g.setAttribute("tabindex", stops < TAB_STOPS ? "0" : "-1");
+      stops += 1;
+      if (id === focused) again = g;
+    }
+    again?.focus({ preventScroll: true });
+  }
+
+  #key = (event: KeyboardEvent): void => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const g = (event.composedPath()[0] as Element | undefined)?.closest?.("g[data-marker]");
+    if (g === null || g === undefined) return;
+    const id = g.getAttribute("data-marker")!;
+    const hit = this.#markerHits.find((h) => h.id === id);
+    if (hit === undefined) return;
+    event.preventDefault();
+    this.#markerSays(hit, "key");
+  };
+
+  #markerSays(hit: MarkerHit, source: "pointer" | "key"): void {
+    const marker = this.#markers[hit.index];
+    if (marker === undefined) return;
+    this.dispatchEvent(new CustomEvent<ChartMarkerDetail>("hoshi-marker", { detail: { marker, id: hit.id, index: hit.index, source } }));
   }
 
   #local(event: PointerEvent): { x: number; y: number } {
@@ -326,6 +478,17 @@ export class HoshiChartElement extends Base {
 
   /** A tap: the nearest star, deep-sky object or black hole drawn within 22 pixels (anywhere in a large object's bright middle), else the figure under it, else nothing. */
   #tap(x: number, y: number): void {
+    // a marker is the page's own point and comes first: the nearest one within its dot and a finger's reach
+    let marker: MarkerHit | undefined;
+    let closest = Infinity;
+    for (const hit of this.#markerHits) {
+      const away = Math.hypot(hit.x - x, hit.y - y);
+      if (away <= Math.max(14, hit.r + 8) && away < closest) {
+        closest = away;
+        marker = hit;
+      }
+    }
+    if (marker !== undefined) return this.#markerSays(marker, "pointer");
     let best: Hit | undefined;
     let near = 22 * 22;
     for (const hit of this.#hits) {
