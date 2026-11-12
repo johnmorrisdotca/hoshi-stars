@@ -3,7 +3,7 @@
 // the step it made (a zoom about a point, a slide, a turn) and played onto the View with the chart's own projection maths (`zoomedAbout`, `dragged`).
 // Zoom 1 of the controller is the chart's opening zoom, "Fit": there the plain wheel scrolls the page and a drag turns the sky; zoomed in, the wheel and a drag move it.
 import { createViewController, type ViewController, type ViewState } from "@johnmorrisdotca/kazoku-ui/view-controls";
-import { DEFAULT_VIEW, dragged, fitScale, ZOOM_MAX, ZOOM_MIN, zoomedAbout, type View } from "../src/chart/chart.ts";
+import { DEFAULT_VIEW, dragged, fitScale, ZOOM_MAX, ZOOM_MIN, zoomedAbout, type View } from "./chart.ts";
 
 export interface HandsHost {
   view(): View;

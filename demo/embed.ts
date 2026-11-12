@@ -12,7 +12,7 @@
 import { chart, defaultZoom, pictureZoomCap, toScreen, ZOOM_MAX, type View } from "../src/chart/chart.ts";
 import { choiceOf } from "./choice.ts";
 import { cultureOf } from "./cultures.ts";
-import { attachHands } from "./hands.ts";
+import { attachHands } from "../src/chart/hands.ts";
 import { viewpointOf, skyOf } from "./from.ts";
 import { nearbyOf } from "./nearby.ts";
 import { faintFor } from "./faint.ts";

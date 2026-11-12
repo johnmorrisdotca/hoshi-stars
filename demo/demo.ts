@@ -25,7 +25,7 @@ import { centreOfConstellation, chart, constellationUnder, DEFAULT_VIEW, default
 import { CULTURE_IDS, cultureOf, cultureText, type CultureId } from "./cultures.ts";
 import { western } from "../src/cultures/western.ts";
 import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
-import { attachHands } from "./hands.ts";
+import { attachHands } from "../src/chart/hands.ts";
 import { nearbyOf, type By } from "./nearby.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
 import type { Box } from "../src/chart/labels.ts";
