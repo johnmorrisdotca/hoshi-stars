@@ -57,7 +57,7 @@ The grade is a rule on the stated figures, not a verdict on the star, and `GRADE
 | B | the distance is known to 20% or better (or to under 5% with a coarse position) |
 | C | anything else: a position and a rough distance, or no distance |
 
-A position is **modern** when its error, or its resolution where it states no error, is 2 arc-seconds or less. A bright star's position is the catalogue's own, to 1.5 arc-seconds at most, so it counts; a nearby star's is modern when it comes from 2MASS and coarse when it is the Yale catalogue's own position carried from 1900. A parallax with no stated error is rough, so the star is grade C, except a dynamical parallax, which is fair. `STAR_GRADES` lists the grades, best first, and `gradeAtLeast(grade, "B")` tests a grade against a minimum.
+A position is **modern** when its error, or its resolution where it states no error, is 2 arc-seconds or less. The Bright Star Catalogue states no error for its positions, so for a bright star the figure is the resolution of the printed position, 1.5 arc-seconds at most, not a measured error; it is within the 2 arc-seconds, so it counts; a nearby star's is modern when it comes from 2MASS and coarse when it is the Yale catalogue's own position carried from 1900. A parallax with no stated error is rough, so the star is grade C, except a dynamical parallax, which is fair. `STAR_GRADES` lists the grades, best first, and `gradeAtLeast(grade, "B")` tests a grade against a minimum.
 
 ## The counts
 
@@ -68,10 +68,42 @@ A position is **modern** when its error, or its resolution where it states no er
 
 Most of the bright stars are grade C because the Bright Star Catalogue has a parallax for few of them, and states no error for those: a distance with no stated error is not graded as if it had one. A modern catalogue would raise many of them; the ones that could be used here cannot be passed on under an MIT licence (`NOTICE.md`, "Deliberately not used").
 
+## Keeping only the stars you can trust
+
+`stars`, `nearbyStars` and `nearest` take `minGrade`: the worst grade to keep, so `"B"` keeps grades A and B. `starGrade(star)` is a star's grade alone, quicker than `starAccuracy(star).grade`, and `checkGrade` is the check that turns a bad `minGrade` into a `RangeError` naming the option.
+
+A query by space (`nearest(..., { by: "space" })`) also says how sure each answer is. Besides `distance` and `error`, every answer has its `range` (the distance one `error` each way, never below 0) and `tied`: `true` where that range overlaps the one before it or after it in the full list, so the data does not settle which of the two is nearer. Rigil Kentaurus and Toliman, the two bright stars of Alpha Centauri, are one such pair. A star with no stated error has no `range` and is never called tied: a missing error is not a small one.
+
+```js
+import { starByName, stars } from "@johnmorrisdotca/hoshi-stars";
+import { nearbyStars } from "@johnmorrisdotca/hoshi-stars/nearby";
+import { nearest } from "@johnmorrisdotca/hoshi-stars/nearest";
+
+console.log(`${stars({ minGrade: "A" }).length} of ${stars().length} bright stars are grade A; ${nearbyStars({ minGrade: "B" }).length} nearby stars are B or better`);
+
+const found = nearest(starByName("Sirius"), { by: "space", count: 4, minGrade: "B" });
+for (const one of found) {
+  const range = one.range === undefined ? "no range" : `${one.range[0].toFixed(1)} to ${one.range[1].toFixed(1)} light-years`;
+  console.log(`${one.thing.name ?? one.thing.designation}: ${one.distance.toFixed(1)}, ${range}${one.tied ? ", tied with a neighbour" : ""}`);
+}
+```
+
+That prints:
+
+```text
+68 of 5080 bright stars are grade A; 1517 nearby stars are B or better
+Procyon: 5.2, 5.2 to 5.3 light-years
+Ran: 8.0, 7.9 to 8.0 light-years
+Rigil Kentaurus: 9.5, 9.4 to 9.5 light-years, tied with a neighbour
+Toliman: 9.5, 9.4 to 9.5 light-years, tied with a neighbour
+```
+
+A deep-sky object has no grade. `nearest("M31", { kind: "deep-sky", minGrade: "A" })` is a `RangeError`, and in a mixed `among` list deep-sky objects are left out when `minGrade` is set.
+
 ## In the data files
 
 The `stars` and `nearby-stars` tables of `pnpm export:data` have the columns `grade` and `distanceQuality`; `stars` also has `positionSource` and `positionResolutionArcsec` (`nearby-stars` already had `positionSource`, `positionErrorArcsec` and `relativeError`).
 
 ## What comes next
 
-The grade is on every star of the two tiers today. Still to come: `minGrade` on `stars()` and `nearest()`, the grade and its error shown when a star is picked on the chart, and a layer that merges the tiers so a star is counted once with its best value in each field.
+The grade is on every star of the two tiers today, and `minGrade` filters by it. Still to come: the grade and its error shown when a star is picked on the chart, and a layer that merges the tiers so a star is counted once with its best value in each field.

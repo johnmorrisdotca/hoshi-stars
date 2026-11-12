@@ -3,6 +3,7 @@
 // so a page that never loads it pays nothing. Pure: no DOM, no clock, no state beyond the parsed table.
 import { NEARBY_ROWS } from "./data/nearby.ts";
 import { luminosityClass, type LuminosityClass } from "./spectral.ts";
+import { checkGrade, gradeAtLeast, starGrade, type StarGrade } from "./accuracy.ts";
 
 /**
  * Where a star's position comes from: a 2MASS source found for it (good to a fraction of an arc-second), or the Yale catalogue's own position (taken to J2000 from 1900, good to arc-seconds at best, an arc-minute at worst).
@@ -180,9 +181,9 @@ function load(): void {
 /**
  * The nearby stars, nearest first (the ones with no distance last). They are the stars of the Yale parallax catalogue that the 5,080 bright stars do not hold, so a star is never in both lists.
  *
- * @param options - `magnitude`: the faintest V to include (a star of exactly that magnitude is in; a star with no magnitude is left out). `maxRelativeError`: only stars whose distance is known to this fraction or better (0.05 for under 5%, 0.2 for under 20%). `withDistance`: only stars with a distance.
+ * @param options - `magnitude`: the faintest V to include (a star of exactly that magnitude is in; a star with no magnitude is left out). `maxRelativeError`: only stars whose distance is known to this fraction or better (0.05 for under 5%, 0.2 for under 20%). `withDistance`: only stars with a distance. `minGrade`: the worst grade to include (`"B"` keeps grades A and B; see `starAccuracy` in `/accuracy`).
  * @returns A fresh array of the shared, frozen stars.
- * @throws TypeError if an option is not a number (or a boolean for `withDistance`).
+ * @throws TypeError if an option is not a number (or a boolean for `withDistance`); RangeError if `minGrade` is not `"A"`, `"B"` or `"C"`.
  *
  * @example
  * ```ts
@@ -192,9 +193,10 @@ function load(): void {
  * console.log(close.length > 50, close[0]?.name);
  * ```
  */
-export function nearbyStars(options: { magnitude?: number; maxRelativeError?: number; withDistance?: boolean } = {}): NearbyStar[] {
+export function nearbyStars(options: { magnitude?: number; maxRelativeError?: number; withDistance?: boolean; minGrade?: StarGrade } = {}): NearbyStar[] {
   load();
   const { magnitude, maxRelativeError, withDistance } = options ?? {};
+  const minGrade = options?.minGrade === undefined ? undefined : checkGrade(options.minGrade, "minGrade");
   for (const [name, value] of [["magnitude", magnitude], ["maxRelativeError", maxRelativeError]] as const) {
     if (value !== undefined && (typeof value !== "number" || Number.isNaN(value))) throw new TypeError(`${name} must be a number, got ${String(value)}`);
   }
@@ -203,7 +205,8 @@ export function nearbyStars(options: { magnitude?: number; maxRelativeError?: nu
     (star) =>
       (magnitude === undefined || (star.magnitude !== undefined && star.magnitude <= magnitude)) &&
       (maxRelativeError === undefined || (star.relativeError !== undefined && star.relativeError <= maxRelativeError)) &&
-      (withDistance !== true || star.lightYears !== undefined),
+      (withDistance !== true || star.lightYears !== undefined) &&
+      (minGrade === undefined || gradeAtLeast(starGrade(star), minGrade)),
   );
 }
 

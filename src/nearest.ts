@@ -4,6 +4,7 @@ import { BOUNDARY_RINGS } from "./data/boundaries.ts";
 import { constellation, constellations, type Constellation } from "./constellations.ts";
 import { deepSkyObject, messier, type DeepSkyObject } from "./deep-sky.ts";
 import type { NearbyStar } from "./nearby.ts";
+import { checkGrade, gradeAtLeast, starGrade, type StarGrade } from "./accuracy.ts";
 import { starByName, starDistance, starDistanceLightYears, starPosition, stars, type Star } from "./stars.ts";
 import { moment, type When } from "./when.ts";
 
@@ -74,6 +75,10 @@ export interface NearestInSpace<T extends Star | NearbyStar = Star> {
   parsecs: number;
   /** The uncertainty of `distance` in light-years, or `undefined` where the star or the target has no parallax error (`parallaxErrorMas`): the 2,329 bright stars with a measured parallax have one, the Bright Star Catalogue's own parallaxes do not. A target that is a point is taken as exact. */
   error: number | undefined;
+  /** The nearest and the farthest the distance can be within one `error`, in light-years (the nearest is never below 0), or `undefined` where `error` is. */
+  range: readonly [number, number] | undefined;
+  /** `true` where this answer's `range` overlaps the range of the answer before it or after it in the full list: the order of the two is then not settled by the data, so call it a tie. `false` where there is no `error` to compare. */
+  tied: boolean;
 }
 
 /**
@@ -115,6 +120,8 @@ export interface NearestOptions {
   magnitude?: number;
   /** Look through this list instead of the table that `kind` names, for example `deepSky()` from `/deep-sky/ngc-ic`, or `[...stars(), ...nearbyStars()]` to count the nearby stars with the bright ones. */
   among?: readonly NearestThing[];
+  /** Only stars of this grade or better (`"B"` keeps A and B; see `starAccuracy` in `/accuracy`). A deep-sky object has no grade and is left out; with `kind: "deep-sky"` it is an error. */
+  minGrade?: StarGrade;
 }
 
 type SkyOptions = Omit<NearestOptions, "by" | "kind" | "among"> & { by?: "sky" };
@@ -174,6 +181,8 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
   if (!Number.isInteger(count) && count !== Number.POSITIVE_INFINITY) throw new RangeError(`count must be a whole number or Infinity, got ${count}`);
   const limit = options?.within === undefined ? Number.POSITIVE_INFINITY : number("within", options.within, 0);
   const faintest = magnitude === undefined ? Number.POSITIVE_INFINITY : number("magnitude", magnitude, Number.NEGATIVE_INFINITY);
+  const minGrade = options?.minGrade === undefined ? undefined : checkGrade(options.minGrade, "minGrade");
+  if (minGrade !== undefined && kind === "deep-sky" && among === undefined) throw new RangeError("minGrade grades stars: a deep-sky object has no grade");
   const when = date === undefined ? undefined : moment(date, "date");
   const from = resolve(target);
   const cartesian = "x" in from ? (from as Point3) : undefined;
@@ -203,6 +212,7 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
   for (const thing of candidates) {
     if (named && same(from as NearestThing, thing)) continue;
     if (thing.magnitude === undefined ? faintest !== Number.POSITIVE_INFINITY : thing.magnitude > faintest) continue;
+    if (minGrade !== undefined && (!(isStar(thing) || isNearby(thing)) || !gradeAtLeast(starGrade(thing), minGrade))) continue;
     const place = placeOf(thing, when);
     const there = unit(place.rightAscension, place.declination);
     if (by === "sky") {
@@ -230,7 +240,10 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
     }
   }
   found.sort((a, b) => a.key - b.key);
-  const list = found.slice(0, count).map(({ thing, key, error }) => (by === "sky" ? { thing, angle: key } : { thing: thing as Star | NearbyStar, distance: key, parsecs: key / LIGHT_YEARS_PER_PARSEC, error }));
+  // Sorted by distance, a range that overlaps a later one overlaps the next one too, so the neighbours settle every tie.
+  const ranges = found.map(({ key, error }): [number, number] | undefined => (error === undefined ? undefined : [Math.max(0, key - error), key + error]));
+  const overlap = (a: [number, number] | undefined, b: [number, number] | undefined): boolean => a !== undefined && b !== undefined && a[0] <= b[1] && b[0] <= a[1];
+  const list = found.slice(0, count).map(({ thing, key, error }, index) => (by === "sky" ? { thing, angle: key } : { thing: thing as Star | NearbyStar, distance: key, parsecs: key / LIGHT_YEARS_PER_PARSEC, error, range: ranges[index], tied: overlap(ranges[index], ranges[index - 1]) || overlap(ranges[index], ranges[index + 1]) }));
   return Object.assign(list, { skipped });
 }
 
@@ -246,8 +259,8 @@ function run(target: NearestTarget, options: NearestOptions, defaultCount: numbe
  * Every candidate is looked at (no index); one query over all the stars takes about a millisecond.
  *
  * @param target - A star, a deep-sky object, a name (`"Mizar"`, `"M31"`) or `{ rightAscension, declination }` in degrees (with `lightYears` for a query by space).
- * @param options - `count` (default 10), `within` (degrees by sky, light-years by space), `kind` (`"star"` or `"deep-sky"`), `by`, `date`, `magnitude` (the faintest to include) and `among`.
- * @returns A new list of `{ thing, angle }` or `{ thing, distance, parsecs, error }` with a `skipped` count.
+ * @param options - `count` (default 10), `within` (degrees by sky, light-years by space), `kind` (`"star"` or `"deep-sky"`), `by`, `date`, `magnitude` (the faintest to include), `among` and `minGrade` (only stars of this grade or better).
+ * @returns A new list of `{ thing, angle }` or `{ thing, distance, parsecs, error, range, tied }` with a `skipped` count. By space, `range` is the distance within one `error` and `tied` says that it overlaps a neighbour's range, so the order of the two is not settled.
  * @throws TypeError or RangeError, naming the argument, if the target, the name or an option is not valid, or the target has no distance for `by: "space"`.
  *
  * @example

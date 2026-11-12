@@ -7,6 +7,7 @@ import { STAR_DISTANCE_NOTES } from "./data/star-distances.ts";
 import { moment, type When } from "./when.ts";
 import { luminosityClass, type LuminosityClass } from "./spectral.ts";
 import { blackBodyColour, starTemperatureK } from "./colour.ts";
+import { checkGrade, gradeAtLeast, starGrade, type StarGrade } from "./accuracy.ts";
 
 export { blackBodyColour, starTemperatureK };
 
@@ -130,21 +131,23 @@ function load(): void {
 /**
  * The stars to a magnitude, brightest first. The catalogue stops at magnitude 6.0, so the default is all 5,080.
  *
- * @param options - `magnitude`: the faintest to include (a star of exactly that magnitude is in). Brighter limits give shorter lists: 1 is 15 stars, 4 is 518, 5 is 1,630.
+ * @param options - `magnitude`: the faintest to include (a star of exactly that magnitude is in). Brighter limits give shorter lists: 1 is 15 stars, 4 is 518, 5 is 1,630. `minGrade`: the worst grade to include (`"B"` keeps grades A and B; see `starAccuracy` in `/accuracy`).
  * @returns A fresh array of the shared, frozen stars.
+ * @throws TypeError if `magnitude` is not a number; RangeError if `minGrade` is not `"A"`, `"B"` or `"C"`.
  *
  * @example
  * ```ts
  * import { stars } from "@johnmorrisdotca/hoshi-stars";
  *
- * console.log(stars().length, stars({ magnitude: 2 }).map((s) => s.name ?? s.designation).slice(0, 3));
+ * console.log(stars().length, stars({ magnitude: 2 }).map((s) => s.name ?? s.designation).slice(0, 3), stars({ minGrade: "A" }).length);
  * ```
  */
-export function stars(options: { magnitude?: number } = {}): Star[] {
+export function stars(options: { magnitude?: number; minGrade?: StarGrade } = {}): Star[] {
   load();
   const limit = options.magnitude ?? Number.POSITIVE_INFINITY;
   if (typeof limit !== "number" || Number.isNaN(limit)) throw new TypeError(`magnitude must be a number, got ${String(limit)}`);
-  return stored.filter((star) => star.magnitude <= limit);
+  const minGrade = options.minGrade === undefined ? undefined : checkGrade(options.minGrade, "minGrade");
+  return stored.filter((star) => star.magnitude <= limit && (minGrade === undefined || gradeAtLeast(starGrade(star), minGrade)));
 }
 
 /**

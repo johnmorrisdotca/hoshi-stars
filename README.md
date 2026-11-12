@@ -633,15 +633,16 @@ console.log(exoplanetHostByName("Proxima Cen")!.planets.map((p) => p.name));    
 
 ## How well a star is known
 
-`@johnmorrisdotca/hoshi-stars/accuracy` says, for every bright star and every nearby star, which catalogue each of its position, magnitude, colour, parallax and proper motion is from, the error that catalogue states (or the size of its last printed digit where it states none, never a guessed error) and a grade: **A** a distance known to under 5% with a modern position, **B** a distance known to 20% or better, **C** anything else. It loads no data. The [guide](docs/guides/accuracy.md) has the rules and the counts by grade.
+`@johnmorrisdotca/hoshi-stars/accuracy` says, for every bright star and every nearby star, which catalogue each of its position, magnitude, colour, parallax and proper motion is from, the error that catalogue states (or the size of its last printed digit where it states none, never a guessed error) and a grade: **A** a distance known to under 5% with a modern position, **B** a distance known to 20% or better, **C** anything else. It loads no data. `stars`, `nearbyStars` and `nearest` take `minGrade`, and a query by space gives each answer its `range` and says where two answers are `tied`. The [guide](docs/guides/accuracy.md) has the rules and the counts by grade.
 
 ```ts
-import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { starByName, stars } from "@johnmorrisdotca/hoshi-stars";
 import { starAccuracy } from "@johnmorrisdotca/hoshi-stars/accuracy";
 
 const sirius = starAccuracy(starByName("Sirius")!);
 console.log(sirius.grade, sirius.parallax.source, sirius.distance.quality);  // A GCTP good
 console.log(starAccuracy(starByName("Rigel")!).grade);                       // C
+console.log(stars({ minGrade: "A" }).length, stars().length);                 // 68 5080
 ```
 
 ## Outside data

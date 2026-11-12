@@ -508,6 +508,12 @@ await step("accuracy", () => {
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 
+await step("min-grade", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "min-grade.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = ["68 of 5080 bright stars are grade A; 1517 nearby stars are B or better", "Procyon: 5.2, 5.2 to 5.3 light-years", "Ran: 8.0, 7.9 to 8.0 light-years", "Rigil Kentaurus: 9.5, 9.4 to 9.5 light-years, tied with a neighbour", "Toliman: 9.5, 9.4 to 9.5 light-years, tied with a neighbour"].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await step("near-stars", () => {
   const out = execFileSync(process.execPath, [join(examples("node"), "near-stars.mjs")], { cwd: usage, encoding: "utf8" }).trim();
   const expected = ["73 systems within 20 light-years, the nearest Alpha Centauri", "Barnard's Star (バーナード星): 5.98 light-years, M5 V", "position from 2MASS, distance from GCTP, Oph", "TRAPPIST-1: 7 planets, periods 1.51, 2.42, 4.05, 6.10, 9.21, 12.35, 18.77 days"].join("\n");
@@ -552,6 +558,7 @@ const FILES: Record<string, string[]> = {
   "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "node/accuracy.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
+  "node/min-grade.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],

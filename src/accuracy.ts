@@ -189,6 +189,48 @@ function nearbyAccuracy(star: NearbyStar): Omit<StarAccuracy, "layer" | "grade" 
   };
 }
 
+const isModern = (size: number | undefined): boolean => (size ?? Number.POSITIVE_INFINITY) <= GRADE_RULES.modernPositionArcsec;
+const gradeOf = (quality: DistanceQuality, modernPosition: boolean): StarGrade => (quality === "good" && modernPosition ? "A" : quality === "good" || quality === "fair" ? "B" : "C");
+
+/**
+ * A star's grade alone, worked out without building the whole record: the same answer as `starAccuracy(star).grade`, cheap enough to filter thousands of stars with.
+ *
+ * @param star - A bright star or a nearby star.
+ * @returns `"A"`, `"B"` or `"C"` by `GRADE_RULES`.
+ *
+ * @example
+ * ```ts
+ * import { starByName } from "@johnmorrisdotca/hoshi-stars";
+ * import { starGrade } from "@johnmorrisdotca/hoshi-stars/accuracy";
+ *
+ * console.log(starGrade(starByName("Sirius")!));
+ * ```
+ */
+export function starGrade(star: Star | NearbyStar): StarGrade {
+  if ("hr" in star) return gradeOf(distanceQuality(star), isModern(Math.max(raStepArcsec(star.declination), 1)));
+  return gradeOf(distanceQuality({ parallaxMas: star.parallaxMas, parallaxErrorMas: star.parallaxErrorMas, parallaxSource: "GCTP" }), isModern(star.positionErrorArcsec));
+}
+
+/**
+ * Whether a value is a grade: `"A"`, `"B"` or `"C"`. Throws a `RangeError` that names the option when it is not, which is what `minGrade` does with a bad value.
+ *
+ * @param value - Anything.
+ * @param name - The option's name, for the message.
+ * @returns The grade, typed.
+ * @throws RangeError if `value` is not `"A"`, `"B"` or `"C"`.
+ *
+ * @example
+ * ```ts
+ * import { checkGrade } from "@johnmorrisdotca/hoshi-stars/accuracy";
+ *
+ * console.log(checkGrade("B", "minGrade"));
+ * ```
+ */
+export function checkGrade(value: unknown, name: string): StarGrade {
+  if (value !== "A" && value !== "B" && value !== "C") throw new RangeError(`${name} must be "A", "B" or "C", got ${String(value)}`);
+  return value;
+}
+
 /**
  * How well each value of a star is known, and its grade. The grade is a rule on the stated figures, not a verdict on the star: **A** a distance known to under 5% and a modern position (an error, or where none is stated a resolution, of 2 arc-seconds or less),
  * **B** a distance known to 20% or better, **C** anything else (a position and a rough distance, or no distance). A parallax with no stated error is never better than rough, except a dynamical one, which is fair. Sirius is grade A, Betelgeuse (a paper's distance, known to about 14%) is grade B and Rigel (a range of 590 to 1,480 light-years) is grade C.
@@ -208,10 +250,8 @@ function nearbyAccuracy(star: NearbyStar): Omit<StarAccuracy, "layer" | "grade" 
 export function starAccuracy(star: Star | NearbyStar): StarAccuracy {
   const layer = "hr" in star ? "bright" : "nearby";
   const fields = "hr" in star ? brightAccuracy(star) : nearbyAccuracy(star);
-  const modernPosition = (fields.position.error ?? fields.position.resolution ?? Number.POSITIVE_INFINITY) <= GRADE_RULES.modernPositionArcsec;
-  const { quality } = fields.distance;
-  const grade: StarGrade = quality === "good" && modernPosition ? "A" : quality === "good" || quality === "fair" ? "B" : "C";
-  return { layer, grade, modernPosition, ...fields };
+  const modernPosition = isModern(fields.position.error ?? fields.position.resolution);
+  return { layer, grade: gradeOf(fields.distance.quality, modernPosition), modernPosition, ...fields };
 }
 
 /**
