@@ -84,6 +84,22 @@ console.log(paths.length > 1000);
 
 格子は銀経1度×銀緯0.5度で32段階です。測定値ではなく、陰影をつけるための地図です。`toGalactic`と`fromGalactic`は、赤経・赤緯と銀経・銀緯を相互に変換します。データの出どころは[データとライセンス](data-and-licences.md)にあります。
 
+### WebGLの空のためのテクスチャー
+
+`milkyWayTexture(options)` は、この地図を空全体の絵として描きます。幅は高さの2倍で、WebGLの空の球やキャンバスに使えます。横は赤経 (左端が0)、縦は赤緯 (上端が+90) です。`frame: "galactic"` を渡すと、横が銀経、縦が銀緯になります。各ピクセルの色は、明るさからカラーランプで決まります。既定は `MILKY_WAY_NIGHT_RAMP` で、天の川のないところは透明、かすかな青い光、灰白色の帯、暖かい色の中心部と続き、明るいほど不透明になるので、暗い空にそのまま重ねられます。
+
+```js
+import { milkyWayTexture } from "@johnmorrisdotca/hoshi-stars/milky-way";
+
+const { width, height, data } = milkyWayTexture({ width: 1024 });
+console.log(width, height, data.length === width * height * 4);
+// 1024 512 true
+```
+
+`data` は、上の行から順に、各ピクセルの赤・緑・青・不透明度で、`ImageData` やWebGLのテクスチャーがそのまま受け取れる形です (three.js なら `new DataTexture(data, width, height)` に、`flipY` を true、`colorSpace` を `SRGBColorSpace` にします)。球の内側から見ると、空は地図と左右が逆になるので、テクスチャーを横に反転してください (`wrapS = RepeatWrapping`、`repeat.x = -1`)。`width` は16から4096までの偶数で、既定は2048 (1ピクセルが約0.18度) です。描くには数百ミリ秒かかるので、一度描いたら取っておいてください。
+
+テクスチャーは `detail` (0から2、既定は1。`milkyWayBrightness(point, { detail })` も同じものを受け取ります) で地図を読みます。格子をなめらかな曲線で読み、各値をまわり1〜2度の平均から遠ざけるので、グレートリフト、コールサック、はくちょう座の暗黒帯は細く暗く、その横の星雲は明るくなります。格子にあるものをくっきりさせるだけで、ノイズや独自の細部は加えません。暗黒帯が格子の0.5度より細かくなることはありません。
+
 ## 決めておくこと
 
 - **広い星図。** `equirectangular`、`mollweide`、`hammer`の星図には、赤経が折り返す継ぎ目があります。反対側の2つの星を結ぶ線は、図全体を横切ってしまいます。両端が図の半分より離れた線は描かないでください。

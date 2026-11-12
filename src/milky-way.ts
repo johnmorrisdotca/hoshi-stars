@@ -186,8 +186,9 @@ function brightnessAt(longitude: number, latitude: number): number {
  * brightness directly.
  *
  * @param point - A right ascension and declination in degrees (J2000).
+ * @param options - `detail`: 0 (the default) reads the grid in straight lines; above 0, up to 2, it is read sharper (see `MilkyWayDetailOptions`).
  * @returns A number from 0 to 1.
- * @throws TypeError if the right ascension or declination is not a finite number.
+ * @throws TypeError if the right ascension, declination or detail is not a finite number. RangeError if `detail` is outside 0 to 2.
  *
  * @example
  * ```ts
@@ -198,9 +199,287 @@ function brightnessAt(longitude: number, latitude: number): number {
  * console.log(sagittarius > pole); // true
  * ```
  */
-export function milkyWayBrightness(point: SkyPoint): number {
+export function milkyWayBrightness(point: SkyPoint, options: MilkyWayDetailOptions = {}): number {
+  const detail = detailOf(options.detail, 0);
   const g = toGalactic(point);
-  return brightnessAt(g.longitude, g.latitude);
+  return detail === 0 ? brightnessAt(g.longitude, g.latitude) : sharpAt(g.longitude, g.latitude, detail);
+}
+
+/**
+ * How sharply to read the grid between its points.
+ *
+ * @example
+ * ```ts
+ * import { milkyWayBrightness, type MilkyWayDetailOptions } from "@johnmorrisdotca/hoshi-stars/milky-way";
+ *
+ * const options: MilkyWayDetailOptions = { detail: 1 };
+ * console.log(milkyWayBrightness({ rightAscension: 190, declination: -63 }, options)); // the Coalsack, darker than with detail 0
+ * ```
+ */
+export interface MilkyWayDetailOptions {
+  /**
+   * 0 reads the grid in straight lines between its points (the default for `milkyWayBrightness`). Above 0 the grid is read along smooth curves and each value is pushed away from the mean of the
+   * degree or two round it, by this much: the dust lanes come out narrower and darker and the star clouds beside them brighter, the way the eye sees them. It sharpens what the grid holds and adds
+   * no detail of its own (no noise, nothing made up). From 0 to 2; 1 is the default for `milkyWayTexture`.
+   */
+  detail?: number;
+}
+
+function detailOf(value: unknown, fallback: number): number {
+  if (value === undefined) return fallback;
+  finite("detail", value);
+  const v = value as number;
+  if (v < 0 || v > 2) throw new RangeError(`detail must be from 0 to 2, got ${v}`);
+  return v;
+}
+
+const smoothed = new Map<number, Float32Array>();
+
+// The grid smoothed with a Gaussian of `sigma` cells each way (a cell is 1 degree of longitude by 0.5 of latitude), kept: 0.7 cells takes the steps of the 32 levels out, so that sharpening does not
+// draw them as contours, and 2 cells is the mean round each point that the detail pushes away from.
+function blur(sigma: number): Float32Array {
+  const kept = smoothed.get(sigma);
+  if (kept !== undefined) return kept;
+  const source = unpack();
+  const reach = Math.ceil(sigma * 3);
+  const weights = Array.from({ length: 2 * reach + 1 }, (_, i) => Math.exp(-((i - reach) ** 2) / (2 * sigma * sigma)));
+  const total = weights.reduce((a, b) => a + b, 0);
+  const across = new Float32Array(COLUMNS * ROWS);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLUMNS; c++) {
+      let sum = 0;
+      for (let i = -reach; i <= reach; i++) sum += weights[i + reach]! * source[(((c + i) % COLUMNS) + COLUMNS) % COLUMNS + r * COLUMNS]!;
+      across[c + r * COLUMNS] = sum / total;
+    }
+  }
+  const out = new Float32Array(COLUMNS * ROWS);
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLUMNS; c++) {
+      let sum = 0;
+      for (let i = -reach; i <= reach; i++) sum += weights[i + reach]! * across[c + Math.max(0, Math.min(ROWS - 1, r + i)) * COLUMNS]!;
+      out[c + r * COLUMNS] = sum / total;
+    }
+  }
+  smoothed.set(sigma, out);
+  return out;
+}
+
+// Catmull-Rom weights for the four points round a fraction t of the way between the middle two.
+function curve(t: number, out: Float64Array): void {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  out[0] = (-t3 + 2 * t2 - t) / 2;
+  out[1] = (3 * t3 - 5 * t2 + 2) / 2;
+  out[2] = (-3 * t3 + 4 * t2 + t) / 2;
+  out[3] = (t3 - t2) / 2;
+}
+
+const WX = new Float64Array(4);
+const WY = new Float64Array(4);
+
+function sharpAt(longitude: number, latitude: number, detail: number): number {
+  if (latitude <= -MILKY_WAY_LATITUDE || latitude >= MILKY_WAY_LATITUDE) return 0;
+  const source = blur(0.7);
+  const mean = blur(2);
+  const x = longitude / STEP_L - 0.5;
+  const y = (latitude + MILKY_WAY_LATITUDE) / STEP_B - 0.5;
+  const c = Math.floor(x);
+  const r = Math.floor(y);
+  curve(x - c, WX);
+  curve(y - r, WY);
+  let sum = 0;
+  for (let j = 0; j < 4; j++) {
+    const row = Math.max(0, Math.min(ROWS - 1, r - 1 + j)) * COLUMNS;
+    let line = 0;
+    for (let i = 0; i < 4; i++) {
+      const at = ((((c - 1 + i) % COLUMNS) + COLUMNS) % COLUMNS) + row;
+      const v = source[at]!;
+      line += WX[i]! * (v + detail * (v - mean[at]!));
+    }
+    sum += WY[j]! * line;
+  }
+  return Math.max(0, Math.min(1, sum));
+}
+
+/**
+ * One stop of a colour ramp: at a brightness level, a colour and an opacity. Between stops the colour runs in a straight line.
+ *
+ * @example
+ * ```ts
+ * import type { MilkyWayRampStop } from "@johnmorrisdotca/hoshi-stars/milky-way";
+ *
+ * const core: MilkyWayRampStop = { level: 1, red: 255, green: 243, blue: 216, alpha: 0.88 };
+ * console.log(core.level);
+ * ```
+ */
+export interface MilkyWayRampStop {
+  /** The brightness, 0 to 1, as `milkyWayBrightness` gives it. */
+  level: number;
+  /** Red, green and blue, 0 to 255. */
+  red: number;
+  green: number;
+  blue: number;
+  /** Opacity, 0 (clear) to 1. */
+  alpha: number;
+}
+
+/**
+ * The package's ramp for a night sky: clear where there is no Milky Way, a faint blue glow, a grey-white band and a warm core, with the opacity rising with the brightness so that the texture can be
+ * laid over a dark sky as it is. Made for this package (no photograph's colours were read).
+ *
+ * @example
+ * ```ts
+ * import { MILKY_WAY_NIGHT_RAMP } from "@johnmorrisdotca/hoshi-stars/milky-way";
+ *
+ * console.log(MILKY_WAY_NIGHT_RAMP.length, MILKY_WAY_NIGHT_RAMP[0]!.alpha); // 6 0
+ * ```
+ */
+export const MILKY_WAY_NIGHT_RAMP: readonly MilkyWayRampStop[] = Object.freeze(
+  (
+    [
+      [0, 0, 0, 0, 0],
+      [0.08, 106, 128, 200, 0.1],
+      [0.2, 122, 144, 210, 0.24],
+      [0.4, 166, 182, 230, 0.4],
+      [0.65, 232, 228, 232, 0.58],
+      [1, 255, 243, 216, 0.88],
+    ] as const
+  ).map(([level, red, green, blue, alpha]) => Object.freeze({ level, red, green, blue, alpha })),
+);
+
+/**
+ * What texture to paint.
+ *
+ * @example
+ * ```ts
+ * import { milkyWayTexture, type MilkyWayTextureOptions } from "@johnmorrisdotca/hoshi-stars/milky-way";
+ *
+ * const options: MilkyWayTextureOptions = { width: 1024, frame: "galactic", detail: 1.5 };
+ * console.log(milkyWayTexture(options).height); // 512
+ * ```
+ */
+export interface MilkyWayTextureOptions extends MilkyWayDetailOptions {
+  /** Pixels across: an even whole number from 16 to 4096 (the family's largest texture side), default 2048. The height is half of it. */
+  width?: number;
+  /**
+   * `equatorial` (the default): across is right ascension, 0 at the left edge rising to 360 at the right, and down is declination, +90 at the top to -90 at the bottom, the way a sky sphere in
+   * equatorial coordinates is mapped. `galactic`: across is galactic longitude and down galactic latitude, the same way round, with the Galactic centre at the left edge.
+   */
+  frame?: "equatorial" | "galactic";
+  /** The colours, at least two stops in rising order of level, the first at 0 and the last at 1. Default `MILKY_WAY_NIGHT_RAMP`. */
+  ramp?: readonly MilkyWayRampStop[];
+}
+
+/**
+ * A painted Milky Way texture.
+ *
+ * @example
+ * ```ts
+ * import { milkyWayTexture, type MilkyWayTexturePixels } from "@johnmorrisdotca/hoshi-stars/milky-way";
+ *
+ * const texture: MilkyWayTexturePixels = milkyWayTexture({ width: 256 });
+ * console.log(texture.data.length === texture.width * texture.height * 4); // true
+ * ```
+ */
+export interface MilkyWayTexturePixels {
+  width: number;
+  height: number;
+  /** Red, green, blue and opacity for each pixel, row by row from the top, as `ImageData` and a WebGL texture take them. The colour is not multiplied by the opacity. */
+  data: Uint8ClampedArray;
+}
+
+function rampOf(ramp: readonly MilkyWayRampStop[]): readonly MilkyWayRampStop[] {
+  if (!Array.isArray(ramp) || ramp.length < 2) throw new RangeError("ramp must have at least two stops");
+  let last = -Infinity;
+  for (const stop of ramp) {
+    for (const key of ["level", "red", "green", "blue", "alpha"] as const) finite(`ramp ${key}`, stop?.[key]);
+    if (!(stop.level > last)) throw new RangeError("ramp levels must rise");
+    last = stop.level;
+  }
+  if (ramp[0]!.level !== 0 || ramp[ramp.length - 1]!.level !== 1) throw new RangeError("ramp must run from level 0 to level 1");
+  return ramp;
+}
+
+/**
+ * The Milky Way painted as a texture for a WebGL sky (or a canvas): a picture twice as wide as it is high covering the whole sky, coloured from the brightness grid by a ramp. It is read with
+ * `detail` (1 by default, see `MilkyWayDetailOptions`), so the dust lanes (the Great Rift, the Coalsack, the Cygnus Rift) are sharper than the plain grid gives them. Made from the package's
+ * numbers alone: no photograph is read. Pure: it returns new pixels and keeps nothing but the grid it unpacks once.
+ *
+ * Seen from inside a sphere, the sky runs the other way round from a map: give a sphere this texture with its across direction flipped (in three.js, `texture.wrapS = RepeatWrapping` and
+ * `texture.repeat.x = -1`), or turn the sphere inside out by scaling it by -1 across.
+ *
+ * @param options - `width` (default 2048), `frame` (`equatorial`, the default, or `galactic`), `detail` (0 to 2, default 1) and `ramp` (default `MILKY_WAY_NIGHT_RAMP`).
+ * @returns The pixels.
+ * @throws RangeError if `width` is not an even whole number from 16 to 4096, `detail` is outside 0 to 2, `frame` is unknown or `ramp` does not run from level 0 to 1 in rising order. TypeError if a number is not finite.
+ *
+ * @example
+ * ```ts
+ * import { milkyWayTexture } from "@johnmorrisdotca/hoshi-stars/milky-way";
+ *
+ * const { width, height, data } = milkyWayTexture({ width: 2048 });
+ * // a canvas: context.putImageData(new ImageData(data, width, height), 0, 0)
+ * // three.js: new DataTexture(data, width, height) with flipY true, colorSpace SRGBColorSpace and needsUpdate true
+ * console.log(width, height); // 2048 1024
+ * ```
+ */
+export function milkyWayTexture(options: MilkyWayTextureOptions = {}): MilkyWayTexturePixels {
+  const width = options.width ?? 2048;
+  if (typeof width !== "number" || !Number.isInteger(width) || width < 16 || width > 4096 || width % 2 !== 0) throw new RangeError(`width must be an even whole number from 16 to 4096, got ${String(width)}`);
+  const frame = options.frame ?? "equatorial";
+  if (frame !== "equatorial" && frame !== "galactic") throw new RangeError(`frame must be "equatorial" or "galactic", got ${String(frame)}`);
+  const detail = detailOf(options.detail, 1);
+  const ramp = rampOf(options.ramp ?? MILKY_WAY_NIGHT_RAMP);
+  const height = width / 2;
+  // the ramp as a table of 1,024 steps, so that each pixel is one lookup
+  const STEPS = 1024;
+  const table = new Uint8ClampedArray((STEPS + 1) * 4);
+  for (let s = 0, k = 1; s <= STEPS; s++) {
+    const level = s / STEPS;
+    while (k < ramp.length - 1 && level > ramp[k]!.level) k += 1;
+    const a = ramp[k - 1]!;
+    const z = ramp[k]!;
+    const t = Math.max(0, Math.min(1, (level - a.level) / (z.level - a.level)));
+    table[s * 4] = a.red + (z.red - a.red) * t;
+    table[s * 4 + 1] = a.green + (z.green - a.green) * t;
+    table[s * 4 + 2] = a.blue + (z.blue - a.blue) * t;
+    table[s * 4 + 3] = (a.alpha + (z.alpha - a.alpha) * t) * 255;
+  }
+  const data = new Uint8ClampedArray(width * height * 4);
+  const sinPole = Math.sin(POLE_DEC);
+  const cosPole = Math.cos(POLE_DEC);
+  const cosRa = new Float64Array(width);
+  const sinRa = new Float64Array(width);
+  for (let x = 0; x < width; x++) {
+    const ra = ((x + 0.5) / width) * 2 * Math.PI - POLE_RA;
+    cosRa[x] = Math.cos(ra);
+    sinRa[x] = Math.sin(ra);
+  }
+  for (let y = 0; y < height; y++) {
+    const up = 90 - ((y + 0.5) / height) * 180;
+    const sinDec = Math.sin(up * RAD);
+    const cosDec = Math.cos(up * RAD);
+    for (let x = 0; x < width; x++) {
+      let longitude: number;
+      let latitude: number;
+      if (frame === "galactic") {
+        longitude = ((x + 0.5) / width) * 360;
+        latitude = up;
+      } else {
+        latitude = Math.asin(Math.max(-1, Math.min(1, sinDec * sinPole + cosDec * cosPole * cosRa[x]!))) * DEG;
+        const across = cosDec * sinRa[x]!;
+        const along = sinDec * cosPole - cosDec * sinPole * cosRa[x]!;
+        longitude = ((((POLE_L - Math.atan2(across, along)) * DEG) % 360) + 360) % 360;
+      }
+      const b = detail === 0 ? brightnessAt(longitude, latitude) : sharpAt(longitude, latitude, detail);
+      const s = Math.round(b * STEPS) * 4;
+      const at = (y * width + x) * 4;
+      data[at] = table[s]!;
+      data[at + 1] = table[s + 1]!;
+      data[at + 2] = table[s + 2]!;
+      data[at + 3] = table[s + 3]!;
+    }
+  }
+  return { width, height, data };
 }
 
 interface Span {
