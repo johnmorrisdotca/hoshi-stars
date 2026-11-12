@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The nearest-star timing test holds under load** (MODULES-1054). "One query over all 5,080 stars costs no more than four plain passes" failed on a Mac with a load average of 22: the fastest of five rounds, the query's and the yardstick's timed apart. It now first counts the work, which no load changes: a query by sky takes one angle for every other star (at a date too), and by space one distance for each star with a parallax and at most one more for its error; a second pass fails it. The time is then taken in turns, the yardstick and the query one after the other, the fastest of fifteen rounds each. This computer holds the budget of four; CI holds the work and a ceiling of twenty. Under 16 busy processes (load 16.5) the old test failed 2 of 8 runs and the new one none; a slow query (6.0 plain passes) still fails it.
+
 ## [0.33.1] - 2026-11-11
 
 - **On a phone the picture credits no longer cover the chart** (MODULES-1075). The credit line of the pictures drawn had no height limit, so long credits wrapped down the chart: Orion close in (the ESO photograph, its Hubble picture and M43's survey picture, 345 characters) took eight lines, a quarter of the chart on a 390 px phone. The line now takes at most three lines and scrolls within itself, on the demo page and in the embed; every word stays (ESA/Hubble asks for its credit unaltered), and its links (each licence, All credits) can be reached by keyboard, which scrolls the line to them. An e2e on both phones checks the height, that the rest scrolls, every credit word for word and the last link reached.

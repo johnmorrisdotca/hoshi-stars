@@ -252,19 +252,31 @@ function abbreviations(): string[] {
   return constellations().map((c) => c.abbreviation);
 }
 
-test("one query over all 5,080 stars costs no more than four plain passes over them", () => {
-  const time = (run: () => unknown): number => {
-    for (let i = 0; i < 5; i++) run();
-    let fastest = Number.POSITIVE_INFINITY;
-    for (let round = 0; round < 5; round++) {
-      const started = performance.now();
-      for (let i = 0; i < 10; i++) run();
-      fastest = Math.min(fastest, (performance.now() - started) / 10);
-    }
-    return fastest;
-  };
-  // The yardstick, timed on the same machine at the same moment: the angle to every star, sorted, the first ten kept.
+test("one query over all 5,080 stars looks at each star once and costs no more than four plain passes over them", () => {
   const all = stars();
+  // The work, which no load changes: a query by sky takes one angle (an atan2) for every other star, at a date too (moving a star to the date takes none); by space, a distance (a hypot)
+  // for each star with a parallax and at most one more for its error. A second pass, or a pass per answer, would take twice as many or more.
+  const counted = (name: "atan2" | "hypot", run: () => unknown): number => {
+    const original = Math[name];
+    let calls = 0;
+    Math[name] = ((...args: number[]) => {
+      calls++;
+      return (original as (...a: number[]) => number)(...args);
+    }) as never;
+    try {
+      run();
+    } finally {
+      Math[name] = original as never;
+    }
+    return calls;
+  };
+  assert.equal(counted("atan2", () => nearest(sirius, { count: 10 })), all.length - 1);
+  assert.equal(counted("atan2", () => nearest(sirius, { count: 10, date: Date.UTC(2100, 0, 1) })), all.length - 1);
+  const spaceCalls = counted("hypot", () => nearest(sirius, { count: 10, by: "space" }));
+  assert.ok(spaceCalls >= 2563 && spaceCalls <= 2 * all.length, `by space: ${spaceCalls} distances for ${all.length} stars`);
+
+  // The time, against a yardstick timed on the same machine in turn with it: the angle to every star, sorted, the first ten kept. Each round times the yardstick and the query one after the
+  // other, so a busy moment falls on both; the fastest of fifteen rounds each is what the machine can do. Under heavy load (a load average of 22) the fastest of five, timed apart, gave more than four.
   const radians = Math.PI / 180;
   const plain = (): number[] => {
     const ra = sirius.rightAscension * radians;
@@ -272,10 +284,29 @@ test("one query over all 5,080 stars costs no more than four plain passes over t
     const angles = all.map((s) => Math.acos(Math.min(1, Math.sin(dec) * Math.sin(s.declination * radians) + Math.cos(dec) * Math.cos(s.declination * radians) * Math.cos(s.rightAscension * radians - ra))));
     return angles.sort((a, b) => a - b).slice(0, 10);
   };
-  const ratio = (run: () => unknown): number => time(run) / time(plain);
+  const once = (run: () => unknown): number => {
+    const started = performance.now();
+    for (let i = 0; i < 10; i++) run();
+    return (performance.now() - started) / 10;
+  };
+  const ratio = (run: () => unknown): number => {
+    for (let i = 0; i < 5; i++) {
+      plain();
+      run();
+    }
+    let yardstick = Number.POSITIVE_INFINITY;
+    let query = Number.POSITIVE_INFINITY;
+    for (let round = 0; round < 15; round++) {
+      yardstick = Math.min(yardstick, once(plain));
+      query = Math.min(query, once(run));
+    }
+    return query / yardstick;
+  };
   const sky = ratio(() => nearest(sirius, { count: 10 }));
   const space = ratio(() => nearest(sirius, { count: 10, by: "space" }));
   const dated = ratio(() => nearest(sirius, { count: 10, date: Date.UTC(2100, 0, 1) }));
   console.log(`nearest over ${all.length} stars, in plain passes: by sky ${sky.toFixed(2)}, by space ${space.toFixed(2)}, by sky at a date ${dated.toFixed(2)}`);
-  assert.ok(sky < 4 && space < 4 && dated < 4, `in plain passes (fastest of 5 rounds each): by sky ${sky}, by space ${space}, at a date ${dated}`);
+  // A shared runner's clock says how busy its neighbours are: CI holds the work above and a ceiling five times the budget; this computer holds the budget.
+  const most = process.env.CI ? 20 : 4;
+  assert.ok(sky < most && space < most && dated < most, `in plain passes (fastest of 15 rounds each, limit ${most}): by sky ${sky}, by space ${space}, at a date ${dated}`);
 });
