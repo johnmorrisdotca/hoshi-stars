@@ -302,6 +302,8 @@ function projectionIcon(kind: string): string {
 function pressed(): void {
   $("seg-projection").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === view.projection)));
   $("seg-layers").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(layers.has(b.dataset.value as Layer))));
+  // the mansions' hour circles are the Chinese sky's own division: their switch is there only in that sky
+  $("seg-layers").querySelector<HTMLButtonElement>('button[data-value="mansions"]')!.hidden = culture.id !== "chinese";
   $("seg-culture").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.value === culture.id)));
   const starNow = starChoiceNow();
   if (starNow === undefined) embedWhat = "chart";

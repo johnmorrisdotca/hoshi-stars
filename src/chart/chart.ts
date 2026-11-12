@@ -22,7 +22,7 @@ import type { FigureLines, StarNames } from "../sky-labels.ts";
 import type { DistanceLayers } from "../distance.ts";
 
 export { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM, FAINT_PAST_GAP, type FaintDraw } from "./faint-layer.ts";
-export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "pictures", "holes", "faint", "grid"] as const;
+export const LAYERS = ["milky", "lines", "boundaries", "mansions", "names", "deep", "pictures", "holes", "faint", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
 
@@ -355,7 +355,26 @@ const MILKY = { levels: [0.04, 0.08, 0.13, 0.2, 0.3, 0.42, 0.58, 0.76], fills: [
 /** Constellation boundaries are dashed on every map of the demo (this one and the whole-sky page): dash and gap in pixels. */
 export const BOUNDARY_DASH = [5, 4] as const;
 
-const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4", hole: "#d68cff", holeCore: "#04060d" };
+/**
+ * Where the Twenty-Eight Mansions of a culture divide the sky: the hour circle (right ascension, J2000) through each mansion's determinative star (距星), its star numbered 1, for every mansion where
+ * exactly one held star has that number. A mansion whose star 1 is not in our data (氐, 牛, 觜 and 參 in Wikidata) or is given twice (斗宿) has none: no circle is guessed. Empty for a culture
+ * without mansions.
+ */
+export function mansionMeridians(culture: Culture): Array<{ id: string; hr: number; rightAscension: number }> {
+  const out: Array<{ id: string; hr: number; rightAscension: number }> = [];
+  for (const asterism of culture.asterisms()) {
+    if (asterism.kind !== "mansion") continue;
+    const first = Object.entries(asterism.numbers ?? {}).filter(([, n]) => n === 1);
+    if (first.length !== 1) continue;
+    const star = starByHr(Number(first[0]![0]));
+    if (star !== undefined) out.push({ id: asterism.id, hr: star.hr, rightAscension: star.rightAscension });
+  }
+  return out;
+}
+/** The declinations an hour circle is drawn through, pole to pole. */
+const MERIDIAN_DECS: readonly number[] = Array.from({ length: 89 }, (_, i) => -88 + i * 2);
+
+const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4", hole: "#d68cff", holeCore: "#04060d" , mansion: "#a8875a"};
 
 
 /** The black hole's own symbol, `k` times its full size (smaller when the chart is zoomed out, so a crowded patch stays readable): a dark disc ringed in violet with a jet each way for a stellar-mass one, a dashed ring round a dark centre for a quiet one, a dark disc inside a tilted ring for a supermassive one. A candidate is drawn fainter. */
@@ -571,6 +590,13 @@ function drawChart(o: ChartOptions): Chart {
       else quiet += d;
     }
     body += `<path d="${quiet}" fill="none" stroke="${COLOURS.boundary}" stroke-width="1" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/><path d="${neighbours}" fill="none" stroke="${COLOURS.near}" stroke-width="1.6" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/><path d="${loud}" fill="none" stroke="${COLOURS.boundaryOn}" stroke-width="1.6" stroke-dasharray="${BOUNDARY_DASH.join(" ")}"/>`;
+  }
+
+  // the Chinese sky's own division: the mansions' hour circles, dashed like the boundaries, in a warm colour of their own
+  if (seen === undefined && layers.has("mansions")) {
+    let d = "";
+    for (const meridian of mansionMeridians(culture)) d += pathOf(view, place, MERIDIAN_DECS.map((dec) => ({ rightAscension: meridian.rightAscension, declination: dec })));
+    if (d !== "") body += `<path d="${d}" fill="none" stroke="${COLOURS.mansion}" stroke-width="1" stroke-dasharray="${BOUNDARY_DASH.join(" ")}" data-layer="mansions"/>`;
   }
 
   if (o.overlay?.lines !== undefined) body += figureLinesSvg(o.overlay.lines);

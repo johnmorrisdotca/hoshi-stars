@@ -64,6 +64,8 @@ Most Chinese asterisms have stars fainter than magnitude 6.0, which the Bright S
 
 Each star of a Chinese asterism also has its number in it, as its name has it: `numbers` maps a star's HR number to it (`{ 5056: 1, 5107: 2 }` for 角宿, Spica being 角宿一). A mansion's star 1 is its determinative star (距星), which our source names for 24 of the 28. The numbers are the source's, repeats and all: 斗宿 has two stars numbered 1 and 天園 two numbered 4, and 三台's pairs share theirs by design. The stars known by a proper name (the Northern Dipper's, 天狼) are numbered by their place in the package's list. The Western and Japanese skies have no `numbers`.
 
+The demo's sky map has a **Mansions** switch in the Chinese sky (`layers=mansions` in the address): the Twenty-Eight Mansions divide the sky by hour circles, and the map draws, dashed like the IAU boundaries in a warm colour, the hour circle (right ascension, J2000) through each mansion's determinative star, its star 1. It draws one only where exactly one star we hold is numbered 1, so 23 of the 28 for now: 氐, 牛, 觜 and 參 have no star 1 in our source, and 斗宿 has two, so they have no circle until a published list gives them. Nothing is guessed. The walls of the Three Enclosures are not drawn yet.
+
 ```js
 import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
 import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";
