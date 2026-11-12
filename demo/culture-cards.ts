@@ -29,15 +29,17 @@ export interface Face {
   /** The reading (pinyin, hiragana), or the English name of a Western constellation's other name; empty for a Western card. */
   reading: string;
   english: string;
-  /** At least how many of its stars are fainter than magnitude 6.0 and so not drawn. */
+  /** At least how many of its stars are not in our data (fainter than magnitude 6.0, or not named in the source) and so not drawn. */
   missing: number;
-  /** The words for the missing stars (`3+ fainter stars not shown`), or an empty string where none are. */
+  /** The words for the missing stars (`3+ stars not in our data`), or an empty string where none are. */
   missingText: string;
   /** One text for a screen reader and for the card's title (the tooltip): the name, the line under it and the missing stars. */
   label: string;
 }
 
-const MISSING_WORD = { en: (n: number) => `${n}+ fainter stars not shown`, ja: (n: number) => `暗い星${n}個以上は描いていません` } as const;
+const MISSING_WORD = { en: (n: number) => `${n}+ stars not in our data`, ja: (n: number) => `データにない星が${n}個以上` } as const;
+/** The card's line for a figure of which we hold one star of several: it has no lines to draw, and its picture is that star alone. */
+const LONE_WORD = { en: "1 star in our data, no lines", ja: "データにある星は1個、線なし" } as const;
 
 /** The words a card is searched by, put in one comparable form: no spaces, hyphens, accents, tone marks or case, katakana as hiragana. */
 const key = (text: string): string => fold(text).replace(/[\s\-_・·]/g, "");
@@ -98,7 +100,9 @@ export function faceOf(card: FigureCard, lang: Lang): Face {
   const english = a.kind === "constellation" ? (a.names.la ?? "") : card.culture === "japanese" ? a.about : (a.names.en ?? "");
   const missing = a.missing;
   const missingText = missing > 0 ? MISSING_WORD[lang](missing) : "";
-  return { name, sub: [reading, english].filter((part) => part !== "").join(" · "), reading, english, missing, missingText, label: [name, reading, english, missingText].filter((part) => part !== "").join(lang === "ja" ? "、" : ", ") };
+  // a figure we hold one star of, of several, says so on its one line (its English name is still in the title)
+  const lone = card.held < 2 && missing > 0 ? LONE_WORD[lang] : "";
+  return { name, sub: [reading, lone === "" ? english : lone].filter((part) => part !== "").join(" · "), reading, english, missing, missingText, label: [name, reading, english, lone, missingText].filter((part) => part !== "").join(lang === "ja" ? "、" : ", ") };
 }
 
 /** The picture of a card: a constellation's own, else the figure's (Pages only). */

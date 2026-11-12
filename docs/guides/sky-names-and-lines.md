@@ -75,7 +75,7 @@ console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
 
 ### Another culture's figures
 
-`createFigureLines({ culture })` lays out the figures of a sky culture instead of the 88: pass `japanese` or `chinese` from `@johnmorrisdotca/hoshi-stars/cultures/…` (or a culture of your own, made with `defineCulture`). The figures are the culture's, in its order, and each `FigureOnScreen`'s `abbreviation` is the figure's id (`Ori` for a constellation, `subaru`, `bei3-dou3`). `update`, `point`, `step`, `opacityOf` and the name behave as they do for the 88. A constellation is named as the 88 are (Latin, or Japanese with `lang: "ja"`); an asterism by its English name (`Subaru`) or, in Japanese, by its reading in kana (`すばる`); a figure with no name in the language by its own (`昴宿`). A new culture in `set` makes its figures once and lets the picked figure go; leaving `culture` out draws the 88 again.
+`createFigureLines({ culture })` lays out the figures of a sky culture instead of the 88: pass `japanese` or `chinese` from `@johnmorrisdotca/hoshi-stars/cultures/…` (or a culture of your own, made with `defineCulture`). The figures are the culture's, in its order, and each `FigureOnScreen`'s `abbreviation` is the figure's id (`Ori` for a constellation, `subaru`, `bei3-dou3`). `update`, `point`, `step`, `opacityOf` and the name behave as they do for the 88. A constellation is named as the 88 are (Latin, or Japanese with `lang: "ja"`); an asterism by its English name (`Subaru`) or, in Japanese, by its reading in kana (`すばる`); a figure with no name in the language by its own (`昴宿`). A new culture in `set` makes its figures once and lets the picked figure go; leaving `culture` out draws the 88 again. `set` replaces every setting, so `set({ strength })` alone goes back to the 88 (and to English, and the default look): a strength slider keeps the rest with `lines.set({ ...lines.settings, strength })`.
 
 ```ts
 import { createFigureLines } from "@johnmorrisdotca/hoshi-stars/sky-labels";
@@ -97,7 +97,7 @@ console.log(lines.figures.length, lines.picked?.abbreviation, lines.name?.text);
 
 ## Nothing is redrawn at rest, nothing is allocated while it moves
 
-`update` and `point` are for the moments something changed: the camera moved, the size changed or a setting changed. At rest there is nothing to call and nothing to redraw. After the first call they allocate nothing (the arrays and objects are reused, and `labels` and `figures` are the same ones every time), so a page may call `update` on every frame the camera moves. A pointer that moves along without changing the picked figure gets `false` from `point`, and the page draws nothing.
+`update` and `point` are for the moments something changed: the camera moved, the size changed or a setting changed. At rest there is nothing to call and nothing to redraw. After the first call they allocate nothing (the arrays and objects are reused, and `labels` and `figures` are the same ones from one `update` to the next), so a page may call `update` on every frame the camera moves. The one exception is a new `culture` in `set`: the figures are made again, so `segments` and `figures` are new objects after it, and a page that holds on to them (a GPU buffer made from `segments`, say) reads them again. A pointer that moves along without changing the picked figure gets `false` from `point`, and the page draws nothing.
 
 ## The default look and its font
 

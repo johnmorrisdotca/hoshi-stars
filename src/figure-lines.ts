@@ -190,7 +190,7 @@ export interface FigureLines {
   readonly settings: Readonly<FigureLinesSettings & { strength: number }>;
   /** The look in force for the picked figure's name. */
   readonly style: Readonly<LabelStyle>;
-  /** The line ends laid out by the last `update`, four numbers for each line: x and y of one end, x and y of the other. Reused; read only up to `4 * count`. */
+  /** The line ends laid out by the last `update`, four numbers for each line: x and y of one end, x and y of the other. Reused, until `set` takes a new culture; read only up to `4 * count`. */
   readonly segments: Float32Array;
   /** How many lines the last `update` laid out. */
   readonly count: number;
@@ -200,7 +200,10 @@ export interface FigureLines {
   readonly picked: FigureOnScreen | undefined;
   /** The picked figure's name and where to draw it, or `undefined` when none is picked. */
   readonly name: FigureName | undefined;
-  /** Change the settings; the next `update` uses them. */
+  /**
+   * Change the settings; the next `update` uses them. Every setting is replaced, so `set({ strength })` alone goes back to the 88, in English, in the default look: keep the rest with
+   * `lines.set({ ...lines.settings, strength })`. A new `culture` makes the figures again: `segments` and `figures` are new objects after it.
+   */
   set(settings: FigureLinesSettings): void;
   /** The opacity to draw a figure's lines at: the picked figure's is 1, every other is the strength. 0 for all when the strength is 0. */
   opacityOf(figure: FigureOnScreen): number;

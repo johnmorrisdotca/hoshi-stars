@@ -136,6 +136,11 @@ function read(): void {
   culture = cultureOf(address.get("culture")) ?? western;
   if (picked?.startsWith("C:") && figureById(picked.slice(2), culture) === undefined) picked = null;
   if (picked?.startsWith("B:") && blackHole(picked.slice(2)) === undefined) picked = null;
+  // An address that picks a figure and says nothing of where to look (a link, a card shared without its view) opens on the figure, not on the default sky where it may be out of sight.
+  if (picked?.startsWith("C:") && !address.has("ra") && !address.has("dec")) {
+    const place = placeOf(picked);
+    if (place !== undefined) view = { ...view, ra: place.ra, dec: place.dec, zoom: address.has("zoom") ? view.zoom : place.zoom };
+  }
   hands.sync();
 }
 

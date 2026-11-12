@@ -31,3 +31,33 @@ test("the element and its define load on a server and define nothing", async () 
   assert.equal(typeof HoshiChartElement, "function");
   assert.equal(defineChart(), false);
 });
+
+test("in every sky, a picked figure's lit lines on the map are the lines of its card, and a figure with no lines rings its stars on the map and draws none on its card", async () => {
+  const { centreOfConstellation } = await import("../src/chart/chart.ts");
+  const { western } = await import("../src/cultures/western.ts");
+  const { japanese } = await import("../src/cultures/japanese.ts");
+  const { chinese } = await import("../src/cultures/chinese.ts");
+  const { figures } = await import("../src/lines.ts");
+  const { constellationThumbnail, figureThumbnail } = await import("../src/thumbnails.ts");
+  // the lines of a path of one stroke: one M for each line
+  const linesIn = (svg: string, stroke: string): number => [...svg.matchAll(new RegExp(`<path d="([^"]*)" fill="none" stroke="${stroke}" stroke-width="2.2"`, "g"))].reduce((sum, m) => sum + (m[1]!.match(/M/g) ?? []).length, 0);
+  const counted = { lit: 0, ringed: 0 };
+  for (const culture of [western, japanese, chinese]) {
+    for (const figure of figures(culture)) {
+      const id = figure.asterism.id;
+      const middle = centreOfConstellation(id, culture)!;
+      // the whole hemisphere round the figure, large enough that every line of it is in view
+      const map = chartSvg({ width: 1600, height: 1600, ra: middle.rightAscension, dec: middle.declination, zoom: 1, culture, constellation: id, layers: [] });
+      const card = figure.asterism.kind === "constellation" ? constellationThumbnail(id, { theme: "dark" }) : figureThumbnail({ title: id, stars: figure.stars, segments: figure.segments }, { theme: "dark" });
+      const where = `${culture.id} ${id}`;
+      assert.equal(linesIn(map, "#ffd86b"), figure.segments.length, `${where}: the map's lit lines`);
+      assert.equal(linesIn(card, "#9bb6f2"), figure.segments.length, `${where}: the card's lines`);
+      const rings = (map.match(/data-figure-star="/g) ?? []).length;
+      assert.equal(rings, figure.segments.length === 0 ? figure.stars.length : 0, `${where}: the stars ringed on the map`);
+      counted.lit += figure.segments.length > 0 ? 1 : 0;
+      counted.ringed += rings > 0 ? 1 : 0;
+    }
+  }
+  // 397 figures with lines and 52 rung on their stars in this data: the check reached both kinds
+  assert.ok(counted.lit > 350 && counted.ringed > 0, JSON.stringify(counted));
+});

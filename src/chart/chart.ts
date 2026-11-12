@@ -579,9 +579,18 @@ function drawChart(o: ChartOptions): Chart {
     let quiet = "";
     let other = "";
     let loud = "";
+    let ringed = "";
     for (const figure of drawn) {
       const on = figure.asterism.id === o.highlight;
       if (!on && (!layers.has("lines") || o.overlay?.lines !== undefined)) continue;
+      // a lit figure with no line to draw (one star, or one star held of several) rings its stars, so the pick is seen on the map as on its card
+      if (on && figure.segments.length === 0) {
+        for (const star of figure.stars) {
+          const shown = seen === undefined ? star : seen.get(`hr-${star.hr}`);
+          const at = shown === undefined ? undefined : place(shown);
+          if (at !== undefined && at[0] >= -12 && at[0] <= width + 12 && at[1] >= -12 && at[1] <= height + 12) ringed += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="9" fill="none" stroke="${COLOURS.linesOn}" stroke-width="1.6" data-figure-star="${star.hr}"/>`;
+        }
+      }
       const side = figure.asterism.kind === "asterism" && culture.id !== "chinese";
       for (const [star, next] of figure.segments) {
         const a = seen === undefined ? star : seen.get(`hr-${star.hr}`);
@@ -598,6 +607,7 @@ function drawChart(o: ChartOptions): Chart {
       }
     }
     body += `<path d="${quiet}" fill="none" stroke="${COLOURS.lines}" stroke-width="1.2" stroke-opacity=".8"/><path d="${other}" fill="none" stroke="${COLOURS.asterism}" stroke-width="1.2" stroke-opacity=".85" stroke-dasharray="4 3"/><path d="${loud}" fill="none" stroke="${COLOURS.linesOn}" stroke-width="2.2"/>`;
+    body += ringed;
   }
 
   const obstacles: Box[] = [{ x0: -1e4, y0: -1e4, x1: 0, y1: 1e4 }, { x0: width, y0: -1e4, x1: 1e4, y1: 1e4 }, { x0: -1e4, y0: -1e4, x1: 1e4, y1: 0 }, { x0: -1e4, y0: height, x1: 1e4, y1: 1e4 }, ...(o.keepClear ?? [])];

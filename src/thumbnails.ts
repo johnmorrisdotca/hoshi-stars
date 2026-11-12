@@ -379,6 +379,8 @@ const PAD_FRACTION = 0.08;
 const PAD_STEPS = 20;
 // A figure's picture is never narrower than this (a constellation's is 13), so the Pleiades are not a dot. It is widened from there, only until a neighbouring boundary line crosses it and never past the second number, so every picture has its faint lines: a figure deep inside a big constellation (Virgo, Bootes) needs the room.
 const FIGURE_LEAST_SPAN_DEGREES = 5;
+/** The width in degrees of the picture of a figure of one star: a constellation's least, so it shows the sky round it. */
+const LONE_STAR_SPAN_DEGREES = 13;
 
 /**
  * A soft outline round some stars: their convex hull grown by a margin with rounded corners, as a closed ring of positions. It is what a figure with no official boundary is drawn with, in the same
@@ -440,7 +442,7 @@ export function paddedOutline(points: readonly SkyPoint[], padDegrees?: number):
 export interface FigureThumbnailInput {
   /** The name for the picture's `<title>` and `aria-label`. */
   title: string;
-  /** The stars of the figure. One star is drawn ringed inside the constellation it lies in; two or more are drawn inside a soft outline round them. */
+  /** The stars of the figure, drawn inside a soft outline round them; one star is also ringed. */
   stars: ReadonlyArray<Star>;
   /** The lines of the figure, each a pair of its stars. */
   segments: ReadonlyArray<readonly [Star, Star]>;
@@ -449,8 +451,9 @@ export interface FigureThumbnailInput {
 /**
  * The picture of a figure of a sky culture (a Chinese asterism, a traditional Japanese figure), drawn the way a constellation's is, so every sky makes one set: the same square, the same room round the
  * figure, the neighbouring constellations' boundaries and stars faint behind it, the same line and star sizes. A figure of two stars or more stands in a soft dashed outline with a faint wash (it has
- * no official boundary: only the 88 constellations do, and the outline is a drawing aid), its stars in full. A figure of one star (Rigel as 源氏星, Sirius as 天狼) is drawn inside its own constellation's
- * picture with the star ringed in the accent colour, never as a lone dot.
+ * no official boundary: only the 88 constellations do, and the outline is a drawing aid), its stars in full. A figure of one star (Rigel as 源氏星, Sirius as 天狼, or an asterism of which the catalogue
+ * holds one star) stands in the same dashed outline round that star, ringed in the accent colour, with the neighbouring boundaries and stars faint behind it: no other figure's lines, so the
+ * picture shows only what the figure has.
  *
  * @param input - The title, the stars and the lines.
  * @param options - The look, the size and whether the neighbours are drawn.
@@ -472,10 +475,10 @@ export interface FigureThumbnailInput {
 export function figureThumbnail(input: FigureThumbnailInput, options: ThumbnailOptions = {}): string {
   if (input.stars.length === 0) throw new RangeError("stars must hold at least one star");
   if (input.stars.length === 1) {
+    // the same card as any figure, a soft dashed outline round its stars, here round the one star, as wide as a constellation's least picture so the sky round it says where it is
     const star = input.stars[0]!;
-    const home = constellation(star.constellation)!;
-    const drawing: ThumbnailInput = { ...constellationInput(home), title: input.title, ringed: [star.hr] };
-    if (options.neighbours !== false) drawing.neighbourOutlines = neighbourRings(home.abbreviation);
+    const drawing: ThumbnailInput = { title: input.title, outlines: [paddedOutline([star])], segments: [], owns: (one) => one.hr === star.hr, leastSpan: LONE_STAR_SPAN_DEGREES, seeNeighbours: true, ringed: [star.hr] };
+    if (options.neighbours !== false) drawing.neighbourOutlines = neighbourRings();
     return thumbnailSvg(drawing, options);
   }
   const mine = new Set(input.stars.map((star) => star.hr));

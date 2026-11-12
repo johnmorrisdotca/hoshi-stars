@@ -100,8 +100,10 @@ test("the names on a card are copied from the package's data: the characters, th
   assert.deepEqual(faceOf(horn, "en"), { name: "角宿", sub: "jiǎo xiù · Horn", reading: "jiǎo xiù", english: "Horn", missing: 0, missingText: "", label: "角宿, jiǎo xiù, Horn" });
   const root = faceOf(cardsOf("chinese").find((card) => card.id === "di1-xiu4")!, "en");
   assert.equal(root.missing, 3);
-  assert.equal(root.missingText, "3+ fainter stars not shown");
-  assert.equal(faceOf(cardsOf("chinese").find((card) => card.id === "di1-xiu4")!, "ja").missingText, "暗い星3個以上は描いていません");
+  assert.equal(root.missingText, "3+ stars not in our data");
+  // one star of four held: no lines, and the card says so on its one line
+  assert.equal(root.sub, "dī xiù · 1 star in our data, no lines");
+  assert.equal(faceOf(cardsOf("chinese").find((card) => card.id === "di1-xiu4")!, "ja").missingText, "データにない星が3個以上");
   const dipper = faceOf(cardsOf("chinese").find((card) => card.id === "bei3-dou3")!, "en");
   assert.equal(dipper.name, "北斗");
   assert.equal(dipper.english, "", "no English name is made up where the data has none");

@@ -30,3 +30,5 @@ export {
   type FigureName,
   type FigureOnScreen,
 } from "./figure-lines.ts";
+// The type of `FigureLinesSettings.culture`, so a page that passes a culture names its type from here too.
+export type { Culture } from "./culture.ts";

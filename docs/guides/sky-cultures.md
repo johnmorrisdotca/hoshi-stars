@@ -60,7 +60,7 @@ console.log(chinese.asterisms().filter((a) => a.partOf === "heavenly-market").ma
 
 ### What the catalogue does not hold
 
-Most Chinese asterisms have stars fainter than magnitude 6.0, which the Bright Star Catalogue does not hold. A figure draws only the stars we have, and `missing` says at least how many it lacks: the largest star number found in the asterism, less the stars held.
+Most Chinese asterisms have stars fainter than magnitude 6.0, which the Bright Star Catalogue does not hold, and some have stars our source does not name with a catalogue number. A figure draws only the stars we have, and `missing` says at least how many it lacks: the largest star number found in the asterism, less the stars held. We cannot always tell which of the two a missing star is, so the demo says "not in our data".
 
 ```js
 import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
@@ -136,7 +136,7 @@ console.log(figureOf("the w", mine).stars.map((star) => star.name).join(", "));
 
 ## Pictures of the figures
 
-Each culture is also a set of picture cards in the demo, and the three skies make one set: every card is the same block, a picture, the name in the culture's own writing and one small line under it, and every card is the same height. The small line is the reading (pinyin for a Chinese figure, hiragana for a Japanese one) and the English name where the data has one; a Western card's is its abbreviation and its name in the other language (`Ori · オリオン座`). Where stars are fainter than the catalogue goes, how many are missing (`3+ fainter stars not shown`) is in the card's title (what a pointer shows and a screen reader says), not a third line. The strip above the sky map, the gallery (`constellations.html?culture=chinese`) and the list (`constellation-list.html?culture=chinese`) all follow the Sky culture and keep it in the address:
+Each culture is also a set of picture cards in the demo, and the three skies make one set: every card is the same block, a picture, the name in the culture's own writing and one small line under it, and every card is the same height. The small line is the reading (pinyin for a Chinese figure, hiragana for a Japanese one) and the English name where the data has one; a Western card's is its abbreviation and its name in the other language (`Ori · オリオン座`). Where stars are not in our data, how many are missing (`3+ stars not in our data`) is in the card's title (what a pointer shows and a screen reader says), not a third line. A figure of which we hold only one star of several has no lines: its card's picture is that star alone, ringed, and its line says `1 star in our data, no lines`. The strip above the sky map, the gallery (`constellations.html?culture=chinese`) and the list (`constellation-list.html?culture=chinese`) all follow the Sky culture and keep it in the address:
 
 | Sky | The cards |
 |---|---|

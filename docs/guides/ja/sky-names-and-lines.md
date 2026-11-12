@@ -75,7 +75,7 @@ console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
 
 ### ほかの文化の星座
 
-`createFigureLines({ culture })`は、88星座の代わりに、ある文化の図を並べます。`@johnmorrisdotca/hoshi-stars/cultures/…`の`japanese`か`chinese`（または`defineCulture`で作った自分の文化）を渡します。図はその文化のもので、その文化の順に並び、各`FigureOnScreen`の`abbreviation`は図のid（星座なら`Ori`、ほかは`subaru`や`bei3-dou3`）です。`update`、`point`、`step`、`opacityOf`と名前の扱いは、88星座のときと同じです。星座の名前は88星座と同じです（ラテン語、`lang: "ja"`なら日本語）。星の並び（アステリズム）は英語の名前（`Subaru`）で、日本語ではかなの読み（`すばる`）で出ます。指定した言語の名前がない図は、その図自身の名前（`昴宿`）で出ます。`set`で別の文化を渡すと、その文化の図を一度だけ作り、選ばれていた図は選ばれなくなります。`culture`を省くと、また88星座を描きます。
+`createFigureLines({ culture })`は、88星座の代わりに、ある文化の図を並べます。`@johnmorrisdotca/hoshi-stars/cultures/…`の`japanese`か`chinese`（または`defineCulture`で作った自分の文化）を渡します。図はその文化のもので、その文化の順に並び、各`FigureOnScreen`の`abbreviation`は図のid（星座なら`Ori`、ほかは`subaru`や`bei3-dou3`）です。`update`、`point`、`step`、`opacityOf`と名前の扱いは、88星座のときと同じです。星座の名前は88星座と同じです（ラテン語、`lang: "ja"`なら日本語）。星の並び（アステリズム）は英語の名前（`Subaru`）で、日本語ではかなの読み（`すばる`）で出ます。指定した言語の名前がない図は、その図自身の名前（`昴宿`）で出ます。`set`で別の文化を渡すと、その文化の図を一度だけ作り、選ばれていた図は選ばれなくなります。`culture`を省くと、また88星座を描きます。`set`はすべての設定を置き換えるので、`set({ strength })`とだけ呼ぶと88星座に戻ります（英語と既定の見た目にも戻ります）。強さのスライダーでほかの設定を残すには、`lines.set({ ...lines.settings, strength })`とします。
 
 ```ts
 import { createFigureLines } from "@johnmorrisdotca/hoshi-stars/sky-labels";
@@ -97,7 +97,7 @@ console.log(lines.figures.length, lines.picked?.abbreviation, lines.name?.text);
 
 ## 止まっているときは描き直さず、動いているときもメモリを新しく使わない
 
-`update`と`point`を呼ぶのは、何かが変わったときです。カメラが動いた、大きさが変わった、設定が変わった、というときです。止まっているときは、呼ぶものも描き直すものもありません。最初の呼び出しのあとは、メモリを新しく使いません（配列とオブジェクトを使い回し、`labels`と`figures`も毎回同じものです）。そのため、カメラが動いている間は、毎フレーム`update`を呼んでかまいません。選ばれた星座が変わらないままポインターが動くときは、`point`が`false`を返すので、ページは何も描きません。
+`update`と`point`を呼ぶのは、何かが変わったときです。カメラが動いた、大きさが変わった、設定が変わった、というときです。止まっているときは、呼ぶものも描き直すものもありません。最初の呼び出しのあとは、メモリを新しく使いません（配列とオブジェクトを使い回し、`labels`と`figures`も`update`のたびに同じものです）。そのため、カメラが動いている間は、毎フレーム`update`を呼んでかまいません。オブジェクトが新しくなるのは、`set`で別の`culture`を渡したときだけです。図を作り直すので、そのあとの`segments`と`figures`は新しいオブジェクトになります。それらを持ち続けているページ（たとえば`segments`からGPUのバッファーを作っているページ）は、読み直してください。選ばれた星座が変わらないままポインターが動くときは、`point`が`false`を返すので、ページは何も描きません。
 
 ## 初期の見た目とフォント
 

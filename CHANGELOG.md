@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- **A picked figure is where its card says, in every sky** (MODULES-1155). With the Chinese sky, a link to a figure (`?culture=chinese&pick=C:di1-xiu4`) opened on the default sky with the figure out of sight, and a figure of which the catalogue holds one star of several (氐宿, 三師) showed its constellation's lines on its card (Libra's for 氐宿) while the map had none to draw. Now:
+  - an address that picks a figure and gives no place (`ra`, `dec`) opens on the figure, at its own zoom unless the address gives one;
+  - a figure of one star is drawn on its card as that star ringed, framed in the sky round it, with no other figure's lines (`figureThumbnail`); the card's line says `1 star in our data, no lines` where the figure has more stars than we hold;
+  - on the map a lit figure with no lines rings its stars;
+  - the stars a figure lacks are "not in our data", not "fainter than the catalogue": our source does not number every bright star (氐宿's α, ι and γ Librae are missing from it), so we cannot always tell which; `Asterism.missing` says so too.
+  - A test for every figure of the three skies: the map's lit lines are its card's lines, and a figure with none rings its stars on the map and draws none on its card. An end-to-end test opens a pick in each sky.
+- **`set` on the figure lines, said plainly** (MODULES-1155): `set` replaces every setting, so `set({ strength })` alone goes back to the 88; the guide gives `lines.set({ ...lines.settings, strength })` for a strength slider. After a new `culture`, `segments` and `figures` are new objects, and a page that holds them reads them again. The `Culture` type is also exported from `/sky-labels`.
+
 ## [0.35.0] - 2026-11-12
 
 - **The figure lines take a sky culture** (MODULES-1126). `createFigureLines` laid out only the 88 constellations of the IAU, so a page drawing the Japanese or Chinese sky (chikyu-earth's sky layer) kept its own copy of the layout. `FigureLinesSettings.culture` takes a culture from `cultures/*` (or `defineCulture`): its figures, in its order, each keyed by its id, with the same `update`, `point`, `step`, `opacityOf` and name. A constellation is named as the 88 are, an asterism by its English name or in Japanese by its reading in kana (昴 as すばる), and a figure with no name in the language by its own. A new culture in `set` makes its figures once and lets the pick go.

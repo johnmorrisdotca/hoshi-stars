@@ -99,11 +99,11 @@ test("search finds a figure by Chinese, pinyin, Japanese, kana, katakana and Eng
 test("a card's name for a screen reader is the name, reading, English and the missing stars; the keyboard reaches cards and Enter opens one", async ({ page, browserName }) => {
   await open(page, "?culture=chinese");
   await expect(strip(page).first()).toHaveAccessibleName("角宿, jiǎo xiù, Horn");
-  await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAccessibleName("氐宿, dī xiù, Root, 3+ fainter stars not shown");
-  await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAttribute("title", "氐宿, dī xiù, Root, 3+ fainter stars not shown");
-  await expect(page.locator("button[data-abbr='di1-xiu4'] .pick-sub")).toHaveText("dī xiù · Root");
+  await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAccessibleName("氐宿, dī xiù, Root, 1 star in our data, no lines, 3+ stars not in our data");
+  await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAttribute("title", "氐宿, dī xiù, Root, 1 star in our data, no lines, 3+ stars not in our data");
+  await expect(page.locator("button[data-abbr='di1-xiu4'] .pick-sub")).toHaveText("dī xiù · 1 star in our data, no lines");
   await open(page, "?culture=chinese&lang=ja");
-  await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAccessibleName("氐宿、dī xiù、Root、暗い星3個以上は描いていません");
+  await expect(page.locator("button[data-abbr='di1-xiu4']")).toHaveAccessibleName("氐宿、dī xiù、Root、データにある星は1個、線なし、データにない星が3個以上");
   await strip(page).nth(1).focus();
   await page.keyboard.press("Enter");
   await expect.poll(() => param(page, "pick")).toBe("C:kang4-xiu4");
@@ -265,7 +265,7 @@ test("every card is one height in all three skies: the strip, the gallery and th
   }
 });
 
-test("a single named star's card draws its constellation's figure, not a lone dot", async ({ page }) => {
+test("a single named star's card is that star ringed in the sky round it, with no other figure's lines", async ({ page }) => {
   await open(page, "?culture=japanese");
   const card = page.locator("button[data-abbr='genji-boshi']");
   await expect(card.locator("img")).toHaveAttribute("src", /thumbnails\/japanese\/png\/160\/(light|dark)\/genji-boshi\.png$/);
@@ -273,6 +273,34 @@ test("a single named star's card draws its constellation's figure, not a lone do
   await expect.poll(() => loaded(card.locator("img"))).toBe(160);
   const response = await page.request.get(await card.locator("img").evaluate((img: HTMLImageElement) => img.src));
   expect(response.ok()).toBe(true);
-  // the picture is more than one dot: a PNG of a constellation's card is many times the size of a lone star's
-  expect((await response.body()).length).toBeGreaterThan(6_000);
+  // the picture is the sky round the star, not a lone dot (which is under 2 kB), and not its constellation's figure (over 6 kB with the figure's lines): the unit tests hold that it has no lines
+  const size = (await response.body()).length;
+  expect(size).toBeGreaterThan(2_000);
+  expect(size).toBeLessThan(6_000);
+});
+
+test("an address that picks a figure and gives no place opens on the figure: lit where it has lines, its stars ringed where it has none, in each sky", async ({ page }) => {
+  // the lit lines and the rings of the picked figure, and where they are on the map
+  const litOn = (page: Page) =>
+    page.locator("#chart").evaluate((svg) => {
+      const box = svg.getBoundingClientRect();
+      const lit = [...svg.querySelectorAll('path[stroke="#ffd86b"][stroke-width="2.2"]')].filter((path) => (path.getAttribute("d") ?? "") !== "");
+      const rings = [...svg.querySelectorAll("[data-figure-star]")];
+      const inView = [...lit, ...rings].some((shape) => {
+        const at = shape.getBoundingClientRect();
+        return at.right > box.left && at.left < box.right && at.bottom > box.top && at.top < box.bottom;
+      });
+      return { lines: lit.reduce((sum, path) => sum + (path.getAttribute("d")!.match(/M/g) ?? []).length, 0), rings: rings.length, inView };
+    });
+  for (const [query, lines, rings] of [
+    ["culture=chinese&pick=C%3Afang2-xiu4", 2, 0],
+    ["culture=chinese&pick=C%3Adi1-xiu4", 0, 1],
+    ["culture=japanese&pick=C%3Asubaru", 5, 0],
+    ["pick=C%3ALib", 6, 0],
+  ] as const) {
+    await open(page, `?${query}`);
+    await expect.poll(() => litOn(page), { message: query }).toEqual({ lines, rings, inView: true });
+    // the address keeps the pick, and the place is the figure's, written once the view is
+    expect(param(page, "pick")).toBe(decodeURIComponent(query.split("pick=")[1]!));
+  }
 });

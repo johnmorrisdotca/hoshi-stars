@@ -23,7 +23,7 @@ export function makeCard(abbreviation: string, href?: string): Card {
 
 /**
  * Set a card's name, the one small line under it and its picture for the page's language and look (the picture's source is only touched when it changed). Every card is the same block: the name,
- * then one line, so the strip is one height in all three skies. The stars a figure holds fewer of than it should (`3+ fainter stars not shown`) are in the card's title and its name for a screen reader.
+ * then one line, so the strip is one height in all three skies. The stars a figure holds fewer of than it should (`3+ stars not in our data`) are in the card's title and its name for a screen reader.
  */
 export function paintCard(card: Card, subject: Constellation | FigureCard, lang: Lang, look: Look, ruby = false): void {
   const [name, sub] = Array.from(card.querySelectorAll("span"));

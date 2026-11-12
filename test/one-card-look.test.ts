@@ -71,7 +71,7 @@ test("a Western card, a Chinese one and a Japanese one are the same drawing: the
   assert.ok(shape(constellationThumbnail("Ori", { theme: "dark", size: 480 })).includes("stroke-dasharray"));
 });
 
-test("a single named star is its own constellation's figure with the star ringed, never a lone dot", () => {
+test("a single named star stands ringed in the same dashed outline as any figure, with the sky round it and no other figure's lines", () => {
   const singles = own.filter(({ figure }) => figure.stars.length === 1);
   assert.ok(singles.length >= 50);
   for (const { culture, figure } of singles) {
@@ -85,11 +85,9 @@ test("a single named star is its own constellation's figure with the star ringed
       const dot = svg.match(new RegExp(`<circle cx="([-\\d.]+)" cy="([-\\d.]+)" r="[\\d.]+" fill="#[0-9a-f]{6}" data-hr="${star.hr}"/>`));
       assert.ok(dot !== null, `${name}: the star is drawn`);
       assert.ok(rings[0]![1]!.includes(`cx="${dot[1]}" cy="${dot[2]}"`), `${name}: the ring is on the star`);
-      // the rest of the picture is the constellation's own card
-      const home = constellationThumbnail(star.constellation, { theme, size: 480 });
-      const without = (text: string): string => text.replace(/<title>.*?<\/title>/, "").replace(/ aria-label="[^"]*"/, "").replace(/<g fill="none" stroke="#[0-9a-f]{6}" stroke-width="2\.6" data-ring="">.*?<\/g>/, "");
-      assert.equal(without(svg), without(home), `${name}: the figure of ${star.constellation}`);
-      assert.ok(home.includes('stroke-width="2.2"') || figures().find((f) => f.constellation.abbreviation === star.constellation)!.segments.length === 0);
+      // the card is what the figure has: no figure lines at all (its constellation's would be another figure's), and the dashed outline round the star as on any card
+      assert.ok(!svg.includes('stroke-width="2.2"'), `${name}: no figure lines`);
+      assert.ok(wash(svg) !== null, `${name}: the dashed outline round the star`);
     }
   }
 });
