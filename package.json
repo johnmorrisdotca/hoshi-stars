@@ -1,7 +1,7 @@
 {
   "name": "@johnmorrisdotca/hoshi-stars",
-  "version": "0.33.1",
-  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed, no dependencies.",
+  "version": "0.34.0",
+  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed; the data and the SVG chart need no other package.",
   "keywords": [
     "stars",
     "milky-way",
@@ -23,7 +23,6 @@
     "galaxy",
     "component",
     "typescript",
-    "zero-dependencies",
     "itsutsu",
     "spaceprogramx",
     "space-program-x",
@@ -320,7 +319,7 @@
     "thumbnails": "node scripts/make-thumbnails.ts"
   },
   "dependencies": {
-    "@johnmorrisdotca/kazoku-ui": "^0.40.1"
+    "@johnmorrisdotca/kazoku-ui": "^0.41.0"
   },
   "devDependencies": {
     "@angular/common": "^22.2.5",
