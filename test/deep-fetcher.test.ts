@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDeepFetcher, PICTURE_RETRY_MS, PICTURE_TRIES } from "../demo/deep.ts";
-import { drawnPictures } from "../demo/picture-quality.ts";
+import { drawnPictures } from "../src/chart/picture-quality.ts";
 
 /** A page with no network: every fetch and every image fails, unless `online` says otherwise. Counts what is asked for. */
 function offline(online = () => false) {

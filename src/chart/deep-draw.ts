@@ -1,13 +1,13 @@
 // The deep-sky part of the chart: every object at its true size, axis ratio and angle, growing with the zoom, the pictures laid on the sky where they are, and the bright stars inside a cluster.
 // It only calls the package: the sizes, angles, outlines and picture corners are the package's; the strokes, the fades and the pixels are decided here.
-import type { DeepSkyObject } from "../src/deep-sky-core.ts";
-import { starsInside } from "../src/deep-sky-members.ts";
-import { pictureCorners, pictureUrl, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
+import type { DeepSkyObject } from "../deep-sky-core.ts";
+import { starsInside } from "../deep-sky-members.ts";
+import { pictureCorners, pictureUrl, type DeepSkyPicture } from "../deep-sky-pictures.ts";
 import { drawnPictures } from "./picture-quality.ts";
 import { pictureBlobs } from "./picture-cache.ts";
-import { deepSkyOutline, measuredParts, offsetOnSky, type DeepSkyShape } from "../src/deep-sky-shape.ts";
-import type { SkyPoint } from "../src/projection.ts";
-import type { Star } from "../src/stars.ts";
+import { deepSkyOutline, measuredParts, offsetOnSky, type DeepSkyShape } from "../deep-sky-shape.ts";
+import type { SkyPoint } from "../projection.ts";
+import type { Star } from "../stars.ts";
 import type { Box } from "./labels.ts";
 
 type Spot = [number, number];

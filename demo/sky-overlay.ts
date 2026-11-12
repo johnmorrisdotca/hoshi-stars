@@ -2,7 +2,7 @@
 // pointer rules, and the words a screen reader hears. The chart draws what it lays out (`sky-labels-svg.ts`).
 import { loadBodyLabelFont } from "@johnmorrisdotca/kazoku-ui/body-label";
 import { createFigureLines, createStarNames, type FigureLines, type FigureLinesSettings, type LabelStyle, type NameLanguage, type SkyProjector, type StarNames, type StarNamesSettings } from "../src/sky-labels.ts";
-import type { Box } from "./labels.ts";
+import type { Box } from "../src/chart/labels.ts";
 
 /** The looks the demo offers: the default (`display`, Michroma in small capitals with a ring and the catalogue letter), a plain one and one in capitals. Each is a settings change, not code. */
 export const LOOKS = {

@@ -4,7 +4,7 @@ import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
 import { layersByDistance, limitFromText, limitText, starInput } from "../src/distance.ts";
 import { project } from "../src/projection.ts";
 import { stars } from "../src/stars.ts";
-import { fitScale } from "./chart.ts";
+import { fitScale } from "../src/chart/chart.ts";
 import { BAND_COLOURS, UNCERTAIN_COLOUR } from "./distance-layers.ts";
 
 declare const __HOSHI_VERSION__: string | undefined;

@@ -3,8 +3,8 @@
 // Both maps use this: the sky chart (`faintFor`, which finds the patch of sky from its projection) and the whole-sky page (`faintAt`, handed the patch).
 import { faintTilesFor, type FaintField } from "../src/faint.ts";
 import { starSky, ucac4Source, type Credit } from "../src/door.ts";
-import { fromScreen, type Layer, type View } from "./chart.ts";
-import { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, type FaintDraw } from "./faint-layer.ts";
+import { fromScreen, type Layer, type View } from "../src/chart/chart.ts";
+import { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, type FaintDraw } from "../src/chart/faint-layer.ts";
 
 const RADIANS = Math.PI / 180;
 /** A view that would need more tiles than this (a wide view with a deep limit) draws no faint stars: zoom in for them. */

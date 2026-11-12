@@ -25,6 +25,8 @@ export interface Hands {
   zoomBy(factor: number): void;
   /** Where Home and 0 go. */
   home(): View;
+  /** Let go of the element: the controller's listeners and this module's own. */
+  destroy(): void;
 }
 
 const KEY_STEP = 48;
@@ -47,7 +49,10 @@ export function attachHands(box: HTMLElement, host: HandsHost): Hands {
   });
   Object.defineProperties(box, { controller: { value: controller, configurable: true }, state: { get: () => ({ ...controller.state }), configurable: true } });
   let last: ViewState = { ...controller.state };
-  box.addEventListener("keydown", (event) => (shift = event.shiftKey), true);
+  const keys = (event: KeyboardEvent): void => {
+    shift = event.shiftKey;
+  };
+  box.addEventListener("keydown", keys, true);
 
   const home = (): View => host.home?.() ?? { ...host.view(), ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: host.opening() };
 
@@ -109,11 +114,18 @@ export function attachHands(box: HTMLElement, host: HandsHost): Hands {
   }
 
   sync();
-  controller.bind(box);
+  const unbind = controller.bind(box);
   return {
     controller,
     sync,
     zoomBy: (factor) => controller.zoomBy(factor),
     home,
+    destroy: () => {
+      unbind();
+      box.removeEventListener("keydown", keys, true);
+      controller.destroy();
+      Reflect.deleteProperty(box, "controller");
+      Reflect.deleteProperty(box, "state");
+    },
   };
 }

@@ -1,7 +1,7 @@
 // The SVG the demo writes for names and lines: no setting, whether from the address or a stylesheet, can close an attribute or open a tag.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { escapeXml, figureLinesSvg, figureNameSvg, starNamesSvg } from "../demo/sky-labels-svg.ts";
+import { escapeXml, figureLinesSvg, figureNameSvg, starNamesSvg } from "../src/chart/sky-labels-svg.ts";
 import { createFigureLines, createStarNames, type SkyProjector } from "../src/sky-labels.ts";
 
 const project: SkyProjector = (ra, dec, out) => {

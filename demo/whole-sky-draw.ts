@@ -7,8 +7,8 @@ import type { Culture } from "../src/culture.ts";
 import { stars } from "../src/index.ts";
 import { figures } from "../src/lines.ts";
 import type { SkyPoint } from "../src/projection.ts";
-import { BOUNDARY_DASH, labelOf } from "./chart.ts";
-import { placeLabels, textSize, type Box } from "./labels.ts";
+import { BOUNDARY_DASH, labelOf } from "../src/chart/chart.ts";
+import { placeLabels, textSize, type Box } from "../src/chart/labels.ts";
 import { binOf, binWidth, RING_BINS, ringWidth, STAR_BINS } from "./whole-sky-stars.ts";
 
 export const UNIT_W = 1000;

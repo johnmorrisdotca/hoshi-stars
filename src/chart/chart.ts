@@ -1,32 +1,43 @@
 // The sky chart the demo and the embed page draw: stars, constellation lines, boundaries, names, Messier objects and a grid, as one SVG string, in any of the seven projections.
 // It only calls the package: the numbers (positions, colours, outlines, figures) are the package's; the pixels are decided here.
-import { blackBodyColour, starByHr, starColour, starTemperatureK, stars, type Star } from "../src/index.ts";
-import { boundaries, constellationAt } from "../src/boundaries.ts";
-import type { Constellation } from "../src/constellations.ts";
-import { blackHoles, type BlackHole } from "../src/black-holes.ts";
-import { messier, type DeepSkyObject } from "../src/deep-sky.ts";
-import { pictureCorners, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
+import { blackBodyColour, starByHr, starColour, starTemperatureK, stars, type Star } from "../index.ts";
+import { boundaries, constellationAt } from "../boundaries.ts";
+import type { Constellation } from "../constellations.ts";
+import { blackHoles, type BlackHole } from "../black-holes.ts";
+import { messier, type DeepSkyObject } from "../deep-sky.ts";
+import { pictureCorners, type DeepSkyPicture } from "../deep-sky-pictures.ts";
 import { drawnPictures } from "./picture-quality.ts";
-import { deepSkyShape, offsetOnSky, type DeepSkyShape } from "../src/deep-sky-shape.ts";
+import { deepSkyShape, offsetOnSky, type DeepSkyShape } from "../deep-sky-shape.ts";
 import { DEEP_COLOURS, drawDeep } from "./deep-draw.ts";
-import { figures, type CultureFigure } from "../src/lines.ts";
-import type { Culture } from "../src/culture.ts";
-import { western } from "../src/cultures/western.ts";
-import { milkyWayBands } from "../src/milky-way.ts";
+import { figures, type CultureFigure } from "../lines.ts";
+import type { Culture } from "../culture.ts";
+import { western } from "../cultures/western.ts";
+import { milkyWayBands } from "../milky-way.ts";
 import { faintMarks, type FaintDraw } from "./faint-layer.ts";
-import { project, unproject, type Projection, type SkyPoint } from "../src/projection.ts";
-import type { SeenSky } from "../src/sky-from.ts";
-import { placeLabels, textSize, type Box } from "./labels.ts";
+import { project, unproject, type Projection, type SkyPoint } from "../projection.ts";
+import type { SeenSky } from "../sky-from.ts";
+import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
 import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
-import type { FigureLines, StarNames } from "../src/sky-labels.ts";
-import type { DistanceLayers } from "../src/distance.ts";
+import type { FigureLines, StarNames } from "../sky-labels.ts";
+import type { DistanceLayers } from "../distance.ts";
 
 export { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM, FAINT_PAST_GAP, type FaintDraw } from "./faint-layer.ts";
 export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "pictures", "holes", "faint", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
 
-/** Where the chart looks: the projection, the point in the middle (degrees) and the zoom, 1 being the projection's own fit. */
+/**
+ * Where the chart looks: the projection, the point in the middle (degrees) and the zoom, in the chart's own unit: 1 fits the projection's whole sky in the smaller side, more is closer.
+ *
+ * @example
+ * ```ts no-run
+ * import type { View } from "@johnmorrisdotca/hoshi-stars/chart/element";
+ *
+ * const chart = document.querySelector("hoshi-chart")! as HTMLElement & { view: View | undefined; setView(change: Partial<View>): void };
+ * chart.setView({ ra: 279.2, dec: 38.8, zoom: 12 });
+ * console.log(chart.view?.zoom);
+ * ```
+ */
 export interface View {
   projection: Projection;
   ra: number;
@@ -69,6 +80,8 @@ export interface ChartOptions extends View {
   overlay?: { lines?: FigureLines | undefined; names?: StarNames | undefined } | undefined;
   /** The sky out to a distance (`layersByDistance`): only these things are drawn, each in the colour of its band (`colours`, six of them, near to far); a thing whose distance is uncertain is a hollow ring in `uncertain`; a thing with no distance is not drawn. The faintest-star limit, the faint layer and the deep-sky marks and pictures are left off while it is on. */
   distance?: { layers: DistanceLayers; colours: readonly string[]; uncertain: string } | undefined;
+  /** The width of a text in pixels for a CSS `font` (`"400 11px system-ui, sans-serif"`), to lay the names out by: a canvas where there is a document, else a built-in table, when left out. A server and a test pass their own for the same names everywhere. */
+  measure?: ((text: string, font: string) => number) | undefined;
 }
 
 /** What a tap can land on, in chart pixels. */
@@ -507,6 +520,10 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
 
 /** One frame of the chart: an SVG string of the size asked, and what a tap can land on. */
 export function chart(o: ChartOptions): Chart {
+  return withMeasure(o.measure, () => drawChart(o));
+}
+
+function drawChart(o: ChartOptions): Chart {
   const { width, height, layers, lang } = o;
   const culture = o.culture ?? western;
   const drawn = figuresOfCulture(culture).list;

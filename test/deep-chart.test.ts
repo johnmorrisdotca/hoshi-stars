@@ -2,8 +2,8 @@
 // dotted where no size is measured; the layers; the bright stars inside a cluster.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW, toScreen, type ChartOptions } from "../demo/chart.ts";
-import { choosePictures, deepLimit, KEEP_MARGIN, markOpacity, MAX_PICTURES, visibleArea } from "../demo/deep-draw.ts";
+import { chart, DEFAULT_VIEW, toScreen, type ChartOptions } from "../src/chart/chart.ts";
+import { choosePictures, deepLimit, KEEP_MARGIN, markOpacity, MAX_PICTURES, visibleArea } from "../src/chart/deep-draw.ts";
 import { DEFAULT_LAYERS, layersOf, layersText } from "../demo/choice.ts";
 import { deepSkyObject } from "../src/deep-sky-ngc-ic.ts";
 import { deepSkyPicture, deepSkyPictures, pictureCorners } from "../src/deep-sky-pictures.ts";

@@ -12,7 +12,7 @@ import { western } from "../src/cultures/western.ts";
 import { CULTURE_IDS, cultureOf } from "./cultures.ts";
 import { creditLine, ownCredit } from "../src/door.ts";
 import { faintAt, faintCredits } from "./faint.ts";
-import { faintDepthOf, faintMarks } from "./faint-layer.ts";
+import { faintDepthOf, faintMarks } from "../src/chart/faint-layer.ts";
 import { mountPicker } from "./picker.ts";
 import { langNow, nameIn, type Lang } from "./thumbs.ts";
 import { geometryOf, LAYERS, layoutLabels, labelsSvg, mapSvg, paperSvg, starsSvg, UNIT_H, UNIT_W, type Geometry, type Layer } from "./whole-sky-draw.ts";

@@ -350,6 +350,94 @@ await step("angular", async () => {
   });
 });
 
+// The chart: `chartSvg` in Node, and <hoshi-chart> from a CDN and in each bundler and framework. The element's hands are kazoku-ui, the package's dependency, put beside it where npm puts it.
+const kazoku = join(usage, "node_modules", "@johnmorrisdotca", "kazoku-ui");
+if (!existsSync(kazoku)) cpSync(join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui"), kazoku, { recursive: true, dereference: true });
+/** One entry bundled, as jsDelivr's /+esm answers it. */
+const bundleOf = async (file: string): Promise<string> => {
+  const out = await esbuild({ entryPoints: [file], bundle: true, format: "esm", write: false, minify: true, absWorkingDir: usage, logLevel: "silent" });
+  return out.outputFiles[0]!.text;
+};
+/** A <hoshi-chart> has drawn: its own <svg> with an accessible name, stars and lines. */
+const seesChart = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => (document.querySelector("hoshi-chart")?.shadowRoot?.querySelectorAll("svg circle").length ?? 0) > 30, undefined, { timeout: 20_000 });
+  const drawn = await page.evaluate(() => {
+    const svg = document.querySelector("hoshi-chart")!.shadowRoot!.querySelector("svg")!;
+    return { label: svg.getAttribute("aria-label") ?? "", lines: svg.querySelectorAll("line, path").length };
+  });
+  if (drawn.label.trim() === "" || drawn.lines < 8) throw new Error(`the chart has the name "${drawn.label}" and ${drawn.lines} lines`);
+};
+
+await step("chart-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("chart"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  if (out !== "subaru.svg true true") throw new Error(`unexpected output: ${out}`);
+});
+
+await step("chart-cdn", async () => {
+  await opened(browser, async (page) => {
+    await page.route("https://cdn.jsdelivr.net/**", async (route) => {
+      const { pathname } = new URL(route.request().url());
+      if (pathname !== "/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm") return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({ body: await bundleOf(join(installed, "dist", "chart", "define.js")), contentType: "text/javascript" });
+    });
+    await showPage(page, "chart/cdn.html");
+    await seesChart(page);
+  });
+});
+
+const chartApp = async (name: string, plugins: unknown[] = []): Promise<void> => {
+  const dir = examples(join("chart", name));
+  const out = join(usage, "out", `chart-${name}`);
+  await viteBuild({ root: dir, plugins: plugins as never[], logLevel: "warn", build: { outDir: out, emptyOutDir: true }, base: "./", configFile: false });
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesChart(page);
+  });
+};
+await step("chart-vite", () => chartApp("vite"));
+await step("chart-react", () => chartApp("react"));
+await step("chart-vue", async () => chartApp("vue", [(await import("@vitejs/plugin-vue")).default({ template: { compilerOptions: { isCustomElement: (tag: string) => tag.startsWith("hoshi-") } } })]));
+await step("chart-svelte", async () => chartApp("svelte", [(await import("@sveltejs/vite-plugin-svelte")).svelte()]));
+await step("chart-angular", async () => {
+  const dir = examples(join("chart", "angular"));
+  const out = join(usage, "out", "chart-angular");
+  writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022", module: "esnext", experimentalDecorators: true, useDefineForClassFields: false } }));
+  await esbuild({ entryPoints: [join(dir, "main.ts")], outdir: out, bundle: true, splitting: true, format: "esm", tsconfig: join(dir, "tsconfig.json"), absWorkingDir: root, logLevel: "silent", minify: true });
+  writeFileSync(join(out, "index.html"), readFileSync(join(dir, "index.html")));
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesChart(page);
+  });
+});
+
+// The package installed as a reader installs it, in a project of its own: npm brings kazoku-ui with it, and a Vite app that imports only /chart/define builds and moves (as an optional peer it did not
+// build: Vite stopped at kazoku-ui's missing export).
+await step("chart-installed", async () => {
+  const app = join(usage, "installed");
+  mkdirSync(app, { recursive: true });
+  writeFileSync(join(app, "package.json"), JSON.stringify({ name: "installed-app", private: true, type: "module" }));
+  sh("npm", ["install", "--no-audit", "--no-fund", "--ignore-scripts", "--no-package-lock", tarball], app);
+  if (!existsSync(join(app, "node_modules", "@johnmorrisdotca", "kazoku-ui", "package.json"))) throw new Error("npm did not install kazoku-ui with the package");
+  writeFileSync(join(app, "index.html"), `<!doctype html><html lang="en"><head><meta charset="utf-8"><script type="module" src="./main.js"></script></head><body><hoshi-chart style="width:640px;height:400px"></hoshi-chart></body></html>`);
+  writeFileSync(join(app, "main.js"), `import "@johnmorrisdotca/hoshi-stars/chart/define";\n`);
+  const out = join(usage, "out", "chart-installed");
+  await viteBuild({ root: app, logLevel: "warn", build: { outDir: out, emptyOutDir: true }, base: "./", configFile: false });
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesChart(page);
+    const before = await page.evaluate(() => (document.querySelector("hoshi-chart") as unknown as { view: { ra: number } }).view.ra);
+    await page.mouse.move(320, 200);
+    await page.mouse.down();
+    await page.mouse.move(420, 230, { steps: 8 });
+    await page.mouse.up();
+    const after = await page.evaluate(() => (document.querySelector("hoshi-chart") as unknown as { view: { ra: number } }).view.ra);
+    if (Math.abs(after - before) < 1) throw new Error(`a drag did not move the sky: ra ${before} then ${after}`);
+  });
+});
+
 await step("door-node", () => {
   const out = execFileSync(process.execPath, [join(examples("door"), "source.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
   if (out.length !== 4 || !out[0]!.startsWith("2 stars")) throw new Error(`the source was not drawn: ${out.join(" | ")}`);
@@ -423,6 +511,13 @@ const FILES: Record<string, string[]> = {
   "deep-sky/outline.mjs": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
+  "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/vite/main.ts": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/react/SkyChart.tsx": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/vue/SkyChart.vue": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/svelte/SkyChart.svelte": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/angular/sky-chart.component.ts": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
 };
 const normal = (text: string) => text.replace(/\r\n/g, "\n").trim();
 for (const [file, places] of everything ? Object.entries(FILES) : []) {
@@ -432,7 +527,7 @@ for (const [file, places] of everything ? Object.entries(FILES) : []) {
   }
 }
 const unlisted = (folder: string): string[] => readdirSync(at("examples", folder), { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? unlisted(join(folder, entry.name)) : [relative("", join(folder, entry.name)).split("\\").join("/")]));
-const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html"]);
+const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html", "chart/vite/index.html", "chart/react/index.html", "chart/react/main.tsx", "chart/vue/index.html", "chart/vue/main.ts", "chart/svelte/index.html", "chart/svelte/main.ts", "chart/angular/index.html", "chart/angular/main.ts"]);
 for (const file of everything ? unlisted("") : []) if (!known.has(file)) failures.push(`examples/${file} is not listed in scripts/check-usage.ts: say where the guides show it`);
 
 console.log(failures.length === 0 ? `\nusage ok: ${results.length} ways to use ${NAME}` : `\n${failures.length} failure${failures.length === 1 ? "" : "s"}:\n- ${failures.join("\n- ")}`);

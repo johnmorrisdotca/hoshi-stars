@@ -5,7 +5,7 @@ import { deepSkyObject } from "../src/deep-sky.ts";
 import { starByHr } from "../src/index.ts";
 import { nearest, neighbouringConstellations } from "../src/nearest.ts";
 import type { SeenSky, SeenStar } from "../src/sky-from.ts";
-import { keyOfSeen } from "./chart.ts";
+import { keyOfSeen } from "../src/chart/chart.ts";
 
 export type By = "sky" | "space";
 export const NEARBY_COUNT = 10;

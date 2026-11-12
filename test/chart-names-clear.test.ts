@@ -1,8 +1,8 @@
 // The sky map's names keep off its bright stars (MODULES-802): in a spread of views, zooms, sizes and projections, no name's box touches the dot of a star drawn 3 pixels in radius or more.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart } from "../demo/chart.ts";
-import { textSize } from "../demo/labels.ts";
+import { chart } from "../src/chart/chart.ts";
+import { textSize } from "../src/chart/labels.ts";
 
 test("no name on the sky map covers a bright star's dot", () => {
   const views = [[84, 0], [310, 42], [0, 89], [100, -60], [84.05, -1.2], [200, 30]] as const;

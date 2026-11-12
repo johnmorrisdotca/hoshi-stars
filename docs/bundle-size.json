@@ -1,0 +1,157 @@
+{
+  "measured": "esbuild 0.25.12, bundled, minified, ES2020, gzip level 9",
+  "entries": {
+    ".": {
+      "minified": 296858,
+      "gzip": 125993
+    },
+    "./constellations": {
+      "minified": 301153,
+      "gzip": 127916
+    },
+    "./lines": {
+      "minified": 305527,
+      "gzip": 130204
+    },
+    "./culture": {
+      "minified": 757,
+      "gzip": 504
+    },
+    "./cultures/western": {
+      "minified": 19575,
+      "gzip": 8096
+    },
+    "./cultures/japanese": {
+      "minified": 19495,
+      "gzip": 7997
+    },
+    "./cultures/chinese": {
+      "minified": 21114,
+      "gzip": 8854
+    },
+    "./sheets": {
+      "minified": 336193,
+      "gzip": 141109
+    },
+    "./chart": {
+      "minified": 499298,
+      "gzip": 198038
+    },
+    "./chart/element": {
+      "minified": 550048,
+      "gzip": 217631
+    },
+    "./chart/define": {
+      "minified": 550134,
+      "gzip": 217655
+    },
+    "./boundaries": {
+      "minified": 32104,
+      "gzip": 10834
+    },
+    "./deep-sky": {
+      "minified": 10226,
+      "gzip": 4879
+    },
+    "./black-holes": {
+      "minified": 64459,
+      "gzip": 23026
+    },
+    "./deep-sky/ngc-ic": {
+      "minified": 711833,
+      "gzip": 222183
+    },
+    "./deep-sky/shape": {
+      "minified": 5184,
+      "gzip": 2227
+    },
+    "./deep-sky/ngc-ic-shape": {
+      "minified": 157665,
+      "gzip": 53462
+    },
+    "./deep-sky/pictures": {
+      "minified": 35006,
+      "gzip": 8486
+    },
+    "./deep-sky/members": {
+      "minified": 295334,
+      "gzip": 125195
+    },
+    "./projection": {
+      "minified": 4072,
+      "gzip": 1638
+    },
+    "./all-sky": {
+      "minified": 9177,
+      "gzip": 3227
+    },
+    "./milky-way": {
+      "minified": 16650,
+      "gzip": 8026
+    },
+    "./sky": {
+      "minified": 5981,
+      "gzip": 2424
+    },
+    "./nearest": {
+      "minified": 332222,
+      "gzip": 139096
+    },
+    "./nearby": {
+      "minified": 510170,
+      "gzip": 239580
+    },
+    "./faint": {
+      "minified": 13542,
+      "gzip": 5905
+    },
+    "./sky-labels": {
+      "minified": 315799,
+      "gzip": 134860
+    },
+    "./distance": {
+      "minified": 2769,
+      "gzip": 1173
+    },
+    "./door": {
+      "minified": 16033,
+      "gzip": 6924
+    },
+    "./sky-from": {
+      "minified": 297282,
+      "gzip": 126056
+    },
+    "./sky-from/nearby": {
+      "minified": 807106,
+      "gzip": 365082
+    },
+    "./constellation-3d": {
+      "minified": 309285,
+      "gzip": 131943
+    },
+    "./profile": {
+      "minified": 39065,
+      "gzip": 17112
+    },
+    "./portrait": {
+      "minified": 9007,
+      "gzip": 3600
+    },
+    "./thumbnails": {
+      "minified": 342307,
+      "gzip": 142826
+    },
+    "./constellation-facts": {
+      "minified": 340316,
+      "gzip": 141840
+    },
+    "./near-stars": {
+      "minified": 36895,
+      "gzip": 8918
+    },
+    "./exoplanet-hosts": {
+      "minified": 39291,
+      "gzip": 8677
+    }
+  }
+}

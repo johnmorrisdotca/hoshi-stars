@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { ALL_SKY_FRAMES, ALL_SKY_PROJECTIONS, allSkyProject, allSkyUnproject, type AllSkyOptions } from "../src/all-sky.ts";
 import { faintTilesFor } from "../src/faint-core.ts";
-import { faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM } from "../demo/faint-layer.ts";
+import { faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM } from "../src/chart/faint-layer.ts";
 import { chartZoomOf, skyFieldOf, visibleBox, WHOLE_SKY_MAGNITUDE, WHOLE_SKY_ZOOM_MAX } from "../demo/whole-sky-field.ts";
 
 const RADIANS = Math.PI / 180;

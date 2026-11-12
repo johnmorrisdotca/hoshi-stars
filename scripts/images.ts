@@ -2,7 +2,7 @@
 // with its constellation lines and the Milky Way, drawn by the demo's own chart function. `pnpm images`. Needs Chromium; it opens one headless browser and no server.
 import { mkdirSync } from "node:fs";
 import { chromium } from "@playwright/test";
-import { chart, defaultZoom, DEFAULT_VIEW } from "../demo/chart.ts";
+import { chart, defaultZoom, DEFAULT_VIEW } from "../src/chart/chart.ts";
 import { captureDrawing, composeThumbnails } from "./family-thumbnail.mjs";
 
 mkdirSync(new URL("../docs/images/", import.meta.url).pathname, { recursive: true });

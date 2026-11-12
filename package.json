@@ -1,7 +1,7 @@
 {
   "name": "@johnmorrisdotca/hoshi-stars",
-  "version": "0.33.1",
-  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed, no dependencies.",
+  "version": "0.34.0",
+  "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed; the data and the SVG chart need no other package.",
   "keywords": [
     "stars",
     "milky-way",
@@ -23,7 +23,6 @@
     "galaxy",
     "component",
     "typescript",
-    "zero-dependencies",
     "itsutsu",
     "spaceprogramx",
     "space-program-x",
@@ -79,7 +78,10 @@
   "author": "John Morris",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/chart/define.js",
+    "./src/chart/define.ts"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -123,6 +125,21 @@
       "types": "./dist/sheets/index.d.ts",
       "import": "./dist/sheets/index.js",
       "default": "./dist/sheets/index.js"
+    },
+    "./chart": {
+      "types": "./dist/chart/index.d.ts",
+      "import": "./dist/chart/index.js",
+      "default": "./dist/chart/index.js"
+    },
+    "./chart/element": {
+      "types": "./dist/chart/element.d.ts",
+      "import": "./dist/chart/element.js",
+      "default": "./dist/chart/element.js"
+    },
+    "./chart/define": {
+      "types": "./dist/chart/define.d.ts",
+      "import": "./dist/chart/define.js",
+      "default": "./dist/chart/define.js"
     },
     "./boundaries": {
       "types": "./dist/boundaries.d.ts",
@@ -301,6 +318,9 @@
     "check:standard": "node scripts/check-standard.mjs",
     "thumbnails": "node scripts/make-thumbnails.ts"
   },
+  "dependencies": {
+    "@johnmorrisdotca/kazoku-ui": "^0.41.0"
+  },
   "devDependencies": {
     "@angular/common": "^22.2.5",
     "@angular/compiler": "^22.2.5",
@@ -308,7 +328,6 @@
     "@angular/platform-browser": "^22.2.5",
     "@eslint/js": "^9.0.0",
     "@johnmorrisdotca/hata": "^1.8.0",
-    "@johnmorrisdotca/kazoku-ui": "^0.41.0",
     "@johnmorrisdotca/kuni": "^1.5.0",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",

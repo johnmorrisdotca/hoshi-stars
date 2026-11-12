@@ -30,6 +30,7 @@ const measured = new Map<string, TextMetrics>();
  * ```
  */
 export function textSize(text: string, size: number, weight = 400): { w: number; h: number; above: number; below: number } {
+  if (custom !== undefined) return { w: Math.ceil(custom(text, `${weight} ${size}px system-ui, sans-serif`)), h: Math.ceil(size * 1.2), above: size * 0.85, below: size * 0.3 };
   let w = 0;
   for (const ch of text) w += ch.charCodeAt(0) > 0x2e7f ? size : size * 0.6;
   let above = size * 0.85;
@@ -48,6 +49,26 @@ export function textSize(text: string, size: number, weight = 400): { w: number;
     below = Math.max(below, metrics.fontBoundingBoxDescent || 0);
   }
   return { w: Math.ceil(w), h: Math.ceil(size * 1.2), above, below };
+}
+
+/** A page's own text measure, while one chart is drawn (`withMeasure`). */
+let custom: ((text: string, font: string) => number) | undefined;
+
+/**
+ * Runs `draw` with `measure` as the width of a text (in pixels, for a CSS `font`), instead of a canvas or the built-in table, so the same options give the same names everywhere.
+ *
+ * @param measure - The width of `text` in `font`, or `undefined` for the usual measure (a canvas where there is a document, else the table).
+ * @param draw - What to run with it.
+ * @returns What `draw` returns.
+ */
+export function withMeasure<T>(measure: ((text: string, font: string) => number) | undefined, draw: () => T): T {
+  const before = custom;
+  custom = measure;
+  try {
+    return draw();
+  } finally {
+    custom = before;
+  }
 }
 
 /** Whether two boxes share any area. */

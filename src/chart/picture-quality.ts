@@ -1,7 +1,7 @@
 // Which of the package's deep-sky pictures the demo draws. Every picture was looked at on the map, at the zoom where it first shows and at its cap, and the ones below were left out: their survey tile has
 // a hard edge, a seam, a box of a different background or a hole where the survey has no data, which on the map reads as a broken picture, not as sky. An object without a picture is drawn as its outline
 // alone, which is true. The files and the package's index are untouched: this is the demo's choice, and a page that draws the pictures itself can make its own.
-import { deepSkyPictures, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";
+import { deepSkyPictures, type DeepSkyPicture } from "../deep-sky-pictures.ts";
 
 /**
  * The survey pictures the demo leaves out, with what is wrong with each. Nine that were here are now natural-colour photographs (M8, M16, M17, M20, M33, M110, NGC 1316, NGC 2403 and NGC 5139) and are drawn;
