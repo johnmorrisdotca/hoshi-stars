@@ -12,11 +12,12 @@ permissions:
   id-token: write
 jobs:
   release:
-    uses: johnmorrisdotca/kazoku-ui/.github/workflows/reusable-release.yml@v0.9.1
+    uses: johnmorrisdotca/kazoku-ui/.github/workflows/reusable-release.yml@v0.43.0
     with:
       github-release: true
       check-command: pnpm check && pnpm test:readme
       freeze-command: pnpm test:freeze
+      require-ci-workflow: ci.yml
   data-files:
     needs: release
     runs-on: ubuntu-latest
