@@ -51,18 +51,63 @@ A drag moves the sky, two fingers or Ctrl (Command) and the wheel zoom about the
 | `picked` | A star (HR number, `2491` for Sirius) or Messier object (`M42`) marked as picked. Set after a tap, it wins again. |
 | `lang` | `en` or `ja`; left out, the nearest `lang` above the element, followed when it changes. |
 | `theme` | `light` or `dark`, for the focus ring; the sky is night in both. |
+| `show-uncertainty` | Draw the stars of grade C (a rough or missing distance: see [How well a star is known](accuracy.md)) dimmer, so the well-known stars stand out. Off by default; the property is `showUncertainty`. It changes how a star is drawn and nothing else: still nothing is drawn at rest. |
 | `controls="none"` | No hands: a still picture. |
 | `markers`, `time-from`, `time-to`, `time-fade`, `tracks` | Your own dated points on the chart, the days shown and the lines joining a group (see [Your own points on the chart](sky-chart-markers.md)). |
 
 | Event | `detail` |
 |---|---|
-| `hoshi-pick` | `ChartPick`: `{ kind, id, abbreviation? }`. `kind` is `star` (the HR number), `deep` (`M42`), `hole` (`cygnus-x-1`), `figure` (its id, with `abbreviation` for a constellation) or `none`. |
+| `hoshi-pick` | `ChartPick`: `{ kind, id, abbreviation? }`. `kind` is `star` (the HR number, with `accuracy`: `{ grade, lightYearsRange, positionResolutionArcsec }`, the star's grade A, B or C, the distance range in light-years, or `null` where there is none, and the size of the last digit of its position in arc-seconds), `deep` (`M42`), `hole` (`cygnus-x-1`), `figure` (its id, with `abbreviation` for a constellation) or `none`. |
 | `hoshi-view` | `ChartViewDetail`: `{ projection, ra, dec, zoom, final }`, as the view changes; `final` once the hand has settled. |
 | `hoshi-marker` | `ChartMarkerDetail`: `{ marker, id, index, source }`, when one of your own points (`markers`) is clicked, tapped, or chosen with Enter or Space. |
 
 `element.setView({ ra, dec, zoom })` moves it from code, and `element.view` says where it is; `View` is their type. `HoshiChartElement` is the class, `CHART_TAG` the tag, and `defineChart(registry?)` defines it once (a page that loads it twice, or two copies of the package, never throws).
 
 **The hands are kazoku-ui.** They are the family's view controls, `@johnmorrisdotca/kazoku-ui`, this package's one dependency, which npm installs with it and jsDelivr's `/+esm` brings by itself. Only `/chart/element` and `/chart/define` load it: `chartSvg` and every other entry load nothing of it.
+
+## How well a star is known
+
+A tap on a star says how well it is known: the `accuracy` of the `hoshi-pick` detail holds its grade, the nearest and farthest the distance can be (one standard error of the parallax each way; the farthest is `Infinity` where the error is as large as the parallax) and the position's resolution. The grade is `/accuracy`'s (see [How well a star is known](accuracy.md)). The `show-uncertainty` attribute (or `chartSvg`'s `showUncertainty`) draws the grade C stars at 45% strength, each marked `data-uncertain="C"`; grades A and B are drawn as before. The same pieces, `pickAccuracy(star)` and `dimsForUncertainty(star)`, are pure and exported from `/chart`.
+
+```js
+import { writeFileSync } from "node:fs";
+import { chartSvg, pickAccuracy } from "@johnmorrisdotca/hoshi-stars/chart";
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+
+// Orion with the stars of grade C (a rough or missing distance) drawn dimmer.
+const svg = chartSvg({ width: 640, height: 400, constellation: "Ori", showUncertainty: true });
+writeFileSync(new URL("orion-uncertain.svg", import.meta.url), svg);
+
+// What a pick says of Betelgeuse: its grade, the distance range in light-years and the position resolution in arc-seconds.
+const { grade, lightYearsRange, positionResolutionArcsec } = pickAccuracy(starByName("Betelgeuse"));
+console.log("orion-uncertain.svg", svg.includes('data-uncertain="C"'), grade, lightYearsRange.map(Math.round).join("-"), Math.round(positionResolutionArcsec * 10) / 10);
+// orion-uncertain.svg true B 480-640 1.5
+```
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How well is the star known?</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-chart ra="88.79" dec="7.41" zoom="12" show-uncertainty style="width: 640px; height: 400px"></hoshi-chart>
+    <p id="card">Tap a star.</p>
+    <script type="module">
+      document.querySelector("hoshi-chart").addEventListener("hoshi-pick", (event) => {
+        const { kind, id, accuracy } = event.detail;
+        if (kind !== "star") return;
+        const [low, high] = accuracy.lightYearsRange ?? [];
+        const range = low === undefined ? "no stated range" : `${Math.round(low)} to ${Math.round(high)} light-years`;
+        document.getElementById("card").textContent = `HR ${id}: grade ${accuracy.grade}, ${range}, position to ${accuracy.positionResolutionArcsec} arc-seconds`;
+      });
+    </script>
+  </body>
+</html>
+```
 
 ## As one SVG string
 
@@ -77,7 +122,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`chartSvg(options)` takes `width` and `height` and, as the element's attributes, `projection`, `ra`, `dec`, `zoom`, `magnitude`, `layers` (a list of `CHART_LAYERS`), `lang`, `culture` (the culture itself, imported from `@johnmorrisdotca/hoshi-stars/cultures/japanese` or `/chinese`, so a page pays only for the one it draws), `constellation`, `picked`, `markers`, `timeRange` and `tracks` (your own points: see [Your own points on the chart](sky-chart-markers.md)) and `label` (the accessible name, "Star chart" or 星図). It returns an `<svg>` with a `viewBox` of the size and its own night background. It reads no clock and fetches nothing.
+`chartSvg(options)` takes `width` and `height` and, as the element's attributes, `projection`, `ra`, `dec`, `zoom`, `magnitude`, `layers` (a list of `CHART_LAYERS`), `lang`, `culture` (the culture itself, imported from `@johnmorrisdotca/hoshi-stars/cultures/japanese` or `/chinese`, so a page pays only for the one it draws), `constellation`, `picked`, `showUncertainty`, `markers`, `timeRange` and `tracks` (your own points: see [Your own points on the chart](sky-chart-markers.md)) and `label` (the accessible name, "Star chart" or 星図). It returns an `<svg>` with a `viewBox` of the size and its own night background. It reads no clock and fetches nothing.
 
 The names are laid out by the width of their text: measured with a canvas where there is a document, else with a built-in table, so a browser and a server can place a name a pixel or two apart. Pass `measure: (text, font) => width` (a font's metrics, or a fixed width a character) for the same SVG everywhere. The types are `ChartSvgOptions` and `ChartLayer`.
 

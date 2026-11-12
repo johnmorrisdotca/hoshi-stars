@@ -112,13 +112,49 @@ test("a tap on a star picks it, and the zoom keeps to its range", async ({ page 
   await expect.poll(() => drawn(page)).toBeGreaterThan(5);
   await listen(page);
   await page.mouse.click(300, 200);
-  await expect.poll(() => lastPick(page)).toEqual({ kind: "star", id: "2061" });
+  await expect.poll(() => lastPick(page)).toMatchObject({ kind: "star", id: "2061" });
   // the zoom range: 500 at most unless the page raises it, up to 8000
   await chart(page).evaluate((el) => el.setAttribute("zoom", "1200"));
   await expect.poll(async () => (await view(page)).zoom).toBe(500);
   await chart(page).evaluate((el) => el.setAttribute("zoom-max", "8000"));
   await chart(page).evaluate((el) => el.setAttribute("zoom", "1200"));
   await expect.poll(async () => (await view(page)).zoom).toBe(1200);
+});
+
+test("a tap on a star says how well it is known: the grade, the distance range and the position resolution", async ({ page }) => {
+  // Betelgeuse in the middle: grade B, a distance of 480 to 640 light-years (Joyce et al. 2020), a position to about 1.5 arc-seconds
+  await chartPage(page, `<hoshi-chart ra="88.79" dec="7.41" zoom="12" style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => drawn(page)).toBeGreaterThan(5);
+  await listen(page);
+  await page.mouse.click(300, 200);
+  await expect.poll(() => lastPick(page)).toMatchObject({ kind: "star", id: "2061", accuracy: { grade: "B" } });
+  const accuracy = ((await lastPick(page)) as { accuracy: { lightYearsRange: [number, number]; positionResolutionArcsec: number } }).accuracy;
+  expect(Math.round(accuracy.lightYearsRange[0] / 10)).toBe(48);
+  expect(Math.round(accuracy.lightYearsRange[1] / 10)).toBe(64);
+  expect(accuracy.positionResolutionArcsec).toBeGreaterThan(1);
+  expect(accuracy.positionResolutionArcsec).toBeLessThanOrEqual(1.5);
+});
+
+test("show-uncertainty draws grade C stars dimmer, only when asked, and still nothing at rest", async ({ page }) => {
+  const dim = (p: Page) => chart(p).evaluate((el) => el.shadowRoot?.querySelectorAll('circle[data-uncertain="C"]').length ?? 0);
+  await chartPage(page, `<hoshi-chart style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => drawn(page)).toBeGreaterThan(30);
+  // off by default: no star is dimmed
+  expect(await dim(page)).toBe(0);
+  expect(await chart(page).evaluate((el) => Reflect.get(el, "showUncertainty"))).toBe(false);
+  // the property sets the attribute, and the stars of grade C dim
+  await chart(page).evaluate((el) => Reflect.set(el, "showUncertainty", true));
+  await expect(chart(page)).toHaveAttribute("show-uncertainty", "");
+  await expect.poll(() => dim(page)).toBeGreaterThan(10);
+  const some = await dim(page);
+  expect(some).toBeLessThan(await drawn(page));
+  // at rest nothing is drawn again
+  const before = await draws(page);
+  await page.waitForTimeout(400);
+  expect(await draws(page)).toBe(before);
+  // the attribute off again, and show-uncertainty="false", put every star back
+  await chart(page).evaluate((el) => el.setAttribute("show-uncertainty", "false"));
+  await expect.poll(() => dim(page)).toBe(0);
 });
 
 // What else a tap lands on. The stars are held back (magnitude -5) so that the tap in the middle finds the thing under test.
@@ -145,7 +181,7 @@ test("the page's own picked and constellation win again after a tap", async ({ p
   await expect.poll(() => drawn(page)).toBeGreaterThan(5);
   await listen(page);
   await page.mouse.click(300, 200);
-  await expect.poll(() => lastPick(page)).toEqual({ kind: "star", id: "2061" });
+  await expect.poll(() => lastPick(page)).toMatchObject({ kind: "star", id: "2061" });
   await expect.poll(async () => Math.round((await middleOf(page, PICK_RING))?.x ?? -1)).toBe(300);
   await chart(page).evaluate((el) => el.setAttribute("picked", "1790"));
   await expect.poll(async () => (await middleOf(page, PICK_RING))?.x ?? -1).toBeGreaterThan(330);
