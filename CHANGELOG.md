@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-11-12
+
 - **A picked figure is where its card says, in every sky** (MODULES-1155). With the Chinese sky, a link to a figure (`?culture=chinese&pick=C:di1-xiu4`) opened on the default sky with the figure out of sight, and a figure of which the catalogue holds one star of several (氐宿, 三師) showed its constellation's lines on its card (Libra's for 氐宿) while the map had none to draw. Now:
   - an address that picks a figure and gives no place (`ra`, `dec`) opens on the figure, at its own zoom unless the address gives one;
   - a figure of one star is drawn on its card as that star ringed, framed in the sky round it, with no other figure's lines (`figureThumbnail`); the card's line says `1 star in our data, no lines` where the figure has more stars than we hold;
