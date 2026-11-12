@@ -28,7 +28,7 @@ for (const name of ["Sirius", "Arcturus", "Betelgeuse", "Deneb"]) {
 // Arcturus: 4487 K, 18.4 mas across
 //   radius 22.4 Suns, from 19.2 to 26.2 (parallax)
 // Betelgeuse: 3710 K, 30.6 mas across
-//   radius 336.0 Suns, from 148.5 to 986.9 (parallax)
+//   radius 553.4 Suns, from 316.6 to 987.3 (parallax)
 // Deneb: 9125 K, 1.9 mas across
 //   radius not known: no-parallax
 ```

@@ -59,10 +59,11 @@ test("Orion opens as seen from the Earth, lines and names on, and says which dis
   await expect(page.locator('.sp-label[data-star="hr-1903"]')).toContainText("distance unknown");
   await expect(page.locator('.sp-label[data-star="hr-1903"]')).toContainText("Alnilam");
   const key = page.getByTestId("sp-key");
-  await expect(key.locator('[data-quality="rough"]')).toContainText("7");
+  await expect(key.locator('[data-quality="rough"]')).toContainText("6");
   await expect(key.locator('[data-quality="none"]')).toContainText("1");
+  await expect(key.locator('[data-quality="fair"]')).toContainText("1");
   await expect(key.locator('[data-quality="good"]')).toContainText("0");
-  await expect(page.getByTestId("sp-summary")).toHaveText("Of 8 stars in the figure: 0 good, 0 fair, 7 rough, 1 with none.");
+  await expect(page.getByTestId("sp-summary")).toHaveText("Of 8 stars in the figure: 0 good, 1 fair, 6 rough, 1 with none.");
   await expect(page.getByTestId("sp-poor")).toBeVisible();
 });
 
@@ -72,9 +73,9 @@ test("the table lists every star of the figure with its distance and the range i
   await expect(rows).toHaveCount(8);
   const row = (hr: number) => page.getByTestId("sp-table").locator(`tr[data-star="hr-${hr}"]`);
   await expect(row(1713)).toContainText("Rigel");
-  await expect(row(1713)).toContainText("351 ly");
-  await expect(row(1713)).toContainText("210–1,052 ly");
-  await expect(row(2061)).toContainText("333 ly");
+  await expect(row(1713)).toContainText("847 ly");
+  await expect(row(1713)).toContainText("593–1,483 ly");
+  await expect(row(2061)).toContainText("548 ly");
   await expect(row(2004)).toContainText("at least 116 ly");
   await expect(row(1903)).toContainText("distance unknown");
   await expect(row(1713).locator("a")).toHaveAttribute("href", /\?pick=S:1713/);
@@ -168,7 +169,7 @@ test("Japanese: the heading, the labels, the table and the buttons are in Japane
   await expect(page.getByTestId("sp-turn")).toHaveText("90°回す");
   await expect(page.locator('.sp-label[data-star="hr-1903"]')).toContainText("距離は不明");
   await expect(page.locator('.sp-label[data-star="hr-2061"] .sp-n')).toHaveText("ベテルギウス");
-  await expect(page.getByTestId("sp-table").locator('tr[data-star="hr-1713"]')).toContainText("351光年");
+  await expect(page.getByTestId("sp-table").locator('tr[data-star="hr-1713"]')).toContainText("847光年");
 });
 
 test("light and dark: the stage takes the device's look and the theme switch's, and the labels stay readable", async ({ page }) => {

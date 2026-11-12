@@ -44,9 +44,9 @@ console.log(rigel.uncertain, Math.round(rigel.low), Math.round(rigel.high));
 // 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance
 // 50: 897 things; bands 9 665 0 0 0 0; 223 uncertain; 3083 with no distance
 // 100: 4130 things; bands 9 665 870 0 0 0; 2586 uncertain; 3083 with no distance
-// 500: 7497 things; bands 9 665 870 329 0 0; 5624 uncertain; 3083 with no distance
-// 1000: 7568 things; bands 9 665 870 329 11 0; 5684 uncertain; 3083 with no distance
-// Infinity: 7672 things; bands 9 665 870 329 11 37; 5751 uncertain; 3083 with no distance
+// 500: 7498 things; bands 9 665 870 329 0 0; 5625 uncertain; 3083 with no distance
+// 1000: 7568 things; bands 9 665 870 329 10 0; 5685 uncertain; 3083 with no distance
+// Infinity: 7672 things; bands 9 665 870 329 10 37; 5752 uncertain; 3083 with no distance
 // true 593 1483
 ```
 
