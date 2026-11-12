@@ -37,6 +37,8 @@ export type AsterismKind = "constellation" | "asterism" | "mansion";
  *
  * const dipper = chinese.find("北斗")!;
  * console.log(dipper.name, dipper.readings.zh, dipper.chains.length);
+ * // each star's number in the asterism: 角宿一 (Spica, HR 5056) is star 1
+ * console.log(chinese.find("角宿")!.numbers);
  * ```
  */
 export interface Asterism {
@@ -64,8 +66,10 @@ export interface Asterism {
    */
   readonly missing: number;
   /**
-   * Each held star's number in the figure, by Bright Star Catalogue number, where the culture numbers its stars: the Chinese sky's names do (角宿一 is star 1 of 角宿, and a mansion's star 1 is its
-   * determinative star, 距星). `{ 5056: 1, 5107: 2 }` for 角宿; absent where the culture does not number them, and a star the source gives no number has none.
+   * Each held star's number in the figure, by Bright Star Catalogue number, where the culture numbers its stars: the Chinese sky's names do (角宿一 is star 1 of 角宿). `{ 5056: 1, 5107: 2 }` for 角宿;
+   * absent where the culture does not number them, and a star the source gives no number has none. The numbers are the source's, repeats and all: in the Chinese sky 斗宿 has two stars numbered 1
+   * and 天園 two numbered 4 (Wikidata names them so), and 三台's pairs share theirs by design; the stars known by a proper name (the Northern Dipper's, 天狼) are numbered by their place in the
+   * package's list. A mansion's star 1 is its determinative star (距星) where one star has that number.
    */
   readonly numbers?: Readonly<Record<number, number>>;
   /** The stars as HR numbers: chains, each a run of stars joined one to the next; a chain of one is a single star. */

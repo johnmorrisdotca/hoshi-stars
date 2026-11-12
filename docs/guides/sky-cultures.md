@@ -62,6 +62,8 @@ console.log(chinese.asterisms().filter((a) => a.partOf === "heavenly-market").ma
 
 Most Chinese asterisms have stars fainter than magnitude 6.0, which the Bright Star Catalogue does not hold, and some have stars our source does not name with a catalogue number. A figure draws only the stars we have, and `missing` says at least how many it lacks: the largest star number found in the asterism, less the stars held. We cannot always tell which of the two a missing star is, so the demo says "not in our data".
 
+Each star of a Chinese asterism also has its number in it, as its name has it: `numbers` maps a star's HR number to it (`{ 5056: 1, 5107: 2 }` for 角宿, Spica being 角宿一). A mansion's star 1 is its determinative star (距星), which our source names for 24 of the 28. The numbers are the source's, repeats and all: 斗宿 has two stars numbered 1 and 天園 two numbered 4, and 三台's pairs share theirs by design. The stars known by a proper name (the Northern Dipper's, 天狼) are numbered by their place in the package's list. The Western and Japanese skies have no `numbers`.
+
 ```js
 import { figureOf } from "@johnmorrisdotca/hoshi-stars/lines";
 import { chinese } from "@johnmorrisdotca/hoshi-stars/cultures/chinese";

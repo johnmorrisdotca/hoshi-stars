@@ -173,7 +173,7 @@ console.log(figureOf("すばる", japanese).asterism.names.en, figureOf("羽林�
 | Name | Gives |
 |---|---|
 | `western`, `japanese`, `chinese` | a `Culture`: `id`, `names`, `asterisms()` and `find(text)` |
-| `Asterism` | one figure: `id`, `name`, `names` (by `NameLanguage`: `la`, `en`, `ja`, `zh-Hans`, `zh-Hant`), `readings` (`ja` in hiragana, `zh` in pinyin), `aka`, `about`, `kind` (an `AsterismKind`: `constellation`, `asterism` or `mansion`), `group`, `partOf` (a Chinese asterism's enclosure or mansion, where Wikidata states it), `missing` and `chains` of HR numbers |
+| `Asterism` | one figure: `id`, `name`, `names` (by `NameLanguage`: `la`, `en`, `ja`, `zh-Hans`, `zh-Hant`), `readings` (`ja` in hiragana, `zh` in pinyin), `aka`, `about`, `kind` (an `AsterismKind`: `constellation`, `asterism` or `mansion`), `group`, `partOf` (a Chinese asterism's enclosure or mansion, where Wikidata states it), `missing`, `chains` of HR numbers and, in the Chinese sky, `numbers` (each star's number in the asterism: `{ 5056: 1, 5107: 2 }` for 角宿) |
 | `CultureFigure` (`/lines`) | an `Asterism` with its `stars` and `segments`: only the stars of the figure that the catalogue holds |
 | `defineCulture(id, names, make)` (`/culture`) | a culture of your own |
 

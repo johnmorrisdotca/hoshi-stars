@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **The Chinese sky keeps each star's number** (MODULES-1160). `Asterism.numbers` gives each held star's number in its asterism, as its name has it (角宿一 is star 1 of 角宿: `{ 5056: 1, 5107: 2 }`), read again from Wikidata (CC0) on 2026-11-12 with every asterism as it was. A mansion's star 1 is its determinative star (距星), which Wikidata names for 24 of the 28. The numbers are Wikidata's, repeats and all: 斗宿 has two stars numbered 1 and 天園 two numbered 4, and 三台's pairs share their numbers by design; the stars named by a proper name (the Northern Dipper's, 天狼, 老人, 大角) are numbered by their place in our list. The Western and Japanese skies do not number their stars.
+- **Missing stars are "not in our data"** (MODULES-1160): wherever the stars a Chinese figure lacks were called fainter than the catalogue (the `missing` docs, the generated data, the guides and the README), they are now stars not in our data, fainter than magnitude 6.0 or given no catalogue number in Wikidata, since we cannot always tell which.
+
 ## [0.36.0] - 2026-11-12
 
 - **A picked figure is where its card says, in every sky** (MODULES-1155). With the Chinese sky, a link to a figure (`?culture=chinese&pick=C:di1-xiu4`) opened on the default sky with the figure out of sight, and a figure of which the catalogue holds one star of several (氐宿, 三師) showed its constellation's lines on its card (Libra's for 氐宿) while the map had none to draw. Now:
