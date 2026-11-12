@@ -38,16 +38,16 @@ for (let step = 0; step < 6; step += 1) {
 }
 
 // A star whose distance is uncertain is in no band: it is kept apart, with the range its error allows.
-const betelgeuse = layersByDistance(everything, { limit: 300 }).things.find((thing) => thing.name === "Betelgeuse");
-console.log(betelgeuse.uncertain, Math.round(betelgeuse.low), Math.round(betelgeuse.high));
+const rigel = layersByDistance(everything, { limit: 700 }).things.find((thing) => thing.name === "Rigel");
+console.log(rigel.uncertain, Math.round(rigel.low), Math.round(rigel.high));
 
 // 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance
 // 50: 897 things; bands 9 665 0 0 0 0; 223 uncertain; 3083 with no distance
-// 100: 4128 things; bands 9 665 870 0 0 0; 2584 uncertain; 3083 with no distance
-// 500: 7500 things; bands 9 665 870 329 0 0; 5627 uncertain; 3083 with no distance
-// 1000: 7568 things; bands 9 665 870 329 9 0; 5686 uncertain; 3083 with no distance
-// Infinity: 7672 things; bands 9 665 870 329 9 37; 5753 uncertain; 3083 with no distance
-// true 225 640
+// 100: 4130 things; bands 9 665 870 0 0 0; 2586 uncertain; 3083 with no distance
+// 500: 7497 things; bands 9 665 870 329 0 0; 5624 uncertain; 3083 with no distance
+// 1000: 7568 things; bands 9 665 870 329 11 0; 5684 uncertain; 3083 with no distance
+// Infinity: 7672 things; bands 9 665 870 329 11 37; 5751 uncertain; 3083 with no distance
+// true 593 1483
 ```
 
 `stepLimit(limit, 1)` goes 10, 50, 100, 500, 1,000 and then all (`Infinity`); `-1` goes back. A free slider is `limitAtSlider(position)` and `sliderOfLimit(limit)`, a log scale over `SLIDER_RANGE` (4 light-years to 3 million) whose end is all. The limit is kept in the address as `dist` (`limitFromText` reads it: a number of light-years or `all`; missing, `off` or not a number is no layers; `limitText` writes it), and a page that offers it as an attribute names it `distance-limit` (`DISTANCE_ATTRIBUTE`). It is off until asked for.

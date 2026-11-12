@@ -71,7 +71,10 @@ test("the real sky lays out: every certain thing a dot inside the unit sphere, e
   }
   const m31 = layoutLayers(layersByDistance([deepSkyInput(deepSkyObject("M31")!, galaxyDistance(deepSkyObject("M31")!))]));
   assert.deepEqual([...m31.dots.kinds], [1]);
+  const rigel = layoutLayers(layersByDistance([starInput(starByName("Rigel")!)], { limit: 1000 }));
+  assert.equal(rigel.dots.count, 0);
+  assert.equal(rigel.streaks.count, 1);
   const betelgeuse = layoutLayers(layersByDistance([starInput(starByName("Betelgeuse")!)], { limit: 1000 }));
-  assert.equal(betelgeuse.dots.count, 0);
-  assert.equal(betelgeuse.streaks.count, 1);
+  assert.equal(betelgeuse.dots.count, 1, "Betelgeuse's paper distance is known to 15%: a dot");
+  assert.equal(betelgeuse.streaks.count, 0);
 });

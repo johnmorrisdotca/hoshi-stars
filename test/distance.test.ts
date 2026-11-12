@@ -62,15 +62,15 @@ test("a thing with no distance is counted and never placed, whatever the limit",
 });
 
 test("a rough distance is kept apart as uncertain, in no band, when the nearest its error allows is inside the limit", () => {
-  const betelgeuse = starInput(starByName("Betelgeuse")!);
-  assert.equal(betelgeuse.certainty, "rough");
-  assert.ok(Math.abs(betelgeuse.low! - 225) < 5 && Math.abs(betelgeuse.high! - 640) < 10);
-  const at300 = layersByDistance([betelgeuse], { limit: 300 });
-  assert.equal(at300.things.length, 1, "its range reaches inside 300 light-years");
+  const rigel = starInput(starByName("Rigel")!);
+  assert.equal(rigel.certainty, "rough");
+  assert.ok(Math.abs(rigel.low! - 593) < 5 && Math.abs(rigel.high! - 1483) < 10);
+  const at300 = layersByDistance([rigel], { limit: 700 });
+  assert.equal(at300.things.length, 1, "its range reaches inside 700 light-years");
   assert.equal(at300.things[0]!.uncertain, true);
   assert.equal(at300.uncertain, 1);
   assert.deepEqual(at300.counts, [0, 0, 0, 0, 0, 0], "and it is in no band");
-  assert.equal(layersByDistance([betelgeuse], { limit: 200 }).things.length, 0, "it cannot be inside 200");
+  assert.equal(layersByDistance([rigel], { limit: 500 }).things.length, 0, "it cannot be inside 500");
   const lone = thing("wide", 40, "rough", 20, Number.POSITIVE_INFINITY);
   assert.equal(layersByDistance([lone], { limit: 30 }).uncertain, 1);
   assert.equal(layersByDistance([lone], { limit: 15 }).uncertain, 0);

@@ -520,7 +520,7 @@ import { constellationIn3D } from "@johnmorrisdotca/hoshi-stars/constellation-3d
 
 const orion = constellationIn3D("Ori");
 // Alnilam has no parallax, so it has no distance: it is the one with none
-console.log(orion.counts); // { good: 0, fair: 0, rough: 7, none: 1 }
+console.log(orion.counts); // { good: 0, fair: 1, rough: 6, none: 1 }
 ```
 
 The demo has a page for it (`constellation-3d.html`, also from "See it in 3D" on each constellation's page): pick a constellation, see it as from the Earth, then drag or press **Turn 90°** to see each star at its distance in light-years with its error bar, or **View from** another star. It is drawn with kazoku-ui's shared renderer (one WebGL context, drawn only when something moves, at most 30 frames a second) and has an embed page, `embed-3d.html`, and code for every way a page is made. A page with no WebGL can draw the figure from the side as SVG from the same numbers. [A constellation in 3D](docs/guides/constellation-in-3d.md) has the details.
@@ -604,16 +604,16 @@ for (let step = 0; step < 6; step += 1) {
 }
 
 // A star whose distance is uncertain is in no band: it is kept apart, with the range its error allows.
-const betelgeuse = layersByDistance(everything, { limit: 300 }).things.find((thing) => thing.name === "Betelgeuse");
-console.log(betelgeuse.uncertain, Math.round(betelgeuse.low), Math.round(betelgeuse.high));
+const rigel = layersByDistance(everything, { limit: 700 }).things.find((thing) => thing.name === "Rigel");
+console.log(rigel.uncertain, Math.round(rigel.low), Math.round(rigel.high));
 
 // 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance
 // 50: 897 things; bands 9 665 0 0 0 0; 223 uncertain; 3083 with no distance
-// 100: 4128 things; bands 9 665 870 0 0 0; 2584 uncertain; 3083 with no distance
-// 500: 7500 things; bands 9 665 870 329 0 0; 5627 uncertain; 3083 with no distance
-// 1000: 7568 things; bands 9 665 870 329 9 0; 5686 uncertain; 3083 with no distance
-// Infinity: 7672 things; bands 9 665 870 329 9 37; 5753 uncertain; 3083 with no distance
-// true 225 640
+// 100: 4130 things; bands 9 665 870 0 0 0; 2586 uncertain; 3083 with no distance
+// 500: 7497 things; bands 9 665 870 329 0 0; 5624 uncertain; 3083 with no distance
+// 1000: 7568 things; bands 9 665 870 329 11 0; 5684 uncertain; 3083 with no distance
+// Infinity: 7672 things; bands 9 665 870 329 11 37; 5751 uncertain; 3083 with no distance
+// true 593 1483
 ```
 
 ## Near stars and their planets

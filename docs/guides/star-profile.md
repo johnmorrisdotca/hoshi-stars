@@ -33,7 +33,7 @@ for (const name of ["Sirius", "Arcturus", "Betelgeuse", "Deneb"]) {
 //   radius not known: no-parallax
 ```
 
-Every one of the 5,080 stars has a temperature, a disc size and a limb darkening. Betelgeuse's radius is anywhere from 150 to 990 Suns because its parallax, 9.8 milliarcseconds with an error of 4.7, barely fixes its distance. Where a figure cannot be worked out it is `undefined` and `unknown` says why (`Unknown`: `"no-parallax"`, `"poor-parallax"`, `"implausible-parallax"`, `"no-typical-radius"`, `"no-class"`, `"odd-type"` or `"no-colour-or-type"`), so a page can say it plainly instead of guessing. About three stars in four have a radius.
+Every one of the 5,080 stars has a temperature, a disc size and a limb darkening. Betelgeuse's radius is anywhere from 320 to 990 Suns: its distance, 548 light-years from a published paper, is still known only to about 15%, and the temperature scale adds to that. Where a figure cannot be worked out it is `undefined` and `unknown` says why (`Unknown`: `"no-parallax"`, `"poor-parallax"`, `"implausible-parallax"`, `"no-typical-radius"`, `"no-class"`, `"odd-type"` or `"no-colour-or-type"`), so a page can say it plainly instead of guessing. About three stars in four have a radius.
 
 The disc size needs no distance: it comes from the brightness and the temperature alone, which is what an interferometer measures, so it is known for every star even where the radius is not. Its `range` is the honest check of the whole method: each of the numbers below is one the method gets wrong by about the amount shown.
 

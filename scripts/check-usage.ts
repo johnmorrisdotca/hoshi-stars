@@ -188,7 +188,7 @@ await step("sky-labels-iframe", async () => {
 await step("distance-node", () => {
   const out = execFileSync(process.execPath, [join(examples("distance"), "layers.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
   if (out.length !== 7 || out[0] !== "10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance") throw new Error(`the nearest layer is not the 9 stars within 10 light-years: ${out.join(" | ")}`);
-  if (!/^Infinity: 7672 things/.test(out[5]!) || out[6] !== "true 225 640") throw new Error(`unexpected output: ${out.join(" | ")}`);
+  if (!/^Infinity: 7672 things/.test(out[5]!) || out[6] !== "true 593 1483") throw new Error(`unexpected output: ${out.join(" | ")}`);
 });
 
 await step("distance-iframe", async () => {
@@ -207,8 +207,8 @@ await step("distance-iframe", async () => {
 
 await step("constellation-3d-node", () => {
   const out = execFileSync(process.execPath, [join(examples("constellation-3d"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
-  if (out.length !== 9 || out[0] !== "Betelgeuse (rough): 333 ly, between 225 and 640" || out[4] !== "Alnilam (none): distance unknown" || out[5] !== "Saiph (rough): 247 ly, at least 116") throw new Error(`unexpected output: ${out.join("\n")}`);
-  if (out[8] !== "{ good: 0, fair: 0, rough: 7, none: 1 }") throw new Error(`unexpected counts: ${out[8]}`);
+  if (out.length !== 9 || out[0] !== "Betelgeuse (fair): 548 ly, between 480 and 640" || out[4] !== "Alnilam (none): distance unknown" || out[5] !== "Saiph (rough): 247 ly, at least 116") throw new Error(`unexpected output: ${out.join("\n")}`);
+  if (out[8] !== "{ good: 0, fair: 1, rough: 6, none: 1 }") throw new Error(`unexpected counts: ${out[8]}`);
 });
 
 await step("constellation-3d-side-view", async () => {
