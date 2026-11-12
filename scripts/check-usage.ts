@@ -385,6 +385,41 @@ await step("chart-cdn", async () => {
   });
 });
 
+// Your own markers: `chartSvg` in Node with a time range and a track, and <hoshi-chart> from a CDN with the markers set as a property, a slider for the time range, and a click that says which marker.
+await step("markers-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("markers"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n")[0];
+  if (out !== "november.svg 3 markers, 1 track, 6 days") throw new Error(`unexpected output: ${out}`);
+});
+
+await step("markers-cdn", async () => {
+  await opened(browser, async (page) => {
+    await page.route("https://cdn.jsdelivr.net/**", async (route) => {
+      const { pathname } = new URL(route.request().url());
+      if (pathname !== "/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm") return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({ body: await bundleOf(join(installed, "dist", "chart", "define.js")), contentType: "text/javascript" });
+    });
+    await showPage(page, "markers/cdn.html");
+    await seesChart(page);
+    const ids = () => page.evaluate(() => [...document.querySelector("hoshi-chart")!.shadowRoot!.querySelectorAll("g[data-marker]")].map((g) => g.getAttribute("data-marker")));
+    await page.waitForFunction(() => (document.querySelector("hoshi-chart")?.shadowRoot?.querySelectorAll("g[data-marker]").length ?? 0) === 3, undefined, { timeout: 20_000 });
+    if ((await page.evaluate(() => document.querySelector("hoshi-chart")!.shadowRoot!.querySelectorAll("path[data-track]").length)) !== 1) throw new Error("the markers are not joined by the tracks attribute");
+    const at = await page.evaluate(() => {
+      const box = document.querySelector("hoshi-chart")!.shadowRoot!.querySelector('g[data-marker="second"] circle')!.getBoundingClientRect();
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    });
+    await page.mouse.click(at.x, at.y);
+    await page.waitForFunction(() => document.getElementById("card")!.textContent!.startsWith("Second night"), undefined, { timeout: 10_000 });
+    await page.evaluate(() => {
+      const day = document.getElementById("day") as HTMLInputElement;
+      day.value = "6";
+      day.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await page.waitForFunction(() => document.querySelector("hoshi-chart")!.shadowRoot!.querySelectorAll("g[data-marker]").length === 2, undefined, { timeout: 10_000 });
+    const left = await ids();
+    if (left.join() !== "first,second") throw new Error(`the time range left ${left.join()}`);
+  });
+});
+
 const chartApp = async (name: string, plugins: unknown[] = []): Promise<void> => {
   const dir = examples(join("chart", name));
   const out = join(usage, "out", `chart-${name}`);
@@ -513,6 +548,8 @@ const FILES: Record<string, string[]> = {
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "markers/node.mjs": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
+  "markers/cdn.html": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
   "chart/vite/main.ts": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/react/SkyChart.tsx": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/vue/SkyChart.vue": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],

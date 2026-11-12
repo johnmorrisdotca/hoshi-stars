@@ -216,3 +216,142 @@ test("moved to another place on the page it keeps its hands, and a new size keep
   await drag(page);
   await expect.poll(async () => Math.abs((await view(page)).ra - start.ra)).toBeGreaterThan(1);
 });
+
+// The page's own markers: a property or an attribute, a time range that hides what is outside it, a track joining a group in date order, a click or Enter that says which marker, and nothing drawn at rest.
+const LOG = [
+  { id: "first", ra: 80, dec: 0, date: "2026-11-01", label: "First night", group: "Log" },
+  { id: "second", ra: 84, dec: 0, date: "2026-11-05", label: "Second night", group: "Log" },
+  { id: "third", ra: 88, dec: 3, date: "2026-11-09", label: "Third night", group: "Log" },
+  { id: "always", ra: 90, dec: -4, label: "No date" },
+];
+const markerIds = (page: Page) => chart(page).evaluate((el) => [...el.shadowRoot!.querySelectorAll("svg g[data-marker]")].map((g) => g.getAttribute("data-marker")));
+const setMarkers = (page: Page) => chart(page).evaluate((el, log) => Reflect.set(el, "markers", log), LOG);
+/** What `hoshi-marker` has said so far; `markerSays(page)` reads it. */
+const hearMarkers = (page: Page) =>
+  page.evaluate(() => {
+    const said: unknown[] = [];
+    (window as unknown as { said: unknown[] }).said = said;
+    document.querySelector("hoshi-chart")!.addEventListener("hoshi-marker", (event) => said.push({ ...(event as CustomEvent).detail, same: (event as CustomEvent).detail.marker === (window as unknown as { given: unknown[] }).given?.[(event as CustomEvent).detail.index] }));
+  });
+const markerSays = (page: Page) => page.evaluate(() => (window as unknown as { said: Array<Record<string, unknown>> }).said);
+
+test("markers set as a property are drawn with their names, the time range hides what is outside it, and nothing is drawn at rest", async ({ page }) => {
+  await chartPage(page, `<hoshi-chart style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => drawn(page)).toBeGreaterThan(30);
+  await setMarkers(page);
+  await expect.poll(() => markerIds(page)).toEqual(["first", "second", "third", "always"]);
+  expect(await chart(page).evaluate((el) => [...el.shadowRoot!.querySelectorAll("svg text")].map((t) => t.textContent).filter((t) => /night|No date/.test(t ?? "")).length)).toBeGreaterThanOrEqual(3);
+  // a range as a property, then as attributes, then given up
+  await chart(page).evaluate((el) => Reflect.set(el, "timeRange", { from: "2026-11-03", to: "2026-11-07" }));
+  await expect.poll(() => markerIds(page)).toEqual(["second", "always"]);
+  await chart(page).evaluate((el) => {
+    el.setAttribute("time-from", "2026-11-06");
+    el.setAttribute("time-to", "2026-11-30");
+  });
+  await expect.poll(() => markerIds(page)).toEqual(["third", "always"]);
+  await chart(page).evaluate((el) => {
+    el.removeAttribute("time-from");
+    el.removeAttribute("time-to");
+  });
+  await expect.poll(() => markerIds(page)).toEqual(["first", "second", "third", "always"]);
+  // at rest: nothing more is drawn
+  const before = await draws(page);
+  await page.waitForTimeout(1500);
+  expect(await draws(page)).toBe(before);
+});
+
+test("markers given as the markers attribute (JSON) are drawn, a bad one is ignored, and tracks joins a group in date order", async ({ page }) => {
+  const json = JSON.stringify([...LOG].reverse()).replace(/"/g, "&quot;");
+  const said = await chartPage(page, `<hoshi-chart markers="${json}" tracks="Log" style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => markerIds(page)).toEqual(["always", "third", "second", "first"]);
+  const track = await chart(page).evaluate((el) => el.shadowRoot!.querySelector("svg path[data-track]")?.getAttribute("d") ?? "");
+  // three points, joined first to third (right ascension 80, 84, 88, and east is to the left on a sky chart)
+  const points = (track.match(/[ML][\d.-]+ [\d.-]+/g) ?? []).map((p) => p.slice(1).split(" ").map(Number));
+  expect(points).toHaveLength(3);
+  expect(points[0]![0]).toBeGreaterThan(points[1]![0]!);
+  expect(points[1]![0]).toBeGreaterThan(points[2]![0]!);
+  // a track follows the range, and every group is joined with tracks="all"
+  await chart(page).evaluate((el) => el.setAttribute("time-to", "2026-11-03"));
+  await expect.poll(() => chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll("svg path[data-track]").length)).toBe(0);
+  await chart(page).evaluate((el) => {
+    el.removeAttribute("time-to");
+    el.setAttribute("tracks", "all");
+  });
+  await expect.poll(() => chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll("svg path[data-track]").length)).toBe(1);
+  await chart(page).evaluate((el) => el.removeAttribute("tracks"));
+  await expect.poll(() => chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll("svg path[data-track]").length)).toBe(0);
+  // not JSON: no markers, and no error
+  await chart(page).evaluate((el) => el.setAttribute("markers", "not json"));
+  await expect.poll(() => markerIds(page)).toEqual([]);
+  expect(said.filter((line) => line.startsWith("error") || line.startsWith("pageerror"))).toEqual([]);
+});
+
+test("a click on a marker says which, with the marker the page gave, and picks no star; a click away from one picks as before", async ({ page }) => {
+  await chartPage(page, `<hoshi-chart style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => hands(page)).toBe(true);
+  await page.evaluate((log) => {
+    (window as unknown as { given: unknown[] }).given = log;
+    Reflect.set(document.querySelector("hoshi-chart")!, "markers", log);
+  }, LOG);
+  await expect.poll(() => markerIds(page)).toHaveLength(4);
+  await hearMarkers(page);
+  await listen(page);
+  // "second" is at the middle of the chart (84, 0)
+  await page.mouse.click(300, 200);
+  await expect.poll(async () => (await markerSays(page)).length).toBe(1);
+  const said = (await markerSays(page))[0]!;
+  expect(said).toMatchObject({ id: "second", index: 1, source: "pointer", same: true });
+  expect((said["marker"] as { label: string }).label).toBe("Second night");
+  expect(await page.evaluate(() => (window as unknown as { picks: unknown[] }).picks.length)).toBe(0);
+  // away from every marker, a tap on the sky picks as it always did
+  await page.mouse.click(40, 40);
+  await expect.poll(async () => page.evaluate(() => (window as unknown as { picks: unknown[] }).picks.length)).toBe(1);
+  expect((await markerSays(page)).length).toBe(1);
+});
+
+test("a marker is a button for the keyboard: it has a name, Tab reaches it, Enter and Space say which, and the focus stays through a redraw", async ({ page }) => {
+  await chartPage(page, `<hoshi-chart style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => hands(page)).toBe(true);
+  await page.evaluate((log) => {
+    (window as unknown as { given: unknown[] }).given = log;
+    Reflect.set(document.querySelector("hoshi-chart")!, "markers", log);
+  }, LOG);
+  await expect.poll(() => markerIds(page)).toHaveLength(4);
+  await hearMarkers(page);
+  const buttons = await chart(page).evaluate((el) => [...el.shadowRoot!.querySelectorAll("svg g[data-marker]")].map((g) => [g.getAttribute("role"), g.getAttribute("aria-label"), g.getAttribute("tabindex")]));
+  expect(buttons).toEqual([["button", "First night", "0"], ["button", "Second night", "0"], ["button", "Third night", "0"], ["button", "No date", "0"]]);
+  // Tab: the chart itself, then its markers one by one
+  await page.keyboard.press("Tab");
+  await expect.poll(() => page.evaluate(() => document.activeElement?.tagName)).toBe("HOSHI-CHART");
+  await page.keyboard.press("Tab");
+  await expect.poll(() => chart(page).evaluate((el) => el.shadowRoot!.activeElement?.getAttribute("data-marker"))).toBe("first");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await expect.poll(async () => (await markerSays(page)).length).toBe(1);
+  expect((await markerSays(page))[0]).toMatchObject({ id: "second", index: 1, source: "key", same: true });
+  await page.keyboard.press("Space");
+  await expect.poll(async () => (await markerSays(page)).length).toBe(2);
+  // a redraw (the time range moves) keeps the focus on the same marker
+  await chart(page).evaluate((el) => Reflect.set(el, "timeRange", { from: "2026-11-02" }));
+  await expect.poll(() => markerIds(page)).toEqual(["second", "third", "always"]);
+  expect(await chart(page).evaluate((el) => el.shadowRoot!.activeElement?.getAttribute("data-marker"))).toBe("second");
+  // a marker that goes out of range takes the focus with it, and nothing is left pointing at it
+  await chart(page).evaluate((el) => Reflect.set(el, "timeRange", { from: "2026-11-06" }));
+  await expect.poll(() => markerIds(page)).toEqual(["third", "always"]);
+});
+
+test("markers set before the element is defined are kept, and the tab stops are limited to 40", async ({ page }) => {
+  await chartPage(page, `<hoshi-chart style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => drawn(page)).toBeGreaterThan(30);
+  const many = Array.from({ length: 60 }, (_, i) => ({ id: `n${i}`, ra: 70 + (i % 10) * 4, dec: -10 + Math.floor(i / 10) * 4 }));
+  // a copy of the element made before its class is known would hold the property itself: here, the same by hand
+  await chart(page).evaluate((el, list) => {
+    const twin = document.createElement("hoshi-chart");
+    twin.style.cssText = "width:600px;height:400px";
+    Object.defineProperty(twin, "markers", { value: list, configurable: true, writable: true, enumerable: true });
+    el.after(twin);
+  }, many);
+  await expect.poll(() => page.locator("hoshi-chart").nth(1).evaluate((el) => el.shadowRoot?.querySelectorAll("svg g[data-marker]").length ?? 0)).toBe(60);
+  const stops = await page.locator("hoshi-chart").nth(1).evaluate((el) => [...el.shadowRoot!.querySelectorAll("svg g[data-marker]")].filter((g) => g.getAttribute("tabindex") === "0").length);
+  expect(stops).toBe(40);
+});

@@ -52,11 +52,13 @@ A drag moves the sky, two fingers or Ctrl (Command) and the wheel zoom about the
 | `lang` | `en` or `ja`; left out, the nearest `lang` above the element, followed when it changes. |
 | `theme` | `light` or `dark`, for the focus ring; the sky is night in both. |
 | `controls="none"` | No hands: a still picture. |
+| `markers`, `time-from`, `time-to`, `time-fade`, `tracks` | Your own dated points on the chart, the days shown and the lines joining a group (see [Your own points on the chart](sky-chart-markers.md)). |
 
 | Event | `detail` |
 |---|---|
 | `hoshi-pick` | `ChartPick`: `{ kind, id, abbreviation? }`. `kind` is `star` (the HR number), `deep` (`M42`), `hole` (`cygnus-x-1`), `figure` (its id, with `abbreviation` for a constellation) or `none`. |
 | `hoshi-view` | `ChartViewDetail`: `{ projection, ra, dec, zoom, final }`, as the view changes; `final` once the hand has settled. |
+| `hoshi-marker` | `ChartMarkerDetail`: `{ marker, id, index, source }`, when one of your own points (`markers`) is clicked, tapped, or chosen with Enter or Space. |
 
 `element.setView({ ra, dec, zoom })` moves it from code, and `element.view` says where it is; `View` is their type. `HoshiChartElement` is the class, `CHART_TAG` the tag, and `defineChart(registry?)` defines it once (a page that loads it twice, or two copies of the package, never throws).
 
@@ -75,7 +77,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`chartSvg(options)` takes `width` and `height` and, as the element's attributes, `projection`, `ra`, `dec`, `zoom`, `magnitude`, `layers` (a list of `CHART_LAYERS`), `lang`, `culture` (the culture itself, imported from `@johnmorrisdotca/hoshi-stars/cultures/japanese` or `/chinese`, so a page pays only for the one it draws), `constellation`, `picked` and `label` (the accessible name, "Star chart" or 星図). It returns an `<svg>` with a `viewBox` of the size and its own night background. It reads no clock and fetches nothing.
+`chartSvg(options)` takes `width` and `height` and, as the element's attributes, `projection`, `ra`, `dec`, `zoom`, `magnitude`, `layers` (a list of `CHART_LAYERS`), `lang`, `culture` (the culture itself, imported from `@johnmorrisdotca/hoshi-stars/cultures/japanese` or `/chinese`, so a page pays only for the one it draws), `constellation`, `picked`, `markers`, `timeRange` and `tracks` (your own points: see [Your own points on the chart](sky-chart-markers.md)) and `label` (the accessible name, "Star chart" or 星図). It returns an `<svg>` with a `viewBox` of the size and its own night background. It reads no clock and fetches nothing.
 
 The names are laid out by the width of their text: measured with a canvas where there is a document, else with a built-in table, so a browser and a server can place a name a pixel or two apart. Pass `measure: (text, font) => width` (a font's metrics, or a fixed width a character) for the same SVG everywhere. The types are `ChartSvgOptions` and `ChartLayer`.
 

@@ -52,11 +52,13 @@ description: "デモの星図を自分のページに置く方法です。ファ
 | `lang` | `en`か`ja`。指定がないときは、要素の祖先でいちばん近い`lang`属性に従い、それが変わると追従します。 |
 | `theme` | `light`か`dark`で、フォーカスの枠の色を決めます。空はどちらでも夜の色です。 |
 | `controls="none"` | 手で動かせない、止まった絵になります。 |
+| `markers`、`time-from`、`time-to`、`time-fade`、`tracks` | 自分の日付つきの点、表示する日、グループをつなぐ線です（[自分の点を星図に置く](sky-chart-markers.md)を見てください）。 |
 
 | イベント | `detail` |
 |---|---|
 | `hoshi-pick` | `ChartPick`：`{ kind, id, abbreviation? }`。`kind`は`star`（HR番号）、`deep`（`M42`）、`hole`（`cygnus-x-1`）、`figure`（図のid。88星座なら`abbreviation`も付きます）、`none`のどれかです。 |
 | `hoshi-view` | `ChartViewDetail`：`{ projection, ra, dec, zoom, final }`。表示が変わるたびに送られ、手が止まると`final`がtrueになります。 |
+| `hoshi-marker` | `ChartMarkerDetail`：`{ marker, id, index, source }`。自分の点（`markers`）をクリック、タップしたとき、またはEnterかSpaceで選んだときに送られます。 |
 
 `element.setView({ ra, dec, zoom })`でコードから動かせ、`element.view`で今の表示がわかります。どちらも型は`View`です。クラスは`HoshiChartElement`、タグは`CHART_TAG`です。`defineChart(registry?)`は一度だけ定義するので、ページが2回読み込んでも、パッケージが2つあっても、例外は起きません。
 
@@ -75,7 +77,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の値の配列）、`lang`、`culture`、`constellation`、`picked`、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
+`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の値の配列）、`lang`、`culture`、`constellation`、`picked`、`markers`、`timeRange`、`tracks`（自分の点です。[自分の点を星図に置く](sky-chart-markers.md)を見てください）、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
 
 名前の置き場所は、文字の幅で決めます。documentがあればcanvasで測り、なければ組み込みの表で測るので、ブラウザーとサーバーでは名前の位置が1、2ピクセルずれることがあります。どこでも同じSVGにしたいときは、`measure: (text, font) => width`（フォントの寸法や、1文字あたりの決まった幅）を渡してください。型は`ChartSvgOptions`と`ChartLayer`です。
 

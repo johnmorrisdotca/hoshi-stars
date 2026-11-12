@@ -18,6 +18,8 @@ import { project, unproject, type Projection, type SkyPoint } from "../projectio
 import type { SeenSky } from "../sky-from.ts";
 import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
 import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
+import { drawMarkers, type MarkerHit } from "./markers-draw.ts";
+import type { MarkerRange, SkyMarker } from "./markers.ts";
 import type { FigureLines, StarNames } from "../sky-labels.ts";
 import type { DistanceLayers } from "../distance.ts";
 
@@ -80,6 +82,12 @@ export interface ChartOptions extends View {
   overlay?: { lines?: FigureLines | undefined; names?: StarNames | undefined } | undefined;
   /** The sky out to a distance (`layersByDistance`): only these things are drawn, each in the colour of its band (`colours`, six of them, near to far); a thing whose distance is uncertain is a hollow ring in `uncertain`; a thing with no distance is not drawn. The faintest-star limit, the faint layer and the deep-sky marks and pictures are left off while it is on. */
   distance?: { layers: DistanceLayers; colours: readonly string[]; uncertain: string } | undefined;
+  /** The page's own points (`SkyMarker`): drawn over the stars, their names placed clear of the stars and of each other. Not drawn in the sky seen from another star (`sky`). */
+  markers?: readonly SkyMarker[] | undefined;
+  /** The moments `markers` are shown for (a marker with a date outside it is not drawn); all of them when left out. */
+  timeRange?: MarkerRange | undefined;
+  /** Join a group of markers in date order: `true` for every group, or the names of the groups. Nothing is joined when left out. */
+  tracks?: boolean | readonly string[] | undefined;
   /** The width of a text in pixels for a CSS `font` (`"400 11px system-ui, sans-serif"`), to lay the names out by: a canvas where there is a document, else a built-in table, when left out. A server and a test pass their own for the same names everywhere. */
   measure?: ((text: string, font: string) => number) | undefined;
 }
@@ -442,6 +450,8 @@ function withFarther(text: string, x: number, y: number, gap: number, fill: stri
 export interface Chart {
   svg: string;
   hits: Hit[];
+  /** The markers drawn, for a tap to land on; markers come before the stars in a tap. */
+  markerHits: MarkerHit[];
   /** The faint stars drawn: how many, and the magnitude they are complete to here. `undefined` where none were asked for. */
   faint?: { drawn: number; depth: number };
   /** The deep-sky pictures the view needs and has not been given: the page fetches them and draws again. */
@@ -644,6 +654,11 @@ function drawChart(o: ChartOptions): Chart {
 
   const obstacles: Box[] = [{ x0: -1e4, y0: -1e4, x1: 0, y1: 1e4 }, { x0: width, y0: -1e4, x1: 1e4, y1: 1e4 }, { x0: -1e4, y0: -1e4, x1: 1e4, y1: 0 }, { x0: -1e4, y0: height, x1: 1e4, y1: 1e4 }, ...(o.keepClear ?? [])];
   const around = (x: number, y: number, r: number): Box => ({ x0: x - r, y0: y - r, x1: x + r, y1: y + r });
+  const marked = o.sky === undefined && o.markers !== undefined && o.markers.length > 0 ? drawMarkers({ markers: o.markers, range: o.timeRange, tracks: o.tracks, width, height, place, path: (points) => pathOf(view, place, points), ground: COLOURS.ground }) : undefined;
+  if (marked !== undefined) {
+    body += marked.tracks;
+    obstacles.push(...marked.obstacles);
+  }
   const deepLabels: Label[] = [];
   obstacles.push(...deep.obstacles);
   body += deep.over;
@@ -757,9 +772,11 @@ function drawChart(o: ChartOptions): Chart {
     if (at !== undefined && inside(at) && star.magnitude <= depth) members += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(Math.max(0.7, (o.magnitude - Math.max(star.magnitude, -2)) * 0.55 + 1.1) * grow + 4)}" fill="none" stroke="${DEEP_COLOURS.member}" stroke-width="1" stroke-dasharray="2 2" data-inside="${star.hr}"/>`;
   }
   body += `<g>${dots}</g>${ring}${members}`;
+  const markerLabels: Label[] = marked === undefined ? [] : marked.labels.map((l) => ({ rank: l.rank, ...withFarther(l.text, l.x, l.y, l.gap, l.fill, 2), opacity: l.opacity }));
+  if (marked !== undefined) body += marked.dots;
 
   for (const label of o.overlay?.names?.labels ?? []) obstacles.push({ x0: label.x0 - 2, y0: label.y0 - 1, x1: label.x1 + 2, y1: label.y1 + 1 });
-  const labels = [...starLabels, ...nameLabels, ...deepLabels, ...holeLabels].sort((a, b) => a.rank - b.rank);
+  const labels = [...markerLabels, ...starLabels, ...nameLabels, ...deepLabels, ...holeLabels].sort((a, b) => a.rank - b.rank);
   const chosen = placeLabels(labels.map((l) => l.places.map((p) => p.box)), obstacles);
   let text = "";
   labels.forEach((l, i) => {
@@ -773,7 +790,7 @@ function drawChart(o: ChartOptions): Chart {
   if (o.overlay?.names !== undefined) body += starNamesSvg(o.overlay.names);
   if (o.overlay?.lines !== undefined) body += figureNameSvg(o.overlay.lines);
 
-  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, wanted: deep.wanted, pictures: deep.pictures, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
+  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, markerHits: marked?.hits ?? [], wanted: deep.wanted, pictures: deep.pictures, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
 }
 
 /** The key a seen star has on the chart and in a pick: the HR number as text, or `sun`. */
