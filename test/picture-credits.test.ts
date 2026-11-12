@@ -2,7 +2,7 @@
 // the chart reporting which pictures it drew so the line can follow them.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW } from "../demo/chart.ts";
+import { chart, DEFAULT_VIEW } from "../src/chart/chart.ts";
 import { licenceName, pictureCredits } from "../demo/picture-credits.ts";
 import { deepSkyPictures } from "../src/deep-sky-pictures.ts";
 

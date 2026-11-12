@@ -1,7 +1,7 @@
 // What the demo's two maps share of the faint stars: the depth rule (how deep a view looks for its zoom), the cap on dots, and the dots themselves as a few paths.
 // Pure: no DOM and no fetching (the tiles are `faint.ts`'s). The sky chart (`chart.ts`) and the whole-sky page (`whole-sky.ts`) both draw from here, so the two cannot drift apart.
-import { blackBodyColour, starTemperatureK } from "../src/index.ts";
-import { FAINT_LIMIT, type FaintStar } from "../src/faint-core.ts";
+import { blackBodyColour, starTemperatureK } from "../index.ts";
+import { FAINT_LIMIT, type FaintStar } from "../faint-core.ts";
 
 /** The faint stars to draw (the brightest first), and the magnitude the list is complete to in the field (a cap cuts it short). */
 export interface FaintDraw {

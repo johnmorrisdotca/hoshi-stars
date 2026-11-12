@@ -1,7 +1,7 @@
 // The faint layer of the demo's chart: a view never draws more than the cap, the brightest first, and says how deep it is complete; the layer is a few paths, never a node a star; off, it draws nothing.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW, FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, type FaintDraw } from "../demo/chart.ts";
+import { chart, DEFAULT_VIEW, FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, type FaintDraw } from "../src/chart/chart.ts";
 import { DEFAULT_LAYERS } from "../demo/choice.ts";
 import type { FaintStar } from "../src/faint.ts";
 

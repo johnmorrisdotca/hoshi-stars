@@ -168,7 +168,7 @@ test("every finer picture lies inside its survey picture, where the object has o
 });
 
 test("the demo leaves out the pictures that look broken, and draws no finer picture alone but the one that is most of its object", async () => {
-  const { drawnPictures, LEFT_OUT } = await import("../demo/picture-quality.ts");
+  const { drawnPictures, LEFT_OUT } = await import("../src/chart/picture-quality.ts");
   const all = deepSkyPictures();
   for (const id of Object.keys(LEFT_OUT)) assert.ok(all.some((p) => p.id === id), `${id} is a picture`);
   const drawn = drawnPictures();

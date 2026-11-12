@@ -1,7 +1,7 @@
 // The code the demo hands out draws the stars of the chart it sits beside: the module's own lines are run here, against the package, and their circles are the chart's.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW } from "../demo/chart.ts";
+import { chart, DEFAULT_VIEW } from "../src/chart/chart.ts";
 import { chartLines, embedCode, heightFor } from "../demo/embed-code.ts";
 import type { Choice } from "../demo/choice.ts";
 import { chinese } from "../src/cultures/chinese.ts";

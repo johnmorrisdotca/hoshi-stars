@@ -1,7 +1,7 @@
 // The text that puts a star chart in a page, for each way a page is made. The package gives numbers, not pictures, so every way ends in the same few lines: the stars and the constellation
 // lines, projected with `/projection` and written as SVG. The tests run the module's lines and compare their stars with the chart the demo draws.
 import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
-import { fitScale, growOf } from "./chart.ts";
+import { fitScale, growOf } from "../src/chart/chart.ts";
 import { frameQuery, type Choice } from "./choice.ts";
 import { BAND_COLOURS, UNCERTAIN_COLOUR } from "./distance-layers.ts";
 

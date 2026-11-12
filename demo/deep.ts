@@ -3,10 +3,10 @@
 import type { DeepSkyObject } from "../src/deep-sky-core.ts";
 import type { DeepSkyShape } from "../src/deep-sky-shape.ts";
 import type { GalaxyDistance } from "../src/galaxy-distance-core.ts";
-import { MAX_PICTURES } from "./deep-draw.ts";
-import { pictureBlobs } from "./picture-cache.ts";
+import { MAX_PICTURES } from "../src/chart/deep-draw.ts";
+import { pictureBlobs } from "../src/chart/picture-cache.ts";
 import { pictureUrl } from "../src/deep-sky-pictures.ts";
-import { drawnPictures } from "./picture-quality.ts";
+import { drawnPictures } from "../src/chart/picture-quality.ts";
 
 /** How long a picture that could not be had waits before it is asked for again, and how many times it is asked for in all before it is given up for the page. */
 export const PICTURE_RETRY_MS = 60_000;

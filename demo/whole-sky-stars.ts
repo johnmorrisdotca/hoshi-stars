@@ -1,7 +1,7 @@
 // How big the whole-sky page draws the Bright Star Catalogue's stars, by magnitude and zoom. Pure: no DOM. `whole-sky-draw.ts` draws with it and lays the names clear of the dots it makes.
 // At the whole sky (zoom 1) the sizes are the page's own three: bright, middle and faint. From there they grow into the sky chart's rule at the same pixels to the degree (`growOf`, the radius by magnitude), so that a
 // magnitude-2 star is as plain a mark here at 10x as it is on the sky map at the same field, and a brighter star is never smaller than a fainter one.
-import { growOf } from "./chart.ts";
+import { growOf } from "../src/chart/chart.ts";
 import { chartZoomOf, WHOLE_SKY_MAGNITUDE } from "./whole-sky-field.ts";
 
 /** The stars come in bins of magnitude, each one path: a bin is as big as its `rep` magnitude says. `cls` is the page's size class (the faintest class is hidden when the map is zoomed out). */

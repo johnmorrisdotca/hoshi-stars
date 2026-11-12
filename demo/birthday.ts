@@ -3,7 +3,7 @@
 // in the address (date=2026-03-12) holds it there, and a reader's Pause or pick writes one. A reader who prefers reduced motion gets it still, with Play ready. All days are the reader's own.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import type { Constellation } from "../src/constellations.ts";
-import { chart, toScreen, type View } from "./chart.ts";
+import { chart, toScreen, type View } from "../src/chart/chart.ts";
 import { eclipticPoint, sunOnChart, sunStay, sunYear } from "./sun.ts";
 import { langNow, nameIn } from "./thumbs.ts";
 import { say } from "./words.ts";

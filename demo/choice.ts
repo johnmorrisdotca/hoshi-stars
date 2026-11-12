@@ -1,5 +1,5 @@
 // What the demo, the embed page and the code to copy all agree on: a chart as a handful of choices, and how they are written into an address.
-import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "./chart.ts";
+import { defaultZoom, LAYERS, DEFAULT_VIEW, ZOOM_MAX, ZOOM_MIN, type Language, type Layer, type View } from "../src/chart/chart.ts";
 import { cultureOf, DEFAULT_CULTURE } from "./cultures.ts";
 import { fromText, viewpointOf } from "./from.ts";
 import { PROJECTIONS, type Projection } from "../src/projection.ts";

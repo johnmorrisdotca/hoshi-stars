@@ -1,8 +1,8 @@
 // Where the chart's names go: a label takes the first place that is free, a label with none is left out, and the chart the demo draws at its opening view has no two names on each other or on a bright star.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW, defaultZoom, toScreen, type View } from "../demo/chart.ts";
-import { overlaps, placeLabels, textSize, type Box } from "../demo/labels.ts";
+import { chart, DEFAULT_VIEW, defaultZoom, toScreen, type View } from "../src/chart/chart.ts";
+import { overlaps, placeLabels, textSize, type Box } from "../src/chart/labels.ts";
 import { PROJECTIONS } from "../src/projection.ts";
 
 const box = (x0: number, y0: number, x1: number, y1: number): Box => ({ x0, y0, x1, y1 });

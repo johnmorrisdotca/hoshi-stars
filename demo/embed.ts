@@ -9,7 +9,7 @@
 //   &label-size=14&label-case=upper  the look of those names: label-font, -size, -weight, -colour, -halo, -halo-width, -case, -letter-spacing, -leader, -leader-colour, -offset (or the page's --hoshi-label-* custom properties)
 //   &dist=100            the sky out to 100 light-years only (10, 50, 100, 500, 1000, any number, or all), each distance band in its own colour, with a legend
 //   &near=S:2491         ring what is near a star (S:<HR number>), a Messier object (D:M31) or a constellation (C:Ori)   &by=space  measure the stars' nearness in space
-import { chart, defaultZoom, pictureZoomCap, toScreen, ZOOM_MAX, type View } from "./chart.ts";
+import { chart, defaultZoom, pictureZoomCap, toScreen, ZOOM_MAX, type View } from "../src/chart/chart.ts";
 import { choiceOf } from "./choice.ts";
 import { cultureOf } from "./cultures.ts";
 import { attachHands } from "./hands.ts";
@@ -19,7 +19,7 @@ import { faintFor } from "./faint.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { frameCredit } from "./frame-credit.ts";
 import { showPictureCredits } from "./picture-credits.ts";
-import { lookOf } from "./sky-labels-svg.ts";
+import { lookOf } from "../src/chart/sky-labels-svg.ts";
 import { createOverlay, lookIdOf } from "./sky-overlay.ts";
 import type { SkyProjector } from "../src/sky-labels.ts";
 import { BAND_COLOURS, layersFor, loadDistances, renderLegend, UNCERTAIN_COLOUR } from "./distance-layers.ts";

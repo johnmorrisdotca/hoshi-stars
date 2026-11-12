@@ -2,10 +2,10 @@
 // with the layer off, none from another star's sky, and the words and text the pick card is made of.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { chart, DEFAULT_VIEW, LAYERS, toScreen, type ChartOptions } from "../demo/chart.ts";
+import { chart, DEFAULT_VIEW, LAYERS, toScreen, type ChartOptions } from "../src/chart/chart.ts";
 import { layersOf, layersText } from "../demo/choice.ts";
 import { distanceText, lightYearsText, massText, papersOf, placeText, plainNumber } from "../demo/holes.ts";
-import { textSize } from "../demo/labels.ts";
+import { textSize } from "../src/chart/labels.ts";
 import { WORDS } from "../scripts/page-words.ts";
 import { blackHole, blackHoles } from "../src/black-holes.ts";
 import { PROJECTIONS } from "../src/projection.ts";

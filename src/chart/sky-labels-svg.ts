@@ -1,6 +1,6 @@
 // The names on the brightest stars and the faint constellation lines of the package's `sky-labels` tier, as SVG for the chart: the lines go under the stars, the names over them.
-import type { FigureLines, StarNames } from "../src/sky-labels.ts";
-import { LABEL_STYLE_PROPERTIES, type LabelStyle } from "../src/sky-labels.ts";
+import type { FigureLines, StarNames } from "../sky-labels.ts";
+import { LABEL_STYLE_PROPERTIES, type LabelStyle } from "../sky-labels.ts";
 
 const round = (n: number): string => n.toFixed(1);
 /** Text made safe for markup, in an element or in an attribute value written between quotes: every character that could end either is escaped. */
