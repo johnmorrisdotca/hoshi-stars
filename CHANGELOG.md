@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The Milky Way as a texture for a WebGL sky** (MODULES-631). `milkyWayTexture({ width, frame, detail, ramp })` from `/milky-way` paints the brightness map as a picture of the whole sky, twice as wide as high (2048 by 1024 by default, up to 4096 across), in right ascension and declination or in galactic coordinates, as red, green, blue and opacity ready for `ImageData` or a WebGL texture; `MILKY_WAY_NIGHT_RAMP` is its default colours. It is made from the package's own numbers, no photograph. `milkyWayBrightness(point, { detail })` reads the grid sharper (from 0 to 2; 0, the plain reading, stays the default there, 1 is the texture's): along smooth curves, each value pushed away from the mean round it, so the Great Rift, the Coalsack and the Cygnus Rift are narrower and darker and the star clouds beside them brighter, with no noise and nothing added. The demo's whole-sky map is painted with it.
+
 ## [0.37.1] - 2026-11-12
 
 - **Messier magnitudes and sizes are used with permission**: Sky & Telescope granted the use of the Sky Catalogue 2000.0 numbers with credit (NOTICE.md).

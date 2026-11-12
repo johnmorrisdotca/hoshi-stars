@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { fromGalactic, milkyWayBands, milkyWayBrightness, toGalactic } from "../src/milky-way.ts";
+import { fromGalactic, MILKY_WAY_NIGHT_RAMP, milkyWayBands, milkyWayBrightness, milkyWayTexture, toGalactic } from "../src/milky-way.ts";
 
 const at = (longitude: number, latitude: number): number => milkyWayBrightness(fromGalactic({ longitude, latitude }));
 const mean = (values: number[]): number => values.reduce((a, b) => a + b, 0) / values.length;
@@ -111,4 +111,72 @@ test("the bands are ribbons of equal-length edges, nested from faint to bright, 
   assert.throws(() => milkyWayBands(["0.3" as unknown as number]), TypeError);
   assert.throws(() => milkyWayBands([0.3], { step: 0.7 }), RangeError);
   assert.throws(() => milkyWayBands([0.3], { step: 0 }), RangeError);
+});
+
+test("detail sharpens the lanes without moving the band: the Cygnus Rift darker, Carina brighter, the pole still dark", () => {
+  const sharp = (longitude: number, latitude: number, detail: number): number => milkyWayBrightness(fromGalactic({ longitude, latitude }), { detail });
+  const sky = (rightAscension: number, declination: number, detail: number): number => milkyWayBrightness({ rightAscension, declination }, { detail });
+  // the Cygnus Rift (right ascension 305, declination +40) is darker read sharper; the Carina star cloud (161, -59) is brighter
+  assert.ok(sky(305, 40, 1) < sky(305, 40, 0) - 0.01, `${sky(305, 40, 1)} ${sky(305, 40, 0)}`);
+  assert.ok(sky(161, -59, 1) > sky(161, -59, 0) + 0.005, `${sky(161, -59, 1)} ${sky(161, -59, 0)}`);
+  assert.ok(sky(305, 40, 2) < sky(305, 40, 1));
+  // it moves light about, it does not add any: over the whole band the mean changes by under 3 per cent
+  const whole = (detail: number): number => mean(range(0, 358, 2).flatMap((l) => range(-29, 29, 1).map((b) => sharp(l, b, detail))));
+  assert.ok(Math.abs(whole(1) / whole(0) - 1) < 0.03, `${whole(1)} ${whole(0)}`);
+  assert.equal(sharp(0, 45, 1), 0);
+  assert.equal(milkyWayBrightness({ rightAscension: 192.9, declination: 27.1 }, { detail: 2 }), 0);
+  // every reading stays from 0 to 1
+  for (const l of range(0, 359, 7)) for (const b of range(-29.5, 29.5, 1.5)) {
+    const v = sharp(l, b, 2);
+    assert.ok(v >= 0 && v <= 1, `${l} ${b} ${v}`);
+  }
+  // detail 0 is the plain reading, and the default
+  assert.equal(milkyWayBrightness({ rightAscension: 280, declination: -8 }, { detail: 0 }), milkyWayBrightness({ rightAscension: 280, declination: -8 }));
+  assert.throws(() => milkyWayBrightness({ rightAscension: 0, declination: 0 }, { detail: -0.1 }), RangeError);
+  assert.throws(() => milkyWayBrightness({ rightAscension: 0, declination: 0 }, { detail: 2.1 }), RangeError);
+  assert.throws(() => milkyWayBrightness({ rightAscension: 0, declination: 0 }, { detail: Number.NaN }), TypeError);
+});
+
+test("milkyWayTexture paints the whole sky, twice as wide as high, in the frame asked for, from the ramp", () => {
+  const texture = milkyWayTexture({ width: 512 });
+  assert.equal(texture.width, 512);
+  assert.equal(texture.height, 256);
+  assert.equal(texture.data.length, 512 * 256 * 4);
+  assert.equal(milkyWayTexture().width, 2048);
+  const pixel = (t: { width: number; height: number; data: Uint8ClampedArray }, x: number, y: number): number[] => Array.from(t.data.subarray((y * t.width + x) * 4, (y * t.width + x) * 4 + 4));
+  // equatorial: across is right ascension from 0 at the left, down is declination from +90 at the top
+  const place = (t: { width: number; height: number }, ra: number, dec: number): [number, number] => [Math.floor((ra / 360) * t.width), Math.floor(((90 - dec) / 180) * t.height)];
+  const core = pixel(texture, ...place(texture, 266.4, -28.9));
+  const pole = pixel(texture, ...place(texture, 192.9, 27.1));
+  assert.ok(core[3]! > 120 && core[0]! > 200, `core ${core}`);
+  assert.deepEqual(pole, [0, 0, 0, 0]);
+  // each pixel is the ramp's colour at the sharp reading there
+  const [x, y] = place(texture, 300, 30);
+  const level = milkyWayBrightness({ rightAscension: ((x + 0.5) / 512) * 360, declination: 90 - ((y + 0.5) / 256) * 180 }, { detail: 1 });
+  assert.ok(level > 0.05, String(level));
+  const opacity = (b: number): number => {
+    const k = MILKY_WAY_NIGHT_RAMP.findIndex((s) => s.level >= b);
+    const [a, z] = [MILKY_WAY_NIGHT_RAMP[k - 1]!, MILKY_WAY_NIGHT_RAMP[k]!];
+    return (a.alpha + ((z.alpha - a.alpha) * (b - a.level)) / (z.level - a.level)) * 255;
+  };
+  assert.ok(Math.abs(pixel(texture, x, y)[3]! - opacity(level)) <= 2, `${pixel(texture, x, y)} ${opacity(level)}`);
+  // galactic: the band is the middle row, the core at the left edge
+  const galactic = milkyWayTexture({ width: 512, frame: "galactic" });
+  assert.ok(pixel(galactic, 0, 128)[3]! > 120);
+  assert.deepEqual(pixel(galactic, 256, 10), [0, 0, 0, 0]);
+  // detail 0 paints the plain grid; a ramp of one's own is used as it is
+  const plain = milkyWayTexture({ width: 64, detail: 0 });
+  const plainLevel = milkyWayBrightness({ rightAscension: ((47 + 0.5) / 64) * 360, declination: 90 - ((19 + 0.5) / 32) * 180 });
+  assert.ok(Math.abs(pixel(plain, 47, 19)[3]! - opacity(plainLevel)) <= 2);
+  const white = milkyWayTexture({ width: 64, ramp: [{ level: 0, red: 0, green: 0, blue: 0, alpha: 1 }, { level: 1, red: 255, green: 255, blue: 255, alpha: 1 }] });
+  assert.deepEqual(pixel(white, 0, 0), [0, 0, 0, 255]);
+  // the same call gives the same pixels
+  assert.deepEqual(milkyWayTexture({ width: 128 }).data, milkyWayTexture({ width: 128 }).data);
+  for (const width of [15, 17, 4098, 1000.5]) assert.throws(() => milkyWayTexture({ width }), RangeError, String(width));
+  assert.throws(() => milkyWayTexture({ frame: "ecliptic" as "galactic" }), RangeError);
+  assert.throws(() => milkyWayTexture({ detail: 3 }), RangeError);
+  assert.throws(() => milkyWayTexture({ ramp: [MILKY_WAY_NIGHT_RAMP[0]!] }), RangeError);
+  assert.throws(() => milkyWayTexture({ ramp: [MILKY_WAY_NIGHT_RAMP[1]!, MILKY_WAY_NIGHT_RAMP[5]!] }), RangeError);
+  assert.throws(() => milkyWayTexture({ ramp: [MILKY_WAY_NIGHT_RAMP[0]!, MILKY_WAY_NIGHT_RAMP[0]!, MILKY_WAY_NIGHT_RAMP[5]!] }), RangeError);
+  assert.ok(Object.isFrozen(MILKY_WAY_NIGHT_RAMP) && Object.isFrozen(MILKY_WAY_NIGHT_RAMP[0]));
 });

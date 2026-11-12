@@ -320,7 +320,7 @@ console.log(milkyWayBrightness({ rightAscension: 266.4, declination: -28.9 }) > 
 console.log(milkyWayBands([0.2, 0.5]).map((band) => band.strips.length));              // [ 188, 10 ]
 ```
 
-`milkyWayBrightness(point)` is 0 (dark sky) to 1 (the core); `milkyWayBands(levels, { step })` gives ribbons of sky points for `project`; `toGalactic` and `fromGalactic` change the frame. The demo draws it as soft bands under the stars, in every projection, and its **Milky Way** button turns it off.
+`milkyWayBrightness(point)` is 0 (dark sky) to 1 (the core); `milkyWayBands(levels, { step })` gives ribbons of sky points for `project`; `milkyWayTexture({ width })` paints the whole sky as an RGBA texture for a WebGL sky sphere, with the dust lanes read sharper (`detail`); `toGalactic` and `fromGalactic` change the frame. The demo draws it as soft bands under the stars, in every projection, and its **Milky Way** button turns it off.
 
 ## A star's size, temperature and portrait
 

@@ -39,7 +39,7 @@ export function milkyPicture(frame: AllSkyFrame, projection: AllSkyProjection, l
     for (let x = 0; x < width; x += 1) {
       const sky = allSkyUnproject({ x: x + 0.5, y: y + 0.5 }, options);
       if (sky === undefined) continue;
-      const [r, g, b, a] = colourAt(ramp, milkyWayBrightness(sky));
+      const [r, g, b, a] = colourAt(ramp, milkyWayBrightness(sky, { detail: 1 }));
       const at = (y * width + x) * 4;
       image.data[at] = r;
       image.data[at + 1] = g;

@@ -84,6 +84,22 @@ Each strip is the polygon `upper` forward then `lower` backward; fill the levels
 
 The grid is 1 degree of galactic longitude by 0.5 degree of latitude and holds 32 levels, which is a map for shading, not a measurement. `toGalactic` and `fromGalactic` turn right ascension and declination into galactic longitude and latitude and back. Where the data comes from is in [Data and licences](data-and-licences.md).
 
+### A texture for a WebGL sky
+
+`milkyWayTexture(options)` paints the map as a picture of the whole sky, twice as wide as it is high, for a sky sphere in WebGL or a canvas: across is right ascension (0 at the left), down is declination (+90 at the top), or galactic longitude and latitude with `frame: "galactic"`. Each pixel is coloured from the brightness by a ramp (`MILKY_WAY_NIGHT_RAMP` by default: clear where there is no Milky Way, a faint blue glow, a grey-white band and a warm core, more opaque as it brightens, so it lays over a dark sky as it is):
+
+```js
+import { milkyWayTexture } from "@johnmorrisdotca/hoshi-stars/milky-way";
+
+const { width, height, data } = milkyWayTexture({ width: 1024 });
+console.log(width, height, data.length === width * height * 4);
+// 1024 512 true
+```
+
+`data` is red, green, blue and opacity for each pixel from the top row down, as `ImageData` and a WebGL texture take them (three.js: `new DataTexture(data, width, height)` with `flipY` true and `colorSpace` `SRGBColorSpace`). Seen from inside a sphere the sky runs the other way round from a map, so flip the texture across (`wrapS = RepeatWrapping`, `repeat.x = -1`). `width` is an even number from 16 to 4096, 2048 by default (about 0.18 degree a pixel); painting it takes a few tenths of a second, so paint it once and keep it.
+
+The texture reads the map with `detail` (from 0 to 2, 1 by default; `milkyWayBrightness(point, { detail })` takes the same): the grid is read along smooth curves, and each value is pushed away from the mean of the degree or two round it, so the Great Rift, the Coalsack and the Cygnus Rift come out narrower and darker and the star clouds beside them brighter. It only sharpens what the grid holds; it adds no noise and no detail of its own, so the lanes are no finer than the grid's 0.5 degree.
+
 ## Things to decide
 
 - **Wide charts.** On `equirectangular`, `mollweide` and `hammer` the chart has a seam, where right ascension wraps. A line between two stars on opposite sides would run across the whole chart: skip a segment whose two ends are more than half the chart apart.
