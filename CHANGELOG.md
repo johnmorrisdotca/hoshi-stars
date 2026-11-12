@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The figure lines take a sky culture** (MODULES-1126). `createFigureLines` laid out only the 88 constellations of the IAU, so a page drawing the Japanese or Chinese sky (chikyu-earth's sky layer) kept its own copy of the layout. `FigureLinesSettings.culture` takes a culture from `cultures/*` (or `defineCulture`): its figures, in its order, each keyed by its id, with the same `update`, `point`, `step`, `opacityOf` and name. A constellation is named as the 88 are, an asterism by its English name or in Japanese by its reading in kana (昴 as すばる), and a figure with no name in the language by its own. A new culture in `set` makes its figures once and lets the pick go.
+
 ## [0.34.0] - 2026-11-12
 
 - **The sky chart is published: `<hoshi-chart>` and `chartSvg`** (MODULES-647). The demo's chart was only in the demo, so a reader of the package got the catalogue and had to build a chart. Now:

@@ -73,6 +73,28 @@ console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
 
 `project`は`SkyProjector`です。星の赤経と赤緯（度）を受け取り、画面上の場所を`ScreenPoint`に書き込み、カメラの前にない星なら`false`を返します。`view`は`SkyView`で、使う範囲の大きさと、省略できる`margin`です。名前が残るのは、名前全体と引き出し線がビューに収まるときだけです。名前どうしが重なることはありません。名前は明るい星から順に置きます。1つの名前ごとに、星の右、左、上、下の順に試します（`LABEL_SIDES`の1つ1つが`LabelSide`です）。ほかの名前、ほかの名前のリング、星の点のどれにも重ならない、最初の場所に置きます。ここでいう星の点は、`dotMagnitude`（初期値3）より明るい星の点で、半径は`dotRadius`ピクセル（初期値3）です。ページが描く大きさに合わせて設定してください。空いている場所がなければ、その名前は出さずに、次の星を試します。`placeLabel`は、1つの側への置き方だけを取り出した関数です。名前は英語（IAUのつづり）で出ます。`lang: "ja"`（`NameLanguage`）なら、カタカナで出ます。カタカナがない星は英語で出ます。星座の名前も同じように、ラテン語か日本語です。
 
+### ほかの文化の星座
+
+`createFigureLines({ culture })`は、88星座の代わりに、ある文化の図を並べます。`@johnmorrisdotca/hoshi-stars/cultures/…`の`japanese`か`chinese`（または`defineCulture`で作った自分の文化）を渡します。図はその文化のもので、その文化の順に並び、各`FigureOnScreen`の`abbreviation`は図のid（星座なら`Ori`、ほかは`subaru`や`bei3-dou3`）です。`update`、`point`、`step`、`opacityOf`と名前の扱いは、88星座のときと同じです。星座の名前は88星座と同じです（ラテン語、`lang: "ja"`なら日本語）。星の並び（アステリズム）は英語の名前（`Subaru`）で、日本語ではかなの読み（`すばる`）で出ます。指定した言語の名前がない図は、その図自身の名前（`昴宿`）で出ます。`set`で別の文化を渡すと、その文化の図を一度だけ作り、選ばれていた図は選ばれなくなります。`culture`を省くと、また88星座を描きます。
+
+```ts
+import { createFigureLines } from "@johnmorrisdotca/hoshi-stars/sky-labels";
+import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
+
+// the Japanese sky, its names in Japanese, the Pleiades in the middle of the view
+const lines = createFigureLines({ culture: japanese, lang: "ja" });
+const project = (ra: number, dec: number, out: { x: number; y: number }): boolean => {
+  out.x = 640 - (ra - 56.9) * 40;
+  out.y = 360 - (dec - 24.1) * 40;
+  return Math.abs(ra - 56.9) < 15 && Math.abs(dec - 24.1) < 9;
+};
+lines.update(project, { width: 1280, height: 720 });
+const subaru = lines.figures.find((figure) => figure.abbreviation === "subaru")!;
+lines.point(lines.segments[subaru.start * 4]!, lines.segments[subaru.start * 4 + 1]!);
+console.log(lines.figures.length, lines.picked?.abbreviation, lines.name?.text);
+// 106 subaru すばる
+```
+
 ## 止まっているときは描き直さず、動いているときもメモリを新しく使わない
 
 `update`と`point`を呼ぶのは、何かが変わったときです。カメラが動いた、大きさが変わった、設定が変わった、というときです。止まっているときは、呼ぶものも描き直すものもありません。最初の呼び出しのあとは、メモリを新しく使いません（配列とオブジェクトを使い回し、`labels`と`figures`も毎回同じものです）。そのため、カメラが動いている間は、毎フレーム`update`を呼んでかまいません。選ばれた星座が変わらないままポインターが動くときは、`point`が`false`を返すので、ページは何も描きません。

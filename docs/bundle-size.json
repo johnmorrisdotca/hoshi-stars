@@ -38,12 +38,12 @@
       "gzip": 198038
     },
     "./chart/element": {
-      "minified": 550048,
-      "gzip": 217631
+      "minified": 550640,
+      "gzip": 217795
     },
     "./chart/define": {
-      "minified": 550134,
-      "gzip": 217655
+      "minified": 550726,
+      "gzip": 217831
     },
     "./boundaries": {
       "minified": 32104,
@@ -106,8 +106,8 @@
       "gzip": 5905
     },
     "./sky-labels": {
-      "minified": 315799,
-      "gzip": 134860
+      "minified": 316258,
+      "gzip": 135017
     },
     "./distance": {
       "minified": 2769,
