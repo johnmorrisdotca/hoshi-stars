@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>My observing log on the chart</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-chart ra="84" dec="0" zoom="4" layers="milky lines names" tracks="all" style="max-width: 640px"></hoshi-chart>
+    <input id="day" type="range" min="1" max="9" value="9" aria-label="Last day shown" />
+    <p id="card">Click a point, or Tab to one and press Enter.</p>
+    <script type="module">
+      const chart = document.querySelector("hoshi-chart");
+      chart.markers = [
+        { id: "first", ra: 80, dec: 0, date: "2026-11-01T20:00:00Z", label: "First night" },
+        { id: "second", ra: 84, dec: 0, date: "2026-11-05T20:00:00Z", label: "Second night" },
+        { id: "third", ra: 88, dec: 3, date: "2026-11-09T20:00:00Z", label: "Third night" },
+      ];
+      chart.addEventListener("hoshi-marker", (event) => {
+        const { marker, source } = event.detail;
+        document.getElementById("card").textContent = `${marker.label}, ${new Date(marker.date).toUTCString()} (${source})`;
+      });
+      document.getElementById("day").addEventListener("input", (event) => {
+        chart.timeRange = { to: `2026-11-${String(event.target.value).padStart(2, "0")}T23:59:59Z` };
+      });
+    </script>
+  </body>
+</html>
