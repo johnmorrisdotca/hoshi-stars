@@ -26,7 +26,18 @@ export const LAYERS = ["milky", "lines", "boundaries", "names", "deep", "picture
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
 
-/** Where the chart looks: the projection, the point in the middle (degrees) and the zoom, 1 being the projection's own fit. */
+/**
+ * Where the chart looks: the projection, the point in the middle (degrees) and the zoom, in the chart's own unit: 1 fits the projection's whole sky in the smaller side, more is closer.
+ *
+ * @example
+ * ```ts no-run
+ * import type { View } from "@johnmorrisdotca/hoshi-stars/chart/element";
+ *
+ * const chart = document.querySelector("hoshi-chart")! as HTMLElement & { view: View | undefined; setView(change: Partial<View>): void };
+ * chart.setView({ ra: 279.2, dec: 38.8, zoom: 12 });
+ * console.log(chart.view?.zoom);
+ * ```
+ */
 export interface View {
   projection: Projection;
   ra: number;

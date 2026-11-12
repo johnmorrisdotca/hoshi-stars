@@ -36,31 +36,31 @@ description: "デモの星図を自分のページに置く方法です。ファ
 </html>
 ```
 
-ドラッグで空が動き、2本指のピンチ、またはCtrl（MacではCommand）キーを押しながらホイールで、ポインターを中心に拡大・縮小します。矢印キーで見回し、`+`と`-`で拡大・縮小、Homeか`0`で最初の表示に戻ります。星、銀河・星団・星雲、ブラックホール、星座をタップすると`hoshi-pick`が送られ、タップしたものに印が付きます。要素は何かが変わったときだけ描くので、止まっているあいだはブラウザーに何も求めません。
+ドラッグで空が動き、2本指のピンチ、またはCtrl（MacではCommand）キーを押しながらホイールで、ポインターを中心に拡大・縮小します。矢印キーで見回し、`+`と`-`で拡大・縮小、Homeか`0`で最初の表示に戻ります。星、銀河・星団・星雲、ブラックホール、星座などの図をタップすると`hoshi-pick`が送られ、タップしたものに印が付きます。要素は何かが変わったときだけ描くので、止まっているあいだはブラウザーに何も求めません。
 
 | 属性 | 意味 |
 |---|---|
 | `projection` | `stereographic`（既定）、`orthographic`、`gnomonic`、`equidistant`、`equirectangular`、`mollweide`、`hammer`。 |
 | `ra`、`dec` | 星図の中心の赤経と赤緯（度）。既定は84と0で、オリオン座です。 |
-| `zoom` | 1がその図法そのものの全体表示です。指定がないときは、要素の大きさに合わせた、その図法が最初に開く拡大率になります。 |
-| `zoom-min`、`zoom-max` | 拡大率の下限と上限で、0.1から500です。`zoom-max`は8000まで上げられます。8000は銀河・星団・星雲の写真に必要な範囲です（写真は今後の版で入ります）。 |
+| `zoom` | 星図独自の拡大率で、ファミリー共通の「1が全体表示（Fit）」とは違います。1は、その図法で空全体（または半球）が短いほうの辺に収まる大きさで、数が大きいほど近づきます。指定がないときは、要素の大きさに応じた、その図法の最初の拡大率になります。空のおよそ90度が横に入る大きさで（幅600ピクセル未満では60度）、640×400のstereographicなら3.86です。Homeと`0`でここに戻ります。 |
+| `zoom-min`、`zoom-max` | 同じ単位での拡大率の下限と上限で、0.1から500です。`zoom-max`は8000まで上げられます。8000は銀河・星団・星雲の写真に必要な範囲です（写真は今後の版で入ります）。 |
 | `magnitude` | 最初の拡大率で描くいちばん暗い星の等級（5）。望遠鏡と同じように、拡大するともっと暗い星も見えます。 |
 | `layers` | `milky lines boundaries names deep holes grid`のどれを描くかを、空白で区切って書きます。既定は`milky lines names grid`で、何も書かないと星だけになります。 |
-| `constellation` | 明るく表示する星座。星座なら境界も描きます。`Ori`のように書き、日本と中国の空では星座のidを書きます。 |
+| `constellation` | 明るく表示する図（星座や星の並び）。88星座のどれかなら、その境界も描きます。`Ori`のように書き、日本と中国の空では図のidを書きます。タップのあとに設定すると、ふたたびこちらが優先されます。 |
 | `culture` | `western`（既定）、`japanese`、`chinese`。日本と中国の星座は、必要になったときだけ読み込みます。 |
-| `picked` | 選んだ印を付ける星（HR番号。シリウスは`2491`）かメシエ天体（`M42`）。 |
-| `lang` | `en`か`ja`。指定がないときは、要素より上にあるいちばん近い`lang`に従います。 |
+| `picked` | 選んだ印を付ける星（HR番号。シリウスは`2491`）かメシエ天体（`M42`）。タップのあとに設定すると、ふたたびこちらが優先されます。 |
+| `lang` | `en`か`ja`。指定がないときは、要素の祖先でいちばん近い`lang`属性に従い、それが変わると追従します。 |
 | `theme` | `light`か`dark`で、フォーカスの枠の色を決めます。空はどちらでも夜の色です。 |
 | `controls="none"` | 手で動かせない、止まった絵になります。 |
 
 | イベント | `detail` |
 |---|---|
-| `hoshi-pick` | `ChartPick`：`{ kind, id, abbreviation? }`。`kind`は`star`（HR番号）、`deep`（`M42`）、`hole`（`cygnus-x-1`）、`figure`（星座のid。88星座なら`abbreviation`も付きます）、`none`のどれかです。 |
+| `hoshi-pick` | `ChartPick`：`{ kind, id, abbreviation? }`。`kind`は`star`（HR番号）、`deep`（`M42`）、`hole`（`cygnus-x-1`）、`figure`（図のid。88星座なら`abbreviation`も付きます）、`none`のどれかです。 |
 | `hoshi-view` | `ChartViewDetail`：`{ projection, ra, dec, zoom, final }`。表示が変わるたびに送られ、手が止まると`final`がtrueになります。 |
 
-`element.setView({ ra, dec, zoom })`でコードから動かせ、`element.view`で今の表示がわかります。クラスは`HoshiChartElement`、タグは`CHART_TAG`です。`defineChart(registry?)`は一度だけ定義するので、ページが2回読み込んでも、パッケージが2つあっても、例外は起きません。
+`element.setView({ ra, dec, zoom })`でコードから動かせ、`element.view`で今の表示がわかります。どちらも型は`View`です。クラスは`HoshiChartElement`、タグは`CHART_TAG`です。`defineChart(registry?)`は一度だけ定義するので、ページが2回読み込んでも、パッケージが2つあっても、例外は起きません。
 
-**手で動かす部分は、なくても動くピア依存関係です。** ファミリー共通の表示コントローラー（`@johnmorrisdotca/kazoku-ui`、0.40以降）を使い、星図が初めて必要としたときに読み込みます。このパッケージと一緒にインストールしてください（`npm install @johnmorrisdotca/kazoku-ui`）。jsDelivrの`/+esm`なら自動で読み込まれます。インストールしていなくても星図は止まった絵として描かれ、コンソールに一度だけ「hoshi-chart: install @johnmorrisdotca/kazoku-ui for zoom and drag」と出ます。このほかのエントリーは、どれも依存がありません。
+**手で動かす部分はkazoku-uiです。** ファミリー共通の表示コントローラー（`@johnmorrisdotca/kazoku-ui`）で、このパッケージの唯一の依存関係です。npmでこのパッケージと一緒にインストールされ、jsDelivrの`/+esm`でも自動で読み込まれます。kazoku-uiを読み込むのは`/chart/element`と`/chart/define`だけで、`chartSvg`をはじめ、ほかのエントリーはどれも読み込みません。
 
 ## SVGの文字列として
 
@@ -75,7 +75,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の並び）、`lang`、`culture`、`constellation`、`picked`、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
+`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の値の配列）、`lang`、`culture`、`constellation`、`picked`、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
 
 名前の置き場所は、文字の幅で決めます。documentがあればcanvasで測り、なければ組み込みの表で測るので、ブラウザーとサーバーでは名前の位置が1、2ピクセルずれることがあります。どこでも同じSVGにしたいときは、`measure: (text, font) => width`（フォントの寸法や、1文字あたりの決まった幅）を渡してください。型は`ChartSvgOptions`と`ChartLayer`です。
 
@@ -188,7 +188,7 @@ export class SkyChartComponent {
 | エントリー | 圧縮後（minifyとgzip） |
 |---|---|
 | `@johnmorrisdotca/hoshi-stars/chart` | 198.0 kB |
-| `@johnmorrisdotca/hoshi-stars/chart/element` | 218.8 kB |
-| `@johnmorrisdotca/hoshi-stars/chart/define` | 218.8 kB |
+| `@johnmorrisdotca/hoshi-stars/chart/element` | 217.6 kB |
+| `@johnmorrisdotca/hoshi-stars/chart/define` | 217.7 kB |
 
 ほとんどは明るい星のカタログ（パッケージのメインのエントリーは126.0 kB）と、各レイヤーが描く星座の境界、星座線、天の川、ブラックホールです。NGCとICの天体、近くの星、暗い星は含みません。日本と中国の星座は、星図が必要としたときだけ読み込みます（それぞれ約8 kB）。数値は`docs/bundle-size.json`の測り方によります。

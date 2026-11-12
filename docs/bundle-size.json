@@ -38,12 +38,12 @@
       "gzip": 198038
     },
     "./chart/element": {
-      "minified": 551365,
-      "gzip": 218783
+      "minified": 550048,
+      "gzip": 217631
     },
     "./chart/define": {
-      "minified": 551428,
-      "gzip": 218817
+      "minified": 550134,
+      "gzip": 217655
     },
     "./boundaries": {
       "minified": 32104,

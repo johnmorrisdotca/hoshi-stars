@@ -319,6 +319,9 @@
     "check:standard": "node scripts/check-standard.mjs",
     "thumbnails": "node scripts/make-thumbnails.ts"
   },
+  "dependencies": {
+    "@johnmorrisdotca/kazoku-ui": "^0.40.1"
+  },
   "devDependencies": {
     "@angular/common": "^22.2.5",
     "@angular/compiler": "^22.2.5",
@@ -326,7 +329,6 @@
     "@angular/platform-browser": "^22.2.5",
     "@eslint/js": "^9.0.0",
     "@johnmorrisdotca/hata": "^1.8.0",
-    "@johnmorrisdotca/kazoku-ui": "^0.40.1",
     "@johnmorrisdotca/kuni": "^1.5.0",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",
@@ -357,13 +359,5 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
-  },
-  "peerDependencies": {
-    "@johnmorrisdotca/kazoku-ui": ">=0.40.0"
-  },
-  "peerDependenciesMeta": {
-    "@johnmorrisdotca/kazoku-ui": {
-      "optional": true
-    }
   }
 }

@@ -350,7 +350,7 @@ await step("angular", async () => {
   });
 });
 
-// The chart: `chartSvg` in Node, and <hoshi-chart> from a CDN and in each bundler and framework. The element's hands are kazoku-ui, an optional peer, installed beside the package as a reader would.
+// The chart: `chartSvg` in Node, and <hoshi-chart> from a CDN and in each bundler and framework. The element's hands are kazoku-ui, the package's dependency, put beside it where npm puts it.
 const kazoku = join(usage, "node_modules", "@johnmorrisdotca", "kazoku-ui");
 if (!existsSync(kazoku)) cpSync(join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui"), kazoku, { recursive: true, dereference: true });
 /** One entry bundled, as jsDelivr's /+esm answers it. */
@@ -409,6 +409,32 @@ await step("chart-angular", async () => {
     await serve(page, "https://app.test", out);
     await page.goto("https://app.test/");
     await seesChart(page);
+  });
+});
+
+// The package installed as a reader installs it, in a project of its own: npm brings kazoku-ui with it, and a Vite app that imports only /chart/define builds and moves (as an optional peer it did not
+// build: Vite stopped at kazoku-ui's missing export).
+await step("chart-installed", async () => {
+  const app = join(usage, "installed");
+  mkdirSync(app, { recursive: true });
+  writeFileSync(join(app, "package.json"), JSON.stringify({ name: "installed-app", private: true, type: "module" }));
+  sh("npm", ["install", "--no-audit", "--no-fund", "--ignore-scripts", "--no-package-lock", tarball], app);
+  if (!existsSync(join(app, "node_modules", "@johnmorrisdotca", "kazoku-ui", "package.json"))) throw new Error("npm did not install kazoku-ui with the package");
+  writeFileSync(join(app, "index.html"), `<!doctype html><html lang="en"><head><meta charset="utf-8"><script type="module" src="./main.js"></script></head><body><hoshi-chart style="width:640px;height:400px"></hoshi-chart></body></html>`);
+  writeFileSync(join(app, "main.js"), `import "@johnmorrisdotca/hoshi-stars/chart/define";\n`);
+  const out = join(usage, "out", "chart-installed");
+  await viteBuild({ root: app, logLevel: "warn", build: { outDir: out, emptyOutDir: true }, base: "./", configFile: false });
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesChart(page);
+    const before = await page.evaluate(() => (document.querySelector("hoshi-chart") as unknown as { view: { ra: number } }).view.ra);
+    await page.mouse.move(320, 200);
+    await page.mouse.down();
+    await page.mouse.move(420, 230, { steps: 8 });
+    await page.mouse.up();
+    const after = await page.evaluate(() => (document.querySelector("hoshi-chart") as unknown as { view: { ra: number } }).view.ra);
+    if (Math.abs(after - before) < 1) throw new Error(`a drag did not move the sky: ra ${before} then ${after}`);
   });
 });
 

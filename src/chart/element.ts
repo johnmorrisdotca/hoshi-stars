@@ -1,19 +1,11 @@
 // <hoshi-chart>: the sky chart as an element a page drops in. The same drawing as `chartSvg` and the demo, with the family's hands (drag, pinch, the wheel, the keys, a double tap), a tap that
 // picks a star, a deep-sky object, a black hole or a figure, and the culture loaded only when asked for. It draws only when something changes, so at rest it asks for nothing.
+// The hands are the family's view controller, @johnmorrisdotca/kazoku-ui, this package's one dependency; only this entry and /chart/define load it.
 import type { Culture } from "../culture.ts";
 import type { Projection } from "../projection.ts";
 import { western } from "../cultures/western.ts";
 import { chart, constellationUnder, defaultZoom, figureById, figureUnder, type Hit, type View } from "./chart.ts";
-import type { Hands } from "./hands.ts";
-
-// The hands are the family's view controller (@johnmorrisdotca/kazoku-ui, an optional peer of this package): loaded when a chart first needs them. Without it the chart is still drawn,
-// as a picture, and the page is told once why it does not move.
-let handsModule: Promise<typeof import("./hands.ts") | undefined> | undefined;
-const loadHands = (): Promise<typeof import("./hands.ts") | undefined> =>
-  (handsModule ??= import("./hands.ts").catch(() => {
-    console.warn("hoshi-chart: install @johnmorrisdotca/kazoku-ui for zoom and drag; the chart is drawn without them.");
-    return undefined;
-  }));
+import { attachHands, type Hands } from "./hands.ts";
 import { CHART_BACKGROUND, CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAULT_CHART_MAGNITUDE, type ChartLayer } from "./svg.ts";
 
 /**
@@ -29,7 +21,9 @@ import { CHART_BACKGROUND, CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAU
  * ```
  */
 export const CHART_TAG = "hoshi-chart";
-/** The zoom range when the page names none: 0.1 to 500. `zoom-max` raises it as far as 8000, the deep-sky pictures' own range. */
+
+export type { View };
+/** The zoom range when the page names none: 0.1 to 500, in the chart's own unit (1 is the projection's fit of the whole sky). `zoom-max` raises it as far as 8000, the deep-sky pictures' own range. */
 const CHART_ZOOM_MIN = 0.1;
 const CHART_ZOOM_MAX = 500;
 const CHART_ZOOM_LIMIT = 8000;
@@ -96,10 +90,14 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
 /**
  * The sky chart as an element: `<hoshi-chart constellation="Ori"></hoshi-chart>`. It fills its box (16 by 10 unless the page sizes it) and draws the bright stars with the layers asked for.
  *
- * Attributes: `projection`, `ra`, `dec`, `zoom` (left out: the projection's opening zoom), `zoom-min` and `zoom-max` (0.1 and 500; `zoom-max` up to 8000), `magnitude`, `layers` (`milky lines names grid`
- * by default; also `boundaries`, `deep`, `holes`), `constellation`, `culture` (`western`, `japanese` or `chinese`), `picked`, `lang` (its own, else the nearest above it), `theme` (`light` or `dark`,
- * for the focus ring: the sky is night in both) and `controls="none"` (no hands, a still picture). A drag moves the sky, two fingers or Ctrl and the wheel zoom, the arrows look round, + and - zoom.
- * It sends `hoshi-view` as the view changes and `hoshi-pick` when a tap lands on something (or on nothing).
+ * Attributes: `projection`, `ra`, `dec`, `zoom`, `zoom-min` and `zoom-max`, `magnitude`, `layers` (`milky lines names grid` by default; also `boundaries`, `deep`, `holes`), `constellation`, `culture`
+ * (`western`, `japanese` or `chinese`), `picked`, `lang` (its own, else the nearest above it, watched), `theme` (`light` or `dark`, for the focus ring: the sky is night in both) and `controls="none"`
+ * (no hands, a still picture). A drag moves the sky, two fingers or Ctrl and the wheel zoom, the arrows look round, + and - zoom. It sends `hoshi-view` as the view changes and `hoshi-pick` when a tap
+ * lands on something (or on nothing); `picked` and `constellation` set after a tap win again.
+ *
+ * The zoom is the chart's own, not the family's "1 is Fit": 1 fits the projection's whole sky (or hemisphere) in the smaller side, and more is closer. Left out, `zoom` is the projection's opening
+ * zoom for the element's size (about 90 degrees of sky across, 60 under 600 pixels wide: 3.86 for a 640 by 400 stereographic chart), which is where Home and 0 go. `zoom-min` and `zoom-max` bound it
+ * in the same unit, 0.1 and 500 by default, `zoom-max` up to 8000.
  *
  * @example
  * ```html
@@ -123,7 +121,8 @@ export class HoshiChartElement extends Base {
   #touch: { x: number; y: number; moved: number; id: number } | undefined;
   #picked: string | undefined;
   #highlight: string | undefined;
-  #handsAsked = 0;
+  #langWatch: MutationObserver | undefined;
+  #langNow: "en" | "ja" | undefined;
 
   connectedCallback(): void {
     const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
@@ -138,8 +137,16 @@ export class HoshiChartElement extends Base {
     this.addEventListener("pointermove", this.#move);
     this.addEventListener("pointerup", this.#up);
     this.addEventListener("pointercancel", this.#cancel);
+    // a lang set or changed above the element (the page's <html lang>, a section's) is watched: the names follow it
+    this.#langWatch = new MutationObserver(() => {
+      if (this.#lang() !== this.#langNow) this.#schedule();
+    });
+    this.#langWatch.observe(this.ownerDocument.documentElement, { attributes: true, attributeFilter: ["lang"], subtree: true });
     void this.#loadCulture();
     this.#measure();
+    // back on a page after being moved: the hands were let go on leaving, and the drawing may be behind
+    if (this.#hands === undefined) this.#bindHands();
+    this.#schedule();
   }
 
   disconnectedCallback(): void {
@@ -151,9 +158,10 @@ export class HoshiChartElement extends Base {
     this.removeEventListener("pointermove", this.#move);
     this.removeEventListener("pointerup", this.#up);
     this.removeEventListener("pointercancel", this.#cancel);
-    this.#hands?.controller.destroy?.();
+    this.#langWatch?.disconnect();
+    this.#langWatch = undefined;
+    this.#hands?.destroy();
     this.#hands = undefined;
-    this.#handsAsked += 1;
   }
 
   attributeChangedCallback(name: string): void {
@@ -163,6 +171,9 @@ export class HoshiChartElement extends Base {
       return;
     }
     if (name === "controls") return this.#bindHands();
+    // the page's own choice wins again over what a tap picked
+    if (name === "picked") this.#picked = undefined;
+    if (name === "constellation") this.#highlight = undefined;
     if (name === "projection" || name === "ra" || name === "dec" || name === "zoom" || name === "zoom-min" || name === "zoom-max") {
       this.#view = this.#viewFromAttributes(name === "projection" && !this.hasAttribute("zoom"));
       this.#hands?.sync();
@@ -182,8 +193,8 @@ export class HoshiChartElement extends Base {
     this.#hands?.sync();
   }
 
-  /** How many times the chart has drawn, for a test that nothing is drawn at rest. */
-  get stats(): { draws: number } {
+  /** @internal How many times the chart has drawn, for the tests that nothing is drawn at rest. */
+  get _stats(): { draws: number } {
     return { draws: this.#draws };
   }
 
@@ -211,24 +222,17 @@ export class HoshiChartElement extends Base {
     this.#size = { width, height };
     if (width === 0 || height === 0) return;
     this.#view ??= this.#viewFromAttributes();
-    this.#bindHands();
+    // the hands are bound once; a new size only tells them the new fit
+    if (this.#hands === undefined) this.#bindHands();
+    else this.#hands.sync();
     this.#schedule();
   }
 
   #bindHands(): void {
-    this.#hands?.controller.destroy?.();
+    this.#hands?.destroy();
     this.#hands = undefined;
-    if (this.getAttribute("controls") === "none" || this.#view === undefined) return;
-    const asked = ++this.#handsAsked;
-    void loadHands().then((module) => {
-      // taken off the page, turned off, or asked again meanwhile: this answer is stale
-      if (module === undefined || asked !== this.#handsAsked || !this.isConnected || this.getAttribute("controls") === "none" || this.#view === undefined) return;
-      this.#attach(module);
-    });
-  }
-
-  #attach(module: typeof import("./hands.ts")): void {
-    this.#hands = module.attachHands(this, {
+    if (!this.isConnected || this.getAttribute("controls") === "none" || this.#view === undefined) return;
+    this.#hands = attachHands(this, {
       view: () => this.#view!,
       size: () => this.#size,
       opening: () => defaultZoom(this.#view!.projection, this.#size.width, this.#size.height),
@@ -281,6 +285,7 @@ export class HoshiChartElement extends Base {
     const { width, height } = this.#size;
     if (svg === undefined || view === undefined || width === 0 || height === 0) return;
     const lang = this.#lang();
+    this.#langNow = lang;
     const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined });
     const out = chart(input);
     this.#hits = out.hits;

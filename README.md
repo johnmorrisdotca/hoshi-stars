@@ -416,7 +416,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`@johnmorrisdotca/hoshi-stars/chart` (`chartSvg`) is 198.0 kB minified and gzipped, and `/chart/element` and `/chart/define` 218.8 kB: the bright catalogue (126.0 kB) with the boundaries, the figures, the Milky Way and the black holes, and none of the NGC and IC, nearby or faint stars. The element's zoom and drag are the family's view controls, `@johnmorrisdotca/kazoku-ui`, an optional peer: install it beside this package; without it the chart is drawn as a picture. The attributes, the events and the frameworks are in [A sky chart in your page](docs/guides/sky-chart.md).
+`@johnmorrisdotca/hoshi-stars/chart` (`chartSvg`) is 198.0 kB minified and gzipped, and `/chart/element` and `/chart/define` 217.6 kB: the bright catalogue (126.0 kB) with the boundaries, the figures, the Milky Way and the black holes, and none of the NGC and IC, nearby or faint stars. The element's zoom and drag are the family's view controls, `@johnmorrisdotca/kazoku-ui`, this package's one dependency, which only `/chart/element` and `/chart/define` load. The attributes, the events and the frameworks are in [A sky chart in your page](docs/guides/sky-chart.md).
 
 To draw your own from the numbers, a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
 

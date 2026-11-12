@@ -2,6 +2,7 @@
 // another planet's sky (IAU WGCCRE Mars, a retrograde spin, and Earth's own spin as a check); wakusei-planets as a dev-only second opinion; bad input; and a speed budget.
 import assert from "node:assert/strict";
 import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { test } from "node:test";
 import { equatorialToHorizontal } from "@johnmorrisdotca/wakusei-planets/coordinates";
 import { starByHr, starByName, starPosition, stars } from "../src/stars.ts";
@@ -291,14 +292,24 @@ test("wakusei-planets as a second opinion (dev only): its equatorialToHorizontal
 });
 
 test("this package never imports wakusei-planets: no source mentions it and no dependency names it", () => {
+  // every source, src/chart and the rest of the folders included
   const dir = new URL("../src/", import.meta.url);
-  for (const file of readdirSync(dir).filter((f) => f.endsWith(".ts"))) assert.ok(!/wakusei/i.test(readFileSync(new URL(file, dir), "utf8")), `src/${file} mentions wakusei`);
+  const files = readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((f) => f.endsWith(".ts"));
+  assert.ok(files.includes(join("chart", "element.ts")), "the scan reaches src/chart");
+  for (const file of files) assert.ok(!/wakusei/i.test(readFileSync(new URL(file, dir), "utf8")), `src/${file} mentions wakusei`);
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as Record<string, unknown>;
-  assert.equal(pkg.dependencies, undefined);
-  // the one peer is kazoku-ui, optional, for the chart element's hands; wakusei-planets is never one
-  assert.deepEqual(Object.keys((pkg.peerDependencies ?? {}) as object), ["@johnmorrisdotca/kazoku-ui"]);
-  assert.deepEqual((pkg.peerDependenciesMeta as Record<string, unknown> | undefined)?.["@johnmorrisdotca/kazoku-ui"], { optional: true });
-  assert.ok(!/wakusei/i.test(JSON.stringify(pkg.peerDependencies ?? {})));
+  // the one dependency is kazoku-ui, for the chart element's hands; there are no peers, and wakusei-planets is never either
+  assert.deepEqual(Object.keys((pkg.dependencies ?? {}) as object), ["@johnmorrisdotca/kazoku-ui"]);
+  assert.equal(pkg.peerDependencies, undefined);
+  assert.equal(pkg.optionalDependencies, undefined);
+});
+
+test("only the chart element loads kazoku-ui: no other source imports it", () => {
+  const dir = new URL("../src/", import.meta.url);
+  const importing = readdirSync(dir, { recursive: true, encoding: "utf8" })
+    .filter((f) => f.endsWith(".ts") && /from "@johnmorrisdotca\/kazoku-ui/.test(readFileSync(new URL(f, dir), "utf8")))
+    .sort();
+  assert.deepEqual(importing, [join("chart", "hands.ts")]);
 });
 
 test("bad input throws, naming the argument and the value", () => {

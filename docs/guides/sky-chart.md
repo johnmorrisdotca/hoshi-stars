@@ -42,14 +42,14 @@ A drag moves the sky, two fingers or Ctrl (Command) and the wheel zoom about the
 |---|---|
 | `projection` | `stereographic` (the default), `orthographic`, `gnomonic`, `equidistant`, `equirectangular`, `mollweide` or `hammer`. |
 | `ra`, `dec` | The middle of the chart in degrees (84 and 0, Orion, by default). |
-| `zoom` | 1 is the projection's own fit; left out, the zoom the projection opens at for the element's size. |
-| `zoom-min`, `zoom-max` | The zoom range, 0.1 to 500. `zoom-max` goes as far as 8000, the range the deep-sky pictures need (they come in a later version). |
+| `zoom` | The chart's own zoom, not the family's "1 is Fit": 1 fits the projection's whole sky (or a hemisphere) in the smaller side, and more is closer. Left out, the projection's opening zoom for the element's size: about 90 degrees of sky across (60 under 600 pixels wide), 3.86 for a 640 by 400 stereographic chart. Home and `0` go back there. |
+| `zoom-min`, `zoom-max` | The zoom range in the same unit, 0.1 to 500. `zoom-max` goes as far as 8000, the range the deep-sky pictures need (they come in a later version). |
 | `magnitude` | The faintest star at the opening zoom (5); zooming in shows fainter ones, as a telescope does. |
 | `layers` | Which of `milky lines boundaries names deep holes grid` to draw, space-separated (`milky lines names grid` by default; empty for the stars alone). |
-| `constellation` | A figure to show brighter, with its boundary when it is a constellation: `Ori`, or a figure's id in the Japanese and Chinese skies. |
+| `constellation` | A figure to show brighter, with its boundary when it is a constellation: `Ori`, or a figure's id in the Japanese and Chinese skies. Set after a tap, it wins again. |
 | `culture` | `western` (the default), `japanese` or `chinese`; the Japanese and Chinese figures are loaded only when asked for. |
-| `picked` | A star (HR number, `2491` for Sirius) or Messier object (`M42`) marked as picked. |
-| `lang` | `en` or `ja`; left out, the nearest `lang` above the element. |
+| `picked` | A star (HR number, `2491` for Sirius) or Messier object (`M42`) marked as picked. Set after a tap, it wins again. |
+| `lang` | `en` or `ja`; left out, the nearest `lang` above the element, followed when it changes. |
 | `theme` | `light` or `dark`, for the focus ring; the sky is night in both. |
 | `controls="none"` | No hands: a still picture. |
 
@@ -58,9 +58,9 @@ A drag moves the sky, two fingers or Ctrl (Command) and the wheel zoom about the
 | `hoshi-pick` | `ChartPick`: `{ kind, id, abbreviation? }`. `kind` is `star` (the HR number), `deep` (`M42`), `hole` (`cygnus-x-1`), `figure` (its id, with `abbreviation` for a constellation) or `none`. |
 | `hoshi-view` | `ChartViewDetail`: `{ projection, ra, dec, zoom, final }`, as the view changes; `final` once the hand has settled. |
 
-`element.setView({ ra, dec, zoom })` moves it from code, and `element.view` says where it is. `HoshiChartElement` is the class, `CHART_TAG` the tag, and `defineChart(registry?)` defines it once (a page that loads it twice, or two copies of the package, never throws).
+`element.setView({ ra, dec, zoom })` moves it from code, and `element.view` says where it is; `View` is their type. `HoshiChartElement` is the class, `CHART_TAG` the tag, and `defineChart(registry?)` defines it once (a page that loads it twice, or two copies of the package, never throws).
 
-**The hands are an optional peer.** They are the family's view controls, `@johnmorrisdotca/kazoku-ui` (0.40 or later), loaded when a chart first needs them: install it beside this package (`npm install @johnmorrisdotca/kazoku-ui`). jsDelivr's `/+esm` brings it by itself. Without it the chart is still drawn, as a picture, and the console says once: "hoshi-chart: install @johnmorrisdotca/kazoku-ui for zoom and drag". Every other entry of the package has no dependency at all.
+**The hands are kazoku-ui.** They are the family's view controls, `@johnmorrisdotca/kazoku-ui`, this package's one dependency, which npm installs with it and jsDelivr's `/+esm` brings by itself. Only `/chart/element` and `/chart/define` load it: `chartSvg` and every other entry load nothing of it.
 
 ## As one SVG string
 
@@ -188,7 +188,7 @@ export class SkyChartComponent {
 | Entry | Minified and gzipped |
 |---|---|
 | `@johnmorrisdotca/hoshi-stars/chart` | 198.0 kB |
-| `@johnmorrisdotca/hoshi-stars/chart/element` | 218.8 kB |
-| `@johnmorrisdotca/hoshi-stars/chart/define` | 218.8 kB |
+| `@johnmorrisdotca/hoshi-stars/chart/element` | 217.6 kB |
+| `@johnmorrisdotca/hoshi-stars/chart/define` | 217.7 kB |
 
 Most of it is the bright catalogue (the package's main entry is 126.0 kB) with the boundaries, the figures, the Milky Way and the black holes the layers draw. Nothing of the NGC and IC objects, the nearby stars or the faint stars comes with it, and the Japanese and Chinese figures load only when a chart asks for them (about 8 kB each). The figures are measured as `docs/bundle-size.json` says.
