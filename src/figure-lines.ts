@@ -1,7 +1,9 @@
-// The 88 constellation figures as very faint lines on a sky of the page's own, with the figure under the pointer (or a finger) at full strength and its name beside it.
+// The figures of a sky (the 88 constellations, or a sky culture's own) as very faint lines on a sky of the page's own, with the figure under the pointer (or a finger) at full strength and its name beside it.
 // The page owns the camera and the drawing: it says where a star is on its screen, and draws the segments this module lays out, each figure at the opacity it asks for.
 // Pure: no DOM, no clock; after the first call nothing is allocated, so a page may call `update` every frame it moves, and `point` on every pointer move; at rest there is nothing to call.
-import { figures, type Figure } from "./lines.ts";
+import type { Asterism, Culture } from "./culture.ts";
+import { figures } from "./lines.ts";
+import type { Star } from "./stars.ts";
 import { DEFAULT_LABEL_STYLE, labelHeight, labelStyle, labelText, labelWidth, type LabelStyle } from "./label-style.ts";
 import type { NameLanguage, ScreenPoint, SkyProjector, SkyView } from "./star-names.ts";
 
@@ -112,8 +114,16 @@ export interface FigureLinesSettings {
   dotRadius?: number;
   /** A line longer than this many pixels is left out: a page that draws the whole sky flat uses it to drop the lines that cross the seam. Left out, no line is dropped for its length. */
   maxLength?: number;
-  /** The language of the figure's name when it is picked: `en` gives the Latin name (`Canis Major`), `ja` the Japanese (`おおいぬ座`). `en` by default. */
+  /**
+   * The language of the figure's name when it is picked: `en` gives the Latin name (`Canis Major`), `ja` the Japanese (`おおいぬ座`). `en` by default. In a culture's sky a constellation is named the
+   * same way, an asterism by its English name (`Subaru`, `Big Dipper`) or in Japanese by its reading in kana (`すばる`), and a figure with no name in the language by its own (`北斗`).
+   */
   lang?: NameLanguage;
+  /**
+   * The sky culture whose figures are drawn (`japanese` or `chinese` from `@johnmorrisdotca/hoshi-stars/cultures/…`, or one made with `defineCulture`): its figures, in its order, each keyed by
+   * its id. Left out, the 88 constellations of the IAU. A new culture in `set` lets the picked figure go.
+   */
+  culture?: Culture | undefined;
   /** The look of the picked figure's name (`labelStyle`); a quiet plain default. */
   style?: Partial<LabelStyle>;
 }
@@ -130,7 +140,7 @@ export interface FigureLinesSettings {
  * ```
  */
 export interface FigureOnScreen {
-  /** The constellation's IAU abbreviation (`Ori`). */
+  /** The constellation's IAU abbreviation (`Ori`); in a culture's sky, the figure's id (`Ori` for a constellation, `subaru`, `bei3-dou3`). */
   abbreviation: string;
   /** The figure's lines are the segments from `start` up to (not including) `end`; the same number means none are in view. */
   start: number;
@@ -184,7 +194,7 @@ export interface FigureLines {
   readonly segments: Float32Array;
   /** How many lines the last `update` laid out. */
   readonly count: number;
-  /** The 88 figures, in the order of the catalogue, each with the lines of `segments` that belong to it. */
+  /** The figures (the 88, in the order of the catalogue, or the culture's, in its order), each with the lines of `segments` that belong to it. */
   readonly figures: readonly FigureOnScreen[];
   /** The figure the pointer is on, or `undefined`. */
   readonly picked: FigureOnScreen | undefined;
@@ -223,10 +233,30 @@ export interface FigureLines {
 /** The steps to either side, in name widths, that a picked figure's name tries in turn. */
 const NAME_SHIFTS: readonly number[] = [0, -0.5, 0.5, -1, 1, -1.5, 1.5];
 
+/** A figure as the lines need it: its key, its lines and its name in each language. */
+interface Drawn {
+  key: string;
+  segments: ReadonlyArray<readonly [Star, Star]>;
+  name(lang: NameLanguage | undefined): string;
+}
+
+/** A culture's figure's name: a constellation's as the 88 are named, an asterism's in English or, in Japanese, its reading in kana; the figure's own where it has none in the language. */
+function cultureName(asterism: Asterism, lang: NameLanguage | undefined): string {
+  if (lang === "ja") return (asterism.kind === "asterism" ? asterism.readings.ja : undefined) ?? asterism.names.ja ?? asterism.name;
+  return (asterism.kind === "constellation" ? asterism.names.la : undefined) ?? asterism.names.en ?? asterism.name;
+}
+
+/** The figures of a sky: the 88 of the IAU, or a culture's. */
+function figuresOf(culture: Culture | undefined): Drawn[] {
+  if (culture === undefined) return figures().map((one) => ({ key: one.constellation.abbreviation, segments: one.segments, name: (lang) => (lang === "ja" ? one.constellation.japanese : one.constellation.name) }));
+  return figures(culture).map((one) => ({ key: one.asterism.id, segments: one.segments, name: (lang) => cultureName(one.asterism, lang) }));
+}
+
 /**
- * The constellation figures as lines for a sky of your own, faint, with the figure under the pointer at full strength and its name. `strength` 0 draws nothing. The figures are the package's own, from the positions of the stars.
+ * The constellation figures as lines for a sky of your own, faint, with the figure under the pointer at full strength and its name. `strength` 0 draws nothing. The figures are the package's own, from the positions of the stars:
+ * the 88 of the IAU, or with `culture` a sky culture's (the Japanese sky's 昴, the Chinese sky's mansions and asterisms).
  *
- * After the first call nothing is allocated by `update` or `point`.
+ * After the first call nothing is allocated by `update` or `point` (a new culture in `set` makes its figures once).
  *
  * @param settings - The strength and what a pick needs.
  * @returns The figures for this sky.
@@ -245,13 +275,42 @@ const NAME_SHIFTS: readonly number[] = [0, -0.5, 0.5, -1, 1, -1.5, 1.5];
  * lines.point(640, 360);
  * console.log(lines.count > 0, lines.picked?.abbreviation, lines.opacityOf(lines.picked!));
  * ```
+ *
+ * @example
+ * ```ts
+ * import { createFigureLines } from "@johnmorrisdotca/hoshi-stars/sky-labels";
+ * import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
+ *
+ * // the Japanese sky, its names in Japanese: the Pleiades are 昴, named by their reading
+ * const lines = createFigureLines({ culture: japanese, lang: "ja" });
+ * const project = (ra: number, dec: number, out: { x: number; y: number }): boolean => {
+ *   out.x = 640 - (ra - 56.9) * 40;
+ *   out.y = 360 - (dec - 24.1) * 40;
+ *   return Math.abs(ra - 56.9) < 15 && Math.abs(dec - 24.1) < 9;
+ * };
+ * lines.update(project, { width: 1280, height: 720 });
+ * const subaru = lines.figures.find((figure) => figure.abbreviation === "subaru")!;
+ * lines.point(lines.segments[subaru.start * 4]!, lines.segments[subaru.start * 4 + 1]!);
+ * console.log(lines.picked?.abbreviation, lines.name?.text);
+ * ```
  */
 export function createFigureLines(settings: FigureLinesSettings = {}): FigureLines {
-  const all: Figure[] = figures();
-  let total = 0;
-  for (const figure of all) total += figure.segments.length;
-  const segments = new Float32Array(total * 4);
-  const onScreen: FigureOnScreen[] = all.map((figure) => ({ abbreviation: figure.constellation.abbreviation, start: 0, end: 0, left: 0, top: 0, right: 0, bottom: 0, x: 0 }));
+  let sky: Culture | undefined | null = null;
+  let all: Drawn[] = [];
+  let segments = new Float32Array(0);
+  let onScreen: FigureOnScreen[] = [];
+  /** The figures, their lines' room and their places on the screen, made again only when the culture changes. */
+  const useSky = (culture: Culture | undefined): void => {
+    if (culture === sky) return;
+    sky = culture;
+    all = figuresOf(culture);
+    let total = 0;
+    for (const figure of all) total += figure.segments.length;
+    segments = new Float32Array(total * 4);
+    onScreen = all.map((figure) => ({ abbreviation: figure.key, start: 0, end: 0, left: 0, top: 0, right: 0, bottom: 0, x: 0 }));
+    count = 0;
+    picked = -1;
+  };
   const name: FigureName = { text: "", x: 0, y: 0, anchor: "middle" };
   const a: ScreenPoint = { x: 0, y: 0 };
   const b: ScreenPoint = { x: 0, y: 0 };
@@ -267,6 +326,7 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
     current = Object.freeze({ ...next, strength: clampStrength(next.strength) });
     style = labelStyle(next.style ?? DEFAULT_LABEL_STYLE);
     texts = [];
+    useSky(next.culture);
     if (current.strength === 0) picked = -1;
   };
   set(settings);
@@ -307,7 +367,7 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
   const placeName = (): void => {
     const figure = onScreen[picked]!;
     nameMargin = size.margin ?? 4;
-    if (texts.length === 0) texts = all.map((one) => labelText(current.lang === "ja" ? one.constellation.japanese : one.constellation.name, style));
+    if (texts.length === 0) texts = all.map((one) => labelText(one.name(current.lang), style));
     name.text = texts[picked]!;
     nameWidth = labelWidth(name.text, style);
     nameHeight = labelHeight(style);
@@ -348,11 +408,15 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
     get style() {
       return style;
     },
-    segments,
+    get segments() {
+      return segments;
+    },
     get count() {
       return count;
     },
-    figures: onScreen,
+    get figures() {
+      return onScreen;
+    },
     get picked() {
       return picked < 0 ? undefined : onScreen[picked];
     },

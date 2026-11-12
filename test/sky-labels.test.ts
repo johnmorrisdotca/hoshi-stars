@@ -578,3 +578,61 @@ test("the keyboard steps through the figures in view, round from the last to the
   none.update(project, VIEW);
   assert.equal(none.step(1), false, "strength 0 picks nothing");
 });
+
+test("a culture's sky: its figures in its order keyed by id, named by its names (a Japanese asterism by its kana reading), the same point, step and name, and a new culture lets the pick go", async () => {
+  const { japanese } = await import("../src/cultures/japanese.ts");
+  const { chinese } = await import("../src/cultures/chinese.ts");
+  const { figures } = await import("../src/lines.ts");
+  // the Pleiades in the middle of a 1280 by 720 view, 40 pixels a degree
+  const project: SkyProjector = (ra, dec, out) => {
+    out.x = 640 - (ra - 56.9) * 40;
+    out.y = 360 - (dec - 24.1) * 40;
+    return Math.abs(ra - 56.9) < 15 && Math.abs(dec - 24.1) < 9;
+  };
+  const view = { width: 1280, height: 720 };
+  const names: Record<string, string | undefined> = {};
+  for (const lang of ["ja", "en"] as const) {
+    const lines = createFigureLines({ culture: japanese, lang });
+    assert.deepEqual(lines.figures.map((figure) => figure.abbreviation), japanese.asterisms().map((one) => one.id));
+    assert.equal(lines.segments.length, 4 * figures(japanese).reduce((sum, one) => sum + one.segments.length, 0));
+    assert.ok(lines.update(project, view) > 0);
+    const subaru = lines.figures.find((figure) => figure.abbreviation === "subaru")!;
+    assert.ok(subaru.end > subaru.start, "the Pleiades' lines are in view");
+    // on a line end of 昴: it is picked, at full strength, with its name clear above it
+    assert.equal(lines.point(lines.segments[subaru.start * 4]!, lines.segments[subaru.start * 4 + 1]!), true);
+    assert.equal(lines.picked, subaru);
+    assert.equal(lines.opacityOf(subaru), 1);
+    assert.ok(lines.name!.y < subaru.top);
+    names[lang] = lines.name?.text;
+  }
+  assert.deepEqual(names, { ja: "すばる", en: "Subaru" });
+  // a constellation of the Japanese sky is named as the 88 are: おひつじ座 in Japanese, Aries in English
+  const aries = (lang: "ja" | "en") => {
+    const lines = createFigureLines({ culture: japanese, lang });
+    lines.update(project, view);
+    while (lines.picked?.abbreviation !== "Ari") assert.equal(lines.step(1), true);
+    return lines.name!.text;
+  };
+  assert.equal(aries("ja"), "おひつじ座");
+  assert.equal(aries("en"), "Aries");
+  // a new culture lets the pick go and lays out its own figures; left out, the 88 come back
+  const lines = createFigureLines({ culture: japanese, lang: "ja" });
+  lines.update(project, view);
+  lines.step(1);
+  assert.notEqual(lines.picked, undefined);
+  lines.set({ culture: chinese, lang: "ja" });
+  assert.equal(lines.picked, undefined);
+  assert.equal(lines.figures.length, chinese.asterisms().length);
+  lines.update(project, view);
+  const mao = lines.figures.find((figure) => figure.abbreviation === "mao3-xiu4")!;
+  lines.point(lines.segments[mao.start * 4]!, lines.segments[mao.start * 4 + 1]!);
+  // a Chinese figure has no Japanese name: its own, 昴宿
+  assert.equal(lines.name?.text, "昴宿");
+  // the same culture again keeps the figures and the pick
+  const before = lines.figures;
+  lines.set({ culture: chinese, lang: "en" });
+  assert.equal(lines.figures, before);
+  assert.equal(lines.picked, mao);
+  lines.set({});
+  assert.equal(lines.figures.length, 88);
+});

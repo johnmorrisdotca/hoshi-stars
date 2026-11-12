@@ -580,6 +580,8 @@ console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
 // 14
 ```
 
+`createFigureLines({ culture: japanese })` lays out a sky culture's figures instead of the 88 (the Japanese sky's 昴, named すばる in Japanese; the Chinese sky's mansions), with the same `update`, `point` and name; the [guide](docs/guides/sky-names-and-lines.md) has an example.
+
 ## The sky by distance
 
 `@johnmorrisdotca/hoshi-stars/distance` gives the stars and galaxies out to a limit (10, 50, 100, 500 or 1,000 light-years, or all), each in the band of its distance. A star whose distance is uncertain is kept apart, with the range its error allows, and one with no distance is counted and never placed. The demo draws the layers on the sky map (a **Distance** row, a colour for each band, a legend with the counts, `dist=100` in the address) and in 3D (`layers-3d.html`, the Earth in the middle, shells round it, stepped out one at a time). Nothing here adds data. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the rules.

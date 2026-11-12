@@ -73,6 +73,28 @@ console.log(labelStyleVars({ size: 14, case: "upper" })["--hoshi-label-size"]);
 
 `project` is a `SkyProjector`: it gets a star's right ascension and declination in degrees and writes where it is into a `ScreenPoint`, answering `false` when the star is not in front of the camera. `view` is a `SkyView`, the size of the part of the screen to use and an optional `margin`. A name is kept only when the whole of it, and its leader line, is inside the view; names never overlap. They are placed brightest first, and each tries the right of its star, then the left, then above, then below (`LABEL_SIDES`, a `LabelSide` each), and takes the first place that covers no other name, no other name's ring and no star's dot (the dots of the stars brighter than `dotMagnitude`, 3 by default, each `dotRadius` pixels, 3 by default: set them to what your page draws). If no place is free the name is left out, and the next star is tried. `placeLabel` is the placing on one side. Names come in English (the IAU spelling) or, with `lang: "ja"` (a `NameLanguage`), in katakana; a star with no katakana is named in English. A constellation's name is Latin or Japanese the same way.
 
+### Another culture's figures
+
+`createFigureLines({ culture })` lays out the figures of a sky culture instead of the 88: pass `japanese` or `chinese` from `@johnmorrisdotca/hoshi-stars/cultures/…` (or a culture of your own, made with `defineCulture`). The figures are the culture's, in its order, and each `FigureOnScreen`'s `abbreviation` is the figure's id (`Ori` for a constellation, `subaru`, `bei3-dou3`). `update`, `point`, `step`, `opacityOf` and the name behave as they do for the 88. A constellation is named as the 88 are (Latin, or Japanese with `lang: "ja"`); an asterism by its English name (`Subaru`) or, in Japanese, by its reading in kana (`すばる`); a figure with no name in the language by its own (`昴宿`). A new culture in `set` makes its figures once and lets the picked figure go; leaving `culture` out draws the 88 again.
+
+```ts
+import { createFigureLines } from "@johnmorrisdotca/hoshi-stars/sky-labels";
+import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
+
+// the Japanese sky, its names in Japanese, the Pleiades in the middle of the view
+const lines = createFigureLines({ culture: japanese, lang: "ja" });
+const project = (ra: number, dec: number, out: { x: number; y: number }): boolean => {
+  out.x = 640 - (ra - 56.9) * 40;
+  out.y = 360 - (dec - 24.1) * 40;
+  return Math.abs(ra - 56.9) < 15 && Math.abs(dec - 24.1) < 9;
+};
+lines.update(project, { width: 1280, height: 720 });
+const subaru = lines.figures.find((figure) => figure.abbreviation === "subaru")!;
+lines.point(lines.segments[subaru.start * 4]!, lines.segments[subaru.start * 4 + 1]!);
+console.log(lines.figures.length, lines.picked?.abbreviation, lines.name?.text);
+// 106 subaru すばる
+```
+
 ## Nothing is redrawn at rest, nothing is allocated while it moves
 
 `update` and `point` are for the moments something changed: the camera moved, the size changed or a setting changed. At rest there is nothing to call and nothing to redraw. After the first call they allocate nothing (the arrays and objects are reused, and `labels` and `figures` are the same ones every time), so a page may call `update` on every frame the camera moves. A pointer that moves along without changing the picked figure gets `false` from `point`, and the page draws nothing.
