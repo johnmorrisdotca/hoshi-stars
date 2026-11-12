@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <title>Hoshi Stars: your own points on the chart</title>
+    <meta name="description" content="Put your own dated points on the sky chart: an observing log, a comet's track, the stars you have seen. A time slider shows what was there when, and nothing leaves your device." />
+    <style>
+      :root { color-scheme: dark; --ink: #e8ecff; --mute: #9aa6c9; --line: #25304f; --panel: #11182e; --accent: #ffd86b; }
+      html, body { margin: 0; background: #0b1020; color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+      main { box-sizing: border-box; max-width: 1040px; margin: 0 auto; padding: 16px; }
+      h1 { margin: 0 0 4px; font-size: 1.4rem; }
+      p { margin: 0 0 12px; color: var(--mute); }
+      hoshi-chart { width: 100%; max-height: 70vh; --hoshi-focus: #ffd86b; }
+      .panel { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+      .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+      button, .button { min-height: 44px; padding: 0 16px; border: 1px solid #46578c; border-radius: 8px; background: #0b1020; color: var(--ink); font: 600 .95rem system-ui, sans-serif; cursor: pointer; display: inline-flex; align-items: center; }
+      button:hover, .button:hover { border-color: var(--ink); }
+      button:focus-visible, .button:focus-within, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+      .button input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+      label.check { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+      #dates { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; margin-bottom: 4px; }
+      #dates output { color: var(--accent); }
+      /* two handles on one track: the inputs lie over each other and only their thumbs take the pointer */
+      .dual { position: relative; height: 44px; }
+      .dual .track { position: absolute; left: 11px; right: 11px; top: 20px; height: 4px; border-radius: 2px; background: var(--line); }
+      .dual .fill { position: absolute; top: 20px; height: 4px; border-radius: 2px; background: var(--accent); }
+      .dual input { position: absolute; left: 0; top: 0; width: 100%; height: 44px; margin: 0; background: none; pointer-events: none; -webkit-appearance: none; appearance: none; }
+      .dual input::-webkit-slider-runnable-track { background: none; height: 44px; }
+      .dual input::-moz-range-track { background: none; height: 44px; }
+      .dual input::-webkit-slider-thumb { -webkit-appearance: none; pointer-events: auto; width: 22px; height: 22px; margin-top: 11px; border-radius: 50%; border: 2px solid #0b1020; background: var(--accent); cursor: grab; }
+      .dual input::-moz-range-thumb { pointer-events: auto; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #0b1020; background: var(--accent); cursor: grab; }
+      #card { min-height: 4.5em; }
+      #card h2 { margin: 0 0 4px; font-size: 1.05rem; }
+      #card dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0; }
+      #card dt { color: var(--mute); }
+      #card dd { margin: 0; font-variant-numeric: tabular-nums; }
+      #message { color: var(--mute); margin: 8px 0 0; min-height: 1.5em; }
+      .small { font-size: .85rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1 id="title">Your own points on the chart</h1>
+      <p id="intro">An observing log and a comet's track, as the sample. Drag the two handles to choose the days shown, press Play to watch them go by, and click or press Enter on a point for its card. Everything stays in this page: nothing is sent anywhere.</p>
+      <hoshi-chart id="chart" layers="milky lines names" ra="84" dec="12" zoom="3.2" data-testid="chart"></hoshi-chart>
+      <section class="panel" id="time" role="group" aria-labelledby="time-label">
+        <div id="dates"><span id="time-label">Days shown</span><span><output id="from-out" data-testid="from-out"></output> &ndash; <output id="to-out" data-testid="to-out"></output></span></div>
+        <div class="dual">
+          <div class="track"></div>
+          <div class="fill" id="fill"></div>
+          <input type="range" id="from" data-testid="from" min="0" max="0" step="1" value="0" aria-label="First day shown" />
+          <input type="range" id="to" data-testid="to" min="0" max="0" step="1" value="0" aria-label="Last day shown" />
+        </div>
+        <div class="row">
+          <button type="button" id="play" data-testid="play" aria-pressed="false">Play</button>
+          <label class="check"><input type="checkbox" id="tracks" data-testid="tracks" checked /> <span id="tracks-label">Join each group with a line</span></label>
+          <span id="count" class="small" data-testid="count" aria-live="polite"></span>
+        </div>
+      </section>
+      <section class="panel" id="card" data-testid="card" aria-live="polite" aria-label="Marker card"></section>
+      <section class="panel">
+        <div class="row">
+          <label class="button" id="import-label"><span id="import-text">Import CSV or JSON</span><input type="file" id="import" data-testid="import" accept=".csv,.json,.txt,text/csv,application/json,text/plain" /></label>
+          <button type="button" id="export-csv" data-testid="export-csv">Export CSV</button>
+          <button type="button" id="export-json" data-testid="export-json">Export JSON</button>
+          <button type="button" id="sample" data-testid="sample">Back to the sample</button>
+        </div>
+        <p id="message" class="small" role="status" data-testid="message"></p>
+        <p class="small" id="columns">CSV columns: id, ra, dec, date, label, color, size, group (ra and dec in degrees; date as 2026-11-08 or 2026-11-08T21:30). JSON is a list of the same fields.</p>
+      </section>
+    </main>
+    <script type="module" src="js/markers.js"></script>
+  </body>
+</html>
