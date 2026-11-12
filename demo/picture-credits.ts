@@ -16,11 +16,12 @@ export interface CreditPiece {
 let byId: Map<string, DeepSkyPicture> | undefined;
 
 /**
- * The short name of a licence where it is plain Creative Commons Attribution (`CC BY 4.0`, `CC BY`), else nothing: a US government work or the public domain needs no licence named, and a share-alike or
- * non-commercial one (`CC BY-SA`, `CC BY-NC`) is refused rather than named as plain CC BY (the package takes no picture under one; the data test holds that).
+ * The short name of a licence where it is plain Creative Commons Attribution (`CC BY 4.0`, `CC BY`), else nothing: a US government work or the public domain needs no licence named, and a share-alike,
+ * non-commercial or no-derivatives one is refused rather than named as plain CC BY, however it is written (`CC BY-SA`, `CC BY SA 4.0`, `CC BY 4.0-SA`, `CC BY 4.0 NC`, `CC-BY-SA`: an SA, NC or ND
+ * anywhere after "CC BY", up to the next comma, semicolon or closing bracket). The package takes no picture under one; the data test holds that.
  */
 export function licenceName(licence: string): string | undefined {
-  return /\bCC BY(?: \d\.\d)?(?![-\w])/.exec(licence)?.[0];
+  return /\bCC BY(?: \d\.\d)?(?![-\w])(?![^,;)]*\b(?:SA|NC|ND|ShareAlike|NonCommercial|NoDerivatives)\b)/i.exec(licence)?.[0];
 }
 
 const licenceOf = (picture: DeepSkyPicture): string | undefined => licenceName(picture.source.licence);

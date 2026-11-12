@@ -299,12 +299,17 @@ test("every laid-over picture fades to nothing at its corners and the middle of 
   for (const [file, alpha] of Object.entries(edges)) expect(alpha, `${file}: the most opaque corner or side middle`).toBeLessThanOrEqual(3);
 });
 
-test("on a phone the picture credits take at most three lines of the chart and scroll within themselves, every word kept, on the page and in the embed", async ({ page }, info) => {
+test("on a phone the picture credits take at most three lines of the chart and scroll within themselves, every word kept, on the page and in the embed, in English and Japanese", async ({ page }, info) => {
   test.skip(!info.project.name.endsWith("phone"), "the long line is a phone's");
   // Orion close in: the photograph, its Hubble picture and the survey picture of M43, three credits of 345 characters, which wrapped to eight lines on a phone and covered a quarter of the chart
   const VIEW = "layers=milky,deep,names,pictures&ra=83.8&dec=-5.45&zoom=300";
   const credits = deepSkyPictures().filter((p) => ["M42", "M42-heic0601a", "M43"].includes(p.id)).map((p) => p.credit);
-  for (const [address, box] of [[`/hoshi-stars/?${VIEW}`, "#chart-box"], [`/hoshi-stars/embed.html?${VIEW}`, "#frame"]] as const) {
+  for (const [address, box, all] of [
+    [`/hoshi-stars/?${VIEW}`, "#chart-box", "All credits"],
+    [`/hoshi-stars/embed.html?${VIEW}`, "#frame", "All credits"],
+    [`/hoshi-stars/?lang=ja&${VIEW}`, "#chart-box", "出典一覧"],
+    [`/hoshi-stars/embed.html?lang=ja&${VIEW}`, "#frame", "出典一覧"],
+  ] as const) {
     await page.goto(address);
     await page.locator(box).scrollIntoViewIfNeeded();
     await expect(page.locator("[data-pic='M42-heic0601a']")).toHaveCount(1, { timeout: 20_000 });
@@ -316,8 +321,8 @@ test("on a phone the picture credits take at most three lines of the chart and s
     expect(sizes.scroll, `${address}: the rest is there, to scroll to`).toBeGreaterThan(sizes.client);
     // the last words, the link to every credit, come into the line when it is scrolled to its end
     await line.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
-    const all = line.getByRole("link", { name: "All credits" });
-    const inside = await all.evaluate((link) => {
+    const last = line.getByRole("link", { name: all });
+    const inside = await last.evaluate((link) => {
       const a = link.getBoundingClientRect();
       const b = link.parentElement!.getBoundingClientRect();
       return a.top >= b.top - 0.5 && a.bottom <= b.bottom + 0.5;

@@ -61,6 +61,7 @@ test("licenceName: plain CC BY is named, with its version; share-alike and non-c
   assert.equal(licenceName("CC BY 4.0 (Creative Commons Attribution 4.0 International)"), "CC BY 4.0");
   assert.equal(licenceName("CC BY (Creative Commons Attribution), per SDSS's image use policy"), "CC BY");
   assert.equal(licenceName("licensed CC BY 4.0."), "CC BY 4.0");
-  for (const refused of ["CC BY-SA 4.0", "CC BY-SA", "CC BY-NC 4.0", "CC BY-NC-SA 2.0", "CC BY-NC-ND 4.0", "CC BY-ND 4.0", "CC BYSA"]) assert.equal(licenceName(refused), undefined, refused);
+  for (const refused of ["CC BY-SA 4.0", "CC BY-SA", "CC BY-NC 4.0", "CC BY-NC-SA 2.0", "CC BY-NC-ND 4.0", "CC BY-ND 4.0", "CC BYSA", "CC BY SA 4.0", "CC BY NC 4.0", "CC BY 4.0-SA", "CC BY 4.0 NC", "CC-BY-SA", "CC BY 4.0 ShareAlike", "cc by-sa 4.0"]) assert.equal(licenceName(refused), undefined, refused);
+  assert.equal(licenceName("CC BY 4.0 (Creative Commons Attribution 4.0 International); not CC BY-SA"), "CC BY 4.0", "a refusal is looked for only up to the next semicolon, comma or bracket");
   assert.equal(licenceName("a US government work"), undefined);
 });
