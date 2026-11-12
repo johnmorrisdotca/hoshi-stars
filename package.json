@@ -1,6 +1,6 @@
 {
   "name": "@johnmorrisdotca/hoshi-stars",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed; the data and the SVG chart need no other package.",
   "keywords": [
     "stars",
