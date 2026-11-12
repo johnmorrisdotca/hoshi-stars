@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-11-12
+
 - **The Chinese sky keeps each star's number** (MODULES-1160). `Asterism.numbers` gives each held star's number in its asterism, as its name has it (角宿一 is star 1 of 角宿: `{ 5056: 1, 5107: 2 }`), read again from Wikidata (CC0) on 2026-11-12 with every asterism as it was. A mansion's star 1 is its determinative star (距星), which Wikidata names for 24 of the 28. The numbers are Wikidata's, repeats and all: 斗宿 has two stars numbered 1 and 天園 two numbered 4, and 三台's pairs share their numbers by design; the stars named by a proper name (the Northern Dipper's, 天狼, 老人, 大角) are numbered by their place in our list. The Western and Japanese skies do not number their stars.
 - **Missing stars are "not in our data"** (MODULES-1160): wherever the stars a Chinese figure lacks were called fainter than the catalogue (the `missing` docs, the generated data, the guides and the README), they are now stars not in our data, fainter than magnitude 6.0 or given no catalogue number in Wikidata, since we cannot always tell which.
 
