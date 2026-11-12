@@ -235,10 +235,12 @@ test("the supergiants whose catalogue parallax is poor: a published distance whe
   assert.ok(rigel.lightYearsRange![0] <= 240 * LY_PER_PC && rigel.lightYearsRange![1] >= 450 * LY_PER_PC - 5, String(rigel.lightYearsRange));
   assert.equal(starByName("Rigel")!.parallaxSource, "literature");
   assert.match(starByName("Rigel")!.parallaxNote!, /de Almeida et al\. 2022/);
-  // Polaris: Bond et al. 2018, ApJ 853, 55: the Hubble parallax of Polaris B, 6.26 +/- 0.24 mas.
+  // Polaris: Bond et al. 2018, ApJ 853, 55: the Hubble parallax of Polaris B, 6.26 +/- 0.24 mas, with the error widened so the range reaches 430 light-years.
   const polaris = starByName("Polaris")!;
-  assert.deepEqual([polaris.parallaxMas, polaris.parallaxErrorMas, polaris.parallaxSource], [6.26, 0.24, "literature"]);
+  assert.deepEqual([polaris.parallaxMas, polaris.parallaxErrorMas, polaris.parallaxSource], [6.26, 1.33, "literature"]);
   assert.match(polaris.parallaxNote!, /Bond et al\. 2018, ApJ 853, 55/);
+  const polarisRange = get("Polaris");
+  assert.ok(within(polarisRange.lightYears, 521, 1) && polarisRange.lightYearsRange![0] <= 430 && polarisRange.lightYearsRange![1] >= 541, String(polarisRange.lightYearsRange));
   // Antares, Canopus and Mu Cephei: no clear-licence figure replaces the Yale parallax, so its error is at least the parallax itself: rough, with no upper limit.
   for (const hr of [6134, 2326, 8316]) {
     const star = starByHr(hr)!;
