@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-11-12
+
 - **The Chinese sky's mansions on the map** (MODULES-1160). In the Chinese sky the demo's layer row has a **Mansions** switch (`layers=mansions`; 二十八宿 in Japanese): an hour circle (right ascension, J2000) through each mansion's determinative star, its one star numbered 1, dashed like the IAU boundaries in a warm colour. A mansion gets a circle only where exactly one star we hold is numbered 1: 23 of the 28 for now. 氐, 牛, 觜 and 參 have no star 1 in Wikidata and 斗宿 has two, so they have none until a published list gives them; nothing is guessed. The walls of the Three Enclosures come with that list. `mansionMeridians(culture)` in the chart's code gives the circles. Tests: the 23 circles, each through a star 1 of its own mansion, and none in another sky; an end-to-end test of the switch.
 
 ## [0.37.1] - 2026-11-12
