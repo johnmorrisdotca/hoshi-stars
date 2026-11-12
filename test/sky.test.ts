@@ -295,7 +295,10 @@ test("this package never imports wakusei-planets: no source mentions it and no d
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".ts"))) assert.ok(!/wakusei/i.test(readFileSync(new URL(file, dir), "utf8")), `src/${file} mentions wakusei`);
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as Record<string, unknown>;
   assert.equal(pkg.dependencies, undefined);
-  assert.equal(pkg.peerDependencies, undefined);
+  // the one peer is kazoku-ui, optional, for the chart element's hands; wakusei-planets is never one
+  assert.deepEqual(Object.keys((pkg.peerDependencies ?? {}) as object), ["@johnmorrisdotca/kazoku-ui"]);
+  assert.deepEqual((pkg.peerDependenciesMeta as Record<string, unknown> | undefined)?.["@johnmorrisdotca/kazoku-ui"], { optional: true });
+  assert.ok(!/wakusei/i.test(JSON.stringify(pkg.peerDependencies ?? {})));
 });
 
 test("bad input throws, naming the argument and the value", () => {

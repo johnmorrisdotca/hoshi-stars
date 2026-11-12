@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A sky chart from jsDelivr</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-chart constellation="Ori" layers="milky lines names boundaries" style="max-width: 640px"></hoshi-chart>
+    <p id="picked">Tap a star.</p>
+    <script type="module">
+      document.querySelector("hoshi-chart").addEventListener("hoshi-pick", (event) => {
+        const { kind, id } = event.detail;
+        document.getElementById("picked").textContent = kind === "none" ? "Nothing there." : `${kind} ${id}`;
+      });
+    </script>
+  </body>
+</html>

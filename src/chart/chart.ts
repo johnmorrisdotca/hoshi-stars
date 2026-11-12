@@ -16,7 +16,7 @@ import { milkyWayBands } from "../milky-way.ts";
 import { faintMarks, type FaintDraw } from "./faint-layer.ts";
 import { project, unproject, type Projection, type SkyPoint } from "../projection.ts";
 import type { SeenSky } from "../sky-from.ts";
-import { placeLabels, textSize, type Box } from "./labels.ts";
+import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
 import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
 import type { FigureLines, StarNames } from "../sky-labels.ts";
 import type { DistanceLayers } from "../distance.ts";
@@ -69,6 +69,8 @@ export interface ChartOptions extends View {
   overlay?: { lines?: FigureLines | undefined; names?: StarNames | undefined } | undefined;
   /** The sky out to a distance (`layersByDistance`): only these things are drawn, each in the colour of its band (`colours`, six of them, near to far); a thing whose distance is uncertain is a hollow ring in `uncertain`; a thing with no distance is not drawn. The faintest-star limit, the faint layer and the deep-sky marks and pictures are left off while it is on. */
   distance?: { layers: DistanceLayers; colours: readonly string[]; uncertain: string } | undefined;
+  /** The width of a text in pixels for a CSS `font` (`"400 11px system-ui, sans-serif"`), to lay the names out by: a canvas where there is a document, else a built-in table, when left out. A server and a test pass their own for the same names everywhere. */
+  measure?: ((text: string, font: string) => number) | undefined;
 }
 
 /** What a tap can land on, in chart pixels. */
@@ -507,6 +509,10 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
 
 /** One frame of the chart: an SVG string of the size asked, and what a tap can land on. */
 export function chart(o: ChartOptions): Chart {
+  return withMeasure(o.measure, () => drawChart(o));
+}
+
+function drawChart(o: ChartOptions): Chart {
   const { width, height, layers, lang } = o;
   const culture = o.culture ?? western;
   const drawn = figuresOfCulture(culture).list;

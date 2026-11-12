@@ -379,7 +379,46 @@ console.log(page.includes("Join the dots from 1 to"), sydney.find((one) => one.c
 
 ## Put a chart in a page
 
-The package gives numbers; a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
+The demo's sky chart is an element: `<hoshi-chart>` draws the bright stars on any of seven projections, with the Milky Way, the figures' lines, the names, the boundaries, the deep-sky objects and the black holes, in English or Japanese and in the Western, Japanese or Chinese sky. A drag moves it, a pinch or Ctrl and the wheel zoom, and a tap says what it landed on (`hoshi-pick`).
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A sky chart from jsDelivr</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-chart constellation="Ori" layers="milky lines names boundaries" style="max-width: 640px"></hoshi-chart>
+    <p id="picked">Tap a star.</p>
+    <script type="module">
+      document.querySelector("hoshi-chart").addEventListener("hoshi-pick", (event) => {
+        const { kind, id } = event.detail;
+        document.getElementById("picked").textContent = kind === "none" ? "Nothing there." : `${kind} ${id}`;
+      });
+    </script>
+  </body>
+</html>
+```
+
+The same drawing as one SVG string, with no DOM and no clock, for a server, a build or a print:
+
+```js
+import { writeFileSync } from "node:fs";
+import { chartSvg } from "@johnmorrisdotca/hoshi-stars/chart";
+import { japanese } from "@johnmorrisdotca/hoshi-stars/cultures/japanese";
+
+const svg = chartSvg({ width: 800, height: 500, ra: 56.9, dec: 24.1, zoom: 8, culture: japanese, lang: "ja", constellation: "subaru" });
+writeFileSync(new URL("subaru.svg", import.meta.url), svg);
+console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'));
+// subaru.svg true true
+```
+
+`@johnmorrisdotca/hoshi-stars/chart` (`chartSvg`) is 198.0 kB minified and gzipped, and `/chart/element` and `/chart/define` 218.8 kB: the bright catalogue (126.0 kB) with the boundaries, the figures, the Milky Way and the black holes, and none of the NGC and IC, nearby or faint stars. The element's zoom and drag are the family's view controls, `@johnmorrisdotca/kazoku-ui`, an optional peer: install it beside this package; without it the chart is drawn as a picture. The attributes, the events and the frameworks are in [A sky chart in your page](docs/guides/sky-chart.md).
+
+To draw your own from the numbers, a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
 
 ```tsx
 import { starColour, stars, type Star } from "@johnmorrisdotca/hoshi-stars";

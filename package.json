@@ -79,7 +79,10 @@
   "author": "John Morris",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "./dist/chart/define.js",
+    "./src/chart/define.ts"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -123,6 +126,21 @@
       "types": "./dist/sheets/index.d.ts",
       "import": "./dist/sheets/index.js",
       "default": "./dist/sheets/index.js"
+    },
+    "./chart": {
+      "types": "./dist/chart/index.d.ts",
+      "import": "./dist/chart/index.js",
+      "default": "./dist/chart/index.js"
+    },
+    "./chart/element": {
+      "types": "./dist/chart/element.d.ts",
+      "import": "./dist/chart/element.js",
+      "default": "./dist/chart/element.js"
+    },
+    "./chart/define": {
+      "types": "./dist/chart/define.d.ts",
+      "import": "./dist/chart/define.js",
+      "default": "./dist/chart/define.js"
     },
     "./boundaries": {
       "types": "./dist/boundaries.d.ts",
@@ -308,7 +326,7 @@
     "@angular/platform-browser": "^22.2.5",
     "@eslint/js": "^9.0.0",
     "@johnmorrisdotca/hata": "^1.8.0",
-    "@johnmorrisdotca/kazoku-ui": "^0.37.0",
+    "@johnmorrisdotca/kazoku-ui": "^0.40.1",
     "@johnmorrisdotca/kuni": "^1.5.0",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",
@@ -339,5 +357,13 @@
     "onlyBuiltDependencies": [
       "esbuild"
     ]
+  },
+  "peerDependencies": {
+    "@johnmorrisdotca/kazoku-ui": ">=0.40.0"
+  },
+  "peerDependenciesMeta": {
+    "@johnmorrisdotca/kazoku-ui": {
+      "optional": true
+    }
   }
 }
