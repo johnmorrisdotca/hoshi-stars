@@ -27,8 +27,8 @@ importers:
         specifier: ^1.8.0
         version: 1.8.0
       '@johnmorrisdotca/kazoku-ui':
-        specifier: ^0.37.0
-        version: 0.37.0(three@0.186.1)
+        specifier: ^0.41.0
+        version: 0.41.0(three@0.186.1)
       '@johnmorrisdotca/kuni':
         specifier: ^1.5.0
         version: 1.5.0
@@ -393,8 +393,8 @@ packages:
       three:
         optional: true
 
-  '@johnmorrisdotca/kazoku-ui@0.37.0':
-    resolution: {integrity: sha512-kaXd/yB+psI9IqvbZ6giQQ9c6ohvhZgwkWXNJNQfTrP4I2nw9YIzOmUFBiEipEl+VRyQObJ6eAppoWbsYHalbg==}
+  '@johnmorrisdotca/kazoku-ui@0.41.0':
+    resolution: {integrity: sha512-Zp/iTun5jgsXMPAJ9qCoIpr6Oc6O/kBSwAeEw4MdNRwwmALHtAwAuALXewecxhQ2j5HUEXamu5HKTA8OFOz+HA==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -1901,7 +1901,7 @@ snapshots:
     optionalDependencies:
       three: 0.186.1
 
-  '@johnmorrisdotca/kazoku-ui@0.37.0(three@0.186.1)':
+  '@johnmorrisdotca/kazoku-ui@0.41.0(three@0.186.1)':
     optionalDependencies:
       three: 0.186.1
 

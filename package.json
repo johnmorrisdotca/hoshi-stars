@@ -308,7 +308,7 @@
     "@angular/platform-browser": "^22.2.5",
     "@eslint/js": "^9.0.0",
     "@johnmorrisdotca/hata": "^1.8.0",
-    "@johnmorrisdotca/kazoku-ui": "^0.37.0",
+    "@johnmorrisdotca/kazoku-ui": "^0.41.0",
     "@johnmorrisdotca/kuni": "^1.5.0",
     "@johnmorrisdotca/wakusei-planets": "^0.20.0",
     "@playwright/test": "1.64.0",
