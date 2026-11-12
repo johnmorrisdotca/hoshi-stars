@@ -138,6 +138,8 @@ test("on a 5K screen at a pixel ratio of 2 its canvas stays inside 6 million pix
 });
 
 test("changing the constellation, the viewpoint and the look over and over gives back what it took: GPU objects stay flat in the one context", async ({ page }) => {
+  // 24 rounds, each waiting for the page to be at rest (about two seconds here, more on a busy machine): longer than the default minute
+  test.setTimeout(180_000);
   await open(page);
   const tiles = ["Ori", "UMa", "Hya", "Cru", "Cas", "Sco", "CMa", "Dra"];
   const settled: number[] = [];
@@ -149,8 +151,15 @@ test("changing the constellation, the viewpoint and the look over and over gives
     await page.evaluate((light) => document.documentElement.setAttribute("data-theme", light ? "light" : "dark"), round % 2 === 0);
     await page.getByTestId("sp-turn").click();
     await page.locator("#sp-stage[data-state=live]").waitFor();
-    // the shared assets are let go a second after a view leaves; count when they have been
-    await page.waitForTimeout(1600);
+    // At rest, by what the page reports: the shared assets a view left are let go a second after (the cache's linger), so wait until every asset held has a user again (one view is
+    // live, and it takes each key once), then until the GPU objects stand still. A fixed 1.6 s read 85 against 51 on a busy Mac, where the linger's timer came late.
+    await expect
+      .poll(() => page.locator("#sp-view").evaluate((el) => {
+        const { entries, refs } = (Reflect.get(el, "stats") as { assets: { entries: number; refs: number } }).assets;
+        return entries - refs;
+      }), { timeout: 30_000, message: "the shared assets a view left were never let go" })
+      .toBe(0);
+    await untilStill(page, async (p) => gpuObjects(await readCounts(p)), { quietMs: 500, timeoutMs: 20_000 });
     const counted = await readCounts(page);
     settled.push(gpuObjects(counted));
     expect(counted.contexts, "one WebGL context for the page, however it changes").toBe(1);
