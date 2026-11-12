@@ -32,6 +32,16 @@ test("the data export has matching schemas, counts and checksums", () => {
     assert.equal(Number(sirius[0]), 2491);
     assert.equal(sirius[1], "Sirius");
     assert.ok(Math.abs(Number(sirius[7]) + 1.46) < 0.001);
+    for (const [name, extra] of [["stars", ["grade", "distanceQuality", "positionSource", "positionResolutionArcsec"]], ["nearby-stars", ["grade", "distanceQuality"]]] as const) {
+      const [header, ...lines] = readFileSync(join(dir, `${name}.csv`), "utf8").trimEnd().split("\n");
+      const names = header!.split(",");
+      for (const column of extra) assert.ok(names.includes(column), `${name} has a ${column} column`);
+      assert.ok(lines.every((line) => /(^|,)[ABC](,|$)/.test(line)), `${name}: every row has a grade`);
+    }
+    const siriusRow = readFileSync(join(dir, "stars.csv"), "utf8").split("\n")[1]!.split(",");
+    const stored = JSON.parse(readFileSync(join(dir, "stars.schema.json"), "utf8")) as { columns: { name: string }[] };
+    assert.equal(siriusRow[stored.columns.findIndex((c) => c.name === "grade")], "A");
+    assert.equal(siriusRow[stored.columns.findIndex((c) => c.name === "positionSource")], "BSC");
     assert.ok(files.includes("LICENCE-DATA.md"));
     const sums = readFileSync(join(dir, "SHA256SUMS"), "utf8").trim().split("\n");
     assert.equal(sums.length, names.length * 2 + 1 + 176);

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **How well each star is known** (MODULES-654, first slice). New entry point `@johnmorrisdotca/hoshi-stars/accuracy`: `starAccuracy(star)` takes a bright star or a nearby star and returns its `grade` (A, B or C) and, for `position`, `magnitude`, `colour`, `parallax` and `properMotion`, the `source` (`BSC`, `GCTP`, `2MASS`, `dynamical` or `literature`), the `error` the source states (never a guessed one) and the `resolution` (the size of the last printed digit, a floor on the error), with a `note` where there is something to watch; plus `distance` (`relativeError`, `quality`). The grade is a rule on those figures (`GRADE_RULES`): A a distance known to under 5% and a modern position (2 arc-seconds or better), B a distance known to 20% or better, C anything else. `gradeAtLeast(grade, minimum)` and `STAR_GRADES` come with it. Of the 5,080 bright stars 68 are A, 461 B and 4,551 C; of the 5,565 nearby stars 235 are A, 1,282 B and 4,048 C (guide: "How well a star is known", English and Japanese). The data export's `stars` and `nearby-stars` tables gain `grade` and `distanceQuality` columns, and `stars` gains `positionSource` and `positionResolutionArcsec`. `distanceQuality`, `DISTANCE_QUALITIES` and `QUALITY_LIMITS` moved to a small file of their own so `/accuracy` loads no star table; `/constellation-3d` still exports them.
+
 ## [0.39.0] - 2026-11-12
 
 - **The demo's header links the Markers page** (MODULES-692): "Markers" in English, マーカー in Japanese, beside the other demo pages.

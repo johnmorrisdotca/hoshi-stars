@@ -272,6 +272,11 @@
       "import": "./dist/near-stars.js",
       "default": "./dist/near-stars.js"
     },
+    "./accuracy": {
+      "types": "./dist/accuracy.d.ts",
+      "import": "./dist/accuracy.js",
+      "default": "./dist/accuracy.js"
+    },
     "./exoplanet-hosts": {
       "types": "./dist/exoplanet-hosts.d.ts",
       "import": "./dist/exoplanet-hosts.js",

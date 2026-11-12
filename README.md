@@ -631,6 +631,19 @@ console.log(sirius.nameJa, sirius.lightYears.toFixed(1), sirius.members.map((m) 
 console.log(exoplanetHostByName("Proxima Cen")!.planets.map((p) => p.name));                  // [ 'Proxima Cen b', 'Proxima Cen d' ]
 ```
 
+## How well a star is known
+
+`@johnmorrisdotca/hoshi-stars/accuracy` says, for every bright star and every nearby star, which catalogue each of its position, magnitude, colour, parallax and proper motion is from, the error that catalogue states (or the size of its last printed digit where it states none, never a guessed error) and a grade: **A** a distance known to under 5% with a modern position, **B** a distance known to 20% or better, **C** anything else. It loads no data. The [guide](docs/guides/accuracy.md) has the rules and the counts by grade.
+
+```ts
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { starAccuracy } from "@johnmorrisdotca/hoshi-stars/accuracy";
+
+const sirius = starAccuracy(starByName("Sirius")!);
+console.log(sirius.grade, sirius.parallax.source, sirius.distance.quality);  // A GCTP good
+console.log(starAccuracy(starByName("Rigel")!).grade);                       // C
+```
+
 ## Outside data
 
 The package draws; you bring the data. `@johnmorrisdotca/hoshi-stars/door` takes outside stars (and deep-sky objects) as a **source**: a small object that carries its own licence and credit, so the page can always say whose data is on the screen. Without a source the package draws exactly what it did before, from its own Yale and UCAC4 data. A source of yours may be non-commercial or share-alike; the credit line says so beside the licence, and the package never bundles one.

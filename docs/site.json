@@ -180,6 +180,11 @@
       "ja": "20光年以内の73の星系 (英語と日本語の名前、位置、距離、伴星、値ごとの出典つき)",
       "platform": "neutral"
     },
+    "./accuracy": {
+      "en": "How well each value of a star is known: the source and error of its position, magnitude, colour, parallax and proper motion, and a grade A, B or C",
+      "ja": "星ごとの値の確かさ (位置・明るさ・色・視差・固有運動の出典と誤差、A・B・Cの等級)",
+      "platform": "neutral"
+    },
     "./exoplanet-hosts": {
       "en": "The host stars of confirmed exoplanets worth a visit: place, distance, and each planet's name and orbital period",
       "ja": "確認された系外惑星をもつ、訪ねてみたい星 (位置・距離、惑星ごとの名前と公転周期)",
