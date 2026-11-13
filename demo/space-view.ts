@@ -9,6 +9,7 @@ import { placeLabels, type LabelRequest, type Rect } from "./space-labels.ts";
 import { RESTING_POSE, type Pose } from "./space-camera.ts";
 import { shapeOf, sizeOf, spaceItem, type Frame, type SpaceScene, type Three } from "./space-scene.ts";
 import { describe, lightYearsText, type Say } from "./space-text.ts";
+import { starLook, type StarLook } from "./star-scene.ts";
 import type { Lang } from "./thumbs.ts";
 
 export interface MountOptions {
@@ -52,6 +53,10 @@ interface Entry {
   sizes: Array<{ w: number; h: number }>;
 }
 
+type ProfileModules = { profile: typeof import("../src/profile.ts"); portrait: typeof import("../src/portrait.ts") };
+let profileModules: ProfileModules | undefined;
+let profileLoading: Promise<void> | undefined;
+
 const reducedMotion = (): boolean => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 export function mountSpace(options: MountOptions): SpaceMount {
@@ -59,6 +64,8 @@ export function mountSpace(options: MountOptions): SpaceMount {
   const renderer = pageRenderer();
   // the renderer's numbers, for the freeze test and anyone who asks the element
   Object.defineProperty(host, "stats", { get: () => renderer.stats, configurable: true });
+  // where a star is on the view now, in pixels from its top left (the last frame's), for the freeze test and anyone who asks the element
+  Object.defineProperty(host, "starAt", { value: (key: string): { x: number; y: number } | undefined => lastFrame?.points.find((point) => point.key === key), configurable: true });
   let token = 0;
   let view: View | undefined;
   let figure: Constellation3D | undefined;
@@ -67,6 +74,23 @@ export function mountSpace(options: MountOptions): SpaceMount {
   let lastPose: Pose = { ...RESTING_POSE };
   let live = false;
   let lastFrame: Frame | undefined;
+  /** The star look of a star zoomed close to. The profile and portrait modules are read the first time one is, not before (they are a chunk of their own), and the view draws again when they are here. */
+  const looks = new Map<number, StarLook | null>();
+  const lookOf = (one: StarIn3D): StarLook | undefined => {
+    const known = looks.get(one.star.hr);
+    if (known !== undefined) return known ?? undefined;
+    if (profileModules === undefined) {
+      profileLoading ??= Promise.all([import("../src/profile.ts"), import("../src/portrait.ts")]).then(([profile, portrait]) => {
+        profileModules = { profile, portrait };
+      });
+      void profileLoading.then(() => view?.invalidate());
+      return undefined;
+    }
+    const profile = profileModules.profile.starProfile(one.star);
+    const made = starLook(profile, profileModules.portrait.portraitLook(profile));
+    looks.set(one.star.hr, made ?? null);
+    return made;
+  };
 
   const element = (tag: string, className: string, text = ""): HTMLElement => {
     const el = document.createElement(tag);
@@ -185,12 +209,18 @@ export function mountSpace(options: MountOptions): SpaceMount {
     figure = constellationIn3D(abbreviation, from === undefined ? {} : { from });
     labels.replaceChildren();
     entries = [];
+    delete host.dataset["close"];
     const made = spaceItem({
       figure,
       light: options.light,
       onFrame: place,
       invalidate: () => view?.invalidate(),
       still: reducedMotion,
+      look: lookOf,
+      onClose(id) {
+        if (id === undefined) delete host.dataset["close"];
+        else host.dataset["close"] = id;
+      },
     });
     const mine2 = renderer.view(host, made, { still: null });
     view = mine2;

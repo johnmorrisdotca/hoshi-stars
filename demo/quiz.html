@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+    <link rel="stylesheet" href="gallery.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="quiz" aria-labelledby="qz-heading">
+        <h1 id="qz-heading" class="gl-title" data-say="qz_heading"></h1>
+        <p class="lead" data-say="qz_lede"></p>
+        <div class="fam-row"><span class="fam-label" data-say="qz_style"></span><span class="fam-seg" id="qz-styles" role="group" data-say-label="qz_style" data-testid="qz-styles"></span></div>
+        <div class="fam-row"><span class="fam-label" data-say="qz_level"></span><span class="fam-seg" id="qz-levels" role="group" data-say-label="qz_level" data-testid="qz-levels"></span></div>
+        <div class="qz-sky" id="qz-box" data-testid="qz-box"><svg id="qz-sky" data-testid="qz-sky" role="img"></svg></div>
+        <div class="qz-choices" id="qz-choices" data-testid="qz-choices" role="group" data-say-label="qz_choose"></div>
+        <p class="qz-result" id="qz-result" data-testid="qz-result" aria-live="polite"></p>
+        <p class="fam-row"><button type="button" class="fam-button" data-primary="true" id="qz-next" data-testid="qz-next" data-say="qz_next"></button><a class="fam-button" id="qz-open" data-testid="qz-open" hidden></a><span class="qz-score" id="qz-score" data-testid="qz-score" aria-live="polite"></span></p>
+        <h2 class="qz-missed-title" id="qz-missed-title" data-say="qz_missed" hidden></h2>
+        <div class="qz-missed" id="qz-missed" data-testid="qz-missed" hidden></div>
+        <p class="fam-fine" data-say="qz_note"></p>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

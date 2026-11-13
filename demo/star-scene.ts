@@ -162,6 +162,64 @@ void main() {
 
 const rgb = (hex: string): [number, number, number] => [parseInt(hex.slice(1, 3), 16) / 255, parseInt(hex.slice(3, 5), 16) / 255, parseInt(hex.slice(5, 7), 16) / 255];
 
+/** The star's body, made from a look: the ball (or spheroid) with its shader, tipped as its axis is, ready to add to a scene. Let it go with `dispose`. */
+export interface StarBody {
+  /** The group to add to a scene; its scale is the star's radius (1 for the unit ball). */
+  readonly group: InstanceType<Three["Group"]>;
+  /** The ball itself, which the reader's turn rotates about its own axis. */
+  readonly ball: InstanceType<Three["Mesh"]>;
+  readonly material: InstanceType<Three["ShaderMaterial"]>;
+  /** The spin axis and its poles, a line the guide shows. */
+  readonly axisLine: InstanceType<Three["LineSegments"]>;
+  dispose(): void;
+}
+
+/** Make the body: the same ball the star's own page draws and the constellation's close-up draws, so there is one look. `segments` is the sphere's detail (128 by 96 for a full-size star, fewer for a small one). */
+export function starBody(T: Three, look: StarLook, seed: number, segments: [number, number] = [128, 96]): StarBody {
+  const geometry = new T.SphereGeometry(1, segments[0], segments[1]);
+  const material = new T.ShaderMaterial({
+    vertexShader: VERTEX,
+    fragmentShader: FRAGMENT,
+    uniforms: {
+      uEquator: { value: new T.Vector3(...rgb(look.equator)) },
+      uPole: { value: new T.Vector3(...rgb(look.pole)) },
+      uEquatorDim: { value: look.equatorDim },
+      uLimb: { value: look.limb },
+      uCells: { value: look.cells?.spacing ?? 0 },
+      uLight: { value: look.cells?.light ?? 0 },
+      uSeed: { value: (seed % 997) * 0.731 },
+      uGuide: { value: 0 },
+    },
+  });
+  const ball = new T.Mesh(geometry, material);
+  ball.scale.set(1, look.squash, 1);
+  // The spin axis is the body's y. Tip it toward the viewer until it is `inclination` from the line of sight, then turn it on the sky by the position angle (north up, east to the left).
+  const group = new T.Group();
+  group.rotation.order = "ZXY";
+  group.rotation.z = (look.positionAngle * Math.PI) / 180;
+  group.rotation.x = ((90 - look.inclination) * Math.PI) / 180;
+  group.add(ball);
+  // The spin axis, through the poles and out past them; the star hides the half behind it.
+  const reach = 1.32 * look.squash + 0.2;
+  const axisGeometry = new T.BufferGeometry();
+  axisGeometry.setAttribute("position", new T.BufferAttribute(new Float32Array([0, -reach, 0, 0, reach, 0]), 3));
+  const axisMaterial = new T.LineBasicMaterial({ color: 0xc8d4e6, transparent: true, opacity: 0.75 });
+  const axisLine = new T.LineSegments(axisGeometry, axisMaterial);
+  group.add(axisLine);
+  return {
+    group,
+    ball,
+    material,
+    axisLine,
+    dispose() {
+      geometry.dispose();
+      material.dispose();
+      axisGeometry.dispose();
+      axisMaterial.dispose();
+    },
+  };
+}
+
 export function starItem(input: StarSceneInput): Item3D<Three> {
   const { look } = input;
   return {
@@ -180,39 +238,11 @@ export function starItem(input: StarSceneInput): Item3D<Three> {
         camera.updateProjectionMatrix();
       };
       fit(width, height);
-      const geometry = new T.SphereGeometry(1, 128, 96);
-      const material = new T.ShaderMaterial({
-        vertexShader: VERTEX,
-        fragmentShader: FRAGMENT,
-        uniforms: {
-          uEquator: { value: new T.Vector3(...rgb(look.equator)) },
-          uPole: { value: new T.Vector3(...rgb(look.pole)) },
-          uEquatorDim: { value: look.equatorDim },
-          uLimb: { value: look.limb },
-          uCells: { value: look.cells?.spacing ?? 0 },
-          uLight: { value: look.cells?.light ?? 0 },
-          uSeed: { value: (input.seed % 997) * 0.731 },
-          uGuide: { value: 0 },
-        },
-      });
-      const body = new T.Mesh(geometry, material);
-      body.scale.set(1, look.squash, 1);
-      // The spin axis is the body's y. Tip it toward the viewer until it is `inclination` from the line of sight, then turn it on the sky by the position angle (north up, east to the left).
-      const axis = new T.Group();
-      axis.rotation.order = "ZXY";
-      axis.rotation.z = (look.positionAngle * Math.PI) / 180;
-      axis.rotation.x = ((90 - look.inclination) * Math.PI) / 180;
-      axis.add(body);
-      // The spin axis, through the poles and out past them; the star hides the half behind it.
-      const reach = 1.32 * look.squash + 0.2;
-      const axisGeometry = new T.BufferGeometry();
-      axisGeometry.setAttribute("position", new T.BufferAttribute(new Float32Array([0, -reach, 0, 0, reach, 0]), 3));
-      const axisMaterial = new T.LineBasicMaterial({ color: 0xc8d4e6, transparent: true, opacity: 0.75 });
-      const axisLine = new T.LineSegments(axisGeometry, axisMaterial);
-      axis.add(axisLine);
+      const star = starBody(T, look, input.seed);
+      const { ball: body, material, axisLine } = star;
       // The reader's turn and tip, around the star's own tilt on the sky.
       const held = new T.Group();
-      held.add(axis);
+      held.add(star.group);
       scene.add(held);
       let size = { width, height };
       let posed = "";
@@ -248,10 +278,7 @@ export function starItem(input: StarSceneInput): Item3D<Three> {
           place();
         },
         dispose() {
-          geometry.dispose();
-          material.dispose();
-          axisGeometry.dispose();
-          axisMaterial.dispose();
+          star.dispose();
         },
       };
     },
