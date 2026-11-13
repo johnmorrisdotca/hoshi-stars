@@ -297,7 +297,7 @@ test("the sky choices and kid mode give nothing away: the address and the page d
 const EMBED = "/hoshi-stars/embed-quiz.html";
 
 test("the embed page asks the quiz its address chooses, with no controls, in kid mode, and writes nothing to its address", async ({ page }) => {
-  await page.goto(`${EMBED}?level=88&style=lines&kid=1`);
+  await page.goto(`${EMBED}?c=Ori&level=88&style=lines&kid=1`);
   await expect(choices(page)).toHaveCount(6);
   await expect(page.locator("#qz-root")).toHaveAttribute("data-kid", "true");
   await expect(page.getByTestId("frame-credit")).toBeVisible();
@@ -316,7 +316,7 @@ test("the embed page asks the quiz its address chooses, with no controls, in kid
   await expect(page.getByTestId("qz-score")).toContainText("of 1");
   await page.getByTestId("qz-next").click();
   await expect(choices(page).first()).toBeEnabled();
-  expect(new URL(page.url()).search).toBe("?level=88&style=lines&kid=1");
+  expect(new URL(page.url()).search).toBe("?c=Ori&level=88&style=lines&kid=1");
 });
 
 test("the embed page takes the hemisphere and the month, and Japanese", async ({ page }) => {
@@ -332,10 +332,11 @@ test("the embed page takes the hemisphere and the month, and Japanese", async ({
 test("the embed page fits the frame its code asks for, at 320, 480 and 640 wide", async ({ page }) => {
   for (const width of [320, 480, 640]) {
     await page.setViewportSize({ width, height: quizHeightFor(width) });
-    await page.goto(`${EMBED}?level=88&style=annotated`);
+    await page.goto(`${EMBED}?c=Ori&level=88&style=annotated`);
     await expect(choices(page)).toHaveCount(6);
-    await choices(page).first().click();
-    await expect(page.getByTestId("qz-result")).not.toHaveText("");
+    // a wrong answer: the answer, the link and a miss with its picture are all on show
+    await page.getByTestId("qz-choices").locator('button:not([data-abbr="Ori"])').first().click();
+    await expect(page.getByTestId("qz-missed").locator("a")).toHaveCount(1);
     const over = await page.evaluate(() => ({ x: document.documentElement.scrollWidth - document.documentElement.clientWidth, y: document.documentElement.scrollHeight - document.documentElement.clientHeight }));
     expect(over.x, `${width} wide: no sideways scroll`).toBeLessThanOrEqual(0);
     expect(over.y, `${width} wide: the frame is tall enough for the chart, the names, the answer and the score`).toBeLessThanOrEqual(0);
