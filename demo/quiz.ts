@@ -226,7 +226,7 @@ function render(): void {
   }
   const cultureNote = $("qz-culturenote");
   cultureNote.hidden = cultureId === "western";
-  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: totalOf() });
+  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: items().length });
   const months = $<HTMLSelectElement>("qz-month");
   months.replaceChildren(Object.assign(document.createElement("option"), { value: "0", textContent: w("anymonth") }), ...Array.from({ length: 12 }, (_, i) => Object.assign(document.createElement("option"), { value: String(i + 1), textContent: monthName(i + 1) })));
   months.value = String(month);
@@ -281,10 +281,12 @@ function render(): void {
 /** The ones missed so far, each with its picture and a link to its page, to look at again. */
 function drawMissed(): void {
   const box = $("qz-missed");
-  box.hidden = missed.length === 0;
-  $("qz-missed-title").hidden = missed.length === 0;
+  // a constellation missed before can be asked again: until it is answered its name and picture must not be shown here
+  const shown = answered ? missed : missed.filter((one) => one !== current);
+  box.hidden = shown.length === 0;
+  $("qz-missed-title").hidden = shown.length === 0;
   box.replaceChildren(
-    ...missed.map((abbreviation) => {
+    ...shown.map((abbreviation) => {
       const link = Object.assign(document.createElement("a"), { className: "qz-miss", href: figureHref(abbreviation) });
       const picture = Object.assign(document.createElement("img"), { src: cultureId === "western" ? thumbSrc(abbreviation, 160, lookNow()) : figureThumbSrc(cultureId, abbreviation, 160, lookNow()), width: 80, height: 80, alt: "" });
       link.append(picture, Object.assign(document.createElement("span"), { textContent: labelOf(abbreviation) }));
