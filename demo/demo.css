@@ -178,3 +178,16 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .pl-list { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .pl-list li { border: 1px solid var(--rule); border-radius: 999px; padding: 2px 10px; font-size: .85rem; background: var(--surface); }
 @media (max-width: 720px) { .pl-wheel { max-width: 100%; } }
+/* tap the dots */
+.tp-status { margin: 6px 0 10px; font-size: 1.1rem; min-height: 1.6em; }
+.tp-board { max-width: 560px; }
+.tp-board svg { width: 100%; height: auto; display: block; border-radius: 12px; background: #0a1226; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.tp-board [data-dot] { cursor: pointer; }
+.tp-board [data-dot]:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.tp-result { margin: 12px 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .tp-board svg.tap-shake { animation: tap-shake .4s ease-in-out 1; }
+  .tp-board line.tap-grow { stroke-dasharray: 1; animation: tap-grow .35s ease-out 1; }
+}
+@keyframes tap-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+@keyframes tap-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }

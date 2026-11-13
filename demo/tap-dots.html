@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="tap" aria-labelledby="tp-heading">
+        <h1 id="tp-heading" class="kids-title" data-say="td_heading"></h1>
+        <p class="lead" data-say="td_lede"></p>
+        <div class="kids-picks">
+          <div class="fam-row"><span class="fam-label" data-say="td_level"></span><span class="fam-seg" id="tp-levels" role="group" data-say-label="td_level"></span></div>
+          <div class="fam-row"><span class="fam-label" data-say="td_which"></span><span class="fam-seg kids-seg" id="tp-whiches" role="group" data-say-label="td_which"></span><label class="field"><span data-say="td_more"></span><select id="tp-more" class="fam-field"></select></label></div>
+        </div>
+        <p id="tp-status" class="tp-status" data-testid="tp-status" role="status"></p>
+        <div id="tp-board" class="tp-board" data-testid="tp-board"></div>
+        <div id="tp-result" class="tp-result" data-testid="tp-result" hidden>
+          <h2 id="tp-name" class="tn-h2"></h2>
+          <p id="tp-sub" class="lead"></p>
+          <p id="tp-stars" class="fam-fine"></p>
+        </div>
+        <div class="fam-row"><button type="button" class="fam-button" id="tp-again" data-say="td_again"></button></div>
+        <p class="fam-fine" id="tp-calm" data-say="td_calm" hidden></p>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

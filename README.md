@@ -27,6 +27,8 @@ The limits of that picture, in plain words: the lines of the Chinese figures are
 
 **Learn:** **[Sheets to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html)** · **[Your sky from a place](https://johnmorrisdotca.github.io/hoshi-stars/kids.html?kind=guide&lat=45)** (a sheet of the constellations for your latitude this month: pick your country, or tap Use my location) · **[The 88 constellations, a picture of each](https://johnmorrisdotca.github.io/hoshi-stars/constellations.html)**
 
+**Tap the dots:** **[Tap the stars of a constellation in order](https://johnmorrisdotca.github.io/hoshi-stars/tap-dots.html)** (the connect-the-dots sheets as a game; the line grows as you tap 1, 2, 3)
+
 **Tonight:** **[What can I see tonight, from a place](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html)** (pick your country and region, or tap Use my location)
 
 **Planisphere:** **[A star wheel to turn](https://johnmorrisdotca.github.io/hoshi-stars/planisphere.html)** (drag the wheel, or pick a date and a time: the window is the horizon of your latitude, north or south) · **[A star wheel to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html)**

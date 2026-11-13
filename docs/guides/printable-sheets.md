@@ -63,6 +63,10 @@ document.body.append(sheet);
 printSheet(sheet);
 ```
 
+## Tap the dots on a screen
+
+The same figure is a game on the demo's [Tap the dots](https://johnmorrisdotca.github.io/hoshi-stars/tap-dots.html) page: pick a level (`easy`, `medium` or `hard`) and a constellation in a row of buttons, then tap 1, 2, 3 in order and the line grows one segment at a time. A wrong tap moves nothing, shakes the picture gently and says which number to find; the last tap shows the constellation's name, its meaning and the names of its stars. The numbers and the order are `dotsFigure`'s own (the order is read from `lines`, so the hard level, which prints no numbers, has one too, and the numbers show as its stars are reached). A tap counts for the nearest dot within a finger's width (24 pixels), so the small dots are easy to hit; each dot can also be reached with Tab and pressed with Enter or Space. With reduced motion set nothing shakes or grows, and a message says what happened instead. The picture is drawn when something changes and never at rest, and the constellation and level are kept in the address (`c` and `level`). The rules (the visit order, which dot a tap meant, what a tap does) are pure functions in the demo, with unit tests.
+
 ## The place
 
 The demo's picker uses the family's `kuni` (countries and their regions, with a point for each) and `hata` (flags), in the demo only: this package depends on neither. A country gives a latitude; a country that spans many (Canada, the United States, Russia, Brazil, Australia, Japan, China, India, Chile, Argentina, Mexico, New Zealand) gives a region too; the slider takes any latitude; and "Use my location" asks the browser once and never stores or sends the answer. The sheets show the region, its flag where the page carries it, the latitude band and the month.
