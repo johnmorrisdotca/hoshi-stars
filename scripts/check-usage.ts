@@ -542,6 +542,12 @@ await step("near-stars", () => {
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 
+await step("tonight", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "tonight.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = ["night, limit 5: 543 stars, the brightest Sirius", "day: 0 stars", "Polaris 50 degrees up, easy"].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await browser.close();
 lock.release();
 
@@ -581,6 +587,7 @@ const FILES: Record<string, string[]> = {
   "deep-sky/picture.html": ["docs/guides/deep-sky-pictures.md", "docs/guides/ja/deep-sky-pictures.md"],
   "node/accuracy.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
   "node/min-grade.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
+  "node/tonight.mjs": ["docs/guides/tonight.md", "docs/guides/ja/tonight.md"],
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],

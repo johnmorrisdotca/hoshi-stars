@@ -156,6 +156,10 @@
     "./exoplanet-hosts": {
       "minified": 39291,
       "gzip": 8628
+    },
+    "./tonight": {
+      "minified": 302992,
+      "gzip": 128840
     }
   }
 }

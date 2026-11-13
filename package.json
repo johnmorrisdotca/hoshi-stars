@@ -282,6 +282,11 @@
       "import": "./dist/exoplanet-hosts.js",
       "default": "./dist/exoplanet-hosts.js"
     },
+    "./tonight": {
+      "types": "./dist/tonight.d.ts",
+      "import": "./dist/tonight.js",
+      "default": "./dist/tonight.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

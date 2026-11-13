@@ -189,6 +189,11 @@
       "en": "The host stars of confirmed exoplanets worth a visit: place, distance, and each planet's name and orbital period",
       "ja": "確認された系外惑星をもつ、訪ねてみたい星 (位置・距離、惑星ごとの名前と公転周期)",
       "platform": "neutral"
+    },
+    "./tonight": {
+      "en": "What you can see tonight: the stars above the horizon of a place and a moment that the Sun's light, the sky's darkness and the air still let through, with the twilight, each star's altitude and azimuth and how easy it is to see",
+      "ja": "今夜見える星 (場所と時刻から、地平線の上にあり、太陽の光・空の明るさ・大気の減光のあとでも見える星を、薄明の種類、高度と方位、見やすさつきで)",
+      "platform": "neutral"
     }
   }
 }
