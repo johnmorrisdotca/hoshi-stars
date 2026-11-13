@@ -30,8 +30,8 @@
       "gzip": 9634
     },
     "./sheets": {
-      "minified": 338624,
-      "gzip": 140809
+      "minified": 340152,
+      "gzip": 141535
     },
     "./chart": {
       "minified": 511799,
