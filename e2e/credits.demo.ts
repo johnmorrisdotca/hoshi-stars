@@ -2,7 +2,7 @@
 import { expect, test } from "@playwright/test";
 
 const NOTICE = "https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.md";
-const PAGES = ["", "kids.html", "tonight.html", "life.html", "constellations.html", "constellation.html?c=Ori", "constellation-list.html", "whole-sky.html", "birthday.html?date=2020-12-01", "quiz.html?c=Ori", "layers-3d.html?spin=off"];
+const PAGES = ["", "kids.html", "tonight.html", "life.html", "planisphere.html", "constellations.html", "constellation.html?c=Ori", "constellation-list.html", "whole-sky.html", "birthday.html?date=2020-12-01", "quiz.html?c=Ori", "layers-3d.html?spin=off"];
 const FRAMES = ["embed.html", "embed-layers.html?spin=off", "embed-quiz.html?level=88", "embed.html?c=Ori&zoom=4", "star.html?star=2491", "star.html?star=2491&view=compare"];
 
 for (const lang of ["en", "ja"] as const) {

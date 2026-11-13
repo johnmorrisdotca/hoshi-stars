@@ -29,6 +29,8 @@ The limits of that picture, in plain words: the lines of the Chinese figures are
 
 **Tonight:** **[What can I see tonight, from a place](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html)** (pick your country and region, or tap Use my location)
 
+**Planisphere:** **[A star wheel to turn](https://johnmorrisdotca.github.io/hoshi-stars/planisphere.html)** (drag the wheel, or pick a date and a time: the window is the horizon of your latitude, north or south) · **[A star wheel to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html)**
+
 **Look:** **[Orion on the sky chart](https://johnmorrisdotca.github.io/hoshi-stars/?go=Ori)** · **[The Andromeda Galaxy](https://johnmorrisdotca.github.io/hoshi-stars/?pick=D:M31&layers=milky,lines,names,deep)** · **[Cygnus X-1](https://johnmorrisdotca.github.io/hoshi-stars/?pick=B:Cygnus%20X-1&layers=milky,lines,names,holes)** · **[The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/?from=HR5459)** (Alpha Centauri)
 
 **Three skies:** **[Western](https://johnmorrisdotca.github.io/hoshi-stars/?go=Ori)** · **[Japanese](https://johnmorrisdotca.github.io/hoshi-stars/?culture=japanese&go=Ori)** · **[Chinese](https://johnmorrisdotca.github.io/hoshi-stars/?culture=chinese&ra=83.97&dec=-1.69&zoom=6.7)** · **[日本語](https://johnmorrisdotca.github.io/hoshi-stars/?lang=ja)** · **[English](https://johnmorrisdotca.github.io/hoshi-stars/?lang=en)**
