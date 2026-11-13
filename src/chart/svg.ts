@@ -4,19 +4,20 @@ import type { Culture } from "../culture.ts";
 import type { Projection } from "../projection.ts";
 import { chart, defaultZoom, type Hit, type Language, type Layer } from "./chart.ts";
 import type { MarkerRange, SkyMarker } from "./markers.ts";
+import type { SkyBody } from "./bodies.ts";
 
 /**
- * The layers a published chart draws: the Milky Way, the figures' lines, the constellation boundaries, the names, the deep-sky objects, the black holes and the grid.
+ * The layers a published chart draws: the Milky Way, the figures' lines, the constellation boundaries, the names, the deep-sky objects, the black holes, the ecliptic (the Sun's yearly path, dashed) and the grid.
  *
  * @example
  * ```js
  * import { CHART_LAYERS } from "@johnmorrisdotca/hoshi-stars/chart";
  *
  * console.log(CHART_LAYERS.join(" "));
- * // milky lines boundaries names deep holes grid
+ * // milky lines boundaries names deep holes ecliptic grid
  * ```
  */
-export const CHART_LAYERS = ["milky", "lines", "boundaries", "names", "deep", "holes", "grid"] as const satisfies readonly Layer[];
+export const CHART_LAYERS = ["milky", "lines", "boundaries", "names", "deep", "holes", "ecliptic", "grid"] as const satisfies readonly Layer[];
 /**
  * One of `CHART_LAYERS`.
  *
@@ -78,6 +79,11 @@ export interface ChartSvgOptions {
   timeRange?: MarkerRange | undefined;
   /** Join a group of markers with a line in date order: `true` for every group, or the groups' names (`["Comet"]`). No lines when left out. */
   tracks?: boolean | readonly string[] | undefined;
+  /**
+   * Planets, the Moon and other bodies you have worked out (`SkyBody`: `id`, `names` in English and Japanese, `ra`, `dec` in degrees, `magnitude`, `phase` as a lit fraction, and if you like `brightLimb` and `size`). Each is drawn by its
+   * magnitude over the stars, the Moon (`id` `moon`) as a disc with its phase, with its name in the chart's language. This package computes no positions and imports no package that does: your page works them out and passes the list.
+   */
+  bodies?: readonly SkyBody[] | undefined;
   /** Draw the stars of grade C (a rough or missing distance, `/accuracy`) dimmer. Off when left out. */
   showUncertainty?: boolean | undefined;
   /** The SVG's accessible name: "Star chart" (星図 in Japanese) when left out. */
@@ -108,6 +114,7 @@ export function chartInput(o: ChartSvgOptions): Parameters<typeof chart>[0] {
     picked: o.picked,
     showUncertainty: o.showUncertainty,
     markers: o.markers,
+    bodies: o.bodies,
     timeRange: o.timeRange,
     tracks: o.tracks,
     measure: o.measure,

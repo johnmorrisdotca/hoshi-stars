@@ -10,6 +10,7 @@ import { starByHr } from "../index.ts";
 import { attachHands, type Hands } from "./hands.ts";
 import { normaliseMarkers, type MarkerRange, type MarkerWhen, type SkyMarker } from "./markers.ts";
 import type { MarkerHit } from "./markers-draw.ts";
+import { normaliseBodies, type SkyBody, type SkyBodyNames } from "./bodies.ts";
 import { CHART_BACKGROUND, CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAULT_CHART_MAGNITUDE, type ChartLayer } from "./svg.ts";
 
 /**
@@ -40,7 +41,7 @@ const CULTURES: Record<string, () => Promise<Culture>> = {
 };
 
 /**
- * What `hoshi-pick` says: a star (`id` its HR number, with `accuracy`: its grade, the distance range and the position resolution), a deep-sky object (`M42`), a black hole (`cygnus-x-1`), a figure (`id` the figure's, with `abbreviation` for a constellation), or nothing (`kind` `none`).
+ * What `hoshi-pick` says: a body of the page's `bodies` (`kind` `body`, `id` its own, with `names`), a star (`id` its HR number, with `accuracy`: its grade, the distance range and the position resolution), a deep-sky object (`M42`), a black hole (`cygnus-x-1`), a figure (`id` the figure's, with `abbreviation` for a constellation), or nothing (`kind` `none`).
  *
  * @example
  * ```ts no-run
@@ -53,8 +54,10 @@ const CULTURES: Record<string, () => Promise<Culture>> = {
  * ```
  */
 export interface ChartPick {
-  kind: "star" | "deep" | "hole" | "figure" | "none";
+  kind: "star" | "deep" | "hole" | "figure" | "body" | "none";
   id: string | null;
+  /** For a body only: its names in English and Japanese, as the page gave them. */
+  names?: SkyBodyNames | undefined;
   abbreviation?: string | undefined;
   /** For a star only: how well it is known (`PickAccuracy`): the grade A, B or C, the distance range in light-years (`null` where there is none) and the position resolution in arc-seconds. */
   accuracy?: PickAccuracy | undefined;
@@ -140,7 +143,7 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * ```
  */
 export class HoshiChartElement extends Base {
-  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls", "markers", "time-from", "time-to", "time-fade", "tracks", "show-uncertainty"];
+  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls", "markers", "bodies", "time-from", "time-to", "time-fade", "tracks", "show-uncertainty"];
 
   #svg: SVGSVGElement | undefined;
   #hands: Hands | undefined;
@@ -160,6 +163,7 @@ export class HoshiChartElement extends Base {
   #attributesRead = false;
   #markers: readonly SkyMarker[] = [];
   #markerHits: MarkerHit[] = [];
+  #bodies: readonly SkyBody[] = [];
   #range: MarkerRange | undefined;
   #tracks: boolean | readonly string[] = false;
 
@@ -181,8 +185,9 @@ export class HoshiChartElement extends Base {
     if (!this.#attributesRead) {
       this.#attributesRead = true;
       this.#readMarkerAttributes();
+      if (this.hasAttribute("bodies")) this.#readBodiesAttribute();
     }
-    for (const name of ["markers", "timeRange", "tracks", "showUncertainty"] as const) {
+    for (const name of ["markers", "bodies", "timeRange", "tracks", "showUncertainty"] as const) {
       if (Object.hasOwn(this, name)) {
         const value = Reflect.get(this, name);
         Reflect.deleteProperty(this, name);
@@ -218,6 +223,7 @@ export class HoshiChartElement extends Base {
   }
 
   attributeChangedCallback(name: string): void {
+    if (name === "bodies") this.#readBodiesAttribute();
     if (name === "markers" || name === "time-from" || name === "time-to" || name === "time-fade" || name === "tracks") this.#readMarkerAttributes(name);
     if (this.#svg === undefined) return;
     if (name === "culture") {
@@ -260,6 +266,33 @@ export class HoshiChartElement extends Base {
   set markers(value: readonly SkyMarker[] | null | undefined) {
     this.#markers = Array.isArray(value) ? value : [];
     this.#schedule();
+  }
+
+  /**
+   * Planets, the Moon and other bodies the page has worked out (`SkyBody`: `id`, `names` { en, ja }, `ra`, `dec`, `magnitude`, `phase` and, if you like, `brightLimb` and `size`). Set as a property (any array) or as the `bodies` attribute (JSON text); the last one set wins.
+   * Each is drawn by its magnitude, the Moon (`id` `moon`) as a disc with its phase, and named in the chart's language. A tap on one sends `hoshi-pick` with `kind` `body`, its `id` and its `names`. Nothing is drawn at rest. The chart computes no
+   * positions and imports no package that does: the page does the arithmetic and hands over the list.
+   */
+  get bodies(): readonly SkyBody[] {
+    return this.#bodies;
+  }
+
+  set bodies(value: readonly SkyBody[] | null | undefined) {
+    this.#bodies = Array.isArray(value) ? value : [];
+    this.#schedule();
+  }
+
+  #readBodiesAttribute(): void {
+    const text = this.getAttribute("bodies");
+    if (text === null) {
+      this.#bodies = [];
+      return;
+    }
+    try {
+      this.#bodies = normaliseBodies(JSON.parse(text));
+    } catch {
+      this.#bodies = [];
+    }
   }
 
   /**
@@ -417,7 +450,7 @@ export class HoshiChartElement extends Base {
     if (svg === undefined || view === undefined || width === 0 || height === 0) return;
     const lang = this.#lang();
     this.#langNow = lang;
-    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined, showUncertainty: this.showUncertainty, markers: this.#markers, timeRange: this.#range, tracks: this.#tracks });
+    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined, showUncertainty: this.showUncertainty, markers: this.#markers, bodies: this.#bodies, timeRange: this.#range, tracks: this.#tracks });
     const out = chart(input);
     this.#hits = out.hits;
     this.#markerHits = out.markerHits;
@@ -519,8 +552,9 @@ export class HoshiChartElement extends Base {
     let detail: ChartPick;
     if (best !== undefined) {
       const star = best.kind === "star" ? starByHr(Number(best.key)) : undefined;
-      detail = { kind: best.kind, id: best.key, ...(star === undefined ? {} : { accuracy: pickAccuracy(star) }) };
-      this.#picked = best.kind === "hole" ? undefined : best.key;
+      const found = best.kind === "body" ? this.#bodies.find((one) => one.id === best.key) : undefined;
+      detail = { kind: best.kind, id: best.key, ...(star === undefined ? {} : { accuracy: pickAccuracy(star) }), ...(found === undefined ? {} : { names: { ...found.names } }) };
+      this.#picked = best.kind === "hole" || best.kind === "body" ? undefined : best.key;
       this.#highlight = undefined;
     } else {
       const figure = this.#figureAt(x, y);

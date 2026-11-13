@@ -21,11 +21,13 @@ import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
 import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
 import { drawMarkers, type MarkerHit } from "./markers-draw.ts";
 import type { MarkerRange, SkyMarker } from "./markers.ts";
+import { eclipticLine, type SkyBody } from "./bodies.ts";
+import { drawBodies } from "./bodies-draw.ts";
 import type { FigureLines, StarNames } from "../sky-labels.ts";
 import type { DistanceLayers } from "../distance.ts";
 
 export { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM, FAINT_PAST_GAP, type FaintDraw } from "./faint-layer.ts";
-export const LAYERS = ["milky", "lines", "boundaries", "mansions", "names", "deep", "pictures", "holes", "faint", "grid"] as const;
+export const LAYERS = ["milky", "lines", "boundaries", "mansions", "names", "deep", "pictures", "holes", "faint", "ecliptic", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
 
@@ -91,6 +93,8 @@ export interface ChartOptions extends View {
   timeRange?: MarkerRange | undefined;
   /** Join a group of markers in date order: `true` for every group, or the names of the groups. Nothing is joined when left out. */
   tracks?: boolean | readonly string[] | undefined;
+  /** Planets, the Moon and other bodies the page has worked out (`SkyBody`): a dot by magnitude, the Moon a disc with its phase, each named in the chart's language and placed clear of the stars. Not drawn in the sky seen from another star (`sky`). */
+  bodies?: readonly SkyBody[] | undefined;
   /** The width of a text in pixels for a CSS `font` (`"400 11px system-ui, sans-serif"`), to lay the names out by: a canvas where there is a document, else a built-in table, when left out. A server and a test pass their own for the same names everywhere. */
   measure?: ((text: string, font: string) => number) | undefined;
 }
@@ -99,7 +103,7 @@ export interface ChartOptions extends View {
 export interface Hit {
   x: number;
   y: number;
-  kind: "star" | "deep" | "hole";
+  kind: "star" | "deep" | "hole" | "body";
   key: string;
   /** For a deep-sky object drawn large: how far from its middle a tap still lands on it. */
   reach?: number | undefined;
@@ -391,7 +395,7 @@ export function mansionMeridians(culture: Culture): Array<{ id: string; hr: numb
 /** The declinations an hour circle is drawn through, pole to pole. */
 const MERIDIAN_DECS: readonly number[] = Array.from({ length: 89 }, (_, i) => -88 + i * 2);
 
-const COLOURS = { ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4", hole: "#d68cff", holeCore: "#04060d", mansion: "#a8875a" };
+const COLOURS = { ecliptic: "#d9a441", ground: "#0b1020", grid: "#25304f", equator: "#3a4a78", lines: "#6f93e0", linesOn: "#ffd86b", asterism: "#c792ea", asterismName: "#c9a8ec", boundary: "#46578c", boundaryOn: "#ffd86b", name: "#8da3d8", nameOn: "#ffe49a", star: "#f4f6ff", deep: "#e0a458", pick: "#ff7a59", near: "#5fe0c4", hole: "#d68cff", holeCore: "#04060d", mansion: "#a8875a" };
 
 
 /** The black hole's own symbol, `k` times its full size (smaller when the chart is zoomed out, so a crowded patch stays readable): a dark disc ringed in violet with a jet each way for a stellar-mass one, a dashed ring round a dark centre for a quiet one, a dark disc inside a tilted ring for a supermassive one. A candidate is drawn fainter. */
@@ -590,6 +594,9 @@ function drawChart(o: ChartOptions): Chart {
     body += `<path d="${d}" fill="none" stroke="${COLOURS.grid}" stroke-width="1"/><path d="${pathOf(view, place, equator)}" fill="none" stroke="${COLOURS.equator}" stroke-width="1"/>`;
   }
 
+  // the ecliptic, the Sun's yearly path: dashed, in a warm colour of its own, under the stars (it is the Earth's, so not drawn in the sky seen from another star)
+  if (o.sky === undefined && layers.has("ecliptic")) body += `<path data-layer="ecliptic" d="${pathOf(view, place, eclipticLine(1))}" fill="none" stroke="${COLOURS.ecliptic}" stroke-width="1.2" stroke-opacity=".75" stroke-dasharray="6 4"/>`;
+
   const seen = o.sky === undefined ? undefined : new Map(o.sky.map((star) => [star.id, star]));
   const near = new Set(o.near ?? []);
   const nearConstellations = new Set([...near].filter((key) => key.startsWith("C:")).map((key) => key.slice(2)));
@@ -684,6 +691,12 @@ function drawChart(o: ChartOptions): Chart {
   }
 
   const grow = growOf(o.zoom);
+  // the page's bodies: drawn over the stars; their taps come first in `hits` so that a planet beside a star is the one picked
+  const bodied = o.sky === undefined && o.bodies !== undefined && o.bodies.length > 0 ? drawBodies({ bodies: o.bodies, lang, magnitude: o.magnitude, faintest: o.magnitude + 2.5 * Math.log10(Math.max(1, o.zoom)), grow, width, height, place }) : undefined;
+  if (bodied !== undefined) {
+    obstacles.push(...bodied.obstacles);
+    for (const h of bodied.hits) hits.push({ x: h.x, y: h.y, kind: "body", key: h.id, reach: Math.max(22, h.r + 14) });
+  }
   let faintDrawn: Chart["faint"];
   if (o.sky === undefined && o.distance === undefined && layers.has("faint") && o.faint !== undefined) {
     const marks = faintMarks(o.faint, place, inside, grow);
@@ -775,11 +788,13 @@ function drawChart(o: ChartOptions): Chart {
     if (at !== undefined && inside(at) && star.magnitude <= depth) members += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(Math.max(0.7, (o.magnitude - Math.max(star.magnitude, -2)) * 0.55 + 1.1) * grow + 4)}" fill="none" stroke="${DEEP_COLOURS.member}" stroke-width="1" stroke-dasharray="2 2" data-inside="${star.hr}"/>`;
   }
   body += `<g>${dots}</g>${ring}${members}`;
+  if (bodied !== undefined) body += bodied.svg;
   const markerLabels: Label[] = marked === undefined ? [] : marked.labels.map((l) => ({ rank: l.rank, ...withFarther(l.text, l.x, l.y, l.gap, l.fill, 2), opacity: l.opacity }));
   if (marked !== undefined) body += marked.dots;
 
   for (const label of o.overlay?.names?.labels ?? []) obstacles.push({ x0: label.x0 - 2, y0: label.y0 - 1, x1: label.x1 + 2, y1: label.y1 + 1 });
-  const labels = [...markerLabels, ...starLabels, ...nameLabels, ...deepLabels, ...holeLabels].sort((a, b) => a.rank - b.rank);
+  const bodyLabels: Label[] = bodied === undefined ? [] : bodied.labels.map((l) => ({ rank: l.rank, ...withFarther(l.text, l.x, l.y, l.gap, l.fill, 1) }));
+  const labels = [...markerLabels, ...bodyLabels, ...starLabels, ...nameLabels, ...deepLabels, ...holeLabels].sort((a, b) => a.rank - b.rank);
   const chosen = placeLabels(labels.map((l) => l.places.map((p) => p.box)), obstacles);
   let text = "";
   labels.forEach((l, i) => {
