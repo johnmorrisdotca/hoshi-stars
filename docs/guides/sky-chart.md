@@ -45,7 +45,7 @@ A drag moves the sky, two fingers or Ctrl (Command) and the wheel zoom about the
 | `zoom` | The chart's own zoom, not the family's "1 is Fit": 1 fits the projection's whole sky (or a hemisphere) in the smaller side, and more is closer. Left out, the projection's opening zoom for the element's size: about 90 degrees of sky across (60 under 600 pixels wide), 3.86 for a 640 by 400 stereographic chart. Home and `0` go back there. |
 | `zoom-min`, `zoom-max` | The zoom range in the same unit, 0.1 to 500. `zoom-max` goes as far as 8000, the range the deep-sky pictures need (they come in a later version). |
 | `magnitude` | The faintest star at the opening zoom (5); zooming in shows fainter ones, as a telescope does. |
-| `layers` | Which of `milky lines boundaries names deep holes grid` to draw, space-separated (`milky lines names grid` by default; empty for the stars alone). |
+| `layers` | Which of `milky lines boundaries names deep holes ecliptic grid` to draw, space-separated (`milky lines names grid` by default; empty for the stars alone). |
 | `constellation` | A figure to show brighter, with its boundary when it is a constellation: `Ori`, or a figure's id in the Japanese and Chinese skies. Set after a tap, it wins again. |
 | `culture` | `western` (the default), `japanese` or `chinese`; the Japanese and Chinese figures are loaded only when asked for. |
 | `picked` | A star (HR number, `2491` for Sirius) or Messier object (`M42`) marked as picked. Set after a tap, it wins again. |
@@ -53,11 +53,12 @@ A drag moves the sky, two fingers or Ctrl (Command) and the wheel zoom about the
 | `theme` | `light` or `dark`, for the focus ring; the sky is night in both. |
 | `show-uncertainty` | Draw the stars of grade C (a rough or missing distance: see [How well a star is known](accuracy.md)) dimmer, so the well-known stars stand out. Off by default; the property is `showUncertainty`. It changes how a star is drawn and nothing else: still nothing is drawn at rest. |
 | `controls="none"` | No hands: a still picture. |
+| `bodies` | Planets, the Moon and other bodies your page has worked out, drawn by magnitude, the Moon with its phase (see [Planets and the Moon on the chart](sky-chart-bodies.md)); the `ecliptic` layer draws the Sun's yearly path. |
 | `markers`, `time-from`, `time-to`, `time-fade`, `tracks` | Your own dated points on the chart, the days shown and the lines joining a group (see [Your own points on the chart](sky-chart-markers.md)). |
 
 | Event | `detail` |
 |---|---|
-| `hoshi-pick` | `ChartPick`: `{ kind, id, abbreviation? }`. `kind` is `star` (the HR number, with `accuracy`: `{ grade, lightYearsRange, positionResolutionArcsec }`, the star's grade A, B or C, the distance range in light-years, or `null` where there is none, and the size of the last digit of its position in arc-seconds), `deep` (`M42`), `hole` (`cygnus-x-1`), `figure` (its id, with `abbreviation` for a constellation) or `none`. |
+| `hoshi-pick` | `ChartPick`: `{ kind, id, abbreviation? }`. `kind` is `star` (the HR number, with `accuracy`: `{ grade, lightYearsRange, positionResolutionArcsec }`, the star's grade A, B or C, the distance range in light-years, or `null` where there is none, and the size of the last digit of its position in arc-seconds), `deep` (`M42`), `hole` (`cygnus-x-1`), `figure` (its id, with `abbreviation` for a constellation), `body` (one of your `bodies`: its `id`, with its `names`) or `none`. |
 | `hoshi-view` | `ChartViewDetail`: `{ projection, ra, dec, zoom, final }`, as the view changes; `final` once the hand has settled. |
 | `hoshi-marker` | `ChartMarkerDetail`: `{ marker, id, index, source }`, when one of your own points (`markers`) is clicked, tapped, or chosen with Enter or Space. |
 
@@ -122,7 +123,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`chartSvg(options)` takes `width` and `height` and, as the element's attributes, `projection`, `ra`, `dec`, `zoom`, `magnitude`, `layers` (a list of `CHART_LAYERS`), `lang`, `culture` (the culture itself, imported from `@johnmorrisdotca/hoshi-stars/cultures/japanese` or `/chinese`, so a page pays only for the one it draws), `constellation`, `picked`, `showUncertainty`, `markers`, `timeRange` and `tracks` (your own points: see [Your own points on the chart](sky-chart-markers.md)) and `label` (the accessible name, "Star chart" or 星図). It returns an `<svg>` with a `viewBox` of the size and its own night background. It reads no clock and fetches nothing.
+`chartSvg(options)` takes `width` and `height` and, as the element's attributes, `projection`, `ra`, `dec`, `zoom`, `magnitude`, `layers` (a list of `CHART_LAYERS`), `lang`, `culture` (the culture itself, imported from `@johnmorrisdotca/hoshi-stars/cultures/japanese` or `/chinese`, so a page pays only for the one it draws), `constellation`, `picked`, `showUncertainty`, `bodies` (planets and the Moon: see [Planets and the Moon on the chart](sky-chart-bodies.md)), `markers`, `timeRange` and `tracks` (your own points: see [Your own points on the chart](sky-chart-markers.md)) and `label` (the accessible name, "Star chart" or 星図). It returns an `<svg>` with a `viewBox` of the size and its own night background. It reads no clock and fetches nothing.
 
 The names are laid out by the width of their text: measured with a canvas where there is a document, else with a built-in table, so a browser and a server can place a name a pixel or two apart. Pass `measure: (text, font) => width` (a font's metrics, or a fixed width a character) for the same SVG everywhere. The types are `ChartSvgOptions` and `ChartLayer`.
 

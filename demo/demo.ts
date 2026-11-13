@@ -28,6 +28,7 @@ import { western } from "../src/cultures/western.ts";
 import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
 import { attachHands } from "../src/chart/hands.ts";
 import { nearbyOf, type By } from "./nearby.ts";
+import { SAMPLE_BODIES, SAMPLE_BODIES_MOMENT, SAMPLE_VIEW } from "./bodies-sample.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
 import type { Box } from "../src/chart/labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
@@ -108,6 +109,15 @@ const projector: SkyProjector = (ra, dec, o) => {
 let limit: number | undefined;
 /** Draw the stars of grade C dimmer (`uncertainty=on` in the address). */
 let showUncertainty = false;
+/** Show the fixed sample of the Moon and the bright planets (`bodies=sample` in the address). */
+let showBodies = false;
+/** What the note under the sample control says after a tap on one of its bodies ("" for the opening words). */
+let bodyNote = "";
+/** Whether a point of the sky is on the chart now. */
+const onChart = (ra: number, dec: number): boolean => {
+  const at = toScreen(view, width, height, { rightAscension: ra, declination: dec });
+  return at !== undefined && at[0] >= 0 && at[0] <= width && at[1] >= 0 && at[1] <= height;
+};
 
 function read(): void {
   const kind = address.get("proj") ?? "";
@@ -124,6 +134,7 @@ function read(): void {
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
   showUncertainty = address.get("uncertainty") === "on";
+  showBodies = address.get("bodies") === "sample";
   const pview = address.get("pview");
   profileView = pview === "compare" || pview === "3d" ? pview : "portrait";
   embedWhat = address.get("ew") === "star" ? "star" : "chart";
@@ -201,7 +212,7 @@ function draw(): void {
   const keepClear = clear();
   overlay.update(projector, { width, height }, keepClear);
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
-  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), showUncertainty, culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), showUncertainty, bodies: showBodies ? SAMPLE_BODIES : undefined, culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
   chosenPictures = new Set(out.wanted);
   // names were kept clear of the line as it was: when it changes, draw once more so that they keep clear of it as it is now
   if (showPictureCredits($("picture-credits"), out.pictures, lang() === "ja")) schedule();
@@ -318,6 +329,9 @@ function pressed(): void {
   $("embed-what-hint").hidden = starNow !== undefined;
   overlayPressed();
   $("uncertainty").setAttribute("aria-pressed", String(showUncertainty));
+  $("bodies").setAttribute("aria-pressed", String(showBodies));
+  $("bodies-note").hidden = !showBodies;
+  if (showBodies && bodyNote === "") $("bodies-note").textContent = say("bodiesNote").replace("{moment}", momentText());
   readings.refresh(say("readings"));
   writeReadings($("culture-note"), say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`), readings.on());
   const slider = $<HTMLInputElement>("magnitude");
@@ -414,6 +428,18 @@ $<HTMLInputElement>("dist-slider").addEventListener("input", () => setLimit(limi
 $("uncertainty").addEventListener("click", () => {
   showUncertainty = !showUncertainty;
   address.set("uncertainty", showUncertainty ? "on" : null);
+  everything();
+});
+$("bodies").addEventListener("click", () => {
+  showBodies = !showBodies;
+  address.set("bodies", showBodies ? "sample" : null);
+  bodyNote = "";
+  // the sample is for the whole sky: where none of it is in view, look at the wide map that holds it, once
+  if (showBodies && !SAMPLE_BODIES.some((one) => onChart(one.ra, one.dec))) {
+    cancelFly();
+    setView({ ...SAMPLE_VIEW });
+    settled();
+  }
   everything();
 });
 $("magnitude").addEventListener("input", () => {
@@ -548,12 +574,25 @@ function tap(x: number, y: number): void {
       best = hit;
     }
   }
+  if (best?.kind === "body") return sayBody(best.key);
   if (best !== undefined) pick(best.kind === "star" ? `S:${best.key}` : best.kind === "hole" ? `B:${best.key}` : `D:${best.key}`);
   else {
     const found = figureAt(x, y);
     pick(found === undefined ? null : `C:${found.asterism.id}`);
   }
   settled();
+}
+
+/** The sample's moment in the reader's own time zone (the device's, not UTC), in the page's language: "November 12, 2026 at 9:00 AM" or "2026年11月12日 9:00". */
+const momentText = (): string => new Intl.DateTimeFormat(lang() === "ja" ? "ja-JP" : "en-US", { dateStyle: "long", timeStyle: "short" }).format(new Date(SAMPLE_BODIES_MOMENT));
+
+/** A tap on a body of the sample: its name, brightness and lit part, in the note under the control. */
+function sayBody(id: string): void {
+  const one = SAMPLE_BODIES.find((body) => body.id === id);
+  if (one === undefined) return;
+  bodyNote = say("bodyFact").replace("{name}", lang() === "ja" ? one.names.ja : one.names.en).replace("{magnitude}", one.magnitude.toFixed(1)).replace("{lit}", String(Math.round(one.phase * 100))).replace("{moment}", momentText());
+  $("bodies-note").textContent = bodyNote;
+  $("bodies-note").hidden = false;
 }
 
 function pick(key: string | null): void {

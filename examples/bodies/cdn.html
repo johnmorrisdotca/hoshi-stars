@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>The Moon and a planet on the chart</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-chart projection="equirectangular" ra="230" dec="-15" zoom="1.5" layers="milky lines names ecliptic" style="max-width: 640px"></hoshi-chart>
+    <label><input id="line" type="checkbox" checked /> Ecliptic</label>
+    <p id="card">Tap the Moon or Venus.</p>
+    <script type="module">
+      const chart = document.querySelector("hoshi-chart");
+      chart.bodies = [
+        { id: "moon", names: { en: "Moon", ja: "月" }, ra: 258.14, dec: -27.57, magnitude: -6.9, phase: 0.07, brightLimb: 282.5, size: 1773 },
+        { id: "venus", names: { en: "Venus", ja: "金星" }, ra: 200.07, dec: -10.76, magnitude: -4.5, phase: 0.11 },
+      ];
+      chart.addEventListener("hoshi-pick", (event) => {
+        const { kind, id, names } = event.detail;
+        if (kind === "body") document.getElementById("card").textContent = `${names.en} (${names.ja}), ${id}`;
+      });
+      document.getElementById("line").addEventListener("change", (event) => {
+        chart.setAttribute("layers", event.target.checked ? "milky lines names ecliptic" : "milky lines names");
+      });
+    </script>
+  </body>
+</html>

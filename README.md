@@ -447,6 +447,8 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 
 Your own dated points go on it too (an observing log, a comet's track), with a time range, a track joining a group and a click that says which: see [Your own points on the chart](docs/guides/sky-chart-markers.md) and the [markers page](https://johnmorrisdotca.github.io/hoshi-stars/markers.html) of the demo.
 
+The Moon and the planets your page has worked out go on it as a plain `bodies` list (each by its magnitude, the Moon with its phase, named in English or Japanese, with an optional ecliptic line), and the package imports no planet package: see [Planets and the Moon on the chart](docs/guides/sky-chart-bodies.md).
+
 To draw your own from the numbers, a chart is a few lines of SVG. In React, for example (Vue, Svelte, Angular, Vite, webpack, a plain `<script type="module">` from a CDN, Node and TypeScript are in the [guides](https://johnmorrisdotca.github.io/hoshi-stars/docs/)):
 
 ```tsx
