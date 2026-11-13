@@ -1,5 +1,6 @@
 // The constellation quiz: a chart with no names, six choices in a row, a right answer scores, and the style, the level and the question are kept in the address. The chart is an SVG drawn once for each question.
 import { expect, test, type Page } from "@playwright/test";
+import { quizHeightFor } from "../demo/quiz-code.ts";
 import { seenIn } from "../demo/quiz-sky.ts";
 import { constellations } from "../src/constellations.ts";
 
@@ -290,4 +291,70 @@ test("the sky choices and kid mode give nothing away: the address and the page d
   expect(await outsideChoices(page)).not.toMatch(/Orion|オリオン|\bOri\b|c=Ori/);
   await expect(page.getByTestId("qz-month")).toBeVisible();
   expect(await page.getByTestId("qz-month").evaluate((s) => (s as HTMLSelectElement).offsetHeight), "the month is a big target in kid mode").toBeGreaterThanOrEqual(56);
+});
+
+const EMBED = "/hoshi-stars/embed-quiz.html";
+
+test("the embed page asks the quiz its address chooses, with no controls, in kid mode, and writes nothing to its address", async ({ page }) => {
+  await page.goto(`${EMBED}?level=88&style=lines&kid=1`);
+  await expect(choices(page)).toHaveCount(6);
+  await expect(page.locator("#qz-root")).toHaveAttribute("data-kid", "true");
+  await expect(page.getByTestId("frame-credit")).toBeVisible();
+  // the controls of the page are not there: the address chooses
+  for (const id of ["qz-styles", "qz-levels", "qz-hemis", "qz-month", "qz-kid"]) await expect(page.locator(`#${id}`)).toBeHidden();
+  const sizes = await choices(page).evaluateAll((all) => all.map((b) => Math.round(b.getBoundingClientRect().height)));
+  expect(Math.min(...sizes), "kid mode's big names").toBeGreaterThanOrEqual(72);
+  expect(await page.getByTestId("qz-sky").locator("line, path").count(), "the lines style draws the figure").toBeGreaterThan(3);
+  expect(await page.getByTestId("qz-sky").locator("text").count(), "no name on the chart").toBe(0);
+  // nothing names the answer before it is answered, and the address is not written to
+  const before = await page.evaluate(() => `${document.title}|${location.search}|${(() => { const copy = document.body.cloneNode(true) as HTMLElement; copy.querySelector("#qz-choices")?.remove(); return copy.innerHTML; })()}`);
+  const answer = await choices(page).first().evaluate((b) => (b as HTMLElement).dataset["abbr"]!);
+  expect(before).not.toContain(`c=${answer}`);
+  expect(before).not.toContain("q=");
+  await choices(page).first().click();
+  await expect(page.getByTestId("qz-score")).toContainText("of 1");
+  await page.getByTestId("qz-next").click();
+  await expect(choices(page).first()).toBeEnabled();
+  expect(new URL(page.url()).search).toBe("?level=88&style=lines&kid=1");
+});
+
+test("the embed page takes the hemisphere and the month, and Japanese", async ({ page }) => {
+  await page.goto(`${EMBED}?hemisphere=south&month=5&level=88&lang=ja`);
+  await expect(choices(page)).toHaveCount(6);
+  const may = new Set(seenIn("south", 5));
+  for (const one of await abbreviationsOf(page)) expect(may.has(one), one).toBe(true);
+  for (const name of await choices(page).allTextContents()) expect(name).toMatch(/座$/);
+  await expect(page.getByTestId("qz-next")).toHaveText("次の問題");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+});
+
+test("the embed page fits the frame its code asks for, at 320, 480 and 640 wide", async ({ page }) => {
+  for (const width of [320, 480, 640]) {
+    await page.setViewportSize({ width, height: quizHeightFor(width) });
+    await page.goto(`${EMBED}?level=88&style=annotated`);
+    await expect(choices(page)).toHaveCount(6);
+    await choices(page).first().click();
+    await expect(page.getByTestId("qz-result")).not.toHaveText("");
+    const over = await page.evaluate(() => ({ x: document.documentElement.scrollWidth - document.documentElement.clientWidth, y: document.documentElement.scrollHeight - document.documentElement.clientHeight }));
+    expect(over.x, `${width} wide: no sideways scroll`).toBeLessThanOrEqual(0);
+    expect(over.y, `${width} wide: the frame is tall enough for the chart, the names, the answer and the score`).toBeLessThanOrEqual(0);
+  }
+});
+
+test("the page's code to copy is the iframe, and follows kid mode, the style, the level and the sky", async ({ page }) => {
+  await page.goto(`${PAGE}?level=88`);
+  const panel = page.getByTestId("embed-panel");
+  await panel.scrollIntoViewIfNeeded();
+  await expect(panel).toContainText("embed-quiz.html");
+  await expect(panel).toContainText("level=88");
+  await page.getByTestId("qz-kid").click();
+  await page.getByTestId("qz-styles").getByRole("button", { name: /Stars and lines|Stars and lines/ }).click();
+  await page.getByTestId("qz-hemis").getByRole("button", { name: "North" }).click();
+  await page.getByTestId("qz-month").selectOption("1");
+  await expect(panel).toContainText("kid=1");
+  await expect(panel).toContainText("style=lines");
+  await expect(panel).toContainText("hemisphere=north");
+  await expect(panel).toContainText("month=1");
+  // the code never carries the question
+  expect(await panel.textContent()).not.toMatch(/[?&;](q|c)=/);
 });

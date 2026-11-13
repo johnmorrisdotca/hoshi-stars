@@ -5,6 +5,7 @@ import { centreOfConstellation, chart, toScreen, type View } from "../src/chart/
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
 import { neighbouringConstellations } from "../src/nearest.ts";
 import { figureOf } from "../src/lines.ts";
+import { frameCredit } from "./frame-credit.ts";
 import { langNow, lookNow, nameIn, thumbSrc } from "./thumbs.ts";
 import { ALL_WORDS } from "../scripts/gallery-words.ts";
 import { distractors, shuffled } from "./quiz-pick.ts";
@@ -12,7 +13,12 @@ import { HEMISPHERES, MIN_ALTITUDE, seenIn, type Hemisphere } from "./quiz-sky.t
 import { monthName, say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
-const address = createAddressState();
+/** The embed page (`embed-quiz.html`) is this same script with its controls hidden: the address chooses (style, level, kid, hemisphere, month, lang) and nothing is written back to it. */
+const embedded = document.body.dataset["embed"] === "quiz";
+if (embedded && new URLSearchParams(location.search).get("lang") === "ja") document.documentElement.lang = "ja";
+const real = createAddressState();
+const address = { get: (name: string): string | null => real.get(name), set: (name: string, value: string | null): void => (embedded ? undefined : real.set(name, value)), flush: (): void => (embedded ? undefined : real.flush()) };
+if (embedded) frameCredit(document.documentElement.lang === "ja");
 
 const STYLES = ["plain", "lines", "annotated"] as const;
 type Style = (typeof STYLES)[number];
@@ -232,6 +238,8 @@ function render(): void {
   $("qz-score").textContent = w("score", { right, asked }) + (best >= 2 ? ` ${w("streak", { streak, best })}` : "");
   drawMissed();
   if (!answered) $("qz-result").textContent = "";
+  // the page's "Put it in your page" code follows what is chosen (there is none to tell in the embed page)
+  document.dispatchEvent(new CustomEvent("qz-change", { detail: { style, level, kid, hemisphere: where, month, lang: langNow() } }));
 }
 
 /** The ones missed so far, each with its picture and a link to its page, to look at again. */
