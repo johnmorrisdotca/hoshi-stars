@@ -76,6 +76,33 @@ m31 alpheratz mirach
 
 The 335 stars come from a small table that `scripts/make-names-named.ts` writes from the bright-star table (the Yale data already credited in `NOTICE.md`; no new data). The ids are settled over the whole table when it is written, so the chunk needs no star table, and a test runs the script again and fails if the table on disk differs. `/names/named` measures 22.7 kB gzipped. A star without a common name (`alpha-centauri`, `hr-1234`) is not in it: a search that finds nothing there goes on to `/names`.
 
+## Your own index
+
+The pieces the three entry points are made of are exported too, for a page that keeps its own list of rows (the rows of one catalogue, or a short list for one page). They are in `/names` and `/names/named`, and all but `deepSkyRow` in `/names/ngc-ic`.
+
+- `NAME_KINDS` is the list of kinds a row can have (`star`, `cluster`, `nebula`, `galaxy`, `other`), in the order the type `NameKind` gives them.
+- `nameKey(text)` is the text folded the way `findName` compares: lower case, no accents, the Greek letter spelt out, one space, a superscript as its digit. `Messier 31`, `M 31` and `m31` all give `m31`, and `NGC 0224` gives `ngc224`.
+- `slugOf(text)` is an address-safe id from a text: lower-case letters and digits in runs joined by one hyphen, an accent dropped (`Boötes` gives `bootes`) and a Greek letter spelt out. It is what the ids of the rows are made with.
+- `deepSkyRow(object, constellations)` is the row of a deep-sky object from `/deep-sky` or `/deep-sky/ngc-ic`, with the constellations by abbreviation for the names of the one it lies in.
+- `nameIndex(rows)` is the index over a list of rows: `rows(kinds)`, `byId(id)`, `find(text)` and `search(text, { limit, kinds })` work as `nameRows`, `nameRowById`, `findName` and `searchNames` do. The rows come out largest weight first, and it throws if two rows have the same id.
+
+```js
+import { constellations } from "@johnmorrisdotca/hoshi-stars/constellations";
+import { deepSkyObject } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+import { NAME_KINDS, deepSkyRow, nameIndex, nameKey, slugOf } from "@johnmorrisdotca/hoshi-stars/names";
+
+console.log(NAME_KINDS.join(" ")); // star cluster nebula galaxy other
+console.log(nameKey("Messier 31"), nameKey("α Ori"), nameKey("NGC 0224")); // m31 alpha ori ngc224
+console.log(slugOf("Rigil Kentaurus"), slugOf("Boötes")); // rigil-kentaurus bootes
+
+const byAbbreviation = new Map(constellations().map((c) => [c.abbreviation, c]));
+const row = deepSkyRow(deepSkyObject("M31"), byAbbreviation);
+console.log(row.id, row.kind, row.pick); // m31 galaxy D:M31
+
+const mine = nameIndex([row]);
+console.log(mine.find("Messier 31").id, mine.rows(["star"]).length); // m31 0
+```
+
 ## Size
 
 The rows are made when first asked for from the tables the package already ships, so the code adds a few kilobytes: `/names` measures 135.7 kB gzipped (the star table with the Messier table) and `/names/ngc-ic` 226.4 kB (the large deep-sky table, and nothing from the stars). Both are over 60 kB, so they are chunks, with the 22.7 kB `/names/named` in front of them, and a page that only wants stars and Messier objects never loads the NGC and IC table. Written out as JSON the rows are larger than the tables they come from, because every spelling of a name is spelt: of the 5,190 rows of `/names` about 300 kB gzipped (5,080 stars about 296 kB), and the 11,788 of `/names/ngc-ic` about 332 kB (the galaxies are most of it). A site that sends its own copy should send the fields it searches and shows, not whole rows.

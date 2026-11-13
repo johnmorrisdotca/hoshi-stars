@@ -95,6 +95,18 @@ console.log("planets.svg", (svg.match(/data-body=/g) ?? []).length, "bodies,", s
 
 黄道は、1年のあいだに太陽が通って見える大円です。星図は自分の座標計算から求めます。赤道を春分点のまわりに、J2000の平均黄道傾斜角（84,381.406秒角、23.4393度。IAU 2006の歳差モデルが公表している定数）だけ回したものです。星と同じJ2000の黄道なので、動きません。`eclipticToEquatorial(longitude, latitude)`と`eclipticLine(step)`は同じ線を数で返し、`OBLIQUITY_J2000`はその定数です。
 
+## 天体の点の大きさ
+
+`bodyRadius(magnitude, limit, grow)`は、天体の点の半径をピクセルで返します。星図が使うのと同じ規則で、星の規則（明るいほど大きい）を等級-4.6まで延ばしてあるので、金星はシリウスより大きくなります。`limit`は星図の`magnitude`の設定（開いたときの倍率で見える最も暗い星）、`grow`は拡大で点がどれだけ大きくなるか（開いたときの倍率で1）です。拡大する前の点は1.4ピクセルより小さくなりません。実際の`size`をもつ天体は、それがこの半径より大きければ、その大きさで描きます。
+
+```js
+import { bodyRadius } from "@johnmorrisdotca/hoshi-stars/chart";
+
+console.log(bodyRadius(-4.4, 5, 1) > bodyRadius(1.2, 5, 1)); // true
+console.log(bodyRadius(20, 5, 1)); // 1.4
+console.log(bodyRadius(1.2, 5, 2) / bodyRadius(1.2, 5, 1)); // 2
+```
+
 ## リストを整える
 
 `normaliseBodies(list)`は、`bodies`属性が`JSON.parse`のリストに対して行う整理をします。idも位置も等級もない項目は捨て、名前が片方なければもう一方の言語（なければid）を使い、おかしい`phase`は満月として扱い、おかしい`size`は捨て、同じidが2つあれば最初の1つを残します。プロパティと`chartSvg`も同じ整理をするので、乱れたリストでもエラーにはなりません。

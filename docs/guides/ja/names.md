@@ -76,6 +76,33 @@ m31 alpheratz mirach
 
 335 個の星は、`scripts/make-names-named.ts` が明るい星の表から書き出す小さな表から読みます (`NOTICE.md` に出典のある Yale のデータで、新しいデータはありません)。ID は表を書くときに全体で決めてあるので、このかたまりは星の表を必要とせず、テストがスクリプトをもう一度走らせて、ディスク上の表と違えば失敗します。`/names/named` は gzip で 22.7 kB です。通称のない星 (`alpha-centauri`、`hr-1234`) は入っていません。ここで見つからない検索は `/names` へ進みます。
 
+## 自分の一覧
+
+3つの入口を作っている部品も公開してあります。自分の行のリスト（ひとつのカタログの行や、1ページ用の短いリスト）を持つページのためです。`/names`と`/names/named`にあり、`deepSkyRow`以外は`/names/ngc-ic`にもあります。
+
+- `NAME_KINDS`は、行がとれる種類（`star`、`cluster`、`nebula`、`galaxy`、`other`）の一覧で、型`NameKind`と同じ順です。
+- `nameKey(text)`は、`findName`が比べるときと同じに整えた文字列です。小文字にし、アクセントを除き、ギリシャ文字を綴り、空白を1つにし、上付き数字を数字にします。`Messier 31`、`M 31`、`m31`はどれも`m31`になり、`NGC 0224`は`ngc224`になります。
+- `slugOf(text)`は、文字列からアドレスに使えるIDを作ります。小文字の英数字の連なりを1つのハイフンでつなぎ、アクセントを除き、ギリシャ文字を綴ります。行のIDはこれで作っています。
+- `deepSkyRow(object, constellations)`は、`/deep-sky`か`/deep-sky/ngc-ic`の天体の行を返します。天体がある星座の名前のために、略号をキーにした星座の表を渡します。
+- `nameIndex(rows)`は、行のリストに対する一覧です。`rows(kinds)`、`byId(id)`、`find(text)`、`search(text, { limit, kinds })`は、`nameRows`、`nameRowById`、`findName`、`searchNames`と同じに働きます。行は重みの大きい順に出て、同じIDの行が2つあるとエラーになります。
+
+```js
+import { constellations } from "@johnmorrisdotca/hoshi-stars/constellations";
+import { deepSkyObject } from "@johnmorrisdotca/hoshi-stars/deep-sky";
+import { NAME_KINDS, deepSkyRow, nameIndex, nameKey, slugOf } from "@johnmorrisdotca/hoshi-stars/names";
+
+console.log(NAME_KINDS.join(" ")); // star cluster nebula galaxy other
+console.log(nameKey("Messier 31"), nameKey("α Ori"), nameKey("NGC 0224")); // m31 alpha ori ngc224
+console.log(slugOf("Rigil Kentaurus"), slugOf("Boötes")); // rigil-kentaurus bootes
+
+const byAbbreviation = new Map(constellations().map((c) => [c.abbreviation, c]));
+const row = deepSkyRow(deepSkyObject("M31"), byAbbreviation);
+console.log(row.id, row.kind, row.pick); // m31 galaxy D:M31
+
+const mine = nameIndex([row]);
+console.log(mine.find("Messier 31").id, mine.rows(["star"]).length); // m31 0
+```
+
 ## 大きさ
 
 行は、パッケージがすでに持つ表から、最初に求められたときに作るので、コードの増分は数キロバイトです。`/names` は gzip で 135.7 kB (星の表とメシエの表)、`/names/ngc-ic` は 226.4 kB (大きな星雲星団の表だけで、星の表は含みません)。どちらも 60 kB を超えるので別のかたまりに分けてあり、手前に 22.7 kB の `/names/named` があります。星とメシエだけがほしいページは NGC・IC の表を読みません。JSON に書き出すと、名前の書き方をすべて並べるので元の表より大きくなります。`/names` の 5,190 行で gzip 約 300 kB (星 5,080 個で約 296 kB)、`/names/ngc-ic` の 11,788 行で約 332 kB (大半は銀河) です。自分のサイトで写しを送るなら、行ごとではなく、検索と表示に使う項目だけを送ってください。

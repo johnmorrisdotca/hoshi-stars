@@ -95,6 +95,18 @@ console.log("planets.svg", (svg.match(/data-body=/g) ?? []).length, "bodies,", s
 
 The ecliptic is the great circle the Sun appears to follow in a year. The chart computes it from its own frame maths: the equator turned about the March equinox by the mean obliquity of the ecliptic at J2000, 84,381.406 arc-seconds (23.4393 degrees), a constant the IAU 2006 precession model publishes. It is the J2000 ecliptic, the frame the stars are in, so it does not move. `eclipticToEquatorial(longitude, latitude)` and `eclipticLine(step)` give the same line as numbers, and `OBLIQUITY_J2000` the constant.
 
+## How big a body is drawn
+
+`bodyRadius(magnitude, limit, grow)` is the radius in pixels of a body's dot, the same rule the chart uses: a star's rule (brighter is larger), carried to magnitude -4.6 so that Venus is larger than Sirius. `limit` is the chart's `magnitude` setting (the faintest star at the opening zoom) and `grow` how much the zoom enlarges a dot (1 at the opening zoom). A dot is never smaller than 1.4 pixels before it grows. A body with a true `size` is drawn as large as that when it is larger than this radius.
+
+```js
+import { bodyRadius } from "@johnmorrisdotca/hoshi-stars/chart";
+
+console.log(bodyRadius(-4.4, 5, 1) > bodyRadius(1.2, 5, 1)); // true
+console.log(bodyRadius(20, 5, 1)); // 1.4
+console.log(bodyRadius(1.2, 5, 2) / bodyRadius(1.2, 5, 1)); // 2
+```
+
 ## Cleaning a list
 
 `normaliseBodies(list)` does the cleaning the `bodies` attribute does for a list from `JSON.parse`: an entry with no id, no place or no magnitude is dropped, a missing name falls back to the other language (then the id), a bad `phase` counts as full, a bad `size` is dropped and, of two entries with one id, the first is kept. The property and `chartSvg` clean a list the same way, so a rough list never throws.
