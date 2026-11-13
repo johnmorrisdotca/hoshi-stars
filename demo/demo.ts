@@ -111,7 +111,7 @@ let limit: number | undefined;
 let showUncertainty = false;
 /** Show the fixed sample of the Moon and the bright planets (`bodies=sample` in the address). */
 let showBodies = false;
-/** What the note under the sample control says after a tap on one of its bodies ("" for the opening words). */
+/** The sample body the note under the control is about after a tap on it ("" for the opening words); the words are made again in the page's language each time. */
 let bodyNote = "";
 /** Whether a point of the sky is on the chart now. */
 const onChart = (ra: number, dec: number): boolean => {
@@ -331,7 +331,11 @@ function pressed(): void {
   $("uncertainty").setAttribute("aria-pressed", String(showUncertainty));
   $("bodies").setAttribute("aria-pressed", String(showBodies));
   $("bodies-note").hidden = !showBodies;
-  if (showBodies && bodyNote === "") $("bodies-note").textContent = say("bodiesNote").replace("{moment}", momentText());
+  if (showBodies) {
+    // only when the words differ, so that a screen reader is not told the same note again at each redraw
+    const words = bodyNote === "" ? say("bodiesNote").replace("{moment}", momentText()) : bodyFactText(bodyNote);
+    if ($("bodies-note").textContent !== words) $("bodies-note").textContent = words;
+  }
   readings.refresh(say("readings"));
   writeReadings($("culture-note"), say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`), readings.on());
   const slider = $<HTMLInputElement>("magnitude");
@@ -588,11 +592,16 @@ const momentText = (): string => new Intl.DateTimeFormat(lang() === "ja" ? "ja-J
 
 /** A tap on a body of the sample: its name, brightness and lit part, in the note under the control. */
 function sayBody(id: string): void {
-  const one = SAMPLE_BODIES.find((body) => body.id === id);
-  if (one === undefined) return;
-  bodyNote = say("bodyFact").replace("{name}", lang() === "ja" ? one.names.ja : one.names.en).replace("{magnitude}", one.magnitude.toFixed(1)).replace("{lit}", String(Math.round(one.phase * 100))).replace("{moment}", momentText());
-  $("bodies-note").textContent = bodyNote;
+  if (!SAMPLE_BODIES.some((body) => body.id === id)) return;
+  bodyNote = id;
+  $("bodies-note").textContent = bodyFactText(id);
   $("bodies-note").hidden = false;
+}
+
+/** What the note says of one sample body, in the page's language now. */
+function bodyFactText(id: string): string {
+  const one = SAMPLE_BODIES.find((body) => body.id === id)!;
+  return say("bodyFact").replace("{name}", lang() === "ja" ? one.names.ja : one.names.en).replace("{magnitude}", one.magnitude.toFixed(1)).replace("{lit}", String(Math.round(one.phase * 100))).replace("{moment}", momentText());
 }
 
 function pick(key: string | null): void {
