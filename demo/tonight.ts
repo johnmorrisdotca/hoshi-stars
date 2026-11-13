@@ -175,10 +175,10 @@ async function render(): Promise<void> {
 
 function choose(change: Partial<State>): void {
   Object.assign(state, change);
-  address.set("country", state.country);
-  address.set("region", state.region);
-  address.set("t", state.t === null ? "" : new Date(state.t).toISOString().slice(0, 16) + "Z");
-  address.set("limit", state.limit === "rural" ? "" : state.limit);
+  address.set("country", state.country === "" ? null : state.country);
+  address.set("region", state.region === "" ? null : state.region);
+  address.set("t", state.t === null ? null : new Date(state.t).toISOString().slice(0, 16) + "Z");
+  address.set("limit", state.limit === "rural" ? null : state.limit);
   void (change.country !== undefined ? loadRegions() : Promise.resolve()).then(render);
 }
 
