@@ -244,6 +244,10 @@ console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date
 - A spin equal to the Earth's gives the Earth's sky (pole at declination 90 and right ascension 270, `w0` 280.46061837, `rate` 360.98564736629), apart from the precession since J2000.
 - A hundred thousand `horizontal` conversions take about 26 ms on a laptop. The formulas are from J. Meeus, *Astronomical Algorithms* (2nd ed.), chapters 12, 13, 16 and 21.
 
+## A names index for a search box
+
+`@johnmorrisdotca/hoshi-stars/names` has one row for each bright star and Messier object, with its names in English and Japanese, its designations (Bayer spelt `α`, `alpha` and `Alp`, `HR`, `M`, `NGC`), an address-safe id and where to point; `findName`, `nameRowById` and `searchNames` look them up. The NGC and IC objects are the chunk `/names/ngc-ic`. [The guide](docs/guides/names.md) has the rows and the known gaps.
+
 ## What you can see tonight
 
 `@johnmorrisdotca/hoshi-stars/tonight` lists the stars you can see from a place at a moment: above the horizon, with the Sun low enough, brighter than the site's limit once the air has dimmed them. The [Tonight page](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html) is the call with a place picker. Pure: no DOM, and the moment is passed in.

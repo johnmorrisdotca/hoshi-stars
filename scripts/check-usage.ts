@@ -548,6 +548,12 @@ await step("tonight", () => {
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 
+await step("names", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "names.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = ["betelgeuse Betelgeuse ベテルギウス S:2061", "m31 Andromeda Galaxy galaxy D:M31", "ngc7000 North America Nebula nebula", "5190 rows, first sirius"].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await browser.close();
 lock.release();
 
@@ -588,6 +594,7 @@ const FILES: Record<string, string[]> = {
   "node/accuracy.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
   "node/min-grade.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
   "node/tonight.mjs": ["docs/guides/tonight.md", "docs/guides/ja/tonight.md"],
+  "node/names.mjs": ["docs/guides/names.md", "docs/guides/ja/names.md"],
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],

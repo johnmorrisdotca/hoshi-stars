@@ -194,6 +194,16 @@
       "en": "What you can see tonight: the stars above the horizon of a place and a moment that the Sun's light, the sky's darkness and the air still let through, with the twilight, each star's altitude and azimuth and how easy it is to see",
       "ja": "今夜見える星 (場所と時刻から、地平線の上にあり、太陽の光・空の明るさ・大気の減光のあとでも見える星を、薄明の種類、高度と方位、見やすさつきで)",
       "platform": "neutral"
+    },
+    "./names": {
+      "en": "A names index for a search box: a row for each bright star and Messier object with its names in English and Japanese, designations, constellation, rank weight, an address-safe id and where to point, with lookup by id and by name",
+      "ja": "検索ボックス用の名前の一覧 (明るい星とメシエ天体ごとに、英語・日本語の名前、符号、星座、順位の重み、アドレスに使える ID、向ける先を持つ行。IDと名前で引けます)",
+      "platform": "neutral"
+    },
+    "./names/ngc-ic": {
+      "en": "The names index for the NGC and IC objects that are not Messier objects, in a chunk of their own",
+      "ja": "メシエ天体ではない NGC・IC 天体の名前の一覧 (別のかたまり)",
+      "platform": "neutral"
     }
   }
 }
