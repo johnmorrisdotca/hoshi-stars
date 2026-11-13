@@ -195,20 +195,20 @@ test("Japanese words, the stars in katakana, and the dark page; and the wheel dr
 });
 
 test.describe("the time is the Sun's time, said beside the time boxes, and Now is the device's own clock", () => {
-  // 05:30 UTC on 13 November is 21:30 on the 12th in Vancouver: the UTC date and the device's date differ
+  // 05:30 UTC on 14 July is 22:30 on the 13th in Vancouver (daylight saving time): the UTC date and the device's date differ, and so do the UTC clock and the device's
   test.use({ timezoneId: "America/Vancouver" });
   test("the page starts at 21:00 on the reader's date and Now sets the dial to the device's date and clock time", async ({ page }) => {
-    await page.clock.setFixedTime(new Date("2026-11-13T05:30:00Z"));
+    await page.clock.setFixedTime(new Date("2026-07-14T05:30:00Z"));
     await page.goto(PAGE);
-    await expect(page.locator("#pl-date")).toHaveValue("2026-11-12");
+    await expect(page.locator("#pl-date")).toHaveValue("2026-07-13");
     await expect(page.locator("#pl-time")).toHaveValue("21:00");
     await page.goto(`${PAGE}?date=2026-06-21&time=03:00`);
     await page.locator("#pl-now").click();
-    await expect(page.locator("#pl-date")).toHaveValue("2026-11-12");
-    await expect(page.locator("#pl-time")).toHaveValue("21:30");
-    await expect(summary(page)).toContainText("2026-11-12, 21:30");
-    await expect.poll(() => param(page, "date")).toBe("2026-11-12");
-    await expect.poll(() => param(page, "time")).toBe("21:30");
+    await expect(page.locator("#pl-date")).toHaveValue("2026-07-13");
+    await expect(page.locator("#pl-time")).toHaveValue("22:30");
+    await expect(summary(page)).toContainText("2026-07-13, 22:30");
+    await expect.poll(() => param(page, "date")).toBe("2026-07-13");
+    await expect.poll(() => param(page, "time")).toBe("22:30");
     // the sky is the one for those numbers on the wheel's own clock
     const { checked } = await compare(page, 45);
     expect(checked).toBeGreaterThan(12);
@@ -244,5 +244,5 @@ test("a drag is not read out frame by frame: the summary is silent while the han
   await expect(page.getByTestId("pl-wheel")).toHaveAttribute("aria-valuetext", "2026-12-21 18:00");
   await page.mouse.up();
   await expect(summary(page)).not.toHaveAttribute("aria-live", "off");
-  await expect(page.getByTestId("pl-wheel")).toHaveAttribute("aria-valuetext", /^2026-12-21 17:/);
+  await expect(page.getByTestId("pl-wheel")).toHaveAttribute("aria-valuetext", /^2026-12-21 15:4/);
 });
