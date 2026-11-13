@@ -28,7 +28,7 @@ import { western } from "../src/cultures/western.ts";
 import { FAMOUS, fromText, skyOf, viewpointOf } from "./from.ts";
 import { attachHands } from "../src/chart/hands.ts";
 import { nearbyOf, type By } from "./nearby.ts";
-import { SAMPLE_BODIES, SAMPLE_VIEW } from "./bodies-sample.ts";
+import { SAMPLE_BODIES, SAMPLE_BODIES_MOMENT, SAMPLE_VIEW } from "./bodies-sample.ts";
 import { DEFAULT_MAGNITUDE, layersOf, layersText, type Choice } from "./choice.ts";
 import type { Box } from "../src/chart/labels.ts";
 import { embedCode, frameAddress, frameCode, heightFor } from "./embed-code.ts";
@@ -331,7 +331,7 @@ function pressed(): void {
   $("uncertainty").setAttribute("aria-pressed", String(showUncertainty));
   $("bodies").setAttribute("aria-pressed", String(showBodies));
   $("bodies-note").hidden = !showBodies;
-  if (showBodies && bodyNote === "") $("bodies-note").textContent = say("bodiesNote");
+  if (showBodies && bodyNote === "") $("bodies-note").textContent = say("bodiesNote").replace("{moment}", momentText());
   readings.refresh(say("readings"));
   writeReadings($("culture-note"), say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`), readings.on());
   const slider = $<HTMLInputElement>("magnitude");
@@ -436,10 +436,9 @@ $("bodies").addEventListener("click", () => {
   bodyNote = "";
   // the sample is for the whole sky: where none of it is in view, look at the wide map that holds it, once
   if (showBodies && !SAMPLE_BODIES.some((one) => onChart(one.ra, one.dec))) {
-    address.set("proj", SAMPLE_VIEW.projection);
-    address.set("ra", String(SAMPLE_VIEW.ra));
-    address.set("dec", String(SAMPLE_VIEW.dec));
-    address.set("zoom", String(SAMPLE_VIEW.zoom));
+    cancelFly();
+    setView({ ...SAMPLE_VIEW });
+    settled();
   }
   everything();
 });
@@ -584,11 +583,14 @@ function tap(x: number, y: number): void {
   settled();
 }
 
+/** The sample's moment in the reader's own time zone (the device's, not UTC), in the page's language: "November 12, 2026 at 9:00 AM" or "2026年11月12日 9:00". */
+const momentText = (): string => new Intl.DateTimeFormat(lang() === "ja" ? "ja-JP" : "en-US", { dateStyle: "long", timeStyle: "short" }).format(new Date(SAMPLE_BODIES_MOMENT));
+
 /** A tap on a body of the sample: its name, brightness and lit part, in the note under the control. */
 function sayBody(id: string): void {
   const one = SAMPLE_BODIES.find((body) => body.id === id);
   if (one === undefined) return;
-  bodyNote = say("bodyFact").replace("{name}", lang() === "ja" ? one.names.ja : one.names.en).replace("{magnitude}", one.magnitude.toFixed(1)).replace("{lit}", String(Math.round(one.phase * 100)));
+  bodyNote = say("bodyFact").replace("{name}", lang() === "ja" ? one.names.ja : one.names.en).replace("{magnitude}", one.magnitude.toFixed(1)).replace("{lit}", String(Math.round(one.phase * 100))).replace("{moment}", momentText());
   $("bodies-note").textContent = bodyNote;
   $("bodies-note").hidden = false;
 }

@@ -21,7 +21,8 @@ test("the control shows the labelled sample: six bodies by magnitude, named, the
   const note = page.getByTestId("bodies-note");
   await expect(note).toBeVisible();
   await expect(note).toContainText("not live");
-  await expect(note).toContainText("12 November 2026");
+  // the moment is shown in the reader's own zone: this browser's, not UTC (the default test zone is the machine's)
+  await expect(note).toContainText(/(November 1[12], 2026 at \d{1,2}:00\s?[AP]M)/);
   const shown = await names(page);
   for (const name of ["Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Moon"]) expect(shown).toContain(name);
   // the Moon is a disc with a lit part (a crescent, 7% lit); the planets are dots
@@ -50,7 +51,10 @@ test("an address with bodies=sample opens with them, named in Japanese when the 
 test("a tap on a body says what it is, and the sample note stays a sample", async ({ page }) => {
   await page.goto(`${HOME}?bodies=sample&proj=equirectangular&ra=180&dec=-5&zoom=1`);
   await expect(bodies(page)).toHaveCount(6);
-  const box = (await page.locator('#chart g[data-body="venus"] circle').first().boundingBox())!;
+  // the chart sits below the fold on a desk, so bring the planet into view before the click
+  const planet = page.locator('#chart g[data-body="venus"] circle').first();
+  await planet.scrollIntoViewIfNeeded();
+  const box = (await planet.boundingBox())!;
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
   await expect(page.getByTestId("bodies-note")).toContainText("Venus: magnitude -4.5");
   await expect(page.getByTestId("bodies-note")).toContainText("not live");
@@ -80,3 +84,18 @@ test("the embed page draws the sample and the ecliptic its address asks for", as
   await expect(page.locator("#sky circle").first()).toBeVisible();
   await expect(page.locator("#sky g[data-body]")).toHaveCount(0);
 });
+
+// 00:00 UTC on 12 November 2026 is 09:00 in Tokyo and 4 pm the evening before in Los Angeles: the page shows the reader's own zone.
+for (const [timezoneId, locale, query, expected] of [
+  ["Asia/Tokyo", "en-US", "", "November 12, 2026 at 9:00 AM"],
+  ["America/Los_Angeles", "en-US", "", "November 11, 2026 at 4:00 PM"],
+  ["Asia/Tokyo", "ja-JP", "&lang=ja", "2026年11月12日 9:00"],
+] as const) {
+  test.describe(`in ${timezoneId} (${locale})`, () => {
+    test.use({ timezoneId, locale });
+    test("the sample's moment follows the reader's time zone", async ({ page }) => {
+      await page.goto(`${HOME}?bodies=sample${query}`);
+      await expect(page.getByTestId("bodies-note")).toContainText(expected);
+    });
+  });
+}
