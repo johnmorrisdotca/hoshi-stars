@@ -184,3 +184,36 @@ test("kid mode in Japanese uses the simple words", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("これは なにざ?");
   await expect(page.getByTestId("qz-next")).toHaveText("つぎの もんだい");
 });
+
+test("the arrow keys move across the six choices, left and right by one and up and down by a row", async ({ page }) => {
+  await page.goto(`${PAGE}?c=Ori&level=88`);
+  await expect(choices(page)).toHaveCount(6);
+  const row = await choices(page).evaluateAll((all) => all.filter((b) => Math.abs(b.getBoundingClientRect().top - all[0]!.getBoundingClientRect().top) < 2).length);
+  await choices(page).first().focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(choices(page).nth(1)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(choices(page).nth(2)).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(choices(page).nth(1)).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(choices(page).nth(1 + row)).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(choices(page).nth(1)).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(choices(page).nth(5)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(choices(page).first()).toBeFocused();
+  // the arrows only move: nothing was answered
+  await expect(page.getByTestId("qz-score")).toHaveText("Score: 0 of 0");
+});
+
+test("at all 88 the wrong names are the ones easy to mix up: most are Orion's neighbours", async ({ page }) => {
+  const near = new Set(["Eri", "Gem", "Lep", "Mon", "Tau"]);
+  for (let i = 0; i < 3; i += 1) {
+    await page.goto(`${PAGE}?q=${constellations().findIndex((c) => c.abbreviation === "Ori") + 1}&level=88`);
+    await expect(choices(page)).toHaveCount(6);
+    const abbreviations = await choices(page).evaluateAll((all) => all.map((b) => (b as HTMLElement).dataset["abbr"]!));
+    expect(abbreviations.filter((one) => near.has(one)).length).toBeGreaterThanOrEqual(3);
+  }
+});

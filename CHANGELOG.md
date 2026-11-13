@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The quiz's wrong names are the lookalikes, and the arrow keys move across the choices** (MODULES-737, second slice, part 2). The five wrong names of a question are no longer random: up to three are the answer's neighbours in the sky (Orion's: Taurus, Gemini, Lepus, Monoceros, Eridanus), then constellations made by the same people in the same years (`origin` of the constellation facts), then the rest of the level, so at all 88 a wrong name is one that is easy to mix up. The arrow keys move across the six choices (left and right by one, up and down by a row, Home and End to the ends). Tests: `test/quiz-pick.test.ts` (five for each of the 88, never the answer, neighbours first, then the family, a small pool) and `e2e/quiz.demo.ts` (the arrows, the neighbours on the page).
+
 - **Kid mode for the constellation quiz** (MODULES-737, second slice, part 1). A **Kid mode** button on `quiz.html` makes every button at least 56 px tall (the six names 76 px, in three columns on a desk and two on a phone) with bigger words, and uses simpler words: "Which star picture is this?", "Yes! It is Orion!", "Easy (12)", "Next one", and the same in plain Japanese (これは なにざ?). It is kept in the address as `kid=1`, and it gives nothing away: the address, the title, the labels and the link still carry no answer until it is answered. Tests: `e2e/quiz.demo.ts` (sizes, words, address, no leak, Japanese). Guide in English and Japanese.
 
 ## [0.44.0] - 2026-11-13

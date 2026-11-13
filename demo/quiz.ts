@@ -7,6 +7,7 @@ import { neighbouringConstellations } from "../src/nearest.ts";
 import { figureOf } from "../src/lines.ts";
 import { langNow, lookNow, nameIn, thumbSrc } from "./thumbs.ts";
 import { ALL_WORDS } from "../scripts/gallery-words.ts";
+import { distractors, shuffled } from "./quiz-pick.ts";
 import { say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -56,19 +57,9 @@ const questionInAddress = (): string | undefined => {
 /** A word of the page: the kid mode's simpler one (`qz_k_<name>`) where it has one, else the plain one. */
 const w = (name: string, values: Record<string, string | number> = {}): string => say(kid && `qz_k_${name}` in ALL_WORDS.en ? `qz_k_${name}` : `qz_${name}`, values);
 const named = (c: Constellation): string => nameIn(c, langNow());
-const shuffle = <T>(items: T[]): T[] => {
-  const out = [...items];
-  for (let i = out.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j]!, out[i]!];
-  }
-  return out;
-};
-
-/** The question's six names: the answer and five others of the level, in a random order. */
+/** The question's six names: the answer and five others of the level that are easy to mix up with it (its neighbours, then ones of the same origin: `distractors`), in a random order. */
 function choicesFor(answer: string): string[] {
-  const others = shuffle(poolOf(level).filter((one) => one !== answer)).slice(0, CHOICES - 1);
-  return shuffle([answer, ...others]);
+  return shuffled([answer, ...distractors(answer, poolOf(level), CHOICES - 1)]);
 }
 
 function ask(abbreviation?: string): void {
@@ -245,6 +236,18 @@ $("qz-next").addEventListener("click", () => {
   ask();
   // Next is disabled again by the new question, so the keyboard goes to the first choice instead of being lost
   $("qz-choices").querySelector("button")?.focus();
+});
+// the arrow keys move across the six choices (left and right one at a time, up and down by a row), Home and End to the ends
+$("qz-choices").addEventListener("keydown", (event) => {
+  const keys = Array.from($("qz-choices").querySelectorAll<HTMLButtonElement>("button"));
+  const at = keys.indexOf(event.target as HTMLButtonElement);
+  if (at < 0 || event.ctrlKey || event.metaKey || event.altKey) return;
+  const row = keys.filter((key) => Math.abs(key.getBoundingClientRect().top - keys[0]!.getBoundingClientRect().top) < 2).length;
+  const to: Record<string, number> = { ArrowRight: (at + 1) % keys.length, ArrowLeft: (at + keys.length - 1) % keys.length, ArrowDown: at + row < keys.length ? at + row : at, ArrowUp: at - row >= 0 ? at - row : at, Home: 0, End: keys.length - 1 };
+  const next = to[event.key];
+  if (next === undefined) return;
+  event.preventDefault();
+  keys[next]!.focus();
 });
 // 1 to 6 answer with the keyboard (the buttons also take Tab, Enter and Space)
 document.addEventListener("keydown", (event) => {
