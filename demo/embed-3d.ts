@@ -1,11 +1,11 @@
 // The embed page of the constellation in 3D: it draws what its address says, for a site that cannot run script of its own, and takes the family's hands (a drag turns it, a pinch or Ctrl and the wheel zooms, the keys turn and
 // zoom). Its buttons turn it 90 degrees, bring it back to the view from the Earth, and zoom. The address is read as text:
-//   ?c=Ori                    the constellation (the IAU abbreviation; Orion when left out)     &from=HR5459   the star it is seen from (a Bright Star Catalogue number: Alpha Centauri)
+//   ?c=Ori                    the constellation (the IAU abbreviation; Orion when left out)     &from=HR5459   the star it is seen from (a Bright Star Catalogue number: Alpha Centauri; or GCTP3278, Proxima Centauri)
 //   &yaw=-90&tilt=10          how far it is turned (degrees)                                     &lang=ja       Japanese words        &theme=light  the paper look (the device's when left out)
 //   &spin=off                 held still (it opens turning, one turn in 30 seconds, unless the reader prefers reduced motion)
 import { createViewController } from "@johnmorrisdotca/kazoku-ui/view-controls";
 import { constellation } from "../src/constellations.ts";
-import { viewpointOf } from "./from.ts";
+import { loadViewpoint } from "./from.ts";
 import { mountSpace } from "./space-view.ts";
 import { lookNow } from "./thumbs.ts";
 import { say } from "./words.ts";
@@ -19,7 +19,6 @@ const stage = $("sp-stage");
 const host = $("sp-view");
 const number = (name: string, low: number, high: number): number => Math.max(low, Math.min(high, Number(query.get(name)) || 0));
 const abbreviation = constellation(query.get("c") ?? "")?.abbreviation ?? "Ori";
-const from = viewpointOf(query.get("from"));
 const lang = document.documentElement.lang === "ja" ? "ja" : "en";
 frameCredit(lang === "ja");
 
@@ -83,4 +82,5 @@ for (const [id, label, act] of buttons) {
 }
 $("sp-nogl").textContent = say("sp_noGl");
 mount.pose({ yaw: controller.state.yaw, tilt: controller.state.tilt, roll: 0, zoom: 1, panX: 0, panY: 0 }, true);
-void mount.show(abbreviation, from?.hr);
+// a nearby star (`from=GCTP3278`, Proxima Centauri) is read from its own chunk first; a bright star (`from=HR5459`) is found at once
+void loadViewpoint(query.get("from")).then((from) => mount.show(abbreviation, from));

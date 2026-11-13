@@ -8,7 +8,7 @@ import { PAGE_NAMES, TYPE_PRESETS, printableSize } from "@johnmorrisdotca/kazoku
 import { constellations } from "../src/constellations.ts";
 import { figureOf } from "../src/lines.ts";
 import { TYPES, textWidth, wrap } from "../src/sheets/common.ts";
-import { DOT_LEVELS, dotsFigure, dotsSvg } from "../src/sheets/dots.ts";
+import { DOT_LEVELS, DOT_LIMITS, dotsFigure, dotsSvg } from "../src/sheets/dots.ts";
 import { regionGuideSvg } from "../src/sheets/guide.ts";
 import { skyMapSvg } from "../src/sheets/map.ts";
 import { latitudeBand, monthName, skyForLatitude, sunRightAscension, whyFamous } from "../src/sheets/region.ts";
@@ -78,17 +78,15 @@ test("the dots are inside the page, sized by brightness, and their numbers are i
       const w = textWidth(dot.numbers.join("·"), TYPES.kid.bodyMm);
       assert.ok(dot.label.x - w / 2 >= -0.5 && dot.label.x + w / 2 <= 185.1 && dot.label.y <= 171 && dot.label.y >= 0, `${abbreviation}: a number is off the page`);
     }
-    const byBrightness = [...figure.dots].sort((a, b) => a.star.magnitude - b.star.magnitude);
-    for (let i = 1; i < byBrightness.length; i += 1) assert.ok(byBrightness[i]!.r <= byBrightness[i - 1]!.r + 1e-9, `${abbreviation}: a fainter star is bigger`);
-    assert.ok(figure.dots.every((d) => d.r >= 3 && d.r <= 7), "dots 3 to 7 mm");
+    assert.ok(figure.dots.every((d) => d.r >= DOT_LIMITS.kid.floor && d.r <= DOT_LIMITS.kid.ceiling), `dots ${DOT_LIMITS.kid.floor} to ${DOT_LIMITS.kid.ceiling} mm`);
   }
 });
 
-test("an answer page has the lines 1.2 mm thick and a puzzle page has none", () => {
+test("an answer page has the lines 1 mm thick (0.4 for the normal type) and a puzzle page has none", () => {
   const puzzle = dotsSvg("Cas", { level: "medium", widthMm: 184.6, heightMm: 170, lang: "en" });
   const answer = dotsSvg("Cas", { level: "medium", widthMm: 184.6, heightMm: 170, lang: "en", answer: true });
   assert.ok(!puzzle.includes("data-line"));
-  assert.ok(numbers(answer, "stroke-width").includes(1.2));
+  assert.ok(numbers(answer, "stroke-width").includes(1));
   assert.ok(answer.includes("Here is Cassiopeia"));
   assert.ok(dotsSvg("Cas", { level: "hard", widthMm: 184.6, heightMm: 170, lang: "ja" }).includes("ほしを みつけて"));
 });

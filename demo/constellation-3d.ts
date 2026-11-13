@@ -4,11 +4,13 @@ import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import "@johnmorrisdotca/kazoku-ui/embed-panel/define";
 import type { EmbedChangeDetail, EmbedPanelElement } from "@johnmorrisdotca/kazoku-ui/embed-panel/element";
 import "@johnmorrisdotca/kazoku-ui/view-controls/define";
+import "@johnmorrisdotca/kazoku-ui/wide-layout/define";
 import type { ViewChangeDetail, ViewControlsElement } from "@johnmorrisdotca/kazoku-ui/view-controls/element";
 import { constellation } from "../src/constellations.ts";
 import { DISTANCE_QUALITIES, type Constellation3D, type DistanceQuality, type StarIn3D } from "../src/constellation-3d.ts";
 import { starDistance } from "../src/stars.ts";
-import { FAMOUS, viewpointOf } from "./from.ts";
+import { FAMOUS, loadViewpoint, readyViewpointOf, viewpointName, viewpointText, type Viewpoint } from "./from.ts";
+import { NEAR_VIEWPOINTS, nearViewpointOf } from "./near-viewpoints.ts";
 import { mountPicker } from "./picker.ts";
 import { frameCode, spaceCode, spaceFrameAddress, spaceSvg } from "./space-code.ts";
 import type { Pose } from "./space-camera.ts";
@@ -27,7 +29,8 @@ let across = 0;
 let abbreviation = "Ori";
 
 const chosen = (): string => constellation(address.get("c") ?? "")?.abbreviation ?? "Ori";
-const fromStar = (): ReturnType<typeof viewpointOf> => viewpointOf(address.get("from"));
+/** The star the figure is seen from, when it is ready: a bright star at once, Proxima Centauri once `load` has read the nearby table. */
+const fromStar = (): Viewpoint | undefined => readyViewpointOf(address.get("from"));
 
 const mount = mountSpace({
   host: $("sp-view"),
@@ -35,6 +38,12 @@ const mount = mountSpace({
   lang: langNow,
   light: () => lookNow() === "light",
   say,
+  // no name is put under the Wide button
+  keepClear: () => {
+    const box = stage.getBoundingClientRect();
+    const wide = $("sp-wide").getBoundingClientRect();
+    return wide.width === 0 ? [] : [{ x: wide.left - box.left - 4, y: wide.top - box.top - 4, w: wide.width + 8, h: wide.height + 8 }];
+  },
   onShown(figure, live) {
     stage.dataset["state"] = live ? "live" : "fallback";
     $("sp-fallback").hidden = live;
@@ -56,7 +65,7 @@ const mount = mountSpace({
 function placeText(figure: Constellation3D | undefined): string {
   const star = fromStar();
   void figure;
-  return star === undefined ? say("sp_placeEarth") : (FAMOUS.find((one) => one.hr === star.hr)?.[langNow()] ?? star.name ?? `HR ${star.hr}`);
+  return star === undefined ? say("sp_placeEarth") : viewpointName(star, langNow());
 }
 
 function note(): void {
@@ -126,10 +135,10 @@ function row(one: StarIn3D, lang: "en" | "ja"): HTMLTableRowElement {
 function fromChoices(): void {
   const select = $<HTMLSelectElement>("sp-from");
   const lang = langNow();
-  const items: Array<[string, string]> = [["", say("viewFromEarth")], ...FAMOUS.map((one): [string, string] => [`HR${one.hr}`, one[lang]])];
+  const items: Array<[string, string]> = [["", say("viewFromEarth")], ...FAMOUS.map((one): [string, string] => [`HR${one.hr}`, one[lang]]), ...NEAR_VIEWPOINTS.map((one): [string, string] => [one.key, one[lang]])];
   select.replaceChildren(...items.map(([value, label]) => Object.assign(document.createElement("option"), { value, textContent: label })));
   const star = fromStar();
-  select.value = star === undefined ? "" : `HR${star.hr}`;
+  select.value = star === undefined ? "" : viewpointText(star);
   const text = $("sp-from-note");
   const distance = star === undefined ? undefined : starDistance(star);
   text.hidden = distance === undefined;
@@ -142,16 +151,25 @@ const picker = mountPicker({
   search: $<HTMLInputElement>("picker-search"),
   go: (to) => {
     address.set("c", to === "Ori" ? null : to);
-    load();
+    void load();
   },
   current: () => abbreviation,
   say: (key) => say(key),
 });
 
-function load(): void {
+let loading = 0;
+/** Shows the chosen constellation from the chosen star. A nearby star's table is read first (a separate chunk, loaded only for it), and a newer choice made meanwhile wins. */
+async function load(): Promise<void> {
+  const mine = ++loading;
   abbreviation = chosen();
-  const from = fromStar();
-  void mount.show(abbreviation, from?.hr);
+  const text = address.get("from");
+  let from = readyViewpointOf(text);
+  if (from === undefined && nearViewpointOf(text) !== undefined) {
+    from = await loadViewpoint(text);
+    if (mine !== loading) return;
+    if (from === undefined) address.set("from", null);
+  }
+  void mount.show(abbreviation, from);
   fromChoices();
   picker.refresh();
   everythingElse();
@@ -172,7 +190,7 @@ $("sp-turn").addEventListener("click", () => {
 $("sp-front").addEventListener("click", () => controls.controller.front());
 $("sp-from").addEventListener("change", () => {
   address.set("from", $<HTMLSelectElement>("sp-from").value || null);
-  load();
+  void load();
 });
 const poseOf = (s: ViewChangeDetail | ViewControlsElement["state"]): Pose => ({ yaw: s.yaw, tilt: s.tilt, roll: s.roll ?? 0, zoom: s.zoom, panX: s.panX, panY: s.panY });
 controls.addEventListener("kazoku-viewchange", (event) => mount.pose(poseOf((event as CustomEvent<ViewChangeDetail>).detail)));
@@ -187,6 +205,7 @@ controls.addEventListener("kazoku-viewchange", (event) => {
 if (address.get("spin") !== "off" && !matchMedia("(prefers-reduced-motion: reduce)").matches) controls.controller.play();
 document.addEventListener("hoshi-language", () => {
   controls.setAttribute("lang", langNow());
+  $("sp-wide").setAttribute("lang", langNow());
   fromChoices();
   mount.refresh();
   everythingElse();
@@ -198,19 +217,23 @@ onLook(() => {
   picker.refresh();
 });
 address.subscribe(({ source }) => {
-  if (source === "navigation") load();
+  if (source === "navigation") void load();
 });
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (): { c: string; from: number | undefined; yaw: number; tilt: number; lang: "en" | "ja" } => ({ c: abbreviation, from: fromStar()?.hr, yaw: Math.round(controls.state.yaw), tilt: Math.round(controls.state.tilt), lang: langNow() });
+const fromChoice = (): number | string | undefined => {
+  const star = fromStar();
+  return star === undefined ? undefined : "hr" in star ? star.hr : viewpointText(star);
+};
+const choice = (): { c: string; from: number | string | undefined; yaw: number; tilt: number; lang: "en" | "ja" } => ({ c: abbreviation, from: fromChoice(), yaw: Math.round(controls.state.yaw), tilt: Math.round(controls.state.tilt), lang: langNow() });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 panel.generate = ({ kind, size, preview }) => (kind === "iframe" ? frameCode(choice(), say("sp_embedLabel"), size, preview) : (spaceCode(kind, choice(), size) ?? ""));
 panel.preview = ({ kind, size }) => {
   if (kind === "iframe") return undefined;
   const holder = document.createElement("div");
   holder.style.cssText = `width: ${size}px; max-width: 100%; line-height: 0`;
-  holder.innerHTML = spaceSvg(choice(), size);
+  holder.innerHTML = spaceSvg(choice(), size, fromStar());
   return holder;
 };
 panel.credits = say("credit");
@@ -229,7 +252,8 @@ function codes(): void {
 }
 
 controls.setAttribute("lang", langNow());
+$("sp-wide").setAttribute("lang", langNow());
 stage.dataset["look"] = lookNow();
 // a page opened with a turn in its address (yaw, tilt, zoom) starts there
 mount.pose(poseOf(controls.state), true);
-load();
+void load();

@@ -162,6 +162,61 @@ test("seen from another star the Earth is a star called Sun, and the note says h
   await expect.poll(() => param(page, "from")).toBeNull();
 });
 
+test("Proxima Centauri is offered as a viewpoint: the choice, the note, the address, a reload and the embed page", async ({ page }) => {
+  await open(page);
+  await expect(page.getByTestId("sp-from").locator("option[value=GCTP3278]")).toHaveText("Proxima Centauri");
+  await page.getByTestId("sp-from").selectOption("GCTP3278");
+  await expect.poll(() => param(page, "from")).toBe("GCTP3278");
+  await expect(page.getByTestId("sp-note")).toContainText("As seen from Proxima Centauri");
+  await expect(page.getByTestId("sp-from-note")).toContainText("4.2 light-years");
+  await expect(live(page)).toBeVisible();
+  await page.getByTestId("sp-turn").click();
+  await expect.poll(() => across(page), { timeout: 10_000 }).toBeGreaterThan(0.95);
+  await expect(page.locator("#sp-labels .sp-place").first()).toBeAttached();
+  // a link kept in the address opens from there, with the choice shown
+  await open(page, "?c=Cas&from=GCTP3278");
+  await expect(page.getByTestId("sp-from")).toHaveValue("GCTP3278");
+  await expect(page.getByTestId("sp-note")).toContainText("As seen from Proxima Centauri");
+  // the copied code reads the nearby entry
+  await expect(page.getByTestId("embed-panel")).toBeAttached();
+  await page.goto("/hoshi-stars/embed-3d.html?c=Cas&from=GCTP3278&lang=ja");
+  await expect(page.locator("#sp-stage[data-state=live]")).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator("#sp-labels .sp-place").first()).toBeAttached();
+});
+
+test("Wide is theatre mode on the page: the view takes the page's column, the panel goes under it, the T key and the address agree, and no name is under the button", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await open(page);
+  const normal = (await page.locator("#sp-stage").boundingBox())!;
+  const main = (await page.locator("main").boundingBox())!;
+  await expect(page.getByTestId("wide-toggle")).toBeVisible();
+  await page.keyboard.press("t");
+  await expect(page.locator("html")).toHaveAttribute("data-wide", "on");
+  await expect.poll(() => param(page, "wide")).toBe("on");
+  await expect.poll(async () => (await page.locator("#sp-stage").boundingBox())!.width).toBeGreaterThan(normal.width + 150);
+  const stage = (await page.locator("#sp-stage").boundingBox())!;
+  const side = (await page.locator(".sp-side").boundingBox())!;
+  expect((await page.locator("main").boundingBox())!.width, "the page keeps its width").toBeCloseTo(main.width, 0);
+  expect(stage.height).toBeLessThanOrEqual(900 * 0.8 + 1);
+  expect(side.y, "the panel is under the view").toBeGreaterThanOrEqual(stage.y + stage.height);
+  expect(stage.width, "the view fills the column").toBeGreaterThan(main.width - 80);
+  await expect.poll(async () => shown(page).count(), { timeout: 20_000 }).toBeGreaterThan(2);
+  await page.waitForTimeout(400);
+  await noOverlap(page, "wide");
+  const button = (await page.getByTestId("wide-toggle").boundingBox())!;
+  for (const label of (await layout(page)).labels) {
+    const clear = label.x + label.w <= button.x || button.x + button.width <= label.x || label.y + label.h <= button.y || button.y + button.height <= label.y;
+    expect(clear, `"${label.text}" is under the Wide button`).toBe(true);
+  }
+  await page.keyboard.press("t");
+  await expect(page.locator("html")).not.toHaveAttribute("data-wide", "on");
+  await expect.poll(() => param(page, "wide")).toBeNull();
+  await expect.poll(async () => (await page.locator("#sp-stage").boundingBox())!.width).toBeLessThan(normal.width + 5);
+  // a link with wide=on opens wide
+  await open(page, "?wide=on");
+  await expect(page.locator("html")).toHaveAttribute("data-wide", "on");
+});
+
 test("Japanese: the heading, the labels, the table and the buttons are in Japanese", async ({ page }) => {
   await open(page, "?lang=ja");
   await expect(page.getByTestId("sp-heading")).toContainText("立体の星座");

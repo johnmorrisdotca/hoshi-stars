@@ -9,16 +9,16 @@ description: Connect-the-dots constellations, the constellations for your countr
 
 `/sheets` draws four printable things from the package's own stars and figures, each as one SVG string measured in millimetres (a millimetre of the picture is a millimetre of the paper), so it has no browser and no dependency:
 
-- **Connect the dots** (`dotsSvg`, `dotsFigure`): a constellation's figure as big dots, sized by brightness and numbered in the order the lines are drawn, for a child; an answer page has the lines. Three levels: `easy` joins the brightest 5 to 10 stars in one line, `medium` joins every star of the figure, `hard` has the dots and no numbers to find. Where a figure has more than one line the pencil is lifted: the dot where a new line starts has a ring. A star the lines pass again carries both numbers (`4·8`).
+- **Connect the dots** (`dotsSvg`, `dotsFigure`): a constellation's figure as big dots, sized by brightness and numbered in the order the lines are drawn, for a child; an answer page has the lines, 1 mm thick. No dot is larger than a third of the distance to its nearest dot (between the floor and the ceiling of `DOT_LIMITS`: 1 to 5 mm for a child, 0.6 to 2 mm for the normal type), and where two stars lie too close on the page for the smallest dots they are moved apart, by 2 mm at the most. Every number is put where it touches no dot, line or other number; a test holds that for all the figures, at every level, type and paper. Three levels: `easy` joins the brightest 5 to 10 stars in one line, `medium` joins every star of the figure, `hard` has the dots and no numbers to find. Where a figure has more than one line the pencil is lifted: the dot where a new line starts has a ring. A star the lines pass again carries both numbers (`4·8`).
 - **Your sky** (`skyForLatitude`, `regionGuideSvg`): the constellations that are always up at a latitude, the best of the evening sky in a month (about 21:00 by the Sun on the 15th), and the ones that are never seen. Latitude decides most of it. Ursa Minor is never seen from Sydney, the Southern Cross never from Toronto, and the Big Dipper never sets there.
 - **A star wheel** (`starWheelDisc`, `starWheelPlate`, `starWheelPoster`): a planisphere for a latitude, to cut out: the disc of stars and figures with the date round its edge, and the plate with the horizon as a window and the hours round its edge. Turn the disc until the date is at the time you look. A poster version is 400 mm across, to tile over pages. Wheels are made for 20 to 70 degrees north or south.
 - **A sky map for a month** (`skyMapSvg`): the evening sky over a latitude, the horizon at the edge and the zenith in the middle, with the figures and the names of the best known constellations that are up.
 
 ```ts
-import { dotsSvg, latitudeBand, monthName, skyForLatitude, skyMapSvg, starWheelPlate } from "@johnmorrisdotca/hoshi-stars/sheets";
+import { DOT_LIMITS, dotsSvg, latitudeBand, monthName, skyForLatitude, skyMapSvg, starWheelPlate } from "@johnmorrisdotca/hoshi-stars/sheets";
 
 const room = { widthMm: 184.6, heightMm: 190 };
-console.log(dotsSvg("Ori", { ...room, level: "easy", lang: "en" }).includes("Join the dots from 1 to"));
+console.log(dotsSvg("Ori", { ...room, level: "easy", lang: "en" }).includes("Join the dots from 1 to"), DOT_LIMITS.kid.ceiling);
 
 const sydney = skyForLatitude(-33.9);
 console.log(sydney.find((one) => one.constellation.abbreviation === "UMi")?.standing, sydney.find((one) => one.constellation.abbreviation === "Cru")?.standing);
@@ -30,7 +30,7 @@ console.log(starWheelPlate(-34, { ...room, lang: "en" }).includes('data-cut="win
 
 | Function | Gives |
 |---|---|
-| `DOT_LEVELS`, `dotsFigure(name, { level, widthMm, heightMm, type })` | the levels (`easy`, `medium`, `hard`) and a figure laid out as dots, numbers and lines |
+| `DOT_LEVELS`, `DOT_LIMITS`, `dotsFigure(name, { level, widthMm, heightMm, type })` | the levels (`easy`, `medium`, `hard`), the smallest and largest dot of each type in millimetres, and a figure laid out as dots, numbers and lines |
 | `dotsSvg(name, { level, widthMm, heightMm, lang, answer, type })`, `dotsSubtitle(constellation, lang)` | a page of the puzzle or its answer, and the line of meaning for a title (`Orion: the Hunter`) |
 | `skyForLatitude(latitude, month?)`, `latitudeBand(latitude, lang)`, `monthName(month, lang)`, `whyFamous(abbreviation, lang)` | the constellations as a place sees them, the band of ten degrees, a month's name and a note on a famous constellation |
 | `regionGuideSvg(latitude, month, options)` | the sheet "constellations for where you live" |

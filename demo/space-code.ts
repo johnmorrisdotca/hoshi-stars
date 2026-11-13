@@ -2,7 +2,9 @@
 // sky sideways) as SVG, for every way a page is made; the live 3D view is the demo's, in an iframe (`embed-3d.html`). The tests run the module's lines against the package.
 import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
 import { constellationIn3D, type Point3, type StarIn3D } from "../src/constellation-3d.ts";
-import { starByHr, starColour } from "../src/stars.ts";
+import type { NearbyStar } from "../src/nearby.ts";
+import { starByHr, starColour, type Star } from "../src/stars.ts";
+import { nearViewpointOf } from "./near-viewpoints.ts";
 
 declare const __HOSHI_VERSION__: string | undefined;
 
@@ -17,8 +19,8 @@ export const spaceHeightFor = (width: number): number => Math.round((width * 3) 
 export interface SpaceChoice {
   /** The IAU abbreviation. */
   c: string;
-  /** The Bright Star Catalogue number of the star the figure is seen from; left out for the Earth. */
-  from: number | undefined;
+  /** The star the figure is seen from: a Bright Star Catalogue number, or the text of a nearby star an address writes (`GCTP3278`, Proxima Centauri); left out for the Earth. */
+  from: number | string | undefined;
   yaw: number;
   tilt: number;
   lang: "en" | "ja";
@@ -28,7 +30,7 @@ export interface SpaceChoice {
 export function spaceQuery(choice: SpaceChoice): string {
   const query = new URLSearchParams();
   query.set("c", choice.c);
-  if (choice.from !== undefined) query.set("from", `HR${choice.from}`);
+  if (choice.from !== undefined) query.set("from", typeof choice.from === "number" ? `HR${choice.from}` : choice.from);
   if (choice.yaw !== 0) query.set("yaw", String(choice.yaw));
   if (choice.tilt !== 0) query.set("tilt", String(choice.tilt));
   if (choice.lang === "ja") query.set("lang", "ja");
@@ -52,10 +54,12 @@ interface Import {
 export function spaceLines(choice: SpaceChoice, width: number): { imports: Import[]; body: string } {
   const height = spaceHeightFor(width);
   const from = choice.from !== undefined;
-  const imports: Import[] = [{ names: from ? "starByHr, starColour" : "starColour", sub: "" }, { names: "constellationIn3D", sub: "/constellation-3d" }];
+  const near = typeof choice.from === "string" ? nearViewpointOf(choice.from) : undefined;
+  const imports: Import[] = [{ names: from && near === undefined ? "starByHr, starColour" : "starColour", sub: "" }, { names: "constellationIn3D", sub: "/constellation-3d" }];
+  if (near !== undefined) imports.push({ names: "nearbyStarByName", sub: "/nearby" });
   const body = [
     `function spaceView() {`,
-    `  const figure = constellationIn3D(${JSON.stringify(choice.c)}${from ? `, { from: starByHr(${choice.from}) }` : ""});`,
+    `  const figure = constellationIn3D(${JSON.stringify(choice.c)}${near !== undefined ? `, { from: nearbyStarByName(${JSON.stringify(near.query)}) }` : from ? `, { from: starByHr(${choice.from}) }` : ""});`,
     `  const { centre, up } = figure.frame;`,
     `  const side = [centre[1] * up[2] - centre[2] * up[1], centre[2] * up[0] - centre[0] * up[2], centre[0] * up[1] - centre[1] * up[0]];`,
     `  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];`,
@@ -133,11 +137,13 @@ export function spaceCode(kind: string, choice: SpaceChoice, width: number): str
  *
  * @param choice - The constellation and the star it is seen from.
  * @param width - The width in pixels.
+ * @param seenFrom - The star `choice.from` names, when it is a nearby star: the page loads the nearby table only for it, so it is handed in here. A bright star is found from its number.
  * @returns The SVG text.
  */
-export function spaceSvg(choice: SpaceChoice, width: number): string {
+export function spaceSvg(choice: SpaceChoice, width: number, seenFrom?: Star | NearbyStar): string {
   const height = spaceHeightFor(width);
-  const figure = constellationIn3D(choice.c, choice.from === undefined ? {} : { from: starByHr(choice.from)! });
+  const from = seenFrom ?? (typeof choice.from === "number" ? starByHr(choice.from) : undefined);
+  const figure = constellationIn3D(choice.c, from === undefined ? {} : { from });
   const { centre, up } = figure.frame;
   const side = [centre[1] * up[2] - centre[2] * up[1], centre[2] * up[0] - centre[0] * up[2], centre[0] * up[1] - centre[1] * up[0]] as const;
   const dot = (a: readonly number[], b: readonly number[]): number => a[0]! * b[0]! + a[1]! * b[1]! + a[2]! * b[2]!;

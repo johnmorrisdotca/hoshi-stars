@@ -3,7 +3,8 @@
 import type { SharedRenderer, View } from "@johnmorrisdotca/kazoku-ui/renderer";
 import { pageRenderer } from "./page-renderer.ts";
 import { constellationIn3D, type Constellation3D, type StarIn3D } from "../src/constellation-3d.ts";
-import { starByHr } from "../src/stars.ts";
+import type { NearbyStar } from "../src/nearby.ts";
+import type { Star } from "../src/stars.ts";
 import { placeLabels, type LabelRequest, type Rect } from "./space-labels.ts";
 import { RESTING_POSE, type Pose } from "./space-camera.ts";
 import { shapeOf, sizeOf, spaceItem, type Frame, type SpaceScene, type Three } from "./space-scene.ts";
@@ -28,8 +29,8 @@ export interface MountOptions {
 }
 
 export interface SpaceMount {
-  /** Show a constellation (its IAU abbreviation), optionally from a star (Bright Star Catalogue number). Resolves with whether the 3D view is live. */
-  show(abbreviation: string, from?: number): Promise<boolean>;
+  /** Show a constellation (its IAU abbreviation), optionally from a star (a bright star, or a nearby one the page has loaded). Resolves with whether the 3D view is live. */
+  show(abbreviation: string, from?: Star | NearbyStar): Promise<boolean>;
   /** The pose the hands hold now. */
   pose(pose: Pose, snap?: boolean): void;
   /** The look or the language changed: draw the labels again. */
@@ -175,14 +176,13 @@ export function mountSpace(options: MountOptions): SpaceMount {
     options.onAcross?.(frame.across);
   }
 
-  async function show(abbreviation: string, from?: number): Promise<boolean> {
+  async function show(abbreviation: string, from?: Star | NearbyStar): Promise<boolean> {
     const mine = ++token;
     view?.dispose();
     view = undefined;
     scene = undefined;
     live = false;
-    const viewpoint = from === undefined ? undefined : starByHr(from);
-    figure = constellationIn3D(abbreviation, viewpoint === undefined ? {} : { from: viewpoint });
+    figure = constellationIn3D(abbreviation, from === undefined ? {} : { from });
     labels.replaceChildren();
     entries = [];
     const made = spaceItem({
