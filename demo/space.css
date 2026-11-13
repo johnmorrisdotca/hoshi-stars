@@ -27,6 +27,12 @@
 .sp-tick { padding: 0 3px; font-size: .68rem; color: var(--sp-muted); background: none; text-shadow: none; }
 .sp-place { font-weight: 650; color: #6fd0ff; }
 .sp-stage[data-look="light"] .sp-place { color: #0b6ea8; }
+.sp-wide { position: absolute; top: 8px; right: 8px; z-index: 2; }
+/* Wide is theatre mode, as on the sky map: the view takes the page's own column, 16 to 9 and no taller than 80% of the window, and the panel goes below it. The page keeps its width. */
+@media (min-width: 641px) {
+  [data-wide="on"] .sp-grid { grid-template-columns: minmax(0, 1fr); }
+  [data-wide="on"] .sp-stage { width: 100%; height: auto; aspect-ratio: 16 / 9; max-height: 80vh; }
+}
 .sp-loading, .sp-fallback { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 10px; margin: 0; padding: 16px; text-align: center; color: var(--sp-muted); }
 .sp-stage:not([data-state="loading"]) .sp-loading { display: none; }
 .sp-fallback img { width: min(320px, 70%); height: auto; border-radius: 8px; }

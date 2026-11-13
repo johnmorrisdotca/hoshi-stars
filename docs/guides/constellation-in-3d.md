@@ -84,6 +84,8 @@ A page with no WebGL can draw the figure from the side with the same numbers: th
 
 ## The live 3D view in an iframe
 
+The demo page's **View from** list offers ten bright stars and Proxima Centauri, the nearest star to the Sun (4.2 light-years), which is not among the bright stars: `{ from: nearbyStarByName("Proxima Centauri") }` with `nearbyStarByName` from `@johnmorrisdotca/hoshi-stars/nearby`. The page reads that table only when Proxima is chosen. The choice is kept in the address as `from=GCTP3278` (the Yale catalogue number; `from=HR5459` is Alpha Centauri), and the embed page reads the same. The **Wide** button at the top right of the view (or the T key) is theatre mode, as on the sky map: the view takes the page's whole column, 16 to 9 and no taller than 80% of the window, and the table of stars goes under it; it is kept in the address as `wide=on`.
+
 The demo's embed page draws the figure with kazoku-ui's shared renderer (one WebGL context, drawn only when something moves, at most 30 frames a second) and takes the family's hands: drag to turn, pinch or Ctrl and the wheel to zoom, and buttons for Play and Pause, Turn 90°, From Earth and zoom. It opens turning, once in 30 seconds, and the demo's page does the same; a reader who prefers reduced motion gets it still, with Play ready. Its address says what to draw: `c` (the constellation, `Ori` when left out), `from` (`HR5459` for Alpha Centauri), `yaw` and `tilt` (degrees), `spin=off` (held still), `lang` (`ja`) and `theme` (`light` or `dark`). On the demo's page a Pause is kept in the address as `spin=off`.
 
 ```html
