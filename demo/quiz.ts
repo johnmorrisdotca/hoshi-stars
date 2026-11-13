@@ -1,11 +1,12 @@
 // The constellation quiz: a chart centred on one constellation with no name for it on the chart, and six names to choose from. The style (plain stars, stars and lines, annotated: the lines, the borders and the names of the neighbours) and the level (the bright 12, 30 or all 88) are kept in
-// the address (style, level), and so is the question (q, the constellation's place in the list of the 88, never its name; a hand-written c=Ori is read too), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
+// the address (style, level, kid), and so is the question (q, the constellation's place in the list of the 88, never its name; a hand-written c=Ori is read too), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { centreOfConstellation, chart, toScreen, type View } from "../src/chart/chart.ts";
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
 import { neighbouringConstellations } from "../src/nearest.ts";
 import { figureOf } from "../src/lines.ts";
 import { langNow, lookNow, nameIn, thumbSrc } from "./thumbs.ts";
+import { ALL_WORDS } from "../scripts/gallery-words.ts";
 import { say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
@@ -13,7 +14,7 @@ const address = createAddressState();
 
 const STYLES = ["plain", "lines", "annotated"] as const;
 type Style = (typeof STYLES)[number];
-const STYLE_WORDS: Record<Style, string> = { plain: "qz_plain", lines: "qz_lines", annotated: "qz_annotated" };
+const STYLE_WORDS: Record<Style, string> = { plain: "plain", lines: "lines", annotated: "annotated" };
 const LEVELS = ["12", "30", "88"] as const;
 type Level = (typeof LEVELS)[number];
 const CHOICES = 6;
@@ -34,6 +35,8 @@ const poolOf = (level: Level): string[] => ranked.slice(0, Number(level));
 
 let style: Style = pick(address.get("style"), STYLES, "plain");
 let level: Level = pick(address.get("level"), LEVELS, "12");
+/** Kid mode: big buttons and simpler words, kept in the address (kid=1). */
+let kid = address.get("kid") === "1";
 let asked = 0;
 let right = 0;
 let streak = 0;
@@ -50,6 +53,8 @@ const questionInAddress = (): string | undefined => {
   return Number.isInteger(place) && place >= 1 && place <= ORDER.length ? ORDER[place - 1] : (address.get("c") ?? undefined);
 };
 
+/** A word of the page: the kid mode's simpler one (`qz_k_<name>`) where it has one, else the plain one. */
+const w = (name: string, values: Record<string, string | number> = {}): string => say(kid && `qz_k_${name}` in ALL_WORDS.en ? `qz_k_${name}` : `qz_${name}`, values);
 const named = (c: Constellation): string => nameIn(c, langNow());
 const shuffle = <T>(items: T[]): T[] => {
   const out = [...items];
@@ -113,7 +118,7 @@ function drawSky(): void {
     }
   }
   svg.innerHTML = drawn.svg + labels;
-  svg.setAttribute("aria-label", say("qz_sky"));
+  svg.setAttribute("aria-label", w("sky"));
 }
 
 function valueButton(value: string): HTMLButtonElement {
@@ -123,12 +128,28 @@ function valueButton(value: string): HTMLButtonElement {
 }
 
 function render(): void {
-  document.title = `${say("qz_heading")} - Hoshi Stars`;
+  document.title = `${w("heading")} - Hoshi Stars`;
+  $("qz-root").dataset["kid"] = String(kid);
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-qz]"))) {
+    const name = el.dataset["qz"]!;
+    el.dataset["say"] = kid && `qz_k_${name}` in ALL_WORDS.en ? `qz_k_${name}` : `qz_${name}`;
+    el.textContent = w(name);
+  }
+  for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-qz-label]"))) el.setAttribute("aria-label", w(el.dataset["qzLabel"]!));
+  const kidButton = $("qz-kid");
+  kidButton.textContent = say("qz_kid");
+  kidButton.setAttribute("aria-pressed", String(kid));
   const styles = $("qz-styles");
   const levels = $("qz-levels");
   if (styles.children.length === 0) {
     for (const value of STYLES) styles.append(valueButton(value));
     for (const value of LEVELS) levels.append(valueButton(value));
+    $("qz-kid").addEventListener("click", () => {
+      kid = !kid;
+      address.set("kid", kid ? "1" : null);
+      render();
+      if (answered) $("qz-result").textContent = w($("qz-result").dataset["correct"] === "true" ? "right" : "wrong", { name: named(constellation(current)!) });
+    });
     styles.addEventListener("click", (event) => {
       const value = (event.target as HTMLElement).closest("button")?.dataset["value"] as Style | undefined;
       if (value === undefined || value === style) return;
@@ -145,11 +166,11 @@ function render(): void {
     });
   }
   for (const button of Array.from(styles.querySelectorAll("button"))) {
-    button.textContent = say(STYLE_WORDS[button.dataset["value"] as Style]);
+    button.textContent = w(STYLE_WORDS[button.dataset["value"] as Style]);
     button.setAttribute("aria-pressed", String(button.dataset["value"] === style));
   }
   for (const button of Array.from(levels.querySelectorAll("button"))) {
-    button.textContent = say(`qz_l${button.dataset["value"]}`);
+    button.textContent = w(`l${button.dataset["value"]}`);
     button.setAttribute("aria-pressed", String(button.dataset["value"] === level));
   }
   drawSky();
@@ -165,20 +186,19 @@ function render(): void {
       return button;
     }),
   );
-  list.setAttribute("aria-label", say("qz_choose"));
   const right_ = constellation(current)!;
   // the link and its words name the answer, so they are put in only once it is answered
   const open = $<HTMLAnchorElement>("qz-open");
   open.hidden = !answered;
   if (answered) {
     open.href = `constellation.html?c=${current}`;
-    open.textContent = say("qz_open", { name: named(right_) });
+    open.textContent = w("open", { name: named(right_) });
   } else {
     open.removeAttribute("href");
     open.textContent = "";
   }
   $<HTMLButtonElement>("qz-next").disabled = !answered;
-  $("qz-score").textContent = say("qz_score", { right, asked }) + (best >= 2 ? ` ${say("qz_streak", { streak, best })}` : "");
+  $("qz-score").textContent = w("score", { right, asked }) + (best >= 2 ? ` ${w("streak", { streak, best })}` : "");
   drawMissed();
   if (!answered) $("qz-result").textContent = "";
 }
@@ -213,7 +233,7 @@ function answer(abbreviation: string): void {
     if (!missed.includes(current)) missed.push(current);
   }
   render();
-  $("qz-result").textContent = say(abbreviation === current ? "qz_right" : "qz_wrong", { name });
+  $("qz-result").textContent = w(abbreviation === current ? "right" : "wrong", { name });
   $("qz-result").dataset["correct"] = String(abbreviation === current);
   for (const button of Array.from($("qz-choices").querySelectorAll<HTMLButtonElement>("button"))) {
     if (button.dataset["abbr"] === abbreviation && abbreviation !== current) button.dataset["state"] = "wrong";
@@ -238,7 +258,7 @@ document.addEventListener("keydown", (event) => {
 });
 document.addEventListener("hoshi-language", () => {
   render();
-  if (answered) $("qz-result").textContent = say($("qz-result").dataset["correct"] === "true" ? "qz_right" : "qz_wrong", { name: named(constellation(current)!) });
+  if (answered) $("qz-result").textContent = w($("qz-result").dataset["correct"] === "true" ? "right" : "wrong", { name: named(constellation(current)!) });
 });
 let lastWidth = 0;
 new ResizeObserver(() => {

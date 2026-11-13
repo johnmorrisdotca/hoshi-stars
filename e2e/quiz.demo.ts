@@ -141,3 +141,46 @@ test("two right answers in a row make a streak", async ({ page }) => {
   await expect(page.getByTestId("qz-score")).toHaveText("Score: 2 of 2 Streak 2, best 2.");
   await expect(page.getByTestId("qz-result")).toHaveAttribute("data-correct", "true");
 });
+
+/** The text of the page outside the six choices: what a reader (or a screen reader) is told before the answer, which must not name it. */
+const outsideChoices = (page: Page): Promise<string> =>
+  page.evaluate(() => {
+    const copy = document.body.cloneNode(true) as HTMLElement;
+    copy.querySelector("#qz-choices")?.remove();
+    return `${document.title}|${location.href}|${copy.innerHTML}`;
+  });
+
+test("kid mode: big buttons, simpler words, kept in the address, and it gives nothing away", async ({ page }) => {
+  await page.goto(`${PAGE}?c=Ori&level=88`);
+  await expect(choices(page)).toHaveCount(6);
+  const plain = await choices(page).first().evaluate((b) => b.getBoundingClientRect().height);
+  await expect(page.getByTestId("qz-kid")).toHaveAttribute("aria-pressed", "false");
+  await page.getByTestId("qz-kid").click();
+  await expect.poll(() => param(page, "kid")).toBe("1");
+  await expect(page.getByTestId("qz-kid")).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Which star picture is this?");
+  await expect(page.getByTestId("qz-levels").getByRole("button", { name: "Easy (12)" })).toBeVisible();
+  // big targets: every choice and every control is at least 56 px tall, and the choices are taller than in the plain mode
+  const sizes = await page.locator(".quiz button, .quiz a.fam-button").evaluateAll((all) => all.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => Math.round(e.getBoundingClientRect().height)));
+  expect(Math.min(...sizes), "every button is big").toBeGreaterThanOrEqual(56);
+  expect(await choices(page).first().evaluate((b) => b.getBoundingClientRect().height)).toBeGreaterThan(plain + 10);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth), "no sideways scroll").toBeLessThanOrEqual(0);
+  // nothing names the answer before it is answered: not the address, the title, the labels or the link
+  expect(await outsideChoices(page)).not.toMatch(/Orion|オリオン|\bOri\b|c=Ori/);
+  await page.getByTestId("qz-choices").locator('button[data-abbr="Ori"]').click();
+  await expect(page.getByTestId("qz-result")).toHaveText("Yes! It is Orion!");
+  await expect(page.getByTestId("qz-score")).toHaveText("You got 1 of 1");
+  await expect(page.getByTestId("qz-next")).toHaveText("Next one");
+  await page.reload();
+  await expect(page.getByTestId("qz-kid")).toHaveAttribute("aria-pressed", "true");
+  await page.getByTestId("qz-kid").click();
+  await expect.poll(() => param(page, "kid")).toBeNull();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Which constellation is this?");
+});
+
+test("kid mode in Japanese uses the simple words", async ({ page }) => {
+  await page.goto(`${PAGE}?kid=1&lang=ja&level=88`);
+  await expect(choices(page)).toHaveCount(6);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("これは なにざ?");
+  await expect(page.getByTestId("qz-next")).toHaveText("つぎの もんだい");
+});
