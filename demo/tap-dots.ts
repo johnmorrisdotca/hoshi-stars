@@ -120,7 +120,7 @@ function draw(what: { grew?: boolean; shake?: boolean }): void {
   svg.addEventListener("keydown", (event) => {
     const target = event.target as Element;
     // the arrow keys walk from dot to dot (the next and the one before, wrapping; Home and End to the ends), as Tab does
-    const all = [...svg.querySelectorAll<SVGElement>("[data-index]")];
+    const all = Array.from(svg.querySelectorAll<SVGElement>("[data-index]"));
     const at = all.indexOf(target as SVGElement);
     const walk = at < 0 ? 0 : event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
     if (walk !== 0 || (at >= 0 && (event.key === "Home" || event.key === "End"))) {
