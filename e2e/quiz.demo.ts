@@ -305,7 +305,12 @@ test("the embed page asks the quiz its address chooses, with no controls, in kid
   for (const id of ["qz-styles", "qz-levels", "qz-hemis", "qz-month", "qz-kid"]) await expect(page.locator(`#${id}`)).toBeHidden();
   const sizes = await choices(page).evaluateAll((all) => all.map((b) => Math.round(b.getBoundingClientRect().height)));
   expect(Math.min(...sizes), "kid mode's big names").toBeGreaterThanOrEqual(72);
-  expect(await page.getByTestId("qz-sky").locator("line, path").count(), "the lines style draws the figure").toBeGreaterThan(3);
+  const withLines = await page.getByTestId("qz-sky").locator("line, path").count();
+  await page.goto(`${EMBED}?c=Ori&level=88&kid=1`);
+  await expect(choices(page)).toHaveCount(6);
+  expect(withLines, "the lines style draws the figure: more than the plain style").toBeGreaterThan(await page.getByTestId("qz-sky").locator("line, path").count());
+  await page.goto(`${EMBED}?c=Ori&level=88&style=lines&kid=1`);
+  await expect(choices(page)).toHaveCount(6);
   expect(await page.getByTestId("qz-sky").locator("text").count(), "no name on the chart").toBe(0);
   // nothing names the answer before it is answered, and the address is not written to
   const before = await page.evaluate(() => `${document.title}|${location.search}|${(() => { const copy = document.body.cloneNode(true) as HTMLElement; copy.querySelector("#qz-choices")?.remove(); return copy.innerHTML; })()}`);
