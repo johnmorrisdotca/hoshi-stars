@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <title>Hoshi Stars constellation quiz embed</title>
+    <meta name="robots" content="noindex" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="quiz.css" />
+    <style>
+      body { background: var(--page); }
+      .qz-frame { padding: 30px 8px 10px; }
+      [hidden] { display: none !important; }
+    </style>
+  </head>
+  <body data-embed="quiz">
+    <main class="quiz qz-frame" id="qz-root" data-kid="false" aria-labelledby="qz-heading">
+      <!-- the controls are the page's; here the address chooses, so they stay hidden -->
+      <div hidden>
+        <h1 id="qz-heading" data-qz="heading"></h1>
+        <span data-qz="lede"></span><span data-qz="style"></span><span data-qz="level"></span><span data-qz="where"></span><span data-qz="note"></span>
+        <span id="qz-cultures" data-qz-label="culture"></span><p id="qz-culturenote"></p><span data-qz="culture"></span><span id="qz-styles" data-qz-label="style"></span><span id="qz-levels" data-qz-label="level"></span><span id="qz-hemis" data-qz-label="where"></span>
+        <select id="qz-month" data-qz-label="month"></select><button type="button" id="qz-kid"></button><p id="qz-skynote"></p>
+      </div>
+      <div class="qz-sky" id="qz-box" data-testid="qz-box"><svg id="qz-sky" data-testid="qz-sky" role="img"></svg></div>
+      <div class="qz-choices" id="qz-choices" data-testid="qz-choices" role="group" data-qz-label="choose"></div>
+      <p class="qz-result" id="qz-result" data-testid="qz-result" aria-live="polite"></p>
+      <p class="fam-row"><button type="button" class="fam-button" data-primary="true" id="qz-next" data-testid="qz-next" data-qz="next"></button><a class="fam-button" id="qz-open" data-testid="qz-open" target="_blank" rel="noopener" hidden></a><span class="qz-score" id="qz-score" data-testid="qz-score" aria-live="polite"></span></p>
+      <h2 class="qz-missed-title" id="qz-missed-title" data-qz="missed" hidden></h2>
+      <div class="qz-missed" id="qz-missed" data-testid="qz-missed" hidden></div>
+    </main>
+    <script type="module" src="js/quiz.js"></script>
+  </body>
+</html>

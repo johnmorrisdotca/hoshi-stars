@@ -6,26 +6,37 @@
     <link rel="stylesheet" href="family.css" />
     <link rel="stylesheet" href="demo.css" />
     <link rel="stylesheet" href="gallery.css" />
+    <link rel="stylesheet" href="quiz.css" />
   </head>
   <body>
     <main>
       <!--family:header-->
       <!--family:unreviewed-->
-      <section class="quiz" aria-labelledby="qz-heading">
-        <h1 id="qz-heading" class="gl-title" data-say="qz_heading"></h1>
-        <p class="lead" data-say="qz_lede"></p>
-        <div class="fam-row"><span class="fam-label" data-say="qz_style"></span><span class="fam-seg" id="qz-styles" role="group" data-say-label="qz_style" data-testid="qz-styles"></span></div>
-        <div class="fam-row"><span class="fam-label" data-say="qz_level"></span><span class="fam-seg" id="qz-levels" role="group" data-say-label="qz_level" data-testid="qz-levels"></span></div>
+      <section class="quiz" id="qz-root" aria-labelledby="qz-heading" data-kid="false">
+        <h1 id="qz-heading" class="gl-title" data-qz="heading" data-say="qz_heading"></h1>
+        <p class="lead" data-qz="lede" data-say="qz_lede"></p>
+        <div class="fam-row"><span class="fam-label" data-qz="style" data-say="qz_style"></span><span class="fam-seg" id="qz-styles" role="group" data-qz-label="style" data-testid="qz-styles"></span></div>
+        <div class="fam-row"><span class="fam-label" data-qz="level" data-say="qz_level"></span><span class="fam-seg" id="qz-levels" role="group" data-qz-label="level" data-testid="qz-levels"></span><button type="button" class="fam-button" id="qz-kid" data-testid="qz-kid" aria-pressed="false" data-say="qz_kid"></button></div>
+        <div class="fam-row"><span class="fam-label" data-qz="culture" data-say="qz_culture"></span><span class="fam-seg" id="qz-cultures" role="group" data-qz-label="culture" data-testid="qz-cultures"></span></div>
+        <p class="fam-fine" id="qz-culturenote" data-testid="qz-culturenote" hidden></p>
+        <div class="fam-row"><span class="fam-label" data-qz="where" data-say="qz_where"></span><span class="fam-seg" id="qz-hemis" role="group" data-qz-label="where" data-testid="qz-hemis"></span><select id="qz-month" class="fam-field" data-testid="qz-month" data-qz-label="month"></select></div>
+        <p class="fam-fine" id="qz-skynote" data-testid="qz-skynote" hidden></p>
         <div class="qz-sky" id="qz-box" data-testid="qz-box"><svg id="qz-sky" data-testid="qz-sky" role="img"></svg></div>
-        <div class="qz-choices" id="qz-choices" data-testid="qz-choices" role="group" data-say-label="qz_choose"></div>
+        <div class="qz-choices" id="qz-choices" data-testid="qz-choices" role="group" data-qz-label="choose"></div>
         <p class="qz-result" id="qz-result" data-testid="qz-result" aria-live="polite"></p>
-        <p class="fam-row"><button type="button" class="fam-button" data-primary="true" id="qz-next" data-testid="qz-next" data-say="qz_next"></button><a class="fam-button" id="qz-open" data-testid="qz-open" hidden></a><span class="qz-score" id="qz-score" data-testid="qz-score" aria-live="polite"></span></p>
-        <h2 class="qz-missed-title" id="qz-missed-title" data-say="qz_missed" hidden></h2>
+        <p class="fam-row"><button type="button" class="fam-button" data-primary="true" id="qz-next" data-testid="qz-next" data-qz="next" data-say="qz_next"></button><a class="fam-button" id="qz-open" data-testid="qz-open" hidden></a><span class="qz-score" id="qz-score" data-testid="qz-score" aria-live="polite"></span></p>
+        <h2 class="qz-missed-title" id="qz-missed-title" data-qz="missed" data-say="qz_missed" hidden></h2>
         <div class="qz-missed" id="qz-missed" data-testid="qz-missed" hidden></div>
-        <p class="fam-fine" data-say="qz_note"></p>
+        <p class="fam-fine" data-qz="note" data-say="qz_note"></p>
+      </section>
+      <section class="more" aria-labelledby="code-heading">
+        <h2 id="code-heading" data-say="qz_codeHeading"></h2>
+        <p class="fam-fine" data-say="qz_codeNote"></p>
+        <kazoku-embed-panel id="embed-panel" data-testid="embed-panel" sizes="320 480 640" size="480"></kazoku-embed-panel>
       </section>
       <!--family:footer-->
     </main>
     <!--family:scripts-->
+    <script type="module" src="js/quiz-panel.js"></script>
   </body>
 </html>
