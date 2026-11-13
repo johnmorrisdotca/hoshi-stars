@@ -393,3 +393,53 @@ test("markers set before the element is defined are kept, and the tab stops are 
   const stops = await page.locator("hoshi-chart").nth(1).evaluate((el) => [...el.shadowRoot!.querySelectorAll("svg g[data-marker]")].filter((g) => g.getAttribute("tabindex") === "0").length);
   expect(stops).toBe(40);
 });
+
+/** A fixed list for the bodies tests: the Moon at the middle of the opening chart (84, 0), a bright planet beside it and a faint one that is left out. */
+const BODIES = [
+  { id: "moon", names: { en: "Moon", ja: "月" }, ra: 84, dec: 0, magnitude: -10.5, phase: 0.3, brightLimb: 90, size: 1800 },
+  { id: "venus", names: { en: "Venus", ja: "金星" }, ra: 92, dec: 8, magnitude: -4.2, phase: 0.6 },
+  { id: "faint", names: { en: "Faint", ja: "かすか" }, ra: 76, dec: -8, magnitude: 9, phase: 1 },
+];
+const bodyIds = (page: Page) => chart(page).evaluate((el) => [...el.shadowRoot!.querySelectorAll("svg g[data-body]")].map((g) => g.getAttribute("data-body")));
+const bodyNames = (page: Page) => chart(page).evaluate((el) => [...el.shadowRoot!.querySelectorAll("svg text")].map((t) => t.textContent));
+
+test("bodies set as a property are drawn by magnitude and named, the Moon with its phase, in the page's language; the ecliptic is a layer; nothing is drawn at rest", async ({ page }) => {
+  await chartPage(page, `<hoshi-chart style="width:600px;height:400px"></hoshi-chart>`);
+  await expect.poll(() => drawn(page)).toBeGreaterThan(30);
+  expect(await bodyIds(page)).toEqual([]);
+  await page.evaluate((list) => Reflect.set(document.querySelector("hoshi-chart")!, "bodies", list), BODIES);
+  await expect.poll(() => bodyIds(page)).toEqual(["venus", "moon"]);
+  expect(await bodyNames(page)).toEqual(expect.arrayContaining(["Moon", "Venus"]));
+  expect(await chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll('svg g[data-body="moon"] path[data-lit]').length)).toBe(1);
+  expect(await chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll('svg g[data-body="venus"] path[data-lit]').length)).toBe(0);
+  // the page's language is followed
+  await page.evaluate(() => document.documentElement.setAttribute("lang", "ja"));
+  await expect.poll(() => bodyNames(page)).toEqual(expect.arrayContaining(["月", "金星"]));
+  await page.evaluate(() => document.documentElement.setAttribute("lang", "en"));
+  // the ecliptic is the layers attribute's to switch
+  expect(await chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll('svg path[data-layer="ecliptic"]').length)).toBe(0);
+  await chart(page).evaluate((el) => el.setAttribute("layers", "milky lines names ecliptic"));
+  await expect.poll(() => chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll('svg path[data-layer="ecliptic"]').length)).toBe(1);
+  await chart(page).evaluate((el) => el.setAttribute("layers", "milky lines names"));
+  await expect.poll(() => chart(page).evaluate((el) => el.shadowRoot!.querySelectorAll('svg path[data-layer="ecliptic"]').length)).toBe(0);
+  // at rest: nothing more is drawn
+  const before = await draws(page);
+  await page.waitForTimeout(1500);
+  expect(await draws(page)).toBe(before);
+});
+
+test("bodies given as the bodies attribute (JSON) are drawn, a bad one is ignored, and a tap on one sends hoshi-pick with its id and names", async ({ page }) => {
+  const list = JSON.stringify([...BODIES, { id: "broken", ra: "x" }]).replace(/'/g, "&#39;");
+  await chartPage(page, `<hoshi-chart style="width:600px;height:400px" bodies='${list}'></hoshi-chart>`);
+  await expect.poll(() => bodyIds(page)).toEqual(["venus", "moon"]);
+  await expect.poll(() => hands(page)).toBe(true);
+  await listen(page);
+  // the Moon is at the middle of the chart (84, 0)
+  await page.mouse.click(300, 200);
+  await expect.poll(() => lastPick(page)).toEqual({ kind: "body", id: "moon", names: { en: "Moon", ja: "月" } });
+  // a body is not a star: picking it rings nothing and sets no `picked`
+  expect(await chart(page).evaluate((el) => el.getAttribute("picked"))).toBeNull();
+  // the attribute taken away takes the bodies away
+  await chart(page).evaluate((el) => el.removeAttribute("bodies"));
+  await expect.poll(() => bodyIds(page)).toEqual([]);
+});

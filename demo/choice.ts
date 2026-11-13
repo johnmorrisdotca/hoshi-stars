@@ -29,6 +29,8 @@ export interface Choice extends View {
   lineStrength?: number | undefined;
   /** The look of the names (`label-look`): `display` when left out. */
   labelLook?: LookId | undefined;
+  /** Show the fixed sample of the Moon and the bright planets (`bodies=sample`), a list for one stated moment, not live. */
+  bodiesSample?: boolean | undefined;
   /** The sky out to this distance, in light-years (`Infinity` for all the things that have one); left out for the sky as it was, with no layers. */
   limit?: number | undefined;
 }
@@ -78,6 +80,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
     ...(lineStrength === undefined ? {} : { lineStrength }),
     ...(lookIdOf(query.get("label-look")) === "display" ? {} : { labelLook: lookIdOf(query.get("label-look")) }),
     ...(limit === undefined ? {} : { limit }),
+    ...(query.get("bodies") === "sample" ? { bodiesSample: true } : {}),
   };
 }
 
@@ -95,5 +98,6 @@ export function frameQuery(choice: Choice): string {
   if (choice.lineStrength !== undefined) q.set("constellation-lines", String(choice.lineStrength));
   if (choice.labelLook !== undefined) q.set("label-look", choice.labelLook);
   if (choice.limit !== undefined) q.set("dist", limitText(choice.limit));
+  if (choice.bodiesSample === true) q.set("bodies", "sample");
   return q.toString();
 }
