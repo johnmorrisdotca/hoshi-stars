@@ -39,7 +39,7 @@ description: "ページが渡す単純なリストから、月と惑星を星図
     <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
   </head>
   <body>
-    <hoshi-chart projection="equirectangular" ra="230" dec="-15" zoom="3" layers="lines names ecliptic" style="max-width: 640px"></hoshi-chart>
+    <hoshi-chart projection="equirectangular" ra="230" dec="-15" zoom="1.5" layers="milky lines names ecliptic" style="max-width: 640px"></hoshi-chart>
     <label><input id="line" type="checkbox" checked /> Ecliptic</label>
     <p id="card">Tap the Moon or Venus.</p>
     <script type="module">
@@ -53,7 +53,7 @@ description: "ページが渡す単純なリストから、月と惑星を星図
         if (kind === "body") document.getElementById("card").textContent = `${names.en} (${names.ja}), ${id}`;
       });
       document.getElementById("line").addEventListener("change", (event) => {
-        chart.setAttribute("layers", event.target.checked ? "lines names ecliptic" : "lines names");
+        chart.setAttribute("layers", event.target.checked ? "milky lines names ecliptic" : "milky lines names");
       });
     </script>
   </body>
@@ -84,7 +84,7 @@ const bodies = [
 ];
 
 // A wide view with the Sun's yearly path, the ecliptic, drawn dashed under them.
-const svg = chartSvg({ width: 640, height: 400, projection: "equirectangular", ra: 230, dec: -15, zoom: 3, layers: ["lines", "names", "ecliptic"], bodies });
+const svg = chartSvg({ width: 640, height: 400, projection: "equirectangular", ra: 230, dec: -15, zoom: 1.5, layers: ["milky", "lines", "names", "ecliptic"], bodies });
 writeFileSync(new URL("planets.svg", import.meta.url), svg);
 
 console.log("planets.svg", (svg.match(/data-body=/g) ?? []).length, "bodies,", svg.includes('data-layer="ecliptic"') ? "with" : "without", "the ecliptic");

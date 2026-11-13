@@ -8,7 +8,7 @@ const bodies = [
 ];
 
 // A wide view with the Sun's yearly path, the ecliptic, drawn dashed under them.
-const svg = chartSvg({ width: 640, height: 400, projection: "equirectangular", ra: 230, dec: -15, zoom: 3, layers: ["lines", "names", "ecliptic"], bodies });
+const svg = chartSvg({ width: 640, height: 400, projection: "equirectangular", ra: 230, dec: -15, zoom: 1.5, layers: ["milky", "lines", "names", "ecliptic"], bodies });
 writeFileSync(new URL("planets.svg", import.meta.url), svg);
 
 console.log("planets.svg", (svg.match(/data-body=/g) ?? []).length, "bodies,", svg.includes('data-layer="ecliptic"') ? "with" : "without", "the ecliptic");
