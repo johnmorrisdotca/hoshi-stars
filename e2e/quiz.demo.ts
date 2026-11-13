@@ -1,5 +1,6 @@
 // The constellation quiz: a chart with no names, six choices in a row, a right answer scores, and the style, the level and the question are kept in the address. The chart is an SVG drawn once for each question.
 import { expect, test, type Page } from "@playwright/test";
+import { seenIn } from "../demo/quiz-sky.ts";
 import { constellations } from "../src/constellations.ts";
 
 const PAGE = "/hoshi-stars/quiz.html";
@@ -216,4 +217,77 @@ test("at all 88 the wrong names are the ones easy to mix up: most are Orion's ne
     const abbreviations = await choices(page).evaluateAll((all) => all.map((b) => (b as HTMLElement).dataset["abbr"]!));
     expect(abbreviations.filter((one) => near.has(one)).length).toBeGreaterThanOrEqual(3);
   }
+});
+
+const abbreviationsOf = (page: Page): Promise<string[]> => choices(page).evaluateAll((all) => all.map((b) => (b as HTMLElement).dataset["abbr"]!));
+const placeOf = (abbreviation: string): number => constellations().findIndex((c) => c.abbreviation === abbreviation) + 1;
+
+test("by hemisphere and month: only what a reader there can see that evening is asked, and the six names come from it too", async ({ page }) => {
+  const january = new Set(seenIn("north", 1));
+  expect(january.has("Ori") && !january.has("Cru"), "Orion is up on a January evening in the north and the Southern Cross never is").toBe(true);
+  // the Southern Cross is not in a northern sky, so a hand-written question for it is not asked
+  await page.goto(`${PAGE}?q=${placeOf("Cru")}&level=88&hemisphere=north&month=1`);
+  await expect(choices(page)).toHaveCount(6);
+  await expect.poll(() => param(page, "q")).not.toBe(String(placeOf("Cru")));
+  expect(answerOf(page)).toBeDefined();
+  for (let i = 0; i < 5; i += 1) {
+    for (const one of await abbreviationsOf(page)) expect(january.has(one), `${one} is in the January sky of the north`).toBe(true);
+    expect(january.has(answerOf(page)!)).toBe(true);
+    await choices(page).first().click();
+    await page.getByTestId("qz-next").click();
+  }
+  // from the south in May it is
+  await page.goto(`${PAGE}?q=${placeOf("Cru")}&level=88&hemisphere=south&month=5`);
+  await expect(choices(page)).toHaveCount(6);
+  expect(answerOf(page)).toBe("Cru");
+  const may = new Set(seenIn("south", 5));
+  for (const one of await abbreviationsOf(page)) expect(may.has(one)).toBe(true);
+  // bright 12: the twelve brightest of that sky, so every name offered is one of 12
+  await page.goto(`${PAGE}?hemisphere=north&month=1`);
+  const offered = new Set<string>();
+  for (let i = 0; i < 6; i += 1) {
+    for (const one of await abbreviationsOf(page)) offered.add(one);
+    await choices(page).first().click();
+    await page.getByTestId("qz-next").click();
+  }
+  expect(offered.size).toBeLessThanOrEqual(12);
+  for (const one of offered) expect(january.has(one)).toBe(true);
+});
+
+test("the sky buttons and the month are kept in the address, the month waits for a hemisphere, and the note says how it is worked out", async ({ page }) => {
+  await page.goto(`${PAGE}?level=88`);
+  await expect(page.getByTestId("qz-hemis").locator('button[aria-pressed="true"]')).toHaveText("Whole sky");
+  await expect(page.getByTestId("qz-month")).toBeDisabled();
+  await expect(page.getByTestId("qz-skynote")).toBeHidden();
+  await page.getByTestId("qz-hemis").getByRole("button", { name: "South" }).click();
+  await expect.poll(() => param(page, "hemisphere")).toBe("south");
+  await expect(page.getByTestId("qz-month")).toBeEnabled();
+  await expect(page.getByTestId("qz-skynote")).toContainText("40 degrees south");
+  await page.getByTestId("qz-month").selectOption("5");
+  await expect.poll(() => param(page, "month")).toBe("5");
+  await expect(page.getByTestId("qz-skynote")).toContainText("21:00 on the 15th");
+  await page.reload();
+  await expect(page.getByTestId("qz-hemis").locator('button[aria-pressed="true"]')).toHaveText("South");
+  await expect(page.getByTestId("qz-month")).toHaveValue("5");
+  await page.getByTestId("qz-hemis").getByRole("button", { name: "Whole sky" }).click();
+  await expect.poll(() => param(page, "hemisphere")).toBeNull();
+  await expect.poll(() => param(page, "month")).toBeNull();
+  // any month in the north: the Southern Cross is never asked, and a page of the Japanese words has the month in Japanese
+  await page.goto(`${PAGE}?level=88&hemisphere=north&lang=ja`);
+  await expect(page.getByTestId("qz-hemis").locator('button[aria-pressed="true"]')).toHaveText("北半球");
+  await expect(page.getByTestId("qz-month").locator("option").nth(1)).toHaveText("1月");
+  for (let i = 0; i < 6; i += 1) {
+    expect(await abbreviationsOf(page)).not.toContain("Cru");
+    await choices(page).first().click();
+    await page.getByTestId("qz-next").click();
+  }
+});
+
+test("the sky choices and kid mode give nothing away: the address and the page do not name the answer", async ({ page }) => {
+  await page.goto(`${PAGE}?q=${placeOf("Ori")}&level=88&hemisphere=north&month=1&kid=1`);
+  await expect(choices(page)).toHaveCount(6);
+  await expect.poll(() => param(page, "q")).toBe(String(placeOf("Ori")));
+  expect(await outsideChoices(page)).not.toMatch(/Orion|オリオン|\bOri\b|c=Ori/);
+  await expect(page.getByTestId("qz-month")).toBeVisible();
+  expect(await page.getByTestId("qz-month").evaluate((s) => (s as HTMLSelectElement).offsetHeight), "the month is a big target in kid mode").toBeGreaterThanOrEqual(56);
 });

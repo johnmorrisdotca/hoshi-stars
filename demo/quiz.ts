@@ -1,5 +1,5 @@
 // The constellation quiz: a chart centred on one constellation with no name for it on the chart, and six names to choose from. The style (plain stars, stars and lines, annotated: the lines, the borders and the names of the neighbours) and the level (the bright 12, 30 or all 88) are kept in
-// the address (style, level, kid), and so is the question (q, the constellation's place in the list of the 88, never its name; a hand-written c=Ori is read too), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
+// the address (style, level, kid, hemisphere, month), and so is the question (q, the constellation's place in the list of the 88, never its name; a hand-written c=Ori is read too), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { centreOfConstellation, chart, toScreen, type View } from "../src/chart/chart.ts";
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
@@ -8,7 +8,8 @@ import { figureOf } from "../src/lines.ts";
 import { langNow, lookNow, nameIn, thumbSrc } from "./thumbs.ts";
 import { ALL_WORDS } from "../scripts/gallery-words.ts";
 import { distractors, shuffled } from "./quiz-pick.ts";
-import { say } from "./words.ts";
+import { HEMISPHERES, MIN_ALTITUDE, seenIn, type Hemisphere } from "./quiz-sky.ts";
+import { monthName, say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
 const address = createAddressState();
@@ -32,10 +33,20 @@ function brightest(): string[] {
   return constellations().map((c) => ({ abbreviation: c.abbreviation, light: light(c.abbreviation) })).sort((a, b) => b.light - a.light || a.abbreviation.localeCompare(b.abbreviation)).map((c) => c.abbreviation);
 }
 const ranked = brightest();
-const poolOf = (level: Level): string[] => ranked.slice(0, Number(level));
+/** The hemisphere asked ("all" is the whole sky) and the month (0 is any), kept in the address as `hemisphere` and `month`. */
+type Where = Hemisphere | "all";
+const WHERE: readonly Where[] = ["all", ...HEMISPHERES];
+/** The constellations of the level: those a reader in the hemisphere can see (in the month, or in any month), the brightest first, as many as the level says. */
+function poolOf(level: Level): string[] {
+  let seen: Set<string> | undefined;
+  if (where !== "all") seen = new Set(month > 0 ? seenIn(where, month) : Array.from({ length: 12 }, (_, i) => seenIn(where as Hemisphere, i + 1)).flat());
+  return ranked.filter((one) => seen === undefined || seen.has(one)).slice(0, Number(level));
+}
 
 let style: Style = pick(address.get("style"), STYLES, "plain");
 let level: Level = pick(address.get("level"), LEVELS, "12");
+let where: Where = pick(address.get("hemisphere"), WHERE, "all");
+let month = where === "all" ? 0 : Math.max(0, Math.min(12, Math.round(Number(address.get("month")) || 0)));
 /** Kid mode: big buttons and simpler words, kept in the address (kid=1). */
 let kid = address.get("kid") === "1";
 let asked = 0;
@@ -129,6 +140,17 @@ function render(): void {
     el.textContent = w(name);
   }
   for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-qz-label]"))) el.setAttribute("aria-label", w(el.dataset["qzLabel"]!));
+  for (const button of Array.from($("qz-hemis").querySelectorAll("button"))) {
+    button.textContent = w(`h${button.dataset["value"]}`);
+    button.setAttribute("aria-pressed", String(button.dataset["value"] === where));
+  }
+  const months = $<HTMLSelectElement>("qz-month");
+  months.replaceChildren(Object.assign(document.createElement("option"), { value: "0", textContent: w("anymonth") }), ...Array.from({ length: 12 }, (_, i) => Object.assign(document.createElement("option"), { value: String(i + 1), textContent: monthName(i + 1) })));
+  months.value = String(month);
+  months.disabled = where === "all";
+  const skyNote = $("qz-skynote");
+  skyNote.hidden = where === "all";
+  skyNote.textContent = where === "all" ? "" : say("qz_skynote", { place: say(`qz_from_${where}`), when: say(month > 0 ? "qz_when_month" : "qz_when_year"), height: MIN_ALTITUDE });
   const kidButton = $("qz-kid");
   kidButton.textContent = say("qz_kid");
   kidButton.setAttribute("aria-pressed", String(kid));
@@ -137,6 +159,22 @@ function render(): void {
   if (styles.children.length === 0) {
     for (const value of STYLES) styles.append(valueButton(value));
     for (const value of LEVELS) levels.append(valueButton(value));
+    const hemis = $("qz-hemis");
+    for (const value of WHERE) hemis.append(valueButton(value));
+    hemis.addEventListener("click", (event) => {
+      const value = (event.target as HTMLElement).closest("button")?.dataset["value"] as Where | undefined;
+      if (value === undefined || value === where) return;
+      where = value;
+      if (where === "all") month = 0;
+      address.set("hemisphere", where === "all" ? null : where);
+      address.set("month", month === 0 ? null : String(month));
+      ask();
+    });
+    $("qz-month").addEventListener("change", (event) => {
+      month = Number((event.target as HTMLSelectElement).value);
+      address.set("month", month === 0 ? null : String(month));
+      ask();
+    });
     $("qz-kid").addEventListener("click", () => {
       kid = !kid;
       address.set("kid", kid ? "1" : null);
