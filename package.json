@@ -287,6 +287,21 @@
       "import": "./dist/tonight.js",
       "default": "./dist/tonight.js"
     },
+    "./names": {
+      "types": "./dist/names.d.ts",
+      "import": "./dist/names.js",
+      "default": "./dist/names.js"
+    },
+    "./names/named": {
+      "types": "./dist/names-named.d.ts",
+      "import": "./dist/names-named.js",
+      "default": "./dist/names-named.js"
+    },
+    "./names/ngc-ic": {
+      "types": "./dist/names-ngc-ic.d.ts",
+      "import": "./dist/names-ngc-ic.js",
+      "default": "./dist/names-ngc-ic.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

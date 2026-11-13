@@ -134,6 +134,11 @@ function designations(prefix: string, list: string): string[] {
 const parsedRows = new Map<string, DeepSkyObject[]>();
 const aliasesOf = new WeakMap<DeepSkyObject, string[]>();
 
+/** The other common names of an object that `deepSkyObject` also finds (`Andromeda Nebula` for M31), as a fresh array; empty for most. Used by the names index. */
+export function deepSkyAliases(object: DeepSkyObject): string[] {
+  return [...(aliasesOf.get(object) ?? [])];
+}
+
 /** The objects of a string of rows, parsed once however many tables use it (the large table's Messier objects are the small table's). */
 function parsed(rows: string): DeepSkyObject[] {
   const found = parsedRows.get(rows);

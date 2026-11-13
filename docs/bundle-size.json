@@ -160,6 +160,18 @@
     "./tonight": {
       "minified": 302992,
       "gzip": 128840
+    },
+    "./names": {
+      "minified": 317651,
+      "gzip": 135748
+    },
+    "./names/named": {
+      "minified": 56910,
+      "gzip": 22712
+    },
+    "./names/ngc-ic": {
+      "minified": 720692,
+      "gzip": 226357
     }
   }
 }
