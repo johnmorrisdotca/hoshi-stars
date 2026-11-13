@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test, type Page } from "@playwright/test";
+import { pickAccuracy } from "../src/chart/uncertainty.ts";
+import { starByHr } from "../src/stars.ts";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const KAZOKU = join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui", "dist");
@@ -112,7 +114,7 @@ test("a tap on a star picks it, and the zoom keeps to its range", async ({ page 
   await expect.poll(() => drawn(page)).toBeGreaterThan(5);
   await listen(page);
   await page.mouse.click(300, 200);
-  await expect.poll(() => lastPick(page)).toMatchObject({ kind: "star", id: "2061" });
+  await expect.poll(() => lastPick(page)).toEqual({ kind: "star", id: "2061", accuracy: pickAccuracy(starByHr(2061)!) });
   // the zoom range: 500 at most unless the page raises it, up to 8000
   await chart(page).evaluate((el) => el.setAttribute("zoom", "1200"));
   await expect.poll(async () => (await view(page)).zoom).toBe(500);
@@ -181,7 +183,7 @@ test("the page's own picked and constellation win again after a tap", async ({ p
   await expect.poll(() => drawn(page)).toBeGreaterThan(5);
   await listen(page);
   await page.mouse.click(300, 200);
-  await expect.poll(() => lastPick(page)).toMatchObject({ kind: "star", id: "2061" });
+  await expect.poll(() => lastPick(page)).toEqual({ kind: "star", id: "2061", accuracy: pickAccuracy(starByHr(2061)!) });
   await expect.poll(async () => Math.round((await middleOf(page, PICK_RING))?.x ?? -1)).toBe(300);
   await chart(page).evaluate((el) => el.setAttribute("picked", "1790"));
   await expect.poll(async () => (await middleOf(page, PICK_RING))?.x ?? -1).toBeGreaterThan(330);
