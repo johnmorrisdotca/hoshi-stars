@@ -89,7 +89,29 @@ function strokesOf(segments: readonly (readonly [Star, Star])[]): Star[][] {
   return out;
 }
 
-const radiusOf = (magnitude: number, type: "kid" | "normal"): number => (type === "kid" ? Math.max(3, Math.min(7, 3 + (4.2 - magnitude) * 0.8)) : Math.max(0.8, Math.min(2.5, 0.8 + (4.2 - magnitude) * 0.35)));
+/**
+ * The smallest and largest radius, in millimetres, a dot of a sheet can have: the floor still prints and can be seen, the ceiling is what the brightest star gets when nothing is near it. A dot is also never larger than a third of the distance to
+ * its nearest neighbour on the page (down to the floor), so close dots stay apart.
+ *
+ * @example
+ * ```ts
+ * import { DOT_LIMITS } from "@johnmorrisdotca/hoshi-stars/sheets";
+ *
+ * console.log(DOT_LIMITS.kid.floor, DOT_LIMITS.kid.ceiling);
+ * ```
+ */
+export const DOT_LIMITS: Readonly<Record<"kid" | "normal", { floor: number; ceiling: number }>> = {
+  kid: { floor: 1, ceiling: 5 },
+  normal: { floor: 0.6, ceiling: 2 },
+};
+/** The thickest a line of an answer page is, in millimetres: the sheet type's own line, but no more than 1 mm so that close dots stay apart. */
+const ANSWER_LINE_MAX_MM = 1;
+
+/** The radius a star's brightness asks for, between the limits; the nearest neighbour may lower it (see `fit`). */
+const radiusOf = (magnitude: number, type: "kid" | "normal"): number => {
+  const { floor, ceiling } = DOT_LIMITS[type];
+  return Math.max(floor, Math.min(ceiling, type === "kid" ? 2 + (4.2 - magnitude) * 0.7 : 0.7 + (4.2 - magnitude) * 0.3));
+};
 
 /** The strokes of a level: all of them, or for `easy` only the brightest stars along them. */
 function strokesFor(strokes: Star[][], level: DotLevel): Star[][] {
@@ -111,8 +133,8 @@ interface Box {
 const gap = (a: Box, b: Box): number => Math.max(0, Math.max(a.x - (b.x + b.w), b.x - (a.x + a.w)), Math.max(a.y - (b.y + b.h), b.y - (a.y + a.h)));
 
 /**
- * A constellation laid out as numbered dots on a page `widthMm` by `heightMm`: the stars placed by a stereographic chart, east to the left as in the sky, made as large as fits; the dots sized by brightness; every visit numbered along the lines in drawing order
- * (one number for each time the pencil reaches a star, a star met again carrying both numbers); each number put on the side of its dot with the most room.
+ * A constellation laid out as numbered dots on a page `widthMm` by `heightMm`: the stars placed by a stereographic chart, east to the left as in the sky, made as large as fits; the dots sized by brightness and never more than a third of the distance to the nearest dot (`DOT_LIMITS`), and two stars too close for the smallest dots moved apart to the distance they need; every visit numbered along the lines in drawing order
+ * (one number for each time the pencil reaches a star, a star met again carrying both numbers); each number put where it touches no dot, line or other number.
  * @param text - The constellation, as `constellation` takes it (`Ori`, `Orion`, `オリオン座`).
  * @param options - `level`, `widthMm`, `heightMm` and `type` (`kid` or `normal`).
  * @returns The dots, the lines of the answer and the counts.
@@ -156,6 +178,14 @@ export function dotsFigure(text: string, options: { level?: DotLevel; widthMm: n
     label: { x: 0, y: 0, anchor: "middle" },
     ring: false,
   }));
+  // two stars that lie closer on the page than the smallest dots can be told apart (the head of Hydra is five stars within 4 mm on an A5 page) are moved apart to that distance: by 2 mm at the most, on a figure over 100 mm across
+  const { floor } = DOT_LIMITS[type];
+  separate(dots, 2 * floor + 0.6);
+  // no dot is larger than a third of the distance to its nearest neighbour on this page, down to the floor that still prints
+  for (const dot of dots) {
+    const nearest = Math.min(...dots.filter((other) => other !== dot).map((other) => Math.hypot(other.x - dot.x, other.y - dot.y)));
+    dot.r = Math.max(floor, Math.min(dot.r, nearest / 3));
+  }
   const index = new Map(members.map((star, i) => [star, i]));
   const lines: [number, number][] = [];
   let visit = 0;
@@ -168,40 +198,103 @@ export function dotsFigure(text: string, options: { level?: DotLevel; widthMm: n
       if (j > 0) lines.push([index.get(one[j - 1]!)!, index.get(star)!]);
     });
   });
-  if (level !== "hard") placeLabels(dots, options.widthMm, options.heightMm, type);
+  if (level !== "hard") placeLabels(dots, lines, options.widthMm, options.heightMm, type);
   return { constellation: found, level, dots, lines, visits: visit, strokes: strokes.length };
 }
 
-/** Put each number on the side of its dot with the most room: away from the other dots and the other numbers, and inside the page. */
-function placeLabels(dots: Dot[], width: number, height: number, type: "kid" | "normal"): void {
-  const size = TYPES[type].bodyMm;
-  const placed: Box[] = [];
-  const order = [...dots].sort((a, b) => a.numbers[0]! - b.numbers[0]!);
-  for (const dot of order) {
-    const words = dot.numbers.join("·");
-    const w = textWidth(words, size);
-    const h = size * 1.2;
-    let best: { score: number; box: Box; anchor: Dot["label"]["anchor"]; x: number; y: number } | undefined;
-    for (let k = 0; k < 16; k += 1) {
-      const angle = (k / 16) * 2 * Math.PI;
-      const ux = Math.cos(angle);
-      const uy = Math.sin(angle);
-      const reach = dot.r + (dot.ring ? 3.6 : 1.4);
-      const cx = dot.x + ux * (reach + w / 2 * Math.abs(ux)) ;
-      const cy = dot.y + uy * (reach + h / 2 * Math.abs(uy));
-      const box: Box = { x: cx - w / 2, y: cy - h / 2, w, h };
-      let score = 100;
-      for (const other of dots) {
-        if (other === dot) continue;
-        const near = Math.hypot(other.x - Math.max(box.x, Math.min(other.x, box.x + box.w)), other.y - Math.max(box.y, Math.min(other.y, box.y + box.h))) - other.r;
-        score = Math.min(score, near);
+/** Moves dots that are closer than `least` millimetres apart until none is, each pair half and half along the line between them. Stops after 400 rounds, which the figures of the sky never need. */
+function separate(dots: Dot[], least: number): void {
+  for (let round = 0; round < 400; round += 1) {
+    let moved = false;
+    for (let i = 0; i < dots.length; i += 1) {
+      for (let j = i + 1; j < dots.length; j += 1) {
+        const a = dots[i]!;
+        const b = dots[j]!;
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d = Math.hypot(dx, dy);
+        if (d >= least) continue;
+        const ux = d === 0 ? 1 : dx / d;
+        const uy = d === 0 ? 0 : dy / d;
+        const push = (least - d) / 2 + 0.01;
+        a.x -= ux * push;
+        a.y -= uy * push;
+        b.x += ux * push;
+        b.y += uy * push;
+        moved = true;
       }
-      for (const other of placed) score = Math.min(score, gap(box, other));
-      if (box.x < 0 || box.y < 0 || box.x + box.w > width || box.y + box.h > height) score -= 50;
-      if (best === undefined || score > best.score) best = { score, box, anchor: "middle", x: cx, y: box.y + size * 0.95 };
     }
-    placed.push(best!.box);
+    if (!moved) return;
+  }
+}
+
+/** The distance from a point to a segment. */
+function toSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const along = dx === 0 && dy === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(px - (ax + along * dx), py - (ay + along * dy));
+}
+/** The distance from a segment to a box: 0 where they meet, else the nearest of the segment's ends to the box and the box's corners to the segment. */
+function segmentToBox(ax: number, ay: number, bx: number, by: number, box: Box): number {
+  // where the segment runs inside the box (clipped against its four sides)
+  let low = 0;
+  let high = 1;
+  for (const [p, q] of [[-(bx - ax), ax - box.x], [bx - ax, box.x + box.w - ax], [-(by - ay), ay - box.y], [by - ay, box.y + box.h - ay]] as const) {
+    if (p === 0) {
+      if (q < 0) { low = 2; break; }
+    } else {
+      const r = q / p;
+      if (p < 0) low = Math.max(low, r);
+      else high = Math.min(high, r);
+    }
+  }
+  if (low <= high) return 0;
+  const toBox = (x: number, y: number): number => Math.hypot(x - Math.max(box.x, Math.min(x, box.x + box.w)), y - Math.max(box.y, Math.min(y, box.y + box.h)));
+  return Math.min(toBox(ax, ay), toBox(bx, by), ...[[box.x, box.y], [box.x + box.w, box.y], [box.x, box.y + box.h], [box.x + box.w, box.y + box.h]].map(([x, y]) => toSegment(x!, y!, ax, ay, bx, by)));
+}
+
+/** Put each number where it touches no dot, no ring, no line of the answer and no other number, and stays inside the page: the best of 24 directions at five distances from its dot (up to 8 mm beyond it), nearest first. The numbers are placed the most crowded dot first, then each is placed again with all the others in place, until nothing moves. */
+function placeLabels(dots: Dot[], lines: readonly (readonly [number, number])[], width: number, height: number, type: "kid" | "normal"): void {
+  const size = TYPES[type].bodyMm;
+  const lineHalf = Math.min(TYPES[type].lineMm, ANSWER_LINE_MAX_MM) / 2;
+  const boxes = new Map<Dot, Box>();
+  const crowd = (dot: Dot): number => Math.min(...dots.filter((other) => other !== dot).map((other) => Math.hypot(other.x - dot.x, other.y - dot.y)));
+  const order = [...dots].sort((a, b) => crowd(a) - crowd(b) || a.numbers[0]! - b.numbers[0]!);
+  const choose = (dot: Dot): void => {
+    const w = textWidth(dot.numbers.join("·"), size);
+    const h = size * 1.2;
+    let best: { score: number; box: Box; x: number; y: number } | undefined;
+    for (const extra of [0, 1.6, 3.4, 5.5, 8]) {
+      for (let k = 0; k < 24; k += 1) {
+        const angle = (k / 24) * 2 * Math.PI;
+        const ux = Math.cos(angle);
+        const uy = Math.sin(angle);
+        const reach = dot.r + (dot.ring ? 3.6 : 1.4) + extra;
+        const cx = dot.x + ux * (reach + (w / 2) * Math.abs(ux));
+        const cy = dot.y + uy * (reach + (h / 2) * Math.abs(uy));
+        const box: Box = { x: cx - w / 2, y: cy - h / 2, w, h };
+        let score = 100;
+        for (const other of dots) {
+          const near = Math.hypot(other.x - Math.max(box.x, Math.min(other.x, box.x + box.w)), other.y - Math.max(box.y, Math.min(other.y, box.y + box.h))) - (other.ring ? other.r + 2.2 : other.r);
+          score = Math.min(score, near);
+        }
+        for (const [other, there] of boxes) if (other !== dot) score = Math.min(score, gap(box, there));
+        for (const [a, b] of lines) score = Math.min(score, segmentToBox(dots[a]!.x, dots[a]!.y, dots[b]!.x, dots[b]!.y, box) - lineHalf);
+        if (box.x < 0 || box.y < 0 || box.x + box.w > width || box.y + box.h > height) score -= 50;
+        // a clear place is good enough once it has a little room; the nearest such place wins
+        const value = Math.min(score, 1.2) - extra * 0.02;
+        if (best === undefined || value > best.score) best = { score: value, box, x: cx, y: box.y + size * 0.95 };
+      }
+    }
+    boxes.set(dot, best!.box);
     dot.label = { x: best!.x, y: best!.y, anchor: "middle" };
+  };
+  for (const dot of order) choose(dot);
+  for (let pass = 0; pass < 6; pass += 1) {
+    const before = order.map((dot) => `${dot.label.x},${dot.label.y}`).join(";");
+    for (const dot of order) choose(dot);
+    if (order.map((dot) => `${dot.label.x},${dot.label.y}`).join(";") === before) break;
   }
 }
 
@@ -234,7 +327,7 @@ function words(figure: DotsFigure, lang: Lang, answer: boolean): string {
 export const dotsSubtitle = (c: Constellation, lang: Lang): string => (lang === "ja" ? `${c.reading}` : `${c.name}: the ${c.english}`);
 
 /**
- * One page of a connect-the-dots sheet as an SVG string measured in millimetres: the dots (and the numbers, unless the level is `hard`), the words that say what to do, and on an answer page the lines too, 1.2 mm thick for the `kid` type.
+ * One page of a connect-the-dots sheet as an SVG string measured in millimetres: the dots (and the numbers, unless the level is `hard`), the words that say what to do, and on an answer page the lines too, 1 mm thick for the `kid` type (0.4 mm for `normal`).
  * @param text - The constellation.
  * @param options - `level`, `widthMm` and `heightMm` (the room the page's body has), `lang`, `answer` (draw the lines) and `type`.
  * @returns The `<svg>` markup.
@@ -259,7 +352,7 @@ export function dotsSvg(text: string, options: { level?: DotLevel; widthMm: numb
   const figure = dotsFigure(text, { level: options.level, widthMm: options.widthMm, heightMm: roomHeight, type });
   const answer = options.answer === true;
   const parts: string[] = [];
-  if (answer) for (const [a, b] of figure.lines) parts.push(`<line x1="${n(figure.dots[a]!.x)}" y1="${n(figure.dots[a]!.y)}" x2="${n(figure.dots[b]!.x)}" y2="${n(figure.dots[b]!.y)}" stroke="#000" stroke-width="${n(t.lineMm)}" stroke-linecap="round" data-line=""/>`);
+  if (answer) for (const [a, b] of figure.lines) parts.push(`<line x1="${n(figure.dots[a]!.x)}" y1="${n(figure.dots[a]!.y)}" x2="${n(figure.dots[b]!.x)}" y2="${n(figure.dots[b]!.y)}" stroke="#000" stroke-width="${n(Math.min(t.lineMm, ANSWER_LINE_MAX_MM))}" stroke-linecap="round" data-line=""/>`);
   for (const dot of figure.dots) {
     parts.push(`<circle cx="${n(dot.x)}" cy="${n(dot.y)}" r="${n(dot.r)}" fill="#000" data-dot="${dot.star.hr}"/>`);
     if (dot.ring) parts.push(`<circle cx="${n(dot.x)}" cy="${n(dot.y)}" r="${n(dot.r + 2.2)}" fill="none" stroke="#000" stroke-width="${n(Math.max(0.6, t.lineMm * 0.5))}" data-ring=""/>`);
