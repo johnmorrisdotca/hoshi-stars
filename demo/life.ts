@@ -334,12 +334,19 @@ function redraw(): void {
   drawLives();
 }
 
-$<HTMLInputElement>("#hr-find").addEventListener("change", (event) => {
-  const text = (event.target as HTMLInputElement).value.trim().toLowerCase();
+/** Finds the star named in the box; says so when there is none. */
+function findByName(input: HTMLInputElement): void {
+  const text = input.value.trim().toLowerCase();
   if (text === "") return;
   const found = stars({ minGrade: "B" }).find((star) => [star.name, star.nameJa, star.designation].some((n) => n?.toLowerCase() === text));
   $("#hr-found").textContent = found === undefined ? say("hr_findNone") : "";
   if (found !== undefined) choose(found.hr);
+}
+const findBox = $<HTMLInputElement>("#hr-find");
+findBox.addEventListener("change", () => findByName(findBox));
+// Safari does not fire `change` when Enter is pressed in a box that is not in a form, so Enter finds the star itself.
+findBox.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") findByName(findBox);
 });
 document.addEventListener("hoshi-language", redraw);
 redraw();

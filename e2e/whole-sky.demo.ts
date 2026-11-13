@@ -11,8 +11,9 @@ async function open(page: Page, query = ""): Promise<void> {
   await expect(links(page)).toHaveCount(88);
   await expect(page.locator("#ws-labels text").first()).toBeVisible();
 }
-/** The middle of a constellation's figure on the screen. */
+/** The middle of a constellation's figure on the screen, scrolled into view first: on a phone the map's lower part is below the fold, where a pointer reaches nothing. */
 async function figureAt(page: Page, id: string): Promise<{ x: number; y: number }> {
+  await page.locator(`#ws-sky path.fg[data-fig="${id}"]`).scrollIntoViewIfNeeded();
   const box = await page.locator(`#ws-sky path.fg[data-fig="${id}"]`).evaluate((el) => {
     const r = el.getBoundingClientRect();
     return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
