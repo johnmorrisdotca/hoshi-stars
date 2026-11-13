@@ -314,6 +314,8 @@ test("zoomed close to Betelgeuse it is drawn with the star look, and zooming out
   await open(page, "?spin=off");
   const view = page.locator("#sp-view");
   await expect(view).not.toHaveAttribute("data-close", /.+/);
+  // the view draws only while it is in sight: on a phone it opens below the fold, so scroll it in first or the zoom is never drawn
+  await view.scrollIntoViewIfNeeded();
   await zoomTo(page, "s:hr-2061", 10);
   await expect(view).toHaveAttribute("data-close", "s:hr-2061", { timeout: 20_000 });
   // it is on the screen, drawn by the one shared renderer

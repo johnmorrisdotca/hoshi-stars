@@ -12,6 +12,11 @@ const answerOf = (page: Page): string | undefined => {
   const place = Number(param(page, "q"));
   return place >= 1 ? constellations()[place - 1]?.abbreviation : undefined;
 };
+/** Waits until the address names a question other than `not` (the address is written when the question is asked, and the test's view of it can lag a moment), and gives it. */
+async function nextAnswer(page: Page, not?: string): Promise<string> {
+  await expect.poll(() => { const now = answerOf(page); return now !== undefined && now !== not; }, { message: "the address names a new question" }).toBe(true);
+  return answerOf(page)!;
+}
 const choices = (page: Page) => page.getByTestId("qz-choices").locator("button");
 
 test("a question shows the chart with no names and six choices in a row, and exactly one is right", async ({ page }) => {
@@ -41,8 +46,7 @@ test("a right answer scores and a wrong one does not, and Next asks another ques
   await page.getByTestId("qz-next").click();
   await expect(page.getByTestId("qz-result")).toHaveText("");
   await expect(choices(page).first()).toBeEnabled();
-  await expect.poll(() => answerOf(page)).not.toBe("Ori");
-  const answer = answerOf(page)!;
+  const answer = await nextAnswer(page, "Ori");
   const wrong = page.getByTestId("qz-choices").locator(`button:not([data-abbr="${answer}"])`).first();
   await wrong.click();
   await expect(page.getByTestId("qz-result")).toContainText("Not quite");
@@ -75,9 +79,11 @@ test("the bright 12 asks only the twelve, and the names are Japanese on the Japa
   await page.goto(`${PAGE}?lang=ja`);
   const asked = new Set<string>();
   const offered = new Set<string>();
+  let before: string | undefined;
   for (let i = 0; i < 8; i += 1) {
     await expect(choices(page)).toHaveCount(6);
-    asked.add(answerOf(page)!);
+    before = await nextAnswer(page, before);
+    asked.add(before);
     for (const name of await choices(page).allTextContents()) expect(name).toMatch(/座$/);
     for (const abbreviation of await choices(page).evaluateAll((all) => all.map((b) => (b as HTMLElement).dataset["abbr"]!))) offered.add(abbreviation);
     await choices(page).first().click();
@@ -135,12 +141,32 @@ test("on a phone it does not run past the screen", async ({ page }) => {
   expect(over).toBeLessThanOrEqual(0);
 });
 
+test("a constellation missed before is not shown under the question while it is asked again", async ({ page }) => {
+  // the bright 12 has only twelve, so answering wrong every time brings a missed one back within a few questions
+  await page.goto(`${PAGE}?level=12`);
+  let before: string | undefined;
+  let again = 0;
+  for (let i = 0; i < 40; i += 1) {
+    await expect(choices(page)).toHaveCount(6);
+    const answer = await nextAnswer(page, before);
+    before = answer;
+    const links = await page.getByTestId("qz-missed").locator("a").evaluateAll((all) => all.map((a) => a.getAttribute("href") ?? ""));
+    expect(links.join(" "), `${answer} is not shown among the misses before it is answered`).not.toContain(`c=${answer}`);
+    expect(await page.getByTestId("qz-missed").evaluate((box) => box.innerHTML)).not.toContain(`/${answer}.png`);
+    if (links.length >= 8) again += 1;
+    await page.getByTestId("qz-choices").locator(`button:not([data-abbr="${answer}"])`).first().click();
+    await expect(page.getByTestId("qz-result")).toContainText("Not quite");
+    await page.getByTestId("qz-next").click();
+  }
+  expect(again, "most of the twelve had been missed, so the test did meet a missed one again").toBeGreaterThan(5);
+});
+
 test("two right answers in a row make a streak", async ({ page }) => {
   await page.goto(`${PAGE}?c=Ori&level=88`);
   await page.getByTestId("qz-choices").locator('button[data-abbr="Ori"]').click();
   await page.getByTestId("qz-next").click();
-  await expect.poll(() => answerOf(page)).not.toBe("Ori");
-  await page.getByTestId("qz-choices").locator(`button[data-abbr="${answerOf(page)}"]`).click();
+  const second = await nextAnswer(page, "Ori");
+  await page.getByTestId("qz-choices").locator(`button[data-abbr="${second}"]`).click();
   await expect(page.getByTestId("qz-score")).toHaveText("Score: 2 of 2 Streak 2, best 2.");
   await expect(page.getByTestId("qz-result")).toHaveAttribute("data-correct", "true");
 });
@@ -312,16 +338,21 @@ test("the embed page asks the quiz its address chooses, with no controls, in kid
   await page.goto(`${EMBED}?c=Ori&level=88&style=lines&kid=1`);
   await expect(choices(page)).toHaveCount(6);
   expect(await page.getByTestId("qz-sky").locator("text").count(), "no name on the chart").toBe(0);
-  // nothing names the answer before it is answered, and the address is not written to
+  // a question the address does not choose: nothing names the answer before it is answered, and the address is not written to
+  await page.goto(`${EMBED}?level=88&style=lines&kid=1`);
+  await expect(choices(page)).toHaveCount(6);
   const before = await page.evaluate(() => `${document.title}|${location.search}|${(() => { const copy = document.body.cloneNode(true) as HTMLElement; copy.querySelector("#qz-choices")?.remove(); return copy.innerHTML; })()}`);
-  const answer = await choices(page).first().evaluate((b) => (b as HTMLElement).dataset["abbr"]!);
-  expect(before).not.toContain(`c=${answer}`);
   expect(before).not.toContain("q=");
   await choices(page).first().click();
   await expect(page.getByTestId("qz-score")).toContainText("of 1");
+  // the answer is told only now: its page is the link that appeared, and nothing of it was there before
+  const answer = new URL((await page.getByTestId("qz-open").getAttribute("href"))!, "http://x/").searchParams.get("c")!;
+  expect(answer).not.toBe("");
+  expect(before).not.toContain(`c=${answer}`);
+  expect(before).not.toContain(`data-abbr="${answer}"`);
   await page.getByTestId("qz-next").click();
   await expect(choices(page).first()).toBeEnabled();
-  expect(new URL(page.url()).search).toBe("?c=Ori&level=88&style=lines&kid=1");
+  expect(new URL(page.url()).search).toBe("?level=88&style=lines&kid=1");
 });
 
 test("the embed page takes the hemisphere and the month, and Japanese", async ({ page }) => {
