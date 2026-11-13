@@ -5,6 +5,7 @@ import type { BuildContext, Item3D, Scene3D } from "@johnmorrisdotca/kazoku-ui/r
 import { pixelRatioFor } from "@johnmorrisdotca/kazoku-ui/renderer";
 import type { Constellation3D, Point3, StarIn3D } from "../src/constellation-3d.ts";
 import { starColour } from "../src/stars.ts";
+import { starBody, type StarBody, type StarLook } from "./star-scene.ts";
 import { cameraFor, frontTan, RESTING_POSE, sideDistance, type Fit, type Pose } from "./space-camera.ts";
 import type * as ThreeModule from "./three-subset.ts";
 
@@ -29,7 +30,25 @@ export interface SpaceInput {
   invalidate: () => void;
   /** True when the reader asks for no motion: a turn then jumps. */
   still(): boolean;
+  /**
+   * The star look for a star the reader has zoomed close to: its colour, limb darkening and surface, from its numbers (star-scene.ts). `undefined` where there is none to draw (no temperature) or it is not ready yet; the page
+   * calls `invalidate` when it is, and the scene asks again on every frame it draws. Left out, no star is drawn close.
+   */
+  look?(one: StarIn3D): StarLook | undefined;
+  /** The star drawn close now (its id), or `undefined` once none is. */
+  onClose?(id: string | undefined): void;
 }
+
+/** From this zoom (1 is Fit), a star near the middle of the view is drawn with its look. */
+export const CLOSE_ZOOM = 5;
+/** The star must be within this share of the view's short side from its middle. */
+export const CLOSE_REACH = 0.3;
+/** Once a star is drawn close it is held until the zoom drops below this or it is further than `CLOSE_REACH_OUT` from the middle, so a view resting on the edge of the thresholds does not make and let go of the star's body again and again. */
+export const CLOSE_ZOOM_OUT = 4.5;
+export const CLOSE_REACH_OUT = 0.36;
+/** The drawn star's width, in CSS pixels for each step of zoom, and its share of the view's short side at the most. */
+const CLOSE_PIXELS = 12;
+const CLOSE_SHARE = 0.34;
 
 /** The scene, with the calls that move it. */
 export interface SpaceScene extends Scene3D {
@@ -276,6 +295,8 @@ export function spaceItem(input: SpaceInput): Item3D<Three> & { readonly anchors
       const feature = new Builder();
       const seen = new Map<string, StarIn3D>();
       const anchorAt: Array<{ key: string; point: Point3 }> = [];
+      /** The stars that have a place of their own (a dot or a bar), which can be drawn close. */
+      const placed = new Map<string, { one: StarIn3D; point: Point3 }>();
       const info = { reach: layout.reach, middle: layout.middle, lateral: layout.lateral, anchors: [] as string[], streaks: 0, rays: 0, bars: 0 };
       const rgb = pairOf;
       const origin: Point3 = [0, 0, 0];
@@ -321,6 +342,7 @@ export function spaceItem(input: SpaceInput): Item3D<Three> & { readonly anchors
         const near = one.nearPosition;
         const bestT = one.sight.best!;
         if (shape === "point") {
+          placed.set(id, { one, point: best });
           body.point(best, base, colour, LOOKS.night.rough, 0, LOOKS.light.rough);
           sights.line(one.sight.origin, best, sightColour, 0.14);
           anchorAt.push({ key: id, point: best });
@@ -331,6 +353,7 @@ export function spaceItem(input: SpaceInput): Item3D<Three> & { readonly anchors
         const farP = at(one.sight.origin, one.sight.direction, farT);
         if (shape === "bar") {
           info.bars += 1;
+          placed.set(id, { one, point: best });
           body.point(best, base, colour, 1, 0);
           sights.line(one.sight.origin, near!, sightColour, 0.14);
           feature.line(near!, farP, colour, 0.85);
@@ -474,6 +497,61 @@ export function spaceItem(input: SpaceInput): Item3D<Three> & { readonly anchors
         input.onFrame(frame);
       };
 
+      // The star look, drawn on demand: made when the reader has zoomed in on a star and let go when they zoom out or move off it. Nothing in it moves by itself, so a view at rest draws nothing and reduced motion has nothing to hold still.
+      let close: { id: string; body: StarBody } | undefined;
+      const letGo = (): void => {
+        if (close === undefined) return;
+        scene.remove(close.body.group);
+        close.body.dispose();
+        close = undefined;
+        input.onClose?.(undefined);
+      };
+      const nearest = (): { id: string; one: StarIn3D; point: Point3 } | undefined => {
+        if (input.look === undefined || current.zoom < (close === undefined ? CLOSE_ZOOM : CLOSE_ZOOM_OUT)) return undefined;
+        const reach = (close === undefined ? CLOSE_REACH : CLOSE_REACH_OUT) * Math.min(size.width, size.height);
+        let best: { id: string; one: StarIn3D; point: Point3 } | undefined;
+        let bestAt = reach;
+        for (const point of frame.points) {
+          const known = placed.get(point.key);
+          if (known === undefined || !point.visible) continue;
+          const away = Math.hypot(point.x - size.width / 2, point.y - size.height / 2);
+          if (away < bestAt) {
+            bestAt = away;
+            best = { id: point.key, ...known };
+          }
+        }
+        return best;
+      };
+      const drawClose = (): void => {
+        const found = nearest();
+        const look = found === undefined ? undefined : input.look?.(found.one);
+        if (found === undefined || look === undefined) {
+          letGo();
+          return;
+        }
+        if (close?.id !== found.id) {
+          letGo();
+          const made = starBody(T, look, found.one.star.hr, [64, 48]);
+          made.material.transparent = true;
+          made.material.depthTest = false;
+          made.material.depthWrite = false;
+          made.axisLine.visible = false;
+          made.group.renderOrder = 10;
+          made.ball.renderOrder = 10;
+          made.group.frustumCulled = false;
+          made.ball.frustumCulled = false;
+          scene.add(made.group);
+          close = { id: found.id, body: made };
+          input.onClose?.(found.id);
+        }
+        // the radius in the scene that makes it this many pixels across, at this star's depth
+        tmp.set(found.point[0], found.point[1], found.point[2]).applyMatrix4(camera.matrixWorldInverse);
+        const pixels = Math.min(CLOSE_SHARE * Math.min(size.width, size.height), CLOSE_PIXELS * current.zoom) / 2;
+        const radius = (pixels * -tmp.z) / (camera.projectionMatrix.elements[5]! * (size.height / 2));
+        close.body.group.position.set(found.point[0], found.point[1], found.point[2]);
+        close.body.group.scale.set(radius, radius, radius);
+      };
+
       const wrap = (degrees: number): number => ((((degrees + 180) % 360) + 360) % 360) - 180;
       let rest = false;
       const result: SpaceScene = {
@@ -519,6 +597,7 @@ export function spaceItem(input: SpaceInput): Item3D<Three> & { readonly anchors
           }
           aim();
           project();
+          drawClose();
           // still easing: the next frame comes in 33 ms, not at the display's rate
           if (!rest) request();
           return false;
@@ -530,6 +609,7 @@ export function spaceItem(input: SpaceInput): Item3D<Three> & { readonly anchors
           request();
         },
         dispose() {
+          letGo();
           scene.clear();
         },
       };

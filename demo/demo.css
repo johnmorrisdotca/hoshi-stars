@@ -134,6 +134,8 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .tn-list th, .tn-list td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--rule); }
 .tn-list td.tn-num { font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) { .tn-body { grid-template-columns: minmax(0, 1fr); } .tn-list { font-size: .85rem; } }
+/* the constellation quiz */
+/* tap the dots */
 .tp-status { margin: 6px 0 10px; font-size: 1.1rem; min-height: 1.6em; }
 .tp-board { max-width: 560px; }
 .tp-board svg { width: 100%; height: auto; display: block; border-radius: 12px; background: #0a1226; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }

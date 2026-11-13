@@ -28,6 +28,7 @@ writeFileSync(join(site, "constellation.html"), renderConstellationPage("constel
 writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.html", "ws_title", "ws_description", "whole-sky"));
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
 writeFileSync(join(site, "birthday.html"), renderConstellationPage("birthday.html", "bd_title", "bd_description", "birthday"));
+writeFileSync(join(site, "quiz.html"), renderConstellationPage("quiz.html", "qz_title", "qz_description", "quiz"));
 writeFileSync(join(site, "constellation-3d.html"), renderSpace());
 writeFileSync(join(site, "layers-3d.html"), renderLayers());
 writeThumbnails(join(site, "thumbnails"));
@@ -40,9 +41,9 @@ cpSync(join(root, "pictures"), join(site, "pictures"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 // Michroma, the family's font for a name on a body (kazoku-ui's body-label, SIL Open Font License 1.1 beside it): copied from kazoku-ui's build so the embed page can load it from its own site, only when its names are on.
 cpSync(join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui", "dist", "body-label", "fonts"), join(site, "fonts"), { recursive: true });
-for (const file of ["embed.html", "embed-3d.html", "embed-layers.html", "markers.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
+for (const file of ["embed.html", "embed-3d.html", "embed-layers.html", "embed-quiz.html", "markers.html", "star.html", "demo.css", "family.css", "gallery.css", "quiz.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), tonight: join(root, "demo", "tonight.ts"), "tap-dots": join(root, "demo", "tap-dots.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts"), markers: join(root, "demo", "markers.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), tonight: join(root, "demo", "tonight.ts"), "tap-dots": join(root, "demo", "tap-dots.ts"), gallery: join(root, "demo", "gallery.ts"), quiz: join(root, "demo", "quiz.ts"), "quiz-panel": join(root, "demo", "quiz-panel.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts"), markers: join(root, "demo", "markers.ts") },
   outdir: join(site, "js"),
   bundle: true,
   splitting: true,

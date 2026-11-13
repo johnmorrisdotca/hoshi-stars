@@ -286,3 +286,44 @@ test("the code to copy: the iframe names the 3D embed page, and the module draws
   await panel.getByRole("tab", { name: /module/i }).click();
   await expect(panel.locator("pre, textarea, code").first()).toContainText("constellationIn3D");
 });
+
+/** Zoom to `zoom` with the star in the middle of the view: where the star is at Fit, times the zoom, is where the pan must undo. */
+async function zoomTo(page: Page, key: string, zoom: number): Promise<void> {
+  await page.evaluate(
+    ({ key, zoom }) => {
+      const stage = document.getElementById("sp-stage")!.getBoundingClientRect();
+      const at = (Reflect.get(document.getElementById("sp-view")!, "starAt") as (key: string) => { x: number; y: number })(key);
+      const dx = at.x - stage.width / 2;
+      const dy = at.y - stage.height / 2;
+      const controls = document.getElementById("sp-controls") as unknown as { controller: { set(to: Record<string, number>, snap: boolean, reason: string): void } };
+      controls.controller.set({ zoom, panX: -dx * zoom, panY: -dy * zoom }, true, "test");
+    },
+    { key, zoom },
+  );
+}
+
+/** Back to Fit: zoom 1 with no pan. */
+async function zoomOut(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const controls = document.getElementById("sp-controls") as unknown as { controller: { set(to: Record<string, number>, snap: boolean, reason: string): void } };
+    controls.controller.set({ zoom: 1, panX: 0, panY: 0 }, true, "test");
+  });
+}
+
+test("zoomed close to Betelgeuse it is drawn with the star look, and zooming out lets it go", async ({ page }) => {
+  await open(page, "?spin=off");
+  const view = page.locator("#sp-view");
+  await expect(view).not.toHaveAttribute("data-close", /.+/);
+  // the view draws only while it is in sight: on a phone it opens below the fold, so scroll it in first or the zoom is never drawn
+  await view.scrollIntoViewIfNeeded();
+  await zoomTo(page, "s:hr-2061", 10);
+  await expect(view).toHaveAttribute("data-close", "s:hr-2061", { timeout: 20_000 });
+  // it is on the screen, drawn by the one shared renderer
+  const draws = await view.evaluate((el) => (Reflect.get(el, "stats") as { draws: number }).draws);
+  expect(draws).toBeGreaterThan(0);
+  // the suite asks for reduced motion: the look has no surface animation, so once drawn it rests
+  await expect.poll(() => view.evaluate((el) => (Reflect.get(el, "stats") as { draws: number }).draws), { timeout: 10_000 }).toBe(await view.evaluate((el) => (Reflect.get(el, "stats") as { draws: number }).draws));
+  await zoomOut(page);
+  await expect(view).not.toHaveAttribute("data-close", /.+/, { timeout: 20_000 });
+  await drainGpu(page);
+});

@@ -169,6 +169,60 @@ test("changing the constellation, the viewpoint and the look over and over gives
   expect(Math.max(...settled.slice(2)), "no more GPU objects after 24 rounds than after the third, give or take three.js's own fixtures").toBeLessThanOrEqual(settled[2]! + 4);
 });
 
+/** Zoom to `zoom` with a star, by where the view says it is at Fit, in the middle of the view (the pan undoes where it is, times the zoom). */
+async function zoomTo(page: Page, key: string, zoom: number): Promise<void> {
+  await page.evaluate(
+    ({ key, zoom }) => {
+      const stage = document.getElementById("sp-stage")!.getBoundingClientRect();
+      const at = (Reflect.get(document.getElementById("sp-view")!, "starAt") as (key: string) => { x: number; y: number })(key);
+      const dx = at.x - stage.width / 2;
+      const dy = at.y - stage.height / 2;
+      const controls = document.getElementById("sp-controls") as unknown as { controller: { set(to: Record<string, number>, snap: boolean, reason: string): void } };
+      controls.controller.set({ zoom, panX: -dx * zoom, panY: -dy * zoom }, true, "test");
+    },
+    { key, zoom },
+  );
+}
+
+/** Back to Fit: zoom 1 with no pan. */
+async function zoomOut(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const controls = document.getElementById("sp-controls") as unknown as { controller: { set(to: Record<string, number>, snap: boolean, reason: string): void } };
+    controls.controller.set({ zoom: 1, panX: 0, panY: 0 }, true, "test");
+  });
+}
+
+test.describe("zoomed close to a star", () => {
+  test("held there, nothing is drawn and no frame is asked for", async ({ page }) => {
+    await open(page, "?spin=off");
+    await zoomTo(page, "s:hr-2061", 10);
+    await expect(page.locator("#sp-view")).toHaveAttribute("data-close", "s:hr-2061", { timeout: 20_000 });
+    await untilStill(page, drawCounts);
+    const rest = await bounded(page, 2500);
+    expect(rest.draws).toBe(0);
+    expect(rest.frames).toBe(0);
+    expect(rest.requests).toBeLessThanOrEqual(2);
+  });
+
+  test("zooming in on a star and out again over and over gives back what it took: GPU objects stay flat in the one context", async ({ page }) => {
+    test.setTimeout(180_000);
+    await open(page, "?spin=off");
+    const settled: number[] = [];
+    for (let round = 0; round < 12; round += 1) {
+      await zoomTo(page, "s:hr-2061", 10);
+      await expect(page.locator("#sp-view")).toHaveAttribute("data-close", "s:hr-2061", { timeout: 20_000 });
+      await zoomOut(page);
+      await expect(page.locator("#sp-view")).not.toHaveAttribute("data-close", /.+/, { timeout: 20_000 });
+      await untilStill(page, async (p) => gpuObjects(await readCounts(p)), { quietMs: 500, timeoutMs: 20_000 });
+      const counted = await readCounts(page);
+      settled.push(gpuObjects(counted));
+      expect(counted.contexts, "one WebGL context for the page, however it zooms").toBe(1);
+    }
+    console.log(`live GPU objects after each zoom round: ${settled.join(", ")}`);
+    expect(Math.max(...settled.slice(2)), "no more GPU objects after 12 rounds than after the third, give or take three.js's own fixtures").toBeLessThanOrEqual(settled[2]! + 4);
+  });
+});
+
 // The star in 3D (star.html?view=3d, and the star's 3D picture in the side panel): it turns on its own while it is in sight, so it may draw at most 30 frames a second then; Pause, reduced motion, out of sight and a hidden
 // tab draw nothing; one context; a 5K screen keeps its canvas in budget; and making its view again and again gives back what each took.
 test.describe("the star in 3D", () => {
