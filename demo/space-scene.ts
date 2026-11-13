@@ -43,9 +43,12 @@ export interface SpaceInput {
 export const CLOSE_ZOOM = 5;
 /** The star must be within this share of the view's short side from its middle. */
 export const CLOSE_REACH = 0.3;
+/** Once a star is drawn close it is held until the zoom drops below this or it is further than `CLOSE_REACH_OUT` from the middle, so a view resting on the edge of the thresholds does not make and let go of the star's body again and again. */
+export const CLOSE_ZOOM_OUT = 4.5;
+export const CLOSE_REACH_OUT = 0.36;
 /** The drawn star's width, in CSS pixels for each step of zoom, and its share of the view's short side at the most. */
 const CLOSE_PIXELS = 12;
-const CLOSE_SHARE = 0.34
+const CLOSE_SHARE = 0.34;
 
 /** The scene, with the calls that move it. */
 export interface SpaceScene extends Scene3D {
@@ -504,8 +507,8 @@ export function spaceItem(input: SpaceInput): Item3D<Three> & { readonly anchors
         input.onClose?.(undefined);
       };
       const nearest = (): { id: string; one: StarIn3D; point: Point3 } | undefined => {
-        if (input.look === undefined || current.zoom < CLOSE_ZOOM) return undefined;
-        const reach = CLOSE_REACH * Math.min(size.width, size.height);
+        if (input.look === undefined || current.zoom < (close === undefined ? CLOSE_ZOOM : CLOSE_ZOOM_OUT)) return undefined;
+        const reach = (close === undefined ? CLOSE_REACH : CLOSE_REACH_OUT) * Math.min(size.width, size.height);
         let best: { id: string; one: StarIn3D; point: Point3 } | undefined;
         let bestAt = reach;
         for (const point of frame.points) {
