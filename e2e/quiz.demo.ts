@@ -158,7 +158,7 @@ test("kid mode: big buttons, simpler words, kept in the address, and it gives no
   await page.getByTestId("qz-kid").click();
   await expect.poll(() => param(page, "kid")).toBe("1");
   await expect(page.getByTestId("qz-kid")).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Which star picture is this?");
+  await expect(page.locator("#qz-heading")).toHaveText("Which star picture is this?");
   await expect(page.getByTestId("qz-levels").getByRole("button", { name: "Easy (12)" })).toBeVisible();
   // big targets: every choice and every control is at least 56 px tall, and the choices are taller than in the plain mode
   const sizes = await page.locator(".quiz button, .quiz a.fam-button").evaluateAll((all) => all.filter((e) => (e as HTMLElement).offsetParent !== null).map((e) => Math.round(e.getBoundingClientRect().height)));
@@ -175,13 +175,13 @@ test("kid mode: big buttons, simpler words, kept in the address, and it gives no
   await expect(page.getByTestId("qz-kid")).toHaveAttribute("aria-pressed", "true");
   await page.getByTestId("qz-kid").click();
   await expect.poll(() => param(page, "kid")).toBeNull();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Which constellation is this?");
+  await expect(page.locator("#qz-heading")).toHaveText("Which constellation is this?");
 });
 
 test("kid mode in Japanese uses the simple words", async ({ page }) => {
   await page.goto(`${PAGE}?kid=1&lang=ja&level=88`);
   await expect(choices(page)).toHaveCount(6);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("これは なにざ?");
+  await expect(page.locator("#qz-heading")).toHaveText("これは なにざ?");
   await expect(page.getByTestId("qz-next")).toHaveText("つぎの もんだい");
 });
 

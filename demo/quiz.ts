@@ -71,6 +71,8 @@ function ask(abbreviation?: string): void {
   answered = false;
   address.set("q", String(ORDER.indexOf(current) + 1));
   address.set("c", null);
+  // written now, not after the address's short delay, so a reload or a copied link right after a question asks the same one
+  address.flush();
   render();
 }
 
