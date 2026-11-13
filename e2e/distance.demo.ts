@@ -128,7 +128,8 @@ test.describe("the demo's map", () => {
     await expect(page.getByTestId("dist-out")).toContainText("light-years");
     await seg(page).getByRole("button", { name: "Off" }).click();
     await expect.poll(() => param(page, "dist")).toBeNull();
-    expect(await marks(page, "#chart").count()).toBe(0);
+    // the address and the buttons change at once; the map is redrawn on the next frame, so wait for it
+    await expect(marks(page, "#chart")).toHaveCount(0);
   });
 
   test("the row and the legend are in Japanese on the Japanese page", async ({ page }) => {
