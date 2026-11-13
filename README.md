@@ -58,6 +58,7 @@ console.log(stars({ magnitude: 2 }).length, "stars as bright as magnitude 2");  
 | `starPosition(star, when?)` | right ascension and declination (degrees, J2000 frame) carried by proper motion |
 | `starDistanceLightYears(star)` | the distance from the parallax |
 | `starDistance(star)` | the distance with its error and its nearest and farthest |
+| `absoluteMagnitude(star)` | how bright the star would look from 10 parsecs, from its magnitude and parallax |
 | `luminosityClass(spectralType)` | the luminosity class in a spectral type: `Ia`, `III`, `V` |
 | `starTemperatureK(bv)`, `blackBodyColour(kelvin)`, `starColour(star)` | temperature and a colour to draw |
 

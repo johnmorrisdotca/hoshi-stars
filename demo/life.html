@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="hr" aria-labelledby="hr-heading">
+        <h1 id="hr-heading" class="kids-title" data-say="hr_heading"></h1>
+        <p class="lead" data-say="hr_lede"></p>
+        <div class="kids-picks">
+          <div class="fam-row">
+            <span class="fam-label" data-say="hr_axes"></span>
+            <span class="fam-seg" id="axes" role="group" data-say-label="hr_axes"></span>
+            <span class="fam-label" data-say="hr_show"></span>
+            <span class="fam-seg" id="shows" role="group" data-say-label="hr_show"></span>
+          </div>
+        </div>
+        <p id="hr-count" class="hr-count" data-testid="hr-count" role="status"></p>
+        <div class="hr-body">
+          <div id="hr-chart" class="hr-chart" data-testid="hr-chart"></div>
+          <div class="hr-side">
+            <label class="field"><span data-say="hr_find"></span><input id="hr-find" class="fam-field" type="search" list="hr-names" autocomplete="off" data-testid="hr-find" /></label>
+            <datalist id="hr-names"></datalist>
+            <p class="fam-fine" id="hr-found" role="status"></p>
+            <div id="hr-card" class="hr-card" data-testid="hr-card" aria-live="polite"></div>
+          </div>
+        </div>
+        <h2 class="tn-h2" data-say="hr_livesHeading"></h2>
+        <p class="fam-fine" data-say="hr_livesLede"></p>
+        <div class="hr-lives" id="hr-lives" data-testid="hr-lives"></div>
+        <p class="fam-fine" data-say="hr_trackNote"></p>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

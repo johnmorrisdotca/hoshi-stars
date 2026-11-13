@@ -548,6 +548,12 @@ await step("tonight", () => {
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 
+await step("hr-diagram", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "hr-diagram.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = ["Sirius: B-V 0, absolute magnitude 1.4, 9500 K, 24 suns", "Aldebaran: B-V 1.54, absolute magnitude -0.7, 3900 K, 403 suns", "Betelgeuse: B-V 1.85, absolute magnitude -5.6, 3700 K, 52266 suns"].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await browser.close();
 lock.release();
 
@@ -588,6 +594,7 @@ const FILES: Record<string, string[]> = {
   "node/accuracy.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
   "node/min-grade.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
   "node/tonight.mjs": ["docs/guides/tonight.md", "docs/guides/ja/tonight.md"],
+  "node/hr-diagram.mjs": ["docs/guides/hr-diagram.md", "docs/guides/ja/hr-diagram.md"],
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
