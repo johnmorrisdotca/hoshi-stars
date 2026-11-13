@@ -7,7 +7,7 @@ description: "Plot the stars by colour and brightness, or by temperature and lum
 
 [日本語](ja/hr-diagram.md)
 
-A Hertzsprung-Russell diagram plots every star by how hot it is (across, hot on the left) and how bright it really is (up). Most stars fall along a band, the main sequence, where a star like the Sun spends most of its life; giants and supergiants lie above it and white dwarfs below. The [life of a star page of the demo](https://johnmorrisdotca.github.io/hoshi-stars/life.html) draws it for the stars of the catalogue whose accuracy grade is A or B (about 530 of the 5,080, the ones with a distance good enough to trust, see [accuracy](accuracy.md)), with two choices of axes in the same picture:
+A Hertzsprung-Russell diagram plots every star by how hot it is (across, hot on the left) and how bright it really is (up). Most stars fall along a band, the main sequence, where a star like the Sun spends most of its life; giants and supergiants lie above it and white dwarfs below. The [life of a star page of the demo](https://johnmorrisdotca.github.io/hoshi-stars/life.html) draws it for the stars of the catalogue whose accuracy grade is A or B (about 500 of the 5,080, the ones with a distance good enough to trust, see [accuracy](accuracy.md)), with two choices of axes in the same picture:
 
 - **Colour and brightness**: the catalogue's B-V colour index across, and the **absolute magnitude** up (how bright the star would look from 10 parsecs, smaller is brighter). `absoluteMagnitude(star)` works it out from the magnitude and the parallax.
 - **Temperature and luminosity**: the temperature in kelvin across and the luminosity in suns up, from [`starProfile`](star-profile.md) (a temperature scale for the star's spectral type and a bolometric correction), with the uncertainty it carries.
@@ -30,6 +30,10 @@ Sirius: B-V 0, absolute magnitude 1.4, 9500 K, 24 suns
 Aldebaran: B-V 1.54, absolute magnitude -0.7, 3900 K, 403 suns
 Betelgeuse: B-V 1.85, absolute magnitude -5.6, 3700 K, 52266 suns
 ```
+
+## What the numbers are
+
+`absoluteMagnitude` is `V + 5 + 5 log10(parallax in arc-seconds)`, so a star with no parallax has none (`undefined`) and is left off, never guessed. The distances are the package's own: the Yale parallax catalogue, the Bright Star Catalogue's parallax or a published paper's distance (see `NOTICE.md`); no Hipparcos or Gaia value is used. The dimming of starlight by interstellar dust is not corrected in either view, so a distant star is drawn a little too faint and too red. The Bright Star Catalogue gives its own parallaxes to a whole milliarcsecond, so the diagram leaves off a star whose parallax of that kind is under 2.5 mas (the rounding alone would be over 20%).
 
 ## What the page does
 

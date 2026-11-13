@@ -1,6 +1,7 @@
 // The Hertzsprung-Russell page's numbers, apart from the drawing: which stars are plotted, where each lies on either pair of axes, and the ticks to label them with. Pure: no DOM, no clock.
 // Colour (B-V) against absolute magnitude is what the catalogue gives; temperature against luminosity is what `starProfile` works out from it, so the two views hold the same stars in two shapes.
 import { gradeAtLeast, starGrade, type StarGrade } from "../src/accuracy.ts";
+import { QUALITY_LIMITS } from "../src/distance-quality.ts";
 import { starProfile, type ProfileInput } from "../src/profile.ts";
 import { absoluteMagnitude, stars, type Star } from "../src/stars.ts";
 
@@ -48,11 +49,21 @@ export function shown(star: Star, show: Show): boolean {
   return gradeAtLeast(starGrade(star), minimum) && (show !== "named" || star.name !== undefined);
 }
 
+/**
+ * Whether the parallax is good enough to place the star in brightness. The Bright Star Catalogue gives its own parallaxes (the dynamical ones among them) to a whole milliarcsecond with no error, so a parallax of 1 or 2
+ * mas is only known to 25% to 50% by its rounding alone: Adhara, with 1 mas, would sit at absolute magnitude -8.5 (about 1,200,000 suns) and not near -4. The grade counts every dynamical parallax as fair, so the diagram applies the grade's own
+ * 20% limit to the rounding (half a milliarcsecond over the parallax) as well.
+ */
+export function placeable(star: Pick<Star, "parallaxMas" | "parallaxSource">): boolean {
+  const rounded = star.parallaxSource === "dynamical" || star.parallaxSource === "BSC";
+  return !rounded || 0.5 / star.parallaxMas <= QUALITY_LIMITS.rough;
+}
+
 /** The stars of the graded set (A and B by default) that have both numbers on these axes, with where each lies. */
 export function hrPoints(axes: Axes, show: Show = "graded"): HrPoint[] {
   const out: HrPoint[] = [];
   for (const star of stars({ minGrade: "B" })) {
-    if (!shown(star, show)) continue;
+    if (!shown(star, show) || !placeable(star)) continue;
     const at = place(star, axes);
     if (at !== undefined) out.push({ hr: star.hr, ...at });
   }

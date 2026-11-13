@@ -232,7 +232,7 @@ export function starDistanceLightYears(star: Star): number | undefined {
 }
 
 /**
- * A star's absolute magnitude: how bright it would look from 10 parsecs (32.6 light-years), from its visual magnitude and its parallax (`M = V + 5 + 5 log10(parallax in arc-seconds)`). It is the brightness the Hertzsprung-Russell diagram plots against colour. The Sun is 4.83 and Sirius 1.45.
+ * A star's absolute magnitude: how bright it would look from 10 parsecs (32.6 light-years), from its visual magnitude and its parallax (`M = V + 5 + 5 log10(parallax in arc-seconds)`). It is the brightness the Hertzsprung-Russell diagram plots against colour. The Sun is 4.83 and Sirius 1.45. The dimming of starlight by interstellar dust is not corrected, so a distant star is a little fainter than it is; the catalogue holds no figure for it.
  *
  * @param star - A star, or anything with a visual magnitude and a parallax in milliarcseconds.
  * @returns The absolute magnitude, or `undefined` where there is no parallax (or a non-positive one). It carries the parallax's error: a star with a poor parallax has a poor absolute magnitude.
