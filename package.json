@@ -292,6 +292,11 @@
       "import": "./dist/names.js",
       "default": "./dist/names.js"
     },
+    "./names/named": {
+      "types": "./dist/names-named.d.ts",
+      "import": "./dist/names-named.js",
+      "default": "./dist/names-named.js"
+    },
     "./names/ngc-ic": {
       "types": "./dist/names-ngc-ic.d.ts",
       "import": "./dist/names-ngc-ic.js",

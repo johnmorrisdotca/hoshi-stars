@@ -2,6 +2,27 @@
 // so the entry point for the NGC and IC objects loads none. Pure: no DOM, no clock, no state beyond the rows it is given.
 import { deepSkyAliases, type DeepSkyObject, type DeepSkyType } from "./deep-sky-core.ts";
 import type { Constellation } from "./constellations.ts";
+import { CONSTELLATION_ROWS } from "./data/constellations.ts";
+import type { Star } from "./stars.ts";
+
+/** The fields of a star a names row is made from: a part of `Star`, so that the small `/names/named` chunk need not load the bright-star table. */
+export type NameStar = Pick<Star, "hr" | "name" | "nameJa" | "designation" | "constellation" | "rightAscension" | "declination" | "magnitude" | "spectralType">;
+/** The fields of a constellation a names row is made from. */
+export type NameConstellation = Pick<Constellation, "abbreviation" | "name" | "genitive" | "japanese">;
+
+let byAbbreviation: Map<string, NameConstellation> | undefined;
+/** The 88 constellations by IAU abbreviation, read from the small constellation table alone (`constellations()` would load the star table with it). */
+export function constellationsByAbbreviation(): ReadonlyMap<string, NameConstellation> {
+  if (byAbbreviation === undefined) {
+    byAbbreviation = new Map();
+    for (const row of CONSTELLATION_ROWS.split("\n")) {
+      const [abbreviation, name, genitive, , stem] = row.split("|") as [string, string, string, string, string];
+      byAbbreviation.set(abbreviation, { abbreviation, name, genitive, japanese: `${stem}座` });
+    }
+  }
+  return byAbbreviation;
+}
+
 
 /**
  * The kinds of row in the names index: `star`, `cluster` (open and globular), `nebula` (emission, reflection, planetary, supernova remnant), `galaxy` and `other` (an asterism, a double star Messier listed, a source that is none of those).
@@ -162,7 +183,7 @@ const KINDS: Readonly<Record<DeepSkyType, NameKind>> = { galaxy: "galaxy", "glob
  * console.log(deepSkyRow(deepSkyObject("M31")!, byAbbreviation).id);
  * ```
  */
-export function deepSkyRow(object: DeepSkyObject, constellations: ReadonlyMap<string, Constellation>): NameRow {
+export function deepSkyRow(object: DeepSkyObject, constellations: ReadonlyMap<string, NameConstellation>): NameRow {
   const numbers = [object.messier, object.ngc, object.ic, ...object.otherIds].filter((text): text is string => text !== undefined);
   const shown = object.name ?? object.id;
   const others = [object.id, ...numbers, ...(object.messier === undefined ? [] : [`Messier ${object.messier.slice(1)}`]), ...deepSkyAliases(object)];
@@ -182,6 +203,75 @@ export function deepSkyRow(object: DeepSkyObject, constellations: ReadonlyMap<st
     declination: object.declination,
     pick: `D:${object.id}`,
     hr: undefined,
+  };
+}
+
+const BAYER = /^(\D+?)(\d*) (\S+)$/u;
+const DATABASE_SHORT: Readonly<Record<string, string>> = { alpha: "alf", theta: "tet", xi: "ksi" };
+const FLAMSTEED = /^(\d+) (\S+)$/u;
+
+/** The id a star would have before any clash is settled: its name, else its Bayer letter or Flamsteed number spelt out with the constellation's genitive, else `hr-` and its number. */
+export function starSlug(star: NameStar, c: NameConstellation | undefined): string {
+  if (star.name !== undefined) return slugOf(star.name);
+  const text = star.designation;
+  if (text !== undefined && c !== undefined) {
+    const bayer = BAYER.exec(text);
+    if (bayer !== null) return slugOf(`${greekName(bayer[1]!)}${bayer[2]!} ${c.genitive}`);
+    const flamsteed = FLAMSTEED.exec(text);
+    if (flamsteed !== null) return slugOf(`${flamsteed[1]!} ${c.genitive}`);
+  }
+  return `hr-${star.hr}`;
+}
+
+/** The row of a star. The id is given, not made here, because a clash between two stars is settled over the whole table, which a small chunk may not hold. */
+export function starRow(star: NameStar, c: NameConstellation | undefined, id: string): NameRow {
+  const others = new Set<string>();
+  const designations: string[] = [];
+  let ja = star.nameJa;
+  const text = star.designation;
+  if (text !== undefined) designations.push(text);
+  designations.push(`HR ${star.hr}`);
+  if (text !== undefined && c !== undefined) {
+    const bayer = BAYER.exec(text);
+    const flamsteed = FLAMSTEED.exec(text);
+    if (bayer !== null) {
+      const letter = bayer[1]!;
+      const number = bayer[2]!;
+      for (const place of [c.abbreviation, c.genitive]) {
+        others.add(`${letter}${number} ${place}`);
+        others.add(`${greekName(letter)}${number} ${place}`);
+        others.add(`${greekShort(greekName(letter))}${number} ${place}`);
+        // the three-letter forms that differ in the astronomy databases (alf Ori, tet Eri, ksi Ori)
+        const database = DATABASE_SHORT[greekName(letter)];
+        if (database !== undefined) others.add(`${database}${number} ${place}`);
+        // a component of a pair (α1 Cen) is also what people mean by the pair's letter (alpha Centauri): the text then names two rows, and `findName` gives none
+        if (number !== "") others.add(`${greekName(letter)} ${place}`);
+      }
+      ja ??= `${c.japanese}${letter}${number}星`;
+    } else if (flamsteed !== null) {
+      for (const place of [c.abbreviation, c.genitive]) others.add(`${flamsteed[1]!} ${place}`);
+    }
+  }
+  const shown = star.name ?? text ?? `HR ${star.hr}`;
+  for (const one of designations) others.add(one);
+  if (star.name !== undefined && text !== undefined) others.add(text);
+  others.delete(shown);
+  if (ja !== undefined) others.delete(ja);
+  return {
+    id,
+    kind: "star",
+    detail: star.spectralType,
+    name: { en: shown, ja },
+    otherNames: [...others],
+    designations,
+    constellation: star.constellation,
+    constellationName: c === undefined ? undefined : { en: c.name, ja: c.japanese },
+    magnitude: star.magnitude,
+    weight: starWeight(star.magnitude, star.name !== undefined),
+    rightAscension: star.rightAscension,
+    declination: star.declination,
+    pick: `S:${star.hr}`,
+    hr: star.hr,
   };
 }
 

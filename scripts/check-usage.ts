@@ -554,6 +554,12 @@ await step("names", () => {
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 
+await step("names-named", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "names-named.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = ["445 rows, first sirius", "betelgeuse m31", "m31 alpheratz mirach"].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await browser.close();
 lock.release();
 
@@ -595,6 +601,7 @@ const FILES: Record<string, string[]> = {
   "node/min-grade.mjs": ["docs/guides/accuracy.md", "docs/guides/ja/accuracy.md"],
   "node/tonight.mjs": ["docs/guides/tonight.md", "docs/guides/ja/tonight.md"],
   "node/names.mjs": ["docs/guides/names.md", "docs/guides/ja/names.md"],
+  "node/names-named.mjs": ["docs/guides/names.md", "docs/guides/ja/names.md"],
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],

@@ -53,9 +53,32 @@ ngc7000 North America Nebula nebula
 
 `findName(text)` は、大文字小文字・空白・アクセント・ギリシャ文字の書き方 (`α`、`alpha`、`Alp`、`alf`)、上付き数字 (`π³`)、離して書いた番号 (`pi 3 Ori`) を区別せず、文字列がちょうど指す1行を返します。`Betelgeuse`、`alpha Ori`、`α Orionis`、`HR 2061`、`M 31`、`Messier 31`、`NGC 224`、`Andromeda Galaxy`、`ベテルギウス`。2行が共有する文字列 (`Alpha Centauri` は `α1 Cen` と `α2 Cen` の両方) は、どれも返しません。`searchNames(text, { limit, kinds })` は、先頭が合う行、続いて含む行を、それぞれ重みの順に返し、入力補完に使えます。NGC・IC のかたまりにも同じ3つがあります: `ngcIcRows`、`ngcIcRowById`、`findNgcIc`、`searchNgcIc`。
 
+## 小さな最初のかたまり
+
+検索ボックスが最初にほしいのは 135 kB ではなく約 20 kB です。`@johnmorrisdotca/hoshi-stars/names/named` は、通称のある 335 個の星と 110 個のメシエ天体 (445 行) だけを持ち、その上で `nameRows`、`nameRowById`、`findName`、`searchNames` がすぐに動きます。各行は、`/names` が同じ ID に返す行と、ID・名前・符号・位置まで同じなので、このかたまりの結果を見せておき、あとから `/names` (と `/names/ngc-ic`) を読んで残りを足しても、ID は変わりません。
+
+```js
+import { findName, nameRows, searchNames } from "@johnmorrisdotca/hoshi-stars/names/named";
+
+const rows = nameRows();
+console.log(`${rows.length} rows, first ${rows[0].id}`);
+console.log(findName("alpha Ori").id, findName("NGC 224").id);
+console.log(searchNames("andro", { limit: 3 }).map((row) => row.id).join(" "));
+```
+
+出力:
+
+```text
+445 rows, first sirius
+betelgeuse m31
+m31 alpheratz mirach
+```
+
+335 個の星は、`scripts/make-names-named.ts` が明るい星の表から書き出す小さな表から読みます (`NOTICE.md` に出典のある Yale のデータで、新しいデータはありません)。ID は表を書くときに全体で決めてあるので、このかたまりは星の表を必要とせず、テストがスクリプトをもう一度走らせて、ディスク上の表と違えば失敗します。`/names/named` は gzip で 22.7 kB です。通称のない星 (`alpha-centauri`、`hr-1234`) は入っていません。ここで見つからない検索は `/names` へ進みます。
+
 ## 大きさ
 
-行は、パッケージがすでに持つ表から、最初に求められたときに作るので、コードの増分は数キロバイトです。`/names` は gzip で 135 kB (星の表とメシエの表)、`/names/ngc-ic` は 226 kB (大きな星雲星団の表だけで、星の表は含みません)。どちらも 60 kB を超えるので2つのかたまりに分けてあり、星とメシエだけがほしいページは NGC・IC の表を読みません。JSON に書き出すと、名前の書き方をすべて並べるので元の表より大きくなります。`/names` の 5,190 行で gzip 約 300 kB (星 5,080 個で約 296 kB)、`/names/ngc-ic` の 11,788 行で約 332 kB (大半は銀河) です。自分のサイトで写しを送るなら、行ごとではなく、検索と表示に使う項目だけを送ってください。
+行は、パッケージがすでに持つ表から、最初に求められたときに作るので、コードの増分は数キロバイトです。`/names` は gzip で 135.7 kB (星の表とメシエの表)、`/names/ngc-ic` は 226.4 kB (大きな星雲星団の表だけで、星の表は含みません)。どちらも 60 kB を超えるので別のかたまりに分けてあり、手前に 22.7 kB の `/names/named` があります。星とメシエだけがほしいページは NGC・IC の表を読みません。JSON に書き出すと、名前の書き方をすべて並べるので元の表より大きくなります。`/names` の 5,190 行で gzip 約 300 kB (星 5,080 個で約 296 kB)、`/names/ngc-ic` の 11,788 行で約 332 kB (大半は銀河) です。自分のサイトで写しを送るなら、行ごとではなく、検索と表示に使う項目だけを送ってください。
 
 ## わかっている欠け
 

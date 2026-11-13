@@ -53,9 +53,32 @@ ngc7000 North America Nebula nebula
 
 `findName(text)` returns the one row a text names exactly, ignoring case, spacing, accents and how the Greek letter is spelt (`α`, `alpha`, `Alp`, `alf`, a superscript `π³` or a number written apart `pi 3 Ori`): `Betelgeuse`, `alpha Ori`, `α Orionis`, `HR 2061`, `M 31`, `Messier 31`, `NGC 224`, `Andromeda Galaxy`, `ベテルギウス`. A text that two rows share (`Alpha Centauri` is both `α1 Cen` and `α2 Cen`) finds none. `searchNames(text, { limit, kinds })` lists the rows whose names start with the text and then those that contain it, each by weight, for a type-ahead box. The NGC and IC chunk has the same three: `ngcIcRows`, `ngcIcRowById`, `findNgcIc` and `searchNgcIc`.
 
+## A small first chunk
+
+A search box wants about 20 kB first, not 135. `@johnmorrisdotca/hoshi-stars/names/named` holds only the 335 stars that have a common name and the 110 Messier objects (445 rows), with `nameRows`, `nameRowById`, `findName` and `searchNames` that work on them at once. Each row is the same row, with the same id, names, designations and position, that `/names` gives for that id, so a page can show results from this chunk and load `/names` (and `/names/ngc-ic`) afterwards for the rest without an id changing.
+
+```js
+import { findName, nameRows, searchNames } from "@johnmorrisdotca/hoshi-stars/names/named";
+
+const rows = nameRows();
+console.log(`${rows.length} rows, first ${rows[0].id}`);
+console.log(findName("alpha Ori").id, findName("NGC 224").id);
+console.log(searchNames("andro", { limit: 3 }).map((row) => row.id).join(" "));
+```
+
+The output is:
+
+```text
+445 rows, first sirius
+betelgeuse m31
+m31 alpheratz mirach
+```
+
+The 335 stars come from a small table that `scripts/make-names-named.ts` writes from the bright-star table (the Yale data already credited in `NOTICE.md`; no new data). The ids are settled over the whole table when it is written, so the chunk needs no star table, and a test runs the script again and fails if the table on disk differs. `/names/named` measures 22.7 kB gzipped. A star without a common name (`alpha-centauri`, `hr-1234`) is not in it: a search that finds nothing there goes on to `/names`.
+
 ## Size
 
-The rows are made when first asked for from the tables the package already ships, so the code adds a few kilobytes: `/names` measures 135 kB gzipped (the star table with the Messier table) and `/names/ngc-ic` 226 kB (the large deep-sky table, and nothing from the stars). Both are over 60 kB, so they are two chunks, and a page that only wants stars and Messier objects never loads the NGC and IC table. Written out as JSON the rows are larger than the tables they come from, because every spelling of a name is spelt: of the 5,190 rows of `/names` about 300 kB gzipped (5,080 stars about 296 kB), and the 11,788 of `/names/ngc-ic` about 332 kB (the galaxies are most of it). A site that sends its own copy should send the fields it searches and shows, not whole rows.
+The rows are made when first asked for from the tables the package already ships, so the code adds a few kilobytes: `/names` measures 135.7 kB gzipped (the star table with the Messier table) and `/names/ngc-ic` 226.4 kB (the large deep-sky table, and nothing from the stars). Both are over 60 kB, so they are chunks, with the 22.7 kB `/names/named` in front of them, and a page that only wants stars and Messier objects never loads the NGC and IC table. Written out as JSON the rows are larger than the tables they come from, because every spelling of a name is spelt: of the 5,190 rows of `/names` about 300 kB gzipped (5,080 stars about 296 kB), and the 11,788 of `/names/ngc-ic` about 332 kB (the galaxies are most of it). A site that sends its own copy should send the fields it searches and shows, not whole rows.
 
 ## Known gaps
 

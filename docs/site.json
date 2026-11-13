@@ -200,6 +200,11 @@
       "ja": "検索ボックス用の名前の一覧 (明るい星とメシエ天体ごとに、英語・日本語の名前、符号、星座、順位の重み、アドレスに使える ID、向ける先を持つ行。IDと名前で引けます)",
       "platform": "neutral"
     },
+    "./names/named": {
+      "en": "The small first chunk of the names index: the 335 stars with a common name and the 110 Messier objects, the same rows as the full index, for a search box that loads about 20 kB first",
+      "ja": "名前の一覧の小さな最初のかたまり (固有名のある335個の星と110個のメシエ天体。全体と同じ行で、最初に約20 kBだけ読み込む検索ボックス用)",
+      "platform": "neutral"
+    },
     "./names/ngc-ic": {
       "en": "The names index for the NGC and IC objects that are not Messier objects, in a chunk of their own",
       "ja": "メシエ天体ではない NGC・IC 天体の名前の一覧 (別のかたまり)",
