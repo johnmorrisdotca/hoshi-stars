@@ -160,27 +160,6 @@ function render(): void {
     el.textContent = w(name);
   }
   for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-qz-label]"))) el.setAttribute("aria-label", w(el.dataset["qzLabel"]!));
-  for (const button of Array.from($("qz-hemis").querySelectorAll("button"))) {
-    button.textContent = w(`h${button.dataset["value"]}`);
-    button.setAttribute("aria-pressed", String(button.dataset["value"] === where));
-  }
-  for (const button of Array.from($("qz-cultures").querySelectorAll("button"))) {
-    button.textContent = w(`c_${button.dataset["value"]}`);
-    button.setAttribute("aria-pressed", String(button.dataset["value"] === cultureId));
-  }
-  const cultureNote = $("qz-culturenote");
-  cultureNote.hidden = cultureId === "western";
-  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: totalOf() });
-  const months = $<HTMLSelectElement>("qz-month");
-  months.replaceChildren(Object.assign(document.createElement("option"), { value: "0", textContent: w("anymonth") }), ...Array.from({ length: 12 }, (_, i) => Object.assign(document.createElement("option"), { value: String(i + 1), textContent: monthName(i + 1) })));
-  months.value = String(month);
-  months.disabled = where === "all";
-  const skyNote = $("qz-skynote");
-  skyNote.hidden = where === "all";
-  skyNote.textContent = where === "all" ? "" : say("qz_skynote", { place: say(`qz_from_${where}`), when: say(month > 0 ? "qz_when_month" : "qz_when_year"), height: MIN_ALTITUDE });
-  const kidButton = $("qz-kid");
-  kidButton.textContent = say("qz_kid");
-  kidButton.setAttribute("aria-pressed", String(kid));
   const styles = $("qz-styles");
   const levels = $("qz-levels");
   if (styles.children.length === 0) {
@@ -237,6 +216,27 @@ function render(): void {
       ask();
     });
   }
+  for (const button of Array.from($("qz-hemis").querySelectorAll("button"))) {
+    button.textContent = w(`h${button.dataset["value"]}`);
+    button.setAttribute("aria-pressed", String(button.dataset["value"] === where));
+  }
+  for (const button of Array.from($("qz-cultures").querySelectorAll("button"))) {
+    button.textContent = w(`c_${button.dataset["value"]}`);
+    button.setAttribute("aria-pressed", String(button.dataset["value"] === cultureId));
+  }
+  const cultureNote = $("qz-culturenote");
+  cultureNote.hidden = cultureId === "western";
+  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: totalOf() });
+  const months = $<HTMLSelectElement>("qz-month");
+  months.replaceChildren(Object.assign(document.createElement("option"), { value: "0", textContent: w("anymonth") }), ...Array.from({ length: 12 }, (_, i) => Object.assign(document.createElement("option"), { value: String(i + 1), textContent: monthName(i + 1) })));
+  months.value = String(month);
+  months.disabled = where === "all";
+  const skyNote = $("qz-skynote");
+  skyNote.hidden = where === "all";
+  skyNote.textContent = where === "all" ? "" : say("qz_skynote", { place: say(`qz_from_${where}`), when: say(month > 0 ? "qz_when_month" : "qz_when_year"), height: MIN_ALTITUDE });
+  const kidButton = $("qz-kid");
+  kidButton.textContent = say("qz_kid");
+  kidButton.setAttribute("aria-pressed", String(kid));
   for (const button of Array.from(styles.querySelectorAll("button"))) {
     button.textContent = w(STYLE_WORDS[button.dataset["value"] as Style]);
     button.hidden = cultureId !== "western" && button.dataset["value"] === "annotated";
