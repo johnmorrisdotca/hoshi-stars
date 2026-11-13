@@ -27,7 +27,7 @@ description: "ページが渡す単純なリストから、月と惑星を星図
 
 ## ページの中で
 
-`bodies`はプロパティ（どんな配列でも、渡したまま保持します）か、`bodies`属性（JSONの文字列）で設定します。最後に設定したものが優先されます。天体をタップすると、`kind`が`body`で、その`id`と`names`を持つ`hoshi-pick`が届きます。黄道は層です。`layers`に`ecliptic`を加えてください。
+`bodies`はプロパティ（配列で、属性のリストと同じ整理をします。「リストを整える」を参照）か、`bodies`属性（JSONの文字列）で設定します。最後に設定したものが優先されます。天体をタップすると、`kind`が`body`で、その`id`と`names`を持つ`hoshi-pick`が届きます。黄道は層です。`layers`に`ecliptic`を加えてください。
 
 ```html
 <!doctype html>
@@ -97,7 +97,7 @@ console.log("planets.svg", (svg.match(/data-body=/g) ?? []).length, "bodies,", s
 
 ## リストを整える
 
-`normaliseBodies(list)`は、`bodies`属性が`JSON.parse`のリストに対して行う整理をします。idも位置も等級もない項目は捨て、名前が片方なければもう一方の言語（なければid）を使い、おかしい`phase`は満月として扱い、おかしい`size`は捨てます。
+`normaliseBodies(list)`は、`bodies`属性が`JSON.parse`のリストに対して行う整理をします。idも位置も等級もない項目は捨て、名前が片方なければもう一方の言語（なければid）を使い、おかしい`phase`は満月として扱い、おかしい`size`は捨て、同じidが2つあれば最初の1つを残します。プロパティと`chartSvg`も同じ整理をするので、乱れたリストでもエラーにはなりません。
 
 ## デモ
 

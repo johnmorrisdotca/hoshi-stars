@@ -27,7 +27,7 @@ The Moon is always a disc, at least 7 pixels wide even where its true size is sm
 
 ## In a page
 
-Set `bodies` as a property (any array, kept as you gave it) or as the `bodies` attribute (JSON text); the last one set wins. A tap on a body sends `hoshi-pick` with `kind` `body`, its `id` and its `names`. The ecliptic is a layer: add `ecliptic` to `layers`.
+Set `bodies` as a property (an array, cleaned as the attribute's list is: see "Cleaning a list") or as the `bodies` attribute (JSON text); the last one set wins. A tap on a body sends `hoshi-pick` with `kind` `body`, its `id` and its `names`. The ecliptic is a layer: add `ecliptic` to `layers`.
 
 ```html
 <!doctype html>
@@ -97,7 +97,7 @@ The ecliptic is the great circle the Sun appears to follow in a year. The chart 
 
 ## Cleaning a list
 
-`normaliseBodies(list)` does the cleaning the `bodies` attribute does for a list from `JSON.parse`: an entry with no id, no place or no magnitude is dropped, a missing name falls back to the other language (then the id), a bad `phase` counts as full and a bad `size` is dropped.
+`normaliseBodies(list)` does the cleaning the `bodies` attribute does for a list from `JSON.parse`: an entry with no id, no place or no magnitude is dropped, a missing name falls back to the other language (then the id), a bad `phase` counts as full, a bad `size` is dropped and, of two entries with one id, the first is kept. The property and `chartSvg` clean a list the same way, so a rough list never throws.
 
 ## The demo
 
