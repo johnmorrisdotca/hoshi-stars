@@ -51,11 +51,8 @@ test("an address with bodies=sample opens with them, named in Japanese when the 
 test("a tap on a body says what it is, and the sample note stays a sample", async ({ page }) => {
   await page.goto(`${HOME}?bodies=sample&proj=equirectangular&ra=180&dec=-5&zoom=1`);
   await expect(bodies(page)).toHaveCount(6);
-  // the chart sits below the fold on a desk, so bring the planet into view before the click
-  const planet = page.locator('#chart g[data-body="venus"] circle').first();
-  await planet.scrollIntoViewIfNeeded();
-  const box = (await planet.boundingBox())!;
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  // the chart sits below the fold on a desk and redraws as the page settles: a locator click scrolls to the planet and tries again if the drawing was replaced
+  await page.locator('#chart g[data-body="venus"] circle').first().click();
   await expect(page.getByTestId("bodies-note")).toContainText("Venus: magnitude -4.5");
   await expect(page.getByTestId("bodies-note")).toContainText("not live");
 });
