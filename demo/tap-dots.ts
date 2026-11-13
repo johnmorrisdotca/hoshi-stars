@@ -119,6 +119,15 @@ function draw(what: { grew?: boolean; shake?: boolean }): void {
   svg.addEventListener("click", (event) => onClick(svg, event));
   svg.addEventListener("keydown", (event) => {
     const target = event.target as Element;
+    // the arrow keys walk from dot to dot (the next and the one before, wrapping; Home and End to the ends), as Tab does
+    const all = [...svg.querySelectorAll<SVGElement>("[data-index]")];
+    const at = all.indexOf(target as SVGElement);
+    const walk = at < 0 ? 0 : event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
+    if (walk !== 0 || (at >= 0 && (event.key === "Home" || event.key === "End"))) {
+      event.preventDefault();
+      all[event.key === "Home" ? 0 : event.key === "End" ? all.length - 1 : (at + walk + all.length) % all.length]!.focus();
+      return;
+    }
     if ((event.key === "Enter" || event.key === " ") && target.hasAttribute("data-index")) {
       event.preventDefault();
       onTap(Number(target.getAttribute("data-index")));

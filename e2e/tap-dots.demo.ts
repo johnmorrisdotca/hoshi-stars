@@ -125,3 +125,31 @@ test("Japanese words, the name of the figure, big buttons and no sideways scroll
   expect(svg.x).toBeGreaterThanOrEqual(0);
   expect(svg.x + svg.width).toBeLessThanOrEqual(page.viewportSize()!.width);
 });
+
+test("the arrow keys walk from dot to dot, wrapping, Home and End go to the ends, and Enter joins the right one", async ({ page }) => {
+  await page.goto(`${PAGE}?c=Cru&level=easy`);
+  const dots = page.locator("[data-index]");
+  const count = await dots.count();
+  expect(count).toBeGreaterThan(3);
+  const index = (): Promise<number> => page.evaluate(() => Number(document.activeElement?.getAttribute("data-index")));
+  await dots.first().focus();
+  expect(await index()).toBe(0);
+  await page.keyboard.press("ArrowRight");
+  expect(await index()).toBe(1);
+  await page.keyboard.press("ArrowDown");
+  expect(await index()).toBe(2);
+  await page.keyboard.press("ArrowLeft");
+  expect(await index()).toBe(1);
+  await page.keyboard.press("ArrowUp");
+  await page.keyboard.press("ArrowUp");
+  expect(await index()).toBe(count - 1);
+  await page.keyboard.press("Home");
+  expect(await index()).toBe(0);
+  await page.keyboard.press("End");
+  expect(await index()).toBe(count - 1);
+  // walking joins nothing; Enter on the dot numbered 1 does
+  await expect(page.locator("svg[data-done]")).toHaveAttribute("data-done", "0");
+  await page.locator('[data-index][data-numbers~="1"]').focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("svg[data-done]")).toHaveAttribute("data-done", "1");
+});
