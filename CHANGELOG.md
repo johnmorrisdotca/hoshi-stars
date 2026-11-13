@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-11-13
+
 - **What you can see tonight** (MODULES-667). New entry point `@johnmorrisdotca/hoshi-stars/tonight`: `visibleStars({ observer, when, sky })` lists the stars above the horizon (or `minAltitude`) with the Sun low enough and an apparent magnitude under the sky's limit, brightest first, each with `altitude`, `azimuth`, `airmass`, `apparentMagnitude` and an `ease` (`"easy"`, `"needs dark adaptation"`, or `"not tonight"` with `all: true`). The Sun is the Almanac's low-precision formula, the airmass is Kasten and Young's (0.2 magnitude an airmass above the zenith's), the site's limit is `"city"` (4), `"suburb"` (5), `"rural"` (6), `"dark"` (6.5) or a number, and `moonPenalty` is the Moon's glare, passed in. `sunPosition`, `sunAltitude`, `twilightOf`, `airmass` and `SKY_LIMITS` are exported too. Pure: no DOM and no clock. Tests: the Sun against the Almanac, the airmass, Polaris (up all night at latitudes 30 to 60, never from latitude -60) and Sirius (not in daylight, never from latitude 75). Guide "What you can see tonight" in English and Japanese, and a usage example (`examples/node/tonight.mjs`).
 - **A Tonight page on the demo** (MODULES-814). `tonight.html` shows the sky over a place now: pick a country and region (kuni's, with the flag from hata) or tap Use my location (asked once, never stored or sent), and it draws a round horizon chart with the stars above the horizon that `visibleStars` says you can see, the Sun's twilight, and a list with each star's altitude and direction. The time is now, or one you set; the place and time are kept in the address. English and Japanese (the Japanese text is to be reviewed), a phone layout, and an e2e test (`e2e/tonight.demo.ts`).
 
