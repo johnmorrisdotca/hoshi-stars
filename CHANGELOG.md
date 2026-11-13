@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-11-13
+
 - **The chart says how well a star is known** (MODULES-654, third slice). A `hoshi-pick` on a star carries `accuracy`: `{ grade, lightYearsRange, positionResolutionArcsec }` (the grade A, B or C, the distance range in light-years or `null`, and the size of the last digit of its position in arc-seconds). `<hoshi-chart>` takes the new `show-uncertainty` attribute (property `showUncertainty`), and `chartSvg` the option `showUncertainty`: stars of grade C are drawn at 45% strength and marked `data-uncertain="C"`; off by default, nothing drawn at rest. `/chart` exports the pure parts, `pickAccuracy`, `dimsForUncertainty` and `UNCERTAIN_OPACITY`. The demo has a Show uncertainty switch (`uncertainty=on` in the address) and the star's card shows its grade, distance range and position resolution. Guides: the chart guide, English and Japanese.
 
 ## [0.40.0] - 2026-11-13

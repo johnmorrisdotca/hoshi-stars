@@ -34,16 +34,16 @@
       "gzip": 140809
     },
     "./chart": {
-      "minified": 507736,
-      "gzip": 200440
+      "minified": 511799,
+      "gzip": 201761
     },
     "./chart/element": {
-      "minified": 563139,
-      "gzip": 221103
+      "minified": 567499,
+      "gzip": 222343
     },
     "./chart/define": {
-      "minified": 563225,
-      "gzip": 221138
+      "minified": 567585,
+      "gzip": 222366
     },
     "./boundaries": {
       "minified": 32104,

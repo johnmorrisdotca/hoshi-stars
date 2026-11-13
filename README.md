@@ -701,7 +701,7 @@ Hoshi Stars is made for learning, teaching, comparing and drawing charts. It is 
 
 ## How to cite
 
-> Morris, J. (2026). *Hoshi Stars* (version 0.40.0) [Computer software]. https://github.com/johnmorrisdotca/hoshi-stars
+> Morris, J. (2026). *Hoshi Stars* (version 0.41.0) [Computer software]. https://github.com/johnmorrisdotca/hoshi-stars
 
 GitHub's "Cite this repository" button reads [CITATION.cff](CITATION.cff) and gives BibTeX and APA. Cite the version you used (`npm ls @johnmorrisdotca/hoshi-stars`), and credit the catalogues behind the numbers: [NOTICE.md](NOTICE.md) says who made each one and under what terms.
 
