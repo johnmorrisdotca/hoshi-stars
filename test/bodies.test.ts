@@ -159,3 +159,17 @@ test("the ecliptic layer draws a dashed line through the solstice point, and not
   const points = [...on.svg.match(/data-layer="ecliptic" d="([^"]+)"/)![1]!.matchAll(/([\d.-]+) ([\d.-]+)/g)].map((m) => [Number(m[1]), Number(m[2])] as const);
   assert.ok(Math.min(...points.map(([x, y]) => Math.hypot(x - at[0], y - at[1]))) < 2);
 });
+
+test("a list handed to the chart straight (not as text) with a missing name or id, a null or a repeated id is cleaned, not thrown on", () => {
+  const rough = [
+    { id: "x", ra: 90, dec: 10, magnitude: 1, phase: 1 },
+    { names: { en: "No id", ja: "なし" }, ra: 90, dec: 10, magnitude: 1, phase: 1 },
+    null,
+    { id: "d", names: { en: "First", ja: "最初" }, ra: 90, dec: 10, magnitude: 1, phase: 1 },
+    { id: "d", names: { en: "Second", ja: "二番目" }, ra: 90, dec: 10, magnitude: 1, phase: 1 },
+  ] as unknown as SkyBody[];
+  const svg = chartSvg({ width: 300, height: 200, ra: 90, dec: 10, zoom: 3, bodies: rough, measure });
+  assert.deepEqual([...svg.matchAll(/data-body="([^"]*)"/g)].map((m) => m[1]), ["x", "d"]);
+  assert.ok(svg.includes("First") && !svg.includes("Second"), "the first of two with one id is kept");
+  assert.deepEqual(normaliseBodies([rough[3], rough[4]]).map((b) => b.names.en), ["First"]);
+});

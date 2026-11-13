@@ -21,7 +21,7 @@ import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
 import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
 import { drawMarkers, type MarkerHit } from "./markers-draw.ts";
 import type { MarkerRange, SkyMarker } from "./markers.ts";
-import { eclipticLine, type SkyBody } from "./bodies.ts";
+import { eclipticLine, normaliseBodies, type SkyBody } from "./bodies.ts";
 import { drawBodies } from "./bodies-draw.ts";
 import type { FigureLines, StarNames } from "../sky-labels.ts";
 import type { DistanceLayers } from "../distance.ts";
@@ -692,7 +692,8 @@ function drawChart(o: ChartOptions): Chart {
 
   const grow = growOf(o.zoom);
   // the page's bodies: drawn over the stars; their taps come first in `hits` so that a planet beside a star is the one picked
-  const bodied = o.sky === undefined && o.bodies !== undefined && o.bodies.length > 0 ? drawBodies({ bodies: o.bodies, lang, magnitude: o.magnitude, faintest: o.magnitude + 2.5 * Math.log10(Math.max(1, o.zoom)), grow, width, height, place }) : undefined;
+  const cleanBodies = o.sky === undefined && o.bodies !== undefined ? normaliseBodies(o.bodies) : [];
+  const bodied = cleanBodies.length > 0 ? drawBodies({ bodies: cleanBodies, lang, magnitude: o.magnitude, faintest: o.magnitude + 2.5 * Math.log10(Math.max(1, o.zoom)), grow, width, height, place }) : undefined;
   if (bodied !== undefined) {
     obstacles.push(...bodied.obstacles);
     for (const h of bodied.hits) hits.push({ x: h.x, y: h.y, kind: "body", key: h.id, reach: Math.max(22, h.r + 14) });

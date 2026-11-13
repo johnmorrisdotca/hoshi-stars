@@ -58,7 +58,7 @@ const finite = (value: unknown): value is number => typeof value === "number" &&
 
 /**
  * Cleans a list that came as text (the `bodies` attribute is JSON): an entry with no id, no place or no brightness is dropped; a missing name falls back to the other language, else the id; a bad phase counts as full;
- * a bad `size` or `brightLimb` is dropped. Anything that is not a list gives an empty one.
+ * a bad `size` or `brightLimb` is dropped; of two entries with the same id the first is kept. Anything that is not a list gives an empty one.
  *
  * @param value - The parsed JSON, or anything.
  * @returns The bodies that can be drawn.
@@ -75,13 +75,15 @@ const finite = (value: unknown): value is number => typeof value === "number" &&
 export function normaliseBodies(value: unknown): SkyBody[] {
   if (!Array.isArray(value)) return [];
   const out: SkyBody[] = [];
+  const seen = new Set<string>();
   for (const item of value as unknown[]) {
-    if (!object(item) || typeof item["id"] !== "string" || item["id"] === "" || !finite(item["ra"]) || !finite(item["dec"]) || !finite(item["magnitude"])) continue;
+    if (!object(item) || typeof item["id"] !== "string" || item["id"] === "" || seen.has(item["id"]) || !finite(item["ra"]) || !finite(item["dec"]) || !finite(item["magnitude"])) continue;
     const names = object(item["names"]) ? item["names"] : {};
     const en = typeof names["en"] === "string" && names["en"] !== "" ? names["en"] : undefined;
     const ja = typeof names["ja"] === "string" && names["ja"] !== "" ? names["ja"] : undefined;
     const size = finite(item["size"]) && item["size"] > 0 ? item["size"] : undefined;
     const limb = finite(item["brightLimb"]) ? item["brightLimb"] : undefined;
+    seen.add(item["id"]);
     out.push({
       id: item["id"],
       names: { en: en ?? ja ?? item["id"], ja: ja ?? en ?? item["id"] },

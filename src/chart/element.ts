@@ -278,7 +278,7 @@ export class HoshiChartElement extends Base {
   }
 
   set bodies(value: readonly SkyBody[] | null | undefined) {
-    this.#bodies = Array.isArray(value) ? value : [];
+    this.#bodies = normaliseBodies(value);
     this.#schedule();
   }
 
