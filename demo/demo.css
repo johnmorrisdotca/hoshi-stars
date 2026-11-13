@@ -134,3 +134,22 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .tn-list th, .tn-list td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--rule); }
 .tn-list td.tn-num { font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) { .tn-body { grid-template-columns: minmax(0, 1fr); } .tn-list { font-size: .85rem; } }
+/* the life of a star page: the Hertzsprung-Russell diagram, its card and the two lives */
+.hr-count { margin: 6px 0 10px; }
+.hr-body { display: grid; grid-template-columns: minmax(0, 700px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.hr-chart svg { width: 100%; height: auto; display: block; border-radius: 8px; touch-action: manipulation; }
+.hr-chart circle[data-hr] { cursor: pointer; }
+.hr-chart circle[data-hr]:focus-visible { outline: none; stroke: #fff; stroke-width: 3; }
+.hr-chart g[role="group"]:focus-visible { outline: 3px solid #ffd86b; outline-offset: 2px; }
+.hr-side { display: grid; gap: 8px; }
+.hr-card h2 { margin: 0 0 4px; font-size: 1.1rem; }
+.hr-card dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 6px 0; font-size: .92rem; }
+.hr-card dt { color: var(--mute, inherit); opacity: .8; }
+.hr-card dd { margin: 0; font-variant-numeric: tabular-nums; }
+.hr-lives { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.hr-lives h3 { margin: 0 0 6px; font-size: 1rem; }
+.hr-lives ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.hr-stage { display: grid; gap: 2px; padding: 6px 0; border-bottom: 1px solid var(--rule); }
+.hr-stage strong { font-size: .95rem; }
+.hr-stage .fam-button { justify-self: start; min-height: 44px; }
+@media (max-width: 720px) { .hr-body, .hr-lives { grid-template-columns: minmax(0, 1fr); } }
