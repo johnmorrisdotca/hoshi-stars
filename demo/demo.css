@@ -126,3 +126,20 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .dist-swatch.ring { background: none; border: 2px solid var(--swatch); box-sizing: border-box; }
 .dist-unknown { color: #9aa6c9; grid-column: 1 / -1; }
 .dist-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+/* the constellation quiz */
+.qz-sky { margin: 10px 0; border-radius: var(--radius); overflow: hidden; background: #0b1020; line-height: 0; }
+.qz-sky svg { display: block; width: 100%; height: auto; }
+.qz-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0; }
+.qz-choice { justify-content: center; text-align: center; }
+.qz-choice[data-state="right"] { border-color: #3fae6a; box-shadow: inset 0 0 0 2px #3fae6a; }
+.qz-choice[data-state="wrong"] { border-color: #c9543f; box-shadow: inset 0 0 0 2px #c9543f; }
+.qz-result { min-height: 1.5em; margin: 8px 0; font-size: 1.15rem; font-weight: 700; }
+.qz-score { margin-left: auto; font-variant-numeric: tabular-nums; }
+@media (max-width: 520px) { .qz-choices { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.qz-choice[data-state="wrong"] { animation: qz-shake .35s; }
+@keyframes qz-shake { 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .qz-choice[data-state="wrong"] { animation: none; } }
+.qz-missed-title { margin: 18px 0 6px; font-size: 1.05rem; }
+.qz-missed { display: flex; flex-wrap: wrap; gap: 8px; }
+.qz-miss { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; width: 88px; text-align: center; font-size: .85rem; text-decoration: none; color: inherit; }
+.qz-miss img { border-radius: var(--radius); background: #0b1020; }

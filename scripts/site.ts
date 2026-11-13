@@ -26,6 +26,7 @@ writeFileSync(join(site, "constellation.html"), renderConstellationPage("constel
 writeFileSync(join(site, "whole-sky.html"), renderConstellationPage("whole-sky.html", "ws_title", "ws_description", "whole-sky"));
 writeFileSync(join(site, "constellation-list.html"), renderConstellationPage("constellation-list.html", "ls_title", "ls_description", "list"));
 writeFileSync(join(site, "birthday.html"), renderConstellationPage("birthday.html", "bd_title", "bd_description", "birthday"));
+writeFileSync(join(site, "quiz.html"), renderConstellationPage("quiz.html", "qz_title", "qz_description", "quiz"));
 writeFileSync(join(site, "constellation-3d.html"), renderSpace());
 writeFileSync(join(site, "layers-3d.html"), renderLayers());
 writeThumbnails(join(site, "thumbnails"));
@@ -40,7 +41,7 @@ writeFileSync(join(site, "family-boot.js"), familyBoot());
 cpSync(join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui", "dist", "body-label", "fonts"), join(site, "fonts"), { recursive: true });
 for (const file of ["embed.html", "embed-3d.html", "embed-layers.html", "markers.html", "star.html", "demo.css", "family.css", "gallery.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts"), markers: join(root, "demo", "markers.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), gallery: join(root, "demo", "gallery.ts"), constellation: join(root, "demo", "constellation.ts"), quiz: join(root, "demo", "quiz.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts"), markers: join(root, "demo", "markers.ts") },
   outdir: join(site, "js"),
   bundle: true,
   splitting: true,

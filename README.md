@@ -135,6 +135,8 @@ console.log(outline.length, outline[0]);
 
 The demo's `birthday.html` puts `constellationAt` to work for one question: which constellation was the Sun really in on a day, such as a birthday? It shows the answer, the days the Sun went in and comes out, a chart of the stars around the Sun with the ecliptic, and the 13 constellations its path crosses that year, Ophiuchus among them. It is real astronomy only: those days are not the traditional signs' dates, and the page says so. It opens moving from today, a day at a time. [The Sun on your birthday](docs/guides/sun-on-a-birthday.md) has the details and how it is tested.
 
+The demo's `quiz.html` is a constellation quiz: a chart centred on one constellation, never named, six names to choose from, in three styles (plain, stars and lines, annotated with the neighbours' names) and three levels (the bright 12, the bright 30, all 88). The style, the level and the question are kept in the address. See [the quiz guide](docs/guides/constellation-quiz.md).
+
 ## Constellation lines
 
 `@johnmorrisdotca/hoshi-stars/lines` is its own import, about 2 kB gzipped, so a chart without lines pays nothing. Each of the 88 constellations has a stick figure: pairs of its bright stars to join with a line. The figures are our own, decided from the star data (`NOTICE.md`); every star of a line lies inside the constellation, so one figure never runs into the next.

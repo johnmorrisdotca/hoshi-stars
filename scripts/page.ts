@@ -11,7 +11,7 @@ const NOTICE = "https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.
 
 /** The family's footer, with a link to every data credit beside the one-line credit, so a reader need not open anything to find the sources. */
 const footer = (): string => familyFooter({ id }).replace('<span data-say="foot"></span>', `<span><span data-say="foot"></span> <a href="${NOTICE}" data-say="creditsAll"></a></span>`);
-const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "layers-3d.html", say: "pageDistance" }, { href: "kids.html", say: "pageKids" }, { href: "markers.html", say: "pageMarkers" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
+const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "quiz.html", say: "pageQuiz" }, { href: "layers-3d.html", say: "pageDistance" }, { href: "kids.html", say: "pageKids" }, { href: "markers.html", say: "pageMarkers" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
 export function renderIndex(): string {
