@@ -107,13 +107,36 @@ function drawChart(): void {
     const y = sy(sun.y);
     const diamond = el("path", { d: `M${x} ${y - 6} L${x + 6} ${y} L${x} ${y + 6} L${x - 6} ${y} Z`, fill: "#fff4e0", stroke: "#ffd86b", "stroke-width": 1.5, "data-hr": SUN_HR, "data-testid": "hr-sun", tabindex: -1, role: "button", "aria-label": say("hr_sun") });
     svg.append(diamond);
-    diamond.addEventListener("click", () => choose(SUN_HR));
+    diamond.addEventListener("click", (event) => {
+      event.stopPropagation();
+      choose(SUN_HR);
+    });
   }
   ring = el("circle", { r: 9, fill: "none", stroke: "#ffd86b", "stroke-width": 2.5, "pointer-events": "none", "data-testid": "hr-ring", display: "none" });
   svg.append(ring);
-  group.addEventListener("click", (event) => {
-    const hr = Number((event.target as Element).getAttribute("data-hr"));
-    if (Number.isInteger(hr) && hr > 0) choose(hr);
+  // A dot is a few pixels across on a phone, so a tap picks the nearest dot within a fingertip's reach (about 10 pixels), not only the one exactly under it.
+  svg.addEventListener("click", (event) => {
+    const direct = Number((event.target as Element).getAttribute("data-hr"));
+    if (Number.isInteger(direct) && direct > 0) {
+      choose(direct);
+      return;
+    }
+    const box = svg.getBoundingClientRect();
+    if (box.width === 0 || (event.target as Element).closest("a, button") !== null) return;
+    const scale = W / box.width;
+    const px = (event.clientX - box.left) * scale;
+    const py = (event.clientY - box.top) * scale;
+    const reach = 10 * scale;
+    let best: HrPoint | undefined;
+    let bestDistance = reach;
+    for (const point of ordered) {
+      const distance = Math.hypot(sx(point.x) - px, sy(point.y) - py);
+      if (distance < bestDistance) {
+        best = point;
+        bestDistance = distance;
+      }
+    }
+    if (best !== undefined) choose(best.hr);
   });
   group.addEventListener("keydown", (event) => {
     const step = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
@@ -193,6 +216,7 @@ function drawCard(): void {
   const parts: HTMLElement[] = [title, list];
   if (star === undefined) parts.push(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("hr_reference") }));
   else if (place(star, state.axes) === undefined) parts.push(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("hr_noPlace", { name: nameOf(star), missing: say(state.axes === "colour" ? "hr_missingColour" : "hr_missingPhysical") }) }));
+  else if (!points.some((p) => p.hr === star.hr)) parts.push(Object.assign(document.createElement("p"), { className: "fam-fine", textContent: say("hr_notDrawn", { name: nameOf(star) }) }));
   const link = document.createElement("a");
   link.className = "fam-button";
   link.dataset["testid"] = "hr-map";

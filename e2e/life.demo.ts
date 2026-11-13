@@ -58,7 +58,52 @@ test("the axes change the drawing, and the stars that fall off one view are said
   expect(named).toBeGreaterThan(20);
   expect(named).toBeLessThan(250);
   await page.locator('#shows button[data-value="a"]').click();
-  expect(await dots(page).count()).toBeLessThan(named + 200);
+  await expect.poll(() => param(page, "show")).toBe("a");
+  const grade = await dots(page).count();
+  expect(grade).toBeGreaterThan(30);
+  expect(grade).toBeLessThan(150);
+});
+
+test("the dots lie where the physics puts them, on both pairs of axes: hot on the left, bright above, the Sun between Sirius and Betelgeuse", async ({ page }) => {
+  await page.goto(PAGE);
+  const place = async (selector: string): Promise<{ x: number; y: number }> => {
+    const node = page.locator(selector);
+    const tag = await node.evaluate((n) => n.tagName);
+    if (tag === "circle") return { x: Number(await node.getAttribute("cx")), y: Number(await node.getAttribute("cy")) };
+    return node.evaluate((n) => {
+      const box = (n as SVGGraphicsElement).getBBox();
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    });
+  };
+  for (const axes of ["colour", "physical"] as const) {
+    if (axes === "physical") await page.locator('#axes button[data-value="physical"]').click();
+    await expect(page.locator("#axes button[aria-pressed=\"true\"]")).toHaveAttribute("data-value", axes);
+    const sun = await place('[data-testid="hr-sun"]');
+    const sirius = await place(`[data-testid="hr-dots"] circle[data-hr="${SIRIUS}"]`);
+    const betelgeuse = await place('[data-testid="hr-dots"] circle[data-hr="2061"]');
+    // Sirius is hotter (further left) and brighter (higher, so a smaller y) than the Sun; Betelgeuse is cooler (right) and brighter than the Sun
+    expect(sirius.x).toBeLessThan(sun.x);
+    expect(sirius.y).toBeLessThan(sun.y);
+    expect(betelgeuse.x).toBeGreaterThan(sun.x);
+    expect(betelgeuse.y).toBeLessThan(sun.y);
+    // the Adhara point is not drawn: its parallax is a rounded 1 mas
+    await expect(page.locator('[data-testid="hr-dots"] circle[data-hr="2618"]')).toHaveCount(0);
+  }
+});
+
+test("a tap near a dot picks a dot, and a star left off the diagram says so", async ({ page }) => {
+  await page.goto(PAGE);
+  const target = page.locator(`[data-testid="hr-dots"] circle[data-hr="${SIRIUS}"]`);
+  await target.scrollIntoViewIfNeeded();
+  const box = (await target.boundingBox())!;
+  // six pixels to the side of the dot, where nothing is drawn under the finger
+  await page.mouse.click(box.x + box.width / 2 + 6, box.y + box.height / 2);
+  await expect.poll(() => param(page, "star")).not.toBeNull();
+  await page.getByTestId("hr-find").fill("Adhara");
+  await page.getByTestId("hr-find").press("Enter");
+  await expect(page.getByTestId("hr-card").locator("h2")).toHaveText("Adhara");
+  await expect(page.getByTestId("hr-card")).toContainText("not drawn here");
+  await expect(page.getByTestId("hr-ring")).toHaveAttribute("display", "none");
 });
 
 test("the dots are reached by keyboard: Tab to the diagram, arrows between dots, Enter to pick; and a star is found by name", async ({ page }) => {
