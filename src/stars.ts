@@ -232,6 +232,23 @@ export function starDistanceLightYears(star: Star): number | undefined {
 }
 
 /**
+ * A star's absolute magnitude: how bright it would look from 10 parsecs (32.6 light-years), from its visual magnitude and its parallax (`M = V + 5 + 5 log10(parallax in arc-seconds)`). It is the brightness the Hertzsprung-Russell diagram plots against colour. The Sun is 4.83 and Sirius 1.45.
+ *
+ * @param star - A star, or anything with a visual magnitude and a parallax in milliarcseconds.
+ * @returns The absolute magnitude, or `undefined` where there is no parallax (or a non-positive one). It carries the parallax's error: a star with a poor parallax has a poor absolute magnitude.
+ *
+ * @example
+ * ```ts
+ * import { absoluteMagnitude, starByName } from "@johnmorrisdotca/hoshi-stars";
+ *
+ * console.log(absoluteMagnitude(starByName("Sirius")!)?.toFixed(2));
+ * ```
+ */
+export function absoluteMagnitude(star: Pick<Star, "magnitude" | "parallaxMas">): number | undefined {
+  return star.parallaxMas > 0 ? star.magnitude + 5 + 5 * Math.log10(star.parallaxMas / 1000) : undefined;
+}
+
+/**
  * A star's distance with its uncertainty, from the parallax and its error. Sirius is 8.5 light-years, to within 0.05; Betelgeuse's distance is a published paper's (168 parsecs, 548 light-years), so it is anywhere from 480 to 640 light-years. Rigel is rougher: from 590 to 1,480 light-years.
  *
  * @param star - A star, or anything with a parallax in milliarcseconds and its error (a nearby star from `/nearby`).
