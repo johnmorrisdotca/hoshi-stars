@@ -27,6 +27,8 @@ The limits of that picture, in plain words: the lines of the Chinese figures are
 
 **Learn:** **[Sheets to print](https://johnmorrisdotca.github.io/hoshi-stars/kids.html)** · **[Your sky from a place](https://johnmorrisdotca.github.io/hoshi-stars/kids.html?kind=guide&lat=45)** (a sheet of the constellations for your latitude this month: pick your country, or tap Use my location) · **[The 88 constellations, a picture of each](https://johnmorrisdotca.github.io/hoshi-stars/constellations.html)**
 
+**Tonight:** **[What can I see tonight, from a place](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html)** (pick your country and region, or tap Use my location)
+
 **Look:** **[Orion on the sky chart](https://johnmorrisdotca.github.io/hoshi-stars/?go=Ori)** · **[The Andromeda Galaxy](https://johnmorrisdotca.github.io/hoshi-stars/?pick=D:M31&layers=milky,lines,names,deep)** · **[Cygnus X-1](https://johnmorrisdotca.github.io/hoshi-stars/?pick=B:Cygnus%20X-1&layers=milky,lines,names,holes)** · **[The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/?from=HR5459)** (Alpha Centauri)
 
 **Three skies:** **[Western](https://johnmorrisdotca.github.io/hoshi-stars/?go=Ori)** · **[Japanese](https://johnmorrisdotca.github.io/hoshi-stars/?culture=japanese&go=Ori)** · **[Chinese](https://johnmorrisdotca.github.io/hoshi-stars/?culture=chinese&ra=83.97&dec=-1.69&zoom=6.7)** · **[日本語](https://johnmorrisdotca.github.io/hoshi-stars/?lang=ja)** · **[English](https://johnmorrisdotca.github.io/hoshi-stars/?lang=en)**
@@ -239,6 +241,20 @@ console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date
 - `rate` is degrees a day and may be negative (Venus and Uranus turn the other way). The pole's slow drift and the periodic terms of the IAU tables are not applied: pass the pole for the date if you want them. The moment is UTC, like every moment here; it is turned into Terrestrial Time inside (leap seconds from 1972, delta T before), which turns Mars by 0.28 degree. A leap second announced after 2017 is not known until the table in `src/time-scale.ts` gets its row. Latitude is the angle from the planet's equator on a sphere.
 - A spin equal to the Earth's gives the Earth's sky (pole at declination 90 and right ascension 270, `w0` 280.46061837, `rate` 360.98564736629), apart from the precession since J2000.
 - A hundred thousand `horizontal` conversions take about 26 ms on a laptop. The formulas are from J. Meeus, *Astronomical Algorithms* (2nd ed.), chapters 12, 13, 16 and 21.
+
+## What you can see tonight
+
+`@johnmorrisdotca/hoshi-stars/tonight` lists the stars you can see from a place at a moment: above the horizon, with the Sun low enough, brighter than the site's limit once the air has dimmed them. The [Tonight page](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html) is the call with a place picker. Pure: no DOM, and the moment is passed in.
+
+```ts
+import { visibleStars } from "@johnmorrisdotca/hoshi-stars/tonight";
+
+const vancouver = { latitude: 49.28, longitude: -123.12 };
+const sky = visibleStars({ observer: vancouver, when: new Date("2026-11-08T10:00:00Z"), sky: { limit: "suburb" } });
+console.log(sky.twilight, sky.stars[0]!.star.name); // night Sirius
+```
+
+`sky` takes `limit` (`"city"`, `"suburb"`, `"rural"`, `"dark"` or a magnitude), `minAltitude`, `extinction`, `moonPenalty` and `all`. Each star has its `altitude`, `azimuth`, `airmass` (Kasten and Young), `apparentMagnitude` and an `ease` (`"easy"`, `"needs dark adaptation"` or `"not tonight"`). `sunPosition`, `sunAltitude`, `twilightOf` and `airmass` come with it. [The guide](docs/guides/tonight.md) has the rules and the limits.
 
 ## Deep-sky objects
 

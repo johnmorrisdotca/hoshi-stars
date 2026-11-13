@@ -126,3 +126,11 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .dist-swatch.ring { background: none; border: 2px solid var(--swatch); box-sizing: border-box; }
 .dist-unknown { color: #9aa6c9; grid-column: 1 / -1; }
 .dist-row { flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.tn-summary { margin: 6px 0 10px; font-size: 1rem; }
+.tn-body { display: grid; grid-template-columns: minmax(0, 520px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.tn-chart svg { width: 100%; height: auto; display: block; border-radius: 8px; }
+.tn-h2 { margin: 0 0 6px; font-size: 1.05rem; }
+.tn-list { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.tn-list th, .tn-list td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--rule); }
+.tn-list td.tn-num { font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .tn-body { grid-template-columns: minmax(0, 1fr); } .tn-list { font-size: .85rem; } }
