@@ -3,7 +3,7 @@
 // main entry; a page that does not import it does not pay for it.
 // The Sun: the low-precision formula of The Astronomical Almanac (U.S. Naval Observatory and HM Nautical Almanac Office, section C), good to 0.01 degree from 1950 to 2050, a position of the date.
 // The air: the airmass of Kasten and Young (1989), X = 1 / (sin h + 0.50572 (h + 6.07995)^-1.6364) with h the altitude in degrees, and an extinction of 0.20 magnitude per airmass in V (a clear, low-altitude site).
-// The sky's limit: the naked-eye limiting magnitude of the Bortle dark-sky scale, rounded to presets; the twilight's limit is our own rough line through what an observer sees (see `TWILIGHT_LIMITS`), not a measurement.
+// The sky's limit: round presets of our own, each near the naked-eye limits of the Bortle dark-sky scale's classes (see NOTICE.md); the twilight's limit is our own rough line through what an observer sees (see `TWILIGHT_LIMITS`), not a measurement.
 import { horizontal, type Observer } from "./sky.ts";
 import { starPosition, stars, type Star } from "./stars.ts";
 import { J2000_MS, moment, type When } from "./when.ts";
@@ -25,7 +25,7 @@ const RAD = Math.PI / 180;
 export type SkyLimit = "city" | "suburb" | "rural" | "dark" | number;
 
 /**
- * The naked-eye limiting magnitude of each preset, at the zenith with the Sun well down: a city centre (Bortle 8), a suburb (Bortle 6), a country site (Bortle 4) and a dark site (Bortle 2).
+ * The naked-eye limiting magnitude of each preset, at the zenith with the Sun well down: round figures of our own, each near the naked-eye limits of the Bortle classes it stands for: a city centre (classes 8 to 9), a suburb (6 to 7), a country site (4 to 5) and a dark site (2 to 3).
  *
  * @example
  * ```ts
@@ -217,7 +217,7 @@ export function twilightOf(altitude: number): Twilight {
  * ```ts
  * import { airmass } from "@johnmorrisdotca/hoshi-stars/tonight";
  *
- * console.log(airmass(90).toFixed(2), airmass(30).toFixed(2)); // 1.00 2.00
+ * console.log(airmass(90).toFixed(1), airmass(30).toFixed(1)); // 1.0 2.0
  * ```
  */
 export function airmass(altitude: number): number {
