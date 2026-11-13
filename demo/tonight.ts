@@ -175,6 +175,7 @@ async function render(): Promise<void> {
 
 function choose(change: Partial<State>): void {
   Object.assign(state, change);
+  countrySelect.value = state.country;
   address.set("country", state.country === "" ? null : state.country);
   address.set("region", state.region === "" ? null : state.region);
   address.set("t", state.t === null ? null : new Date(state.t).toISOString().slice(0, 16) + "Z");
@@ -203,9 +204,9 @@ document.addEventListener("hoshi-language", () => {
   fillCountries();
   void loadRegions().then(render);
 });
-// With "now" showing, keep it current: the sky turns a degree in four minutes, so a minute's wait is as fine as anyone can see.
-window.setInterval(() => {
+// With "now" showing, bring it up to date when the reader comes back to the tab: nothing runs on a timer, and the sky turns only a degree in four minutes.
+document.addEventListener("visibilitychange", () => {
   if (state.t === null && !document.hidden) void render();
-}, 60_000);
+});
 fillCountries();
 void loadRegions().then(render);
