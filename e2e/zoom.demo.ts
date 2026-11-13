@@ -155,10 +155,10 @@ for (const where of PAGES) {
       await open(page);
       for (let i = 0; i < 12; i += 1) await page.getByTestId("zoom-out").click();
       await expect.poll(() => number(page, "zoom")).toBe(0.1);
-      expect(await circles(page)).toBeGreaterThan(500);
+      await expect.poll(() => circles(page)).toBeGreaterThan(500);
       // Mizar and Alcor, 12 arc-minutes apart, are both on the chart and well apart at the top of the old range.
       await open(page, "?ra=200.98&dec=54.92&zoom=400");
-      expect(await circles(page)).toBeGreaterThanOrEqual(2);
+      await expect.poll(() => circles(page)).toBeGreaterThanOrEqual(2);
       const dots = await page.locator(`${where.target} circle[r]`).evaluateAll((all) => all.map((c) => ({ x: Number(c.getAttribute("cx")), y: Number(c.getAttribute("cy")) })));
       const apart = Math.max(...dots.flatMap((a) => dots.map((b) => Math.hypot(a.x - b.x, a.y - b.y))));
       expect(apart).toBeGreaterThan(60);
@@ -175,7 +175,7 @@ for (const where of PAGES) {
       expect(zoom).toBeCloseTo(top!, 6);
       expect(number(page, "zoom")).toBe(8000);
       // Mizar is in the middle of a view 3 arc-minutes across
-      expect(await circles(page)).toBeGreaterThanOrEqual(1);
+      await expect.poll(() => circles(page)).toBeGreaterThanOrEqual(1);
       expect(errors).toEqual([]);
     });
   });

@@ -159,7 +159,7 @@ test("every projection draws, and the layers switch on and off", async ({ page }
   await open(page);
   for (const kind of ["orthographic", "gnomonic", "equidistant", "equirectangular", "mollweide", "hammer", "stereographic"]) {
     await page.locator(`#seg-projection button[data-value="${kind}"]`).click();
-    expect(await stars(page)).toBeGreaterThan(10);
+    await expect.poll(() => stars(page)).toBeGreaterThan(10);
     await expect.poll(() => param(page, "proj")).toBe(kind === "stereographic" ? null : kind);
   }
   await page.locator('#seg-layers button[data-value="boundaries"]').click();

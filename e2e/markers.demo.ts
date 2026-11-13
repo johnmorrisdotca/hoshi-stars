@@ -39,14 +39,13 @@ test("the two handles choose the days shown: the points outside go, the tracks s
   expect(last).toBeGreaterThan(15);
   await setRange(page, "from", 5);
   await setRange(page, "to", 10);
-  await expect.poll(async () => (await markerIds(page)).length).toBeLessThan(29);
+  // the two handles are moved one after the other and the chart redraws on a frame of its own, so the first handle's drawing can be read before the second one's: wait for the days of both
+  await expect.poll(() => markerIds(page), { message: "the points of the days 5 to 10 only" }).not.toContain("comet-20");
   const ids = await markerIds(page);
   // the comet's points of those days, and none of the first days
   expect(ids).toContain("comet-8");
   expect(ids).not.toContain("comet-1");
-  expect(ids).not.toContain("comet-20");
-  const text = await page.getByTestId("count").textContent();
-  expect(text).toMatch(/^\d+ of 29 points shown$/);
+  await expect(page.getByTestId("count")).toHaveText(/^\d+ of 29 points shown$/);
   // pushing: the left handle taken past the right one carries it along
   await setRange(page, "from", 14);
   expect(await page.locator("#to").inputValue()).toBe("14");

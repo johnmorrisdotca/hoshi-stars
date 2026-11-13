@@ -24,14 +24,14 @@ test("zooming into Orion draws more stars and says how deep the map is here", as
   await expect(page.getByTestId("faint-note")).toContainText("Zoom in to add fainter stars");
   await open(page, `${ORION}&zoom=40`);
   await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
+  await expect.poll(() => dots(page)).toBeGreaterThan(20);
   const shallow = { dots: await dots(page), depth: await depthOf(page) };
-  expect(shallow.dots).toBeGreaterThan(20);
   expect(shallow.depth).toBeGreaterThanOrEqual(8.5);
   await open(page, `${ORION}&zoom=160`);
   await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
+  await expect.poll(() => dots(page)).toBeGreaterThan(20);
   const deep = { dots: await dots(page), depth: await depthOf(page) };
   expect(deep.depth).toBeGreaterThan(shallow.depth);
-  expect(deep.dots).toBeGreaterThan(20);
   // the same sky, zoomed with the map's own button: the readout follows
   await page.getByTestId("zoom-in").click();
   await expect.poll(() => depthOf(page)).toBeGreaterThan(deep.depth);
@@ -40,10 +40,11 @@ test("zooming into Orion draws more stars and says how deep the map is here", as
 test("a deeper zoom in a crowded field draws more faint stars than a shallower one, and never more than the cap", async ({ page }) => {
   await open(page, `${CYGNUS}&zoom=20&mag=6`);
   await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
+  await expect.poll(() => dots(page)).toBeGreaterThan(0);
   const shallow = await dots(page);
   await open(page, `${CYGNUS}&zoom=60&mag=6`);
   await expect(page.getByTestId("faint-note")).toContainText("Stars to magnitude");
-  expect(await dots(page)).toBeGreaterThan(shallow * 0.5);
+  await expect.poll(() => dots(page)).toBeGreaterThan(shallow * 0.5);
   expect(await dots(page)).toBeLessThanOrEqual(6000);
   // one path a size and colour, never a node a star
   expect(await page.locator('[data-layer="faint"] path').count()).toBeLessThanOrEqual(24);

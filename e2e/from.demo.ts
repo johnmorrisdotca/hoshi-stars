@@ -46,7 +46,7 @@ test("an address with from= opens there: the select, the note, the lines and the
   await open(page, "?ra=84&dec=0&zoom=2&from=HR5459&pick=S:sun");
   await expect(page.getByTestId("from")).toHaveValue("HR5459");
   await expect(page.getByTestId("from-note")).toContainText("Alpha Centauri");
-  expect(await lines(page)).not.toBe(earth);
+  await expect.poll(() => lines(page)).not.toBe(earth);
   await open(page, "?ra=40&dec=61&zoom=12&from=HR5459&pick=S:sun");
   await expect(page.locator("#chart circle[stroke='#ff7a59']")).toHaveCount(1);
 });

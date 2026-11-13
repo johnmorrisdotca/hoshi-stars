@@ -134,7 +134,7 @@ test("the zoom bar zooms the map and more names appear; Home puts it back", asyn
   await page.getByTestId("ws-box").focus();
   await page.keyboard.press("Home");
   await expect.poll(() => scaleOf(page)).toBeCloseTo(before, 3);
-  expect(await names()).toBe(fewer);
+  await expect.poll(names).toBe(fewer);
 });
 
 test("choosing from the strip shows the constellation on this map with a card that opens the sky map", async ({ page }) => {

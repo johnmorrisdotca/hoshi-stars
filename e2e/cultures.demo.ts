@@ -27,12 +27,11 @@ test("choosing the Chinese sky writes culture=chinese, redraws the figures and n
   await expect(choice(page, "Chinese")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("culture-note")).toContainText("Three Enclosures");
   await expect.poll(() => page.locator("#chart").innerHTML()).not.toBe(western);
-  const names = await labels(page);
-  expect(names).toContain("北斗");
-  expect(names).not.toContain("Ursa Major");
+  await expect.poll(() => labels(page)).toContain("北斗");
+  expect(await labels(page)).not.toContain("Ursa Major");
   await choice(page, "Western").click();
   await expect.poll(() => param(page, "culture")).toBeNull();
-  expect(await labels(page)).toContain("Ursa Major");
+  await expect.poll(() => labels(page)).toContain("Ursa Major");
 });
 
 test("an address with culture= opens in that sky, and a word that is no culture is the Western sky", async ({ page }) => {

@@ -79,7 +79,7 @@ test("a latitude from the slider makes the wheel, in two pages, or a poster tile
   await expect(sheet.locator('svg [data-cut="window"]')).toHaveCount(1);
   await page.locator('#forms [data-value="poster"]').click();
   await expect(sheet.locator(".kazoku-tile").first()).toBeVisible();
-  expect(await sheet.locator(".kazoku-tile").count()).toBeGreaterThanOrEqual(4);
+  await expect.poll(() => sheet.locator(".kazoku-tile").count()).toBeGreaterThanOrEqual(4);
   await expect(sheet.locator(".kazoku-tile").first().locator(".kazoku-marks line")).toHaveCount(8);
   await page.locator("#kinds [data-value=map]").click();
   await page.locator('#months [data-value="11"]').click();
