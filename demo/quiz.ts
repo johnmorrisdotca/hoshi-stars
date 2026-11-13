@@ -1,5 +1,5 @@
 // The constellation quiz: a chart centred on one constellation with no name for it on the chart, and six names to choose from. The style (plain stars, stars and lines, annotated: the lines, the borders and the names of the neighbours) and the level (the bright 12, 30 or all 88) are kept in
-// the address (style, level), and so is the question (c), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
+// the address (style, level), and so is the question (q, the constellation's place in the list of the 88, never its name; a hand-written c=Ori is read too), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { centreOfConstellation, chart, toScreen, type View } from "../src/chart/chart.ts";
 import { constellation, constellations, starsIn, type Constellation } from "../src/constellations.ts";
@@ -43,6 +43,12 @@ const missed: string[] = [];
 let current = "";
 let answered = false;
 let options: string[] = [];
+/** The 88 in their order: the address names the question by its place in it (1 to 88), so the answer's name is not in the address. */
+const ORDER = constellations().map((c) => c.abbreviation);
+const questionInAddress = (): string | undefined => {
+  const place = Number(address.get("q"));
+  return Number.isInteger(place) && place >= 1 && place <= ORDER.length ? ORDER[place - 1] : (address.get("c") ?? undefined);
+};
 
 const named = (c: Constellation): string => nameIn(c, langNow());
 const shuffle = <T>(items: T[]): T[] => {
@@ -67,14 +73,19 @@ function ask(abbreviation?: string): void {
   current = held !== undefined && pool.includes(held) ? held : fresh[Math.floor(Math.random() * fresh.length)]!;
   options = choicesFor(current);
   answered = false;
-  address.set("c", current);
+  address.set("q", String(ORDER.indexOf(current) + 1));
+  address.set("c", null);
   render();
 }
 
 /** The chart centred on the constellation, as large as its figure allows; no names, ever. */
+let drawnKey = "";
 function drawSky(): void {
   const box = $("qz-box");
   const width = Math.max(280, Math.round(box.clientWidth));
+  const key = `${current}|${style}|${langNow()}|${width}`;
+  if (key === drawnKey) return;
+  drawnKey = key;
   const height = Math.round(width < 600 ? width : Math.min(480, width * 0.6));
   const centre = centreOfConstellation(current)!;
   const view: View = { projection: "stereographic", ra: centre.rightAscension, dec: centre.declination, zoom: 1 };
@@ -156,10 +167,16 @@ function render(): void {
   );
   list.setAttribute("aria-label", say("qz_choose"));
   const right_ = constellation(current)!;
+  // the link and its words name the answer, so they are put in only once it is answered
   const open = $<HTMLAnchorElement>("qz-open");
   open.hidden = !answered;
-  open.href = `constellation.html?c=${current}`;
-  open.textContent = say("qz_open", { name: named(right_) });
+  if (answered) {
+    open.href = `constellation.html?c=${current}`;
+    open.textContent = say("qz_open", { name: named(right_) });
+  } else {
+    open.removeAttribute("href");
+    open.textContent = "";
+  }
   $<HTMLButtonElement>("qz-next").disabled = !answered;
   $("qz-score").textContent = say("qz_score", { right, asked }) + (best >= 2 ? ` ${say("qz_streak", { streak, best })}` : "");
   drawMissed();
@@ -204,7 +221,21 @@ function answer(abbreviation: string): void {
   $("qz-next").focus();
 }
 
-$("qz-next").addEventListener("click", () => ask());
+$("qz-next").addEventListener("click", () => {
+  ask();
+  // Next is disabled again by the new question, so the keyboard goes to the first choice instead of being lost
+  $("qz-choices").querySelector("button")?.focus();
+});
+// 1 to 6 answer with the keyboard (the buttons also take Tab, Enter and Space)
+document.addEventListener("keydown", (event) => {
+  if (answered || event.ctrlKey || event.metaKey || event.altKey) return;
+  if ((event.target as HTMLElement).closest("input, select, textarea") !== null) return;
+  const at = Number(event.key) - 1;
+  const choice = Number.isInteger(at) && at >= 0 && at < CHOICES ? options[at] : undefined;
+  if (choice === undefined) return;
+  event.preventDefault();
+  answer(choice);
+});
 document.addEventListener("hoshi-language", () => {
   render();
   if (answered) $("qz-result").textContent = say($("qz-result").dataset["correct"] === "true" ? "qz_right" : "qz_wrong", { name: named(constellation(current)!) });
@@ -216,4 +247,4 @@ new ResizeObserver(() => {
   lastWidth = width;
   if (current !== "") drawSky();
 }).observe($("qz-box"));
-ask(address.get("c") ?? undefined);
+ask(questionInAddress());
