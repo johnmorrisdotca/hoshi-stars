@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="tonight" aria-labelledby="tn-heading">
+        <h1 id="tn-heading" class="kids-title" data-say="tn_heading"></h1>
+        <p class="lead" data-say="tn_lede"></p>
+        <div class="kids-picks">
+          <div class="fam-row">
+            <span class="fam-label" data-say="tn_where"></span>
+            <label class="field"><span data-say="tn_country"></span><select id="country" class="fam-field"></select></label>
+            <label class="field" id="field-region" hidden><span data-say="tn_region"></span><select id="region" class="fam-field"></select></label>
+            <button type="button" class="fam-button" id="here" data-say="tn_here"></button>
+            <img id="flag" class="kids-flag" alt="" hidden />
+          </div>
+          <p class="fam-fine" id="where-note" role="status"></p>
+          <div class="fam-row">
+            <span class="fam-label" data-say="tn_when"></span>
+            <button type="button" class="fam-button" id="now" data-say="tn_now"></button>
+            <label class="field"><span data-say="tn_moment"></span><input id="moment" class="fam-field" type="datetime-local" /></label>
+            <span class="fam-label" data-say="tn_dark"></span>
+            <span class="fam-seg" id="limits" role="group" data-say-label="tn_dark"></span>
+          </div>
+        </div>
+        <p id="tn-summary" class="tn-summary" data-testid="tn-summary" role="status"></p>
+        <div class="tn-body">
+          <div id="tn-chart" class="tn-chart" data-testid="tn-chart"></div>
+          <div class="tn-list-box">
+            <h2 class="tn-h2" data-say="tn_listHeading"></h2>
+            <table class="tn-list" data-testid="tn-list">
+              <thead><tr><th data-say="tn_star"></th><th data-say="tn_altitude"></th><th data-say="tn_direction"></th><th data-say="tn_ease"></th></tr></thead>
+              <tbody id="tn-rows"></tbody>
+            </table>
+            <p class="fam-fine" data-say="tn_note"></p>
+          </div>
+        </div>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

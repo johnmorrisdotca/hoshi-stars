@@ -6,6 +6,7 @@ export interface RegionPoint {
   code: string;
   name: { en: string; ja: string };
   lat: number;
+  lon: number;
 }
 
 const FACTS: Record<string, () => Promise<{ default: readonly { code: string; point: { lat: number; lon: number } | null }[] }>> = {
@@ -46,7 +47,7 @@ export async function regionPoints(country: string): Promise<RegionPoint[]> {
   const byCode = new Map(names.default.map((one) => [one.code, one.name]));
   return facts.default
     .filter((one) => one.point !== null && byCode.has(one.code))
-    .map((one) => ({ code: one.code, name: { en: byCode.get(one.code)!.en, ja: byCode.get(one.code)!.ja ?? byCode.get(one.code)!.en }, lat: one.point!.lat }))
+    .map((one) => ({ code: one.code, name: { en: byCode.get(one.code)!.en, ja: byCode.get(one.code)!.ja ?? byCode.get(one.code)!.en }, lat: one.point!.lat, lon: one.point!.lon }))
     .sort((a, b) => a.name.en.localeCompare(b.name.en));
 }
 
