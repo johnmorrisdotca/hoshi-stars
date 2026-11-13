@@ -67,7 +67,7 @@ A drag moves the sky, two fingers or Ctrl (Command) and the wheel zoom about the
 
 ## How well a star is known
 
-A tap on a star says how well it is known: the `accuracy` of the `hoshi-pick` detail holds its grade, the nearest and farthest the distance can be (one standard error of the parallax each way; the farthest is `Infinity` where the error is as large as the parallax) and the position's resolution. The grade is `/accuracy`'s (see [How well a star is known](accuracy.md)). The `show-uncertainty` attribute (or `chartSvg`'s `showUncertainty`) draws the grade C stars at 45% strength, each marked `data-uncertain="C"`; grades A and B are drawn as before. The same pieces, `pickAccuracy(star)` and `dimsForUncertainty(star)`, are pure and exported from `/chart`.
+A tap on a star says how well it is known: the `accuracy` of the `hoshi-pick` detail holds its grade, the nearest and farthest the distance can be (one standard error of the parallax each way; the farthest is `Infinity` where the error is as large as the parallax) and the position's resolution. The grade is `/accuracy`'s (see [How well a star is known](accuracy.md)). The `show-uncertainty` attribute (or `chartSvg`'s `showUncertainty`) draws the grade C stars at 45% strength (`UNCERTAIN_OPACITY`), each marked `data-uncertain="C"`; grades A and B are drawn as before. The same pieces, `pickAccuracy(star)` and `dimsForUncertainty(star)`, are pure and exported from `/chart`.
 
 ```js
 import { writeFileSync } from "node:fs";

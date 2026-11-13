@@ -67,7 +67,7 @@ description: "デモの星図を自分のページに置く方法です。ファ
 
 ## 星の確かさ
 
-星をタップすると、その星がどれだけ確かかが分かります。`hoshi-pick`の`detail`の`accuracy`に、グレード、距離が最も近い場合と最も遠い場合（視差の標準誤差を前後に1つずつ取った値。誤差が視差と同じ大きさなら、遠い側は`Infinity`です）、位置の分解能が入っています。グレードは`/accuracy`のものです（[星の値の確かさ](accuracy.md)を見てください）。`show-uncertainty`属性（`chartSvg`では`showUncertainty`）を付けると、グレードCの星を45%の濃さで描き、それぞれに`data-uncertain="C"`を付けます。グレードAとBはこれまでどおりです。同じ部品の`pickAccuracy(star)`と`dimsForUncertainty(star)`は純粋な関数で、`/chart`から使えます。
+星をタップすると、その星がどれだけ確かかが分かります。`hoshi-pick`の`detail`の`accuracy`に、グレード、距離が最も近い場合と最も遠い場合（視差の標準誤差を前後に1つずつ取った値。誤差が視差と同じ大きさなら、遠い側は`Infinity`です）、位置の分解能が入っています。グレードは`/accuracy`のものです（[星の値の確かさ](accuracy.md)を見てください）。`show-uncertainty`属性（`chartSvg`では`showUncertainty`）を付けると、グレードCの星を45%の濃さ（`UNCERTAIN_OPACITY`）で描き、それぞれに`data-uncertain="C"`を付けます。グレードAとBはこれまでどおりです。同じ部品の`pickAccuracy(star)`と`dimsForUncertainty(star)`は純粋な関数で、`/chart`から使えます。
 
 ```js
 import { writeFileSync } from "node:fs";
