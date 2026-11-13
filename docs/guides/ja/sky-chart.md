@@ -45,7 +45,7 @@ description: "デモの星図を自分のページに置く方法です。ファ
 | `zoom` | 星図独自の拡大率で、ファミリー共通の「1が全体表示（Fit）」とは違います。1は、その図法で空全体（または半球）が短いほうの辺に収まる大きさで、数が大きいほど近づきます。指定がないときは、要素の大きさに応じた、その図法の最初の拡大率になります。空のおよそ90度が横に入る大きさで（幅600ピクセル未満では60度）、640×400のstereographicなら3.86です。Homeと`0`でここに戻ります。 |
 | `zoom-min`、`zoom-max` | 同じ単位での拡大率の下限と上限で、0.1から500です。`zoom-max`は8000まで上げられます。8000は銀河・星団・星雲の写真に必要な範囲です（写真は今後の版で入ります）。 |
 | `magnitude` | 最初の拡大率で描くいちばん暗い星の等級（5）。望遠鏡と同じように、拡大するともっと暗い星も見えます。 |
-| `layers` | `milky lines boundaries names deep holes grid`のどれを描くかを、空白で区切って書きます。既定は`milky lines names grid`で、何も書かないと星だけになります。 |
+| `layers` | `milky lines boundaries names deep holes ecliptic grid`のどれを描くかを、空白で区切って書きます。既定は`milky lines names grid`で、何も書かないと星だけになります。 |
 | `constellation` | 明るく表示する図（星座や星の並び）。88星座のどれかなら、その境界も描きます。`Ori`のように書き、日本と中国の空では図のidを書きます。タップのあとに設定すると、ふたたびこちらが優先されます。 |
 | `culture` | `western`（既定）、`japanese`、`chinese`。日本と中国の星座は、必要になったときだけ読み込みます。 |
 | `picked` | 選んだ印を付ける星（HR番号。シリウスは`2491`）かメシエ天体（`M42`）。タップのあとに設定すると、ふたたびこちらが優先されます。 |
@@ -53,11 +53,12 @@ description: "デモの星図を自分のページに置く方法です。ファ
 | `theme` | `light`か`dark`で、フォーカスの枠の色を決めます。空はどちらでも夜の色です。 |
 | `show-uncertainty` | グレードCの星（距離が粗いか不明。[星の値の確かさ](accuracy.md)を見てください）を暗く描き、確かな星が目立つようにします。既定はオフで、プロパティは`showUncertainty`です。変わるのは星の描き方だけで、静止しているときは何も描きません。 |
 | `controls="none"` | 手で動かせない、止まった絵になります。 |
+| `bodies` | ページが位置を求めた惑星、月などの天体です。等級に応じて描かれ、月は満ち欠けの形で描かれます（[惑星と月を星図に置く](sky-chart-bodies.md)を見てください）。`ecliptic`の層は太陽の年間の通り道を描きます。 |
 | `markers`、`time-from`、`time-to`、`time-fade`、`tracks` | 自分の日付つきの点、表示する日、グループをつなぐ線です（[自分の点を星図に置く](sky-chart-markers.md)を見てください）。 |
 
 | イベント | `detail` |
 |---|---|
-| `hoshi-pick` | `ChartPick`：`{ kind, id, abbreviation? }`。`kind`は`star`（HR番号。`accuracy`も付き、`{ grade, lightYearsRange, positionResolutionArcsec }`、つまり星のグレードA・B・C、距離の範囲（光年。範囲がなければ`null`）、位置の最後の桁の大きさ（秒角）を持ちます）、`deep`（`M42`）、`hole`（`cygnus-x-1`）、`figure`（図のid。88星座なら`abbreviation`も付きます）、`none`のどれかです。 |
+| `hoshi-pick` | `ChartPick`：`{ kind, id, abbreviation? }`。`kind`は`star`（HR番号。`accuracy`も付き、`{ grade, lightYearsRange, positionResolutionArcsec }`、つまり星のグレードA・B・C、距離の範囲（光年。範囲がなければ`null`）、位置の最後の桁の大きさ（秒角）を持ちます）、`deep`（`M42`）、`hole`（`cygnus-x-1`）、`figure`（図のid。88星座なら`abbreviation`も付きます）、`body`（`bodies`のひとつ。その`id`と`names`が付きます）、`none`のどれかです。 |
 | `hoshi-view` | `ChartViewDetail`：`{ projection, ra, dec, zoom, final }`。表示が変わるたびに送られ、手が止まると`final`がtrueになります。 |
 | `hoshi-marker` | `ChartMarkerDetail`：`{ marker, id, index, source }`。自分の点（`markers`）をクリック、タップしたとき、またはEnterかSpaceで選んだときに送られます。 |
 
@@ -122,7 +123,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の値の配列）、`lang`、`culture`、`constellation`、`picked`、`showUncertainty`、`markers`、`timeRange`、`tracks`（自分の点です。[自分の点を星図に置く](sky-chart-markers.md)を見てください）、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
+`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の値の配列）、`lang`、`culture`、`constellation`、`picked`、`showUncertainty`、`bodies`（惑星と月です。[惑星と月を星図に置く](sky-chart-bodies.md)を見てください）、`markers`、`timeRange`、`tracks`（自分の点です。[自分の点を星図に置く](sky-chart-markers.md)を見てください）、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
 
 名前の置き場所は、文字の幅で決めます。documentがあればcanvasで測り、なければ組み込みの表で測るので、ブラウザーとサーバーでは名前の位置が1、2ピクセルずれることがあります。どこでも同じSVGにしたいときは、`measure: (text, font) => width`（フォントの寸法や、1文字あたりの決まった幅）を渡してください。型は`ChartSvgOptions`と`ChartLayer`です。
 

@@ -442,6 +442,36 @@ await step("markers-cdn", async () => {
   });
 });
 
+// Planets and the Moon on the chart: `chartSvg` in Node with a list of bodies and the ecliptic layer, and <hoshi-chart> from a CDN with `bodies` set as a property, a tap that says which body, and the ecliptic switched off.
+await step("bodies-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("bodies"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n")[0];
+  if (out !== "planets.svg 2 bodies, with the ecliptic") throw new Error(`unexpected output: ${out}`);
+});
+
+await step("bodies-cdn", async () => {
+  await opened(browser, async (page) => {
+    await page.route("https://cdn.jsdelivr.net/**", async (route) => {
+      const { pathname } = new URL(route.request().url());
+      if (pathname !== "/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm") return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({ body: await bundleOf(join(installed, "dist", "chart", "define.js")), contentType: "text/javascript" });
+    });
+    await showPage(page, "bodies/cdn.html");
+    await seesChart(page);
+    const count = (selector: string) => page.evaluate((s) => document.querySelector("hoshi-chart")!.shadowRoot!.querySelectorAll(s).length, selector);
+    await page.waitForFunction(() => (document.querySelector("hoshi-chart")?.shadowRoot?.querySelectorAll("g[data-body]").length ?? 0) === 2, undefined, { timeout: 20_000 });
+    if ((await count('path[data-layer="ecliptic"]')) !== 1) throw new Error("the ecliptic layer draws no line");
+    if ((await count("path[data-lit]")) !== 1) throw new Error("the Moon is not drawn with its phase");
+    const at = await page.evaluate(() => {
+      const box = document.querySelector("hoshi-chart")!.shadowRoot!.querySelector('g[data-body="moon"] circle')!.getBoundingClientRect();
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    });
+    await page.mouse.click(at.x, at.y);
+    await page.waitForFunction(() => document.getElementById("card")!.textContent === "Moon (月), moon", undefined, { timeout: 10_000 });
+    await page.locator("#line").uncheck();
+    await page.waitForFunction(() => document.querySelector("hoshi-chart")!.shadowRoot!.querySelectorAll('path[data-layer="ecliptic"]').length === 0, undefined, { timeout: 10_000 });
+  });
+});
+
 const chartApp = async (name: string, plugins: unknown[] = []): Promise<void> => {
   const dir = examples(join("chart", name));
   const out = join(usage, "out", `chart-${name}`);
@@ -595,6 +625,8 @@ const FILES: Record<string, string[]> = {
   "chart/uncertainty.html": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "markers/node.mjs": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
   "markers/cdn.html": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
+  "bodies/node.mjs": ["docs/guides/sky-chart-bodies.md", "docs/guides/ja/sky-chart-bodies.md"],
+  "bodies/cdn.html": ["docs/guides/sky-chart-bodies.md", "docs/guides/ja/sky-chart-bodies.md"],
   "chart/vite/main.ts": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/react/SkyChart.tsx": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/vue/SkyChart.vue": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
