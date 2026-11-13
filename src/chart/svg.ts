@@ -78,6 +78,8 @@ export interface ChartSvgOptions {
   timeRange?: MarkerRange | undefined;
   /** Join a group of markers with a line in date order: `true` for every group, or the groups' names (`["Comet"]`). No lines when left out. */
   tracks?: boolean | readonly string[] | undefined;
+  /** Draw the stars of grade C (a rough or missing distance, `/accuracy`) dimmer. Off when left out. */
+  showUncertainty?: boolean | undefined;
   /** The SVG's accessible name: "Star chart" (星図 in Japanese) when left out. */
   label?: string | undefined;
   /**
@@ -104,6 +106,7 @@ export function chartInput(o: ChartSvgOptions): Parameters<typeof chart>[0] {
     culture: o.culture,
     highlight: o.constellation,
     picked: o.picked,
+    showUncertainty: o.showUncertainty,
     markers: o.markers,
     timeRange: o.timeRange,
     tracks: o.tracks,

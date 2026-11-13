@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How well is the star known?</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-chart ra="88.79" dec="7.41" zoom="12" show-uncertainty style="width: 640px; height: 400px"></hoshi-chart>
+    <p id="card">Tap a star.</p>
+    <script type="module">
+      document.querySelector("hoshi-chart").addEventListener("hoshi-pick", (event) => {
+        const { kind, id, accuracy } = event.detail;
+        if (kind !== "star") return;
+        const [low, high] = accuracy.lightYearsRange ?? [];
+        const range = low === undefined ? "no stated range" : `${Math.round(low)} to ${Math.round(high)} light-years`;
+        document.getElementById("card").textContent = `HR ${id}: grade ${accuracy.grade}, ${range}, position to ${accuracy.positionResolutionArcsec} arc-seconds`;
+      });
+    </script>
+  </body>
+</html>

@@ -14,6 +14,7 @@ import type { Culture } from "../culture.ts";
 import { western } from "../cultures/western.ts";
 import { milkyWayBands } from "../milky-way.ts";
 import { faintMarks, type FaintDraw } from "./faint-layer.ts";
+import { dimsForUncertainty, UNCERTAIN_OPACITY } from "./uncertainty.ts";
 import { project, unproject, type Projection, type SkyPoint } from "../projection.ts";
 import type { SeenSky } from "../sky-from.ts";
 import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
@@ -57,6 +58,8 @@ export interface ChartOptions extends View {
   culture?: Culture | undefined;
   /** The figure (a constellation's abbreviation in the Western and Japanese cultures, else the figure's id) to show brighter, with its boundary when it is a constellation, even when boundaries are off. */
   highlight?: string | undefined;
+  /** Draw the stars of grade C (a rough or missing distance, `/accuracy`) dimmer. Off when left out. The sky seen from another star (`sky`) is not dimmed. */
+  showUncertainty?: boolean | undefined;
   /** The star (HR number) or Messier object (`M31`) that is picked. */
   picked?: string | undefined;
   /** The black hole (its id, `cygnus-x-1`) that is picked; it is drawn and named even when the black-hole layer is off. */
@@ -692,12 +695,12 @@ function drawChart(o: ChartOptions): Chart {
   let ring = "";
   const starLabels: Label[] = [];
   const depth = depthOf(o.magnitude, o.zoom);
-  const plot = (key: string, point: SkyPoint, magnitude: number, colour: () => string, text: string | undefined, designation: string): void => {
+  const plot = (key: string, point: SkyPoint, magnitude: number, colour: () => string, text: string | undefined, designation: string, dim = false): void => {
     const isNear = near.has(`S:${key}`);
     const at = place(point);
     if (at === undefined || !inside(at)) return;
     const r = Math.max(0.7, (o.magnitude - Math.max(magnitude, -2)) * 0.55 + 1.1) * grow;
-    dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${colour()}"/>`;
+    dots += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r)}" fill="${colour()}"${dim ? ` fill-opacity="${UNCERTAIN_OPACITY}" data-uncertain="C"` : ""}/>`;
     hits.push({ x: at[0], y: at[1], kind: "star", key });
     if (r >= 2.6) obstacles.push(around(at[0], at[1], r + 1));
     if (key === o.picked) ring += `<circle cx="${round(at[0])}" cy="${round(at[1])}" r="${round(r + 6)}" fill="none" stroke="${COLOURS.pick}" stroke-width="2"/>`;
@@ -733,7 +736,7 @@ function drawChart(o: ChartOptions): Chart {
       const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;
       if (extra !== undefined && extra.magnitude > depth) drawn.push(extra);
     }
-    for (const star of drawn) plot(String(star.hr), star, star.magnitude, () => starColour(star), lang === "ja" ? star.nameJa ?? star.name : star.name, star.designation ?? `HR ${star.hr}`);
+    for (const star of drawn) plot(String(star.hr), star, star.magnitude, () => starColour(star), lang === "ja" ? star.nameJa ?? star.name : star.name, star.designation ?? `HR ${star.hr}`, o.showUncertainty === true && dimsForUncertainty(star));
   } else {
     for (const star of o.sky) {
       if (star.magnitude > depth && !near.has(`S:${keyOfSeen(star.id)}`)) continue;

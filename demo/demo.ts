@@ -18,6 +18,7 @@ import type { GalaxyDistance } from "../src/galaxy-distance-core.ts";
 import { byDistance, compact, ends, GALAXY_LIST_COUNT, parsecsText, type Order } from "./galaxies.ts";
 import { PROJECTIONS, project, type Projection } from "../src/projection.ts";
 import { deepSkyShape, measuredParts, type DeepSkyShape } from "../src/deep-sky-shape.ts";
+import { pickAccuracy } from "../src/chart/uncertainty.ts";
 import { drawnPictures } from "../src/chart/picture-quality.ts";
 import { starsInside } from "../src/deep-sky-members.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
@@ -105,6 +106,8 @@ const projector: SkyProjector = (ra, dec, o) => {
 };
 /** The sky out to this many light-years (Infinity for all), or undefined for the sky as it was. */
 let limit: number | undefined;
+/** Draw the stars of grade C dimmer (`uncertainty=on` in the address). */
+let showUncertainty = false;
 
 function read(): void {
   const kind = address.get("proj") ?? "";
@@ -120,6 +123,7 @@ function read(): void {
   const named = address.get("layers");
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
+  showUncertainty = address.get("uncertainty") === "on";
   const pview = address.get("pview");
   profileView = pview === "compare" || pview === "3d" ? pview : "portrait";
   embedWhat = address.get("ew") === "star" ? "star" : "chart";
@@ -197,7 +201,7 @@ function draw(): void {
   const keepClear = clear();
   overlay.update(projector, { width, height }, keepClear);
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
-  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), showUncertainty, culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
   chosenPictures = new Set(out.wanted);
   // names were kept clear of the line as it was: when it changes, draw once more so that they keep clear of it as it is now
   if (showPictureCredits($("picture-credits"), out.pictures, lang() === "ja")) schedule();
@@ -313,6 +317,7 @@ function pressed(): void {
   });
   $("embed-what-hint").hidden = starNow !== undefined;
   overlayPressed();
+  $("uncertainty").setAttribute("aria-pressed", String(showUncertainty));
   readings.refresh(say("readings"));
   writeReadings($("culture-note"), say(`cultureNote${culture.id[0]!.toUpperCase()}${culture.id.slice(1)}`), readings.on());
   const slider = $<HTMLInputElement>("magnitude");
@@ -406,6 +411,11 @@ function words(): void {
 $("dist-nearer").addEventListener("click", () => limit !== undefined && setLimit(stepLimit(limit, -1)));
 $("dist-farther").addEventListener("click", () => limit !== undefined && setLimit(stepLimit(limit, 1)));
 $<HTMLInputElement>("dist-slider").addEventListener("input", () => setLimit(limitAtSlider(Number($<HTMLInputElement>("dist-slider").value) / 1000)));
+$("uncertainty").addEventListener("click", () => {
+  showUncertainty = !showUncertainty;
+  address.set("uncertainty", showUncertainty ? "on" : null);
+  everything();
+});
 $("magnitude").addEventListener("input", () => {
   magnitude = Number($<HTMLInputElement>("magnitude").value);
   address.set("mag", String(magnitude));
@@ -873,6 +883,13 @@ function details(): void {
     colour.append(swatch, ` ${starColour(star)}`);
     fact(list, "fieldColour", colour);
     if (star.spectralType !== "") fact(list, "fieldClass", star.spectralType);
+    if (sky === undefined) {
+      const known = pickAccuracy(star);
+      fact(list, "fieldGrade", fill(say("gradeValue"), { grade: known.grade }));
+      const [low, high] = known.lightYearsRange ?? [];
+      fact(list, "fieldDistanceRange", low === undefined || high === undefined ? say("distanceRangeNone") : high === Infinity ? fill(say("distanceRangeOpen"), { low: Math.round(low).toLocaleString(lang()) }) : fill(say("distanceRangeValue"), { low: Math.round(low).toLocaleString(lang()), high: Math.round(high).toLocaleString(lang()) }));
+      fact(list, "fieldPositionResolution", fill(say("positionResolutionValue"), { n: String(Math.round(known.positionResolutionArcsec * 10) / 10) }));
+    }
     if (star.constellation !== undefined) {
       const c = constellation(star.constellation);
       if (c !== undefined) fact(list, "fieldIn", figureById(c.abbreviation, culture) === undefined ? nameOf(c) : linkTo(nameOf(c), `C:${c.abbreviation}`));

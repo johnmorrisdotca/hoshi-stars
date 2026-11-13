@@ -51,18 +51,63 @@ description: "デモの星図を自分のページに置く方法です。ファ
 | `picked` | 選んだ印を付ける星（HR番号。シリウスは`2491`）かメシエ天体（`M42`）。タップのあとに設定すると、ふたたびこちらが優先されます。 |
 | `lang` | `en`か`ja`。指定がないときは、要素の祖先でいちばん近い`lang`属性に従い、それが変わると追従します。 |
 | `theme` | `light`か`dark`で、フォーカスの枠の色を決めます。空はどちらでも夜の色です。 |
+| `show-uncertainty` | グレードCの星（距離が粗いか不明。[星の値の確かさ](accuracy.md)を見てください）を暗く描き、確かな星が目立つようにします。既定はオフで、プロパティは`showUncertainty`です。変わるのは星の描き方だけで、静止しているときは何も描きません。 |
 | `controls="none"` | 手で動かせない、止まった絵になります。 |
 | `markers`、`time-from`、`time-to`、`time-fade`、`tracks` | 自分の日付つきの点、表示する日、グループをつなぐ線です（[自分の点を星図に置く](sky-chart-markers.md)を見てください）。 |
 
 | イベント | `detail` |
 |---|---|
-| `hoshi-pick` | `ChartPick`：`{ kind, id, abbreviation? }`。`kind`は`star`（HR番号）、`deep`（`M42`）、`hole`（`cygnus-x-1`）、`figure`（図のid。88星座なら`abbreviation`も付きます）、`none`のどれかです。 |
+| `hoshi-pick` | `ChartPick`：`{ kind, id, abbreviation? }`。`kind`は`star`（HR番号。`accuracy`も付き、`{ grade, lightYearsRange, positionResolutionArcsec }`、つまり星のグレードA・B・C、距離の範囲（光年。範囲がなければ`null`）、位置の最後の桁の大きさ（秒角）を持ちます）、`deep`（`M42`）、`hole`（`cygnus-x-1`）、`figure`（図のid。88星座なら`abbreviation`も付きます）、`none`のどれかです。 |
 | `hoshi-view` | `ChartViewDetail`：`{ projection, ra, dec, zoom, final }`。表示が変わるたびに送られ、手が止まると`final`がtrueになります。 |
 | `hoshi-marker` | `ChartMarkerDetail`：`{ marker, id, index, source }`。自分の点（`markers`）をクリック、タップしたとき、またはEnterかSpaceで選んだときに送られます。 |
 
 `element.setView({ ra, dec, zoom })`でコードから動かせ、`element.view`で今の表示がわかります。どちらも型は`View`です。クラスは`HoshiChartElement`、タグは`CHART_TAG`です。`defineChart(registry?)`は一度だけ定義するので、ページが2回読み込んでも、パッケージが2つあっても、例外は起きません。
 
 **手で動かす部分はkazoku-uiです。** ファミリー共通の表示コントローラー（`@johnmorrisdotca/kazoku-ui`）で、このパッケージの唯一の依存関係です。npmでこのパッケージと一緒にインストールされ、jsDelivrの`/+esm`でも自動で読み込まれます。kazoku-uiを読み込むのは`/chart/element`と`/chart/define`だけで、`chartSvg`をはじめ、ほかのエントリーはどれも読み込みません。
+
+## 星の確かさ
+
+星をタップすると、その星がどれだけ確かかが分かります。`hoshi-pick`の`detail`の`accuracy`に、グレード、距離が最も近い場合と最も遠い場合（視差の標準誤差を前後に1つずつ取った値。誤差が視差と同じ大きさなら、遠い側は`Infinity`です）、位置の分解能が入っています。グレードは`/accuracy`のものです（[星の値の確かさ](accuracy.md)を見てください）。`show-uncertainty`属性（`chartSvg`では`showUncertainty`）を付けると、グレードCの星を45%の濃さで描き、それぞれに`data-uncertain="C"`を付けます。グレードAとBはこれまでどおりです。同じ部品の`pickAccuracy(star)`と`dimsForUncertainty(star)`は純粋な関数で、`/chart`から使えます。
+
+```js
+import { writeFileSync } from "node:fs";
+import { chartSvg, pickAccuracy } from "@johnmorrisdotca/hoshi-stars/chart";
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+
+// Orion with the stars of grade C (a rough or missing distance) drawn dimmer.
+const svg = chartSvg({ width: 640, height: 400, constellation: "Ori", showUncertainty: true });
+writeFileSync(new URL("orion-uncertain.svg", import.meta.url), svg);
+
+// What a pick says of Betelgeuse: its grade, the distance range in light-years and the position resolution in arc-seconds.
+const { grade, lightYearsRange, positionResolutionArcsec } = pickAccuracy(starByName("Betelgeuse"));
+console.log("orion-uncertain.svg", svg.includes('data-uncertain="C"'), grade, lightYearsRange.map(Math.round).join("-"), Math.round(positionResolutionArcsec * 10) / 10);
+// orion-uncertain.svg true B 480-640 1.5
+```
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>How well is the star known?</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-chart ra="88.79" dec="7.41" zoom="12" show-uncertainty style="width: 640px; height: 400px"></hoshi-chart>
+    <p id="card">Tap a star.</p>
+    <script type="module">
+      document.querySelector("hoshi-chart").addEventListener("hoshi-pick", (event) => {
+        const { kind, id, accuracy } = event.detail;
+        if (kind !== "star") return;
+        const [low, high] = accuracy.lightYearsRange ?? [];
+        const range = low === undefined ? "no stated range" : `${Math.round(low)} to ${Math.round(high)} light-years`;
+        document.getElementById("card").textContent = `HR ${id}: grade ${accuracy.grade}, ${range}, position to ${accuracy.positionResolutionArcsec} arc-seconds`;
+      });
+    </script>
+  </body>
+</html>
+```
 
 ## SVGの文字列として
 
@@ -77,7 +122,7 @@ console.log("subaru.svg", svg.length > 10000, svg.includes('aria-label="星図"'
 // subaru.svg true true
 ```
 
-`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の値の配列）、`lang`、`culture`、`constellation`、`picked`、`markers`、`timeRange`、`tracks`（自分の点です。[自分の点を星図に置く](sky-chart-markers.md)を見てください）、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
+`chartSvg(options)`には、`width`と`height`のほか、要素の属性と同じ`projection`、`ra`、`dec`、`zoom`、`magnitude`、`layers`（`CHART_LAYERS`の値の配列）、`lang`、`culture`、`constellation`、`picked`、`showUncertainty`、`markers`、`timeRange`、`tracks`（自分の点です。[自分の点を星図に置く](sky-chart-markers.md)を見てください）、`label`（読み上げられる名前で、既定は「Star chart」か「星図」）を渡せます。`culture`には文化そのものを、`@johnmorrisdotca/hoshi-stars/cultures/japanese`か`/chinese`から読み込んで渡すので、ページは描く文化の分だけ読み込みます。返すのは、大きさどおりの`viewBox`と夜の背景を持つ`<svg>`です。時計を読まず、何も取りに行きません。
 
 名前の置き場所は、文字の幅で決めます。documentがあればcanvasで測り、なければ組み込みの表で測るので、ブラウザーとサーバーでは名前の位置が1、2ピクセルずれることがあります。どこでも同じSVGにしたいときは、`measure: (text, font) => width`（フォントの寸法や、1文字あたりの決まった幅）を渡してください。型は`ChartSvgOptions`と`ChartLayer`です。
 

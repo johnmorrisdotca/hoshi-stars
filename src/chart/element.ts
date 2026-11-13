@@ -5,6 +5,8 @@ import type { Culture } from "../culture.ts";
 import type { Projection } from "../projection.ts";
 import { western } from "../cultures/western.ts";
 import { chart, constellationUnder, defaultZoom, figureById, figureUnder, type Hit, type View } from "./chart.ts";
+import { pickAccuracy, type PickAccuracy } from "./uncertainty.ts";
+import { starByHr } from "../index.ts";
 import { attachHands, type Hands } from "./hands.ts";
 import { normaliseMarkers, type MarkerRange, type MarkerWhen, type SkyMarker } from "./markers.ts";
 import type { MarkerHit } from "./markers-draw.ts";
@@ -38,15 +40,15 @@ const CULTURES: Record<string, () => Promise<Culture>> = {
 };
 
 /**
- * What `hoshi-pick` says: a star (`id` its HR number), a deep-sky object (`M42`), a black hole (`cygnus-x-1`), a figure (`id` the figure's, with `abbreviation` for a constellation), or nothing (`kind` `none`).
+ * What `hoshi-pick` says: a star (`id` its HR number, with `accuracy`: its grade, the distance range and the position resolution), a deep-sky object (`M42`), a black hole (`cygnus-x-1`), a figure (`id` the figure's, with `abbreviation` for a constellation), or nothing (`kind` `none`).
  *
  * @example
  * ```ts no-run
  * import type { ChartPick } from "@johnmorrisdotca/hoshi-stars/chart/element";
  *
  * document.querySelector("hoshi-chart")!.addEventListener("hoshi-pick", (event) => {
- *   const { kind, id, abbreviation } = (event as CustomEvent<ChartPick>).detail;
- *   console.log(kind, id, abbreviation ?? "");
+ *   const { kind, id, abbreviation, accuracy } = (event as CustomEvent<ChartPick>).detail;
+ *   console.log(kind, id, abbreviation ?? "", accuracy?.grade ?? "");
  * });
  * ```
  */
@@ -54,6 +56,8 @@ export interface ChartPick {
   kind: "star" | "deep" | "hole" | "figure" | "none";
   id: string | null;
   abbreviation?: string | undefined;
+  /** For a star only: how well it is known (`PickAccuracy`): the grade A, B or C, the distance range in light-years (`null` where there is none) and the position resolution in arc-seconds. */
+  accuracy?: PickAccuracy | undefined;
 }
 
 /**
@@ -136,7 +140,7 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * ```
  */
 export class HoshiChartElement extends Base {
-  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls", "markers", "time-from", "time-to", "time-fade", "tracks"];
+  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls", "markers", "time-from", "time-to", "time-fade", "tracks", "show-uncertainty"];
 
   #svg: SVGSVGElement | undefined;
   #hands: Hands | undefined;
@@ -178,7 +182,7 @@ export class HoshiChartElement extends Base {
       this.#attributesRead = true;
       this.#readMarkerAttributes();
     }
-    for (const name of ["markers", "timeRange", "tracks"] as const) {
+    for (const name of ["markers", "timeRange", "tracks", "showUncertainty"] as const) {
       if (Object.hasOwn(this, name)) {
         const value = Reflect.get(this, name);
         Reflect.deleteProperty(this, name);
@@ -229,6 +233,20 @@ export class HoshiChartElement extends Base {
       this.#hands?.sync();
     }
     this.#schedule();
+  }
+
+  /**
+   * Draw the stars of grade C (a rough or missing distance, from `/accuracy`) dimmer, so the stars that are well known stand out. Off by default. The `show-uncertainty` attribute sets it (present, or any value but `false`); setting the property sets or removes the attribute.
+   * It changes only how a star is drawn: nothing is drawn at rest.
+   */
+  get showUncertainty(): boolean {
+    const value = this.getAttribute("show-uncertainty");
+    return value !== null && value !== "false";
+  }
+
+  set showUncertainty(value: boolean) {
+    if (value) this.setAttribute("show-uncertainty", "");
+    else this.removeAttribute("show-uncertainty");
   }
 
   /**
@@ -399,7 +417,7 @@ export class HoshiChartElement extends Base {
     if (svg === undefined || view === undefined || width === 0 || height === 0) return;
     const lang = this.#lang();
     this.#langNow = lang;
-    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined, markers: this.#markers, timeRange: this.#range, tracks: this.#tracks });
+    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined, showUncertainty: this.showUncertainty, markers: this.#markers, timeRange: this.#range, tracks: this.#tracks });
     const out = chart(input);
     this.#hits = out.hits;
     this.#markerHits = out.markerHits;
@@ -500,7 +518,8 @@ export class HoshiChartElement extends Base {
     }
     let detail: ChartPick;
     if (best !== undefined) {
-      detail = { kind: best.kind, id: best.key };
+      const star = best.kind === "star" ? starByHr(Number(best.key)) : undefined;
+      detail = { kind: best.kind, id: best.key, ...(star === undefined ? {} : { accuracy: pickAccuracy(star) }) };
       this.#picked = best.kind === "hole" ? undefined : best.key;
       this.#highlight = undefined;
     } else {

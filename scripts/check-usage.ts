@@ -385,6 +385,28 @@ await step("chart-cdn", async () => {
   });
 });
 
+// How well a star is known: `chartSvg` with the uncertainty look and a pick's grade in Node, and <hoshi-chart> from a CDN with `show-uncertainty` and a tap that says the grade and the range.
+await step("chart-uncertainty-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("chart"), "uncertainty.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  if (out !== "orion-uncertain.svg true B 480-640 1.5") throw new Error(`unexpected output: ${out}`);
+});
+
+await step("chart-uncertainty-cdn", async () => {
+  await opened(browser, async (page) => {
+    await page.route("https://cdn.jsdelivr.net/**", async (route) => {
+      const { pathname } = new URL(route.request().url());
+      if (pathname !== "/npm/@johnmorrisdotca/hoshi-stars/chart/define/+esm") return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({ body: await bundleOf(join(installed, "dist", "chart", "define.js")), contentType: "text/javascript" });
+    });
+    await showPage(page, "chart/uncertainty.html");
+    await seesChart(page);
+    if ((await page.evaluate(() => document.querySelector("hoshi-chart")!.shadowRoot!.querySelectorAll('circle[data-uncertain="C"]').length)) === 0) throw new Error("no star is drawn dimmer with show-uncertainty");
+    const box = (await page.locator("hoshi-chart").boundingBox())!;
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForFunction(() => document.getElementById("card")!.textContent!.includes("grade B"), undefined, { timeout: 10_000 });
+  });
+});
+
 // Your own markers: `chartSvg` in Node with a time range and a track, and <hoshi-chart> from a CDN with the markers set as a property, a slider for the time range, and a click that says which marker.
 await step("markers-node", () => {
   const out = execFileSync(process.execPath, [join(examples("markers"), "node.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n")[0];
@@ -562,6 +584,8 @@ const FILES: Record<string, string[]> = {
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/uncertainty.mjs": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/uncertainty.html": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "markers/node.mjs": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
   "markers/cdn.html": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
   "chart/vite/main.ts": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
