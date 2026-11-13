@@ -9,6 +9,7 @@ export { NAME_KINDS, nameIndex, nameKey, slugOf, type NameIndex, type NameKind, 
 export { deepSkyRow } from "./names-core.ts";
 
 const BAYER = /^(\D+?)(\d*) (\S+)$/u;
+const DATABASE_SHORT: Readonly<Record<string, string>> = { alpha: "alf", theta: "tet", xi: "ksi" };
 const FLAMSTEED = /^(\d+) (\S+)$/u;
 
 /** The slug a star would have before any clash is settled. */
@@ -41,6 +42,9 @@ function starRow(star: Star, c: Constellation | undefined, id: string): NameRow 
         others.add(`${letter}${number} ${place}`);
         others.add(`${greekName(letter)}${number} ${place}`);
         others.add(`${greekShort(greekName(letter))}${number} ${place}`);
+        // the three-letter forms that differ in the astronomy databases (alf Ori, tet Eri, ksi Ori)
+        const database = DATABASE_SHORT[greekName(letter)];
+        if (database !== undefined) others.add(`${database}${number} ${place}`);
         // a component of a pair (α1 Cen) is also what people mean by the pair's letter (alpha Centauri): the text then names two rows, and `findName` gives none
         if (number !== "") others.add(`${greekName(letter)} ${place}`);
       }

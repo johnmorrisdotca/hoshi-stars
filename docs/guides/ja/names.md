@@ -51,7 +51,7 @@ ngc7000 North America Nebula nebula
 
 ## 引く
 
-`findName(text)` は、大文字小文字・空白・アクセント・ギリシャ文字の書き方 (`α`、`alpha`、`Alp`) を区別せず、文字列がちょうど指す1行を返します。`Betelgeuse`、`alpha Ori`、`α Orionis`、`HR 2061`、`M 31`、`Messier 31`、`NGC 224`、`Andromeda Galaxy`、`ベテルギウス`。2行が共有する文字列 (`Alpha Centauri` は `α1 Cen` と `α2 Cen` の両方) は、どれも返しません。`searchNames(text, { limit, kinds })` は、先頭が合う行、続いて含む行を、それぞれ重みの順に返し、入力補完に使えます。NGC・IC のかたまりにも同じ3つがあります: `ngcIcRows`、`ngcIcRowById`、`findNgcIc`、`searchNgcIc`。
+`findName(text)` は、大文字小文字・空白・アクセント・ギリシャ文字の書き方 (`α`、`alpha`、`Alp`、`alf`)、上付き数字 (`π³`)、離して書いた番号 (`pi 3 Ori`) を区別せず、文字列がちょうど指す1行を返します。`Betelgeuse`、`alpha Ori`、`α Orionis`、`HR 2061`、`M 31`、`Messier 31`、`NGC 224`、`Andromeda Galaxy`、`ベテルギウス`。2行が共有する文字列 (`Alpha Centauri` は `α1 Cen` と `α2 Cen` の両方) は、どれも返しません。`searchNames(text, { limit, kinds })` は、先頭が合う行、続いて含む行を、それぞれ重みの順に返し、入力補完に使えます。NGC・IC のかたまりにも同じ3つがあります: `ngcIcRows`、`ngcIcRowById`、`findNgcIc`、`searchNgcIc`。
 
 ## 大きさ
 

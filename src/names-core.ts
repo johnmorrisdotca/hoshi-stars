@@ -101,7 +101,7 @@ export const greekName = (letter: string): string => GREEK[letter] ?? letter;
 export const greekShort = (name: string): string => GREEK_SHORT[name] ?? name;
 
 /**
- * A text folded to compare, as `findName` does: lower case, no accents, Greek letters spelt out and one space; `M 31`, `Messier 31` and `m31` give `m31`, `NGC 0224` gives `ngc224`, `HR 2061` and `hr2061` give `hr2061`.
+ * A text folded to compare, as `findName` does: lower case, no accents, Greek letters spelt out and one space, a superscript as its digit; `M 31`, `Messier 31` and `m31` give `m31`, `NGC 0224` gives `ngc224`, `HR 2061` and `hr2061` give `hr2061`.
  *
  * @param text - Any text.
  * @returns The key.
@@ -114,8 +114,9 @@ export const greekShort = (name: string): string => GREEK_SHORT[name] ?? name;
  * ```
  */
 export function nameKey(text: string): string {
-  const spelt = [...text.normalize("NFD").replace(/[̀-ͯ]/g, "")].map((ch) => GREEK[ch.toLowerCase()] ?? ch).join("");
-  const folded = spelt.replace(/\s+/g, " ").trim().toLowerCase();
+  // NFKD turns a superscript (π³) into its digit, and a Bayer number written apart (pi 3 Ori) is joined to its letter
+  const spelt = [...text.normalize("NFKD").replace(/[̀-ͯ]/g, "")].map((ch) => GREEK[ch.toLowerCase()] ?? ch).join("");
+  const folded = spelt.replace(/\s+/g, " ").trim().toLowerCase().replace(/^(alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|omicron|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega) (\d{1,2}) (?=[a-z])/, "$1$2 ");
   const designation = /^(m|messier|ngc|ic|hr|hd) ?0*(\d+) ?([a-z]?)$/.exec(folded);
   return designation === null ? folded : `${designation[1] === "messier" ? "m" : designation[1]}${designation[2]}${designation[3]}`;
 }

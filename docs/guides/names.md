@@ -51,7 +51,7 @@ ngc7000 North America Nebula nebula
 
 ## Finding one
 
-`findName(text)` returns the one row a text names exactly, ignoring case, spacing, accents and how the Greek letter is spelt (`α`, `alpha`, `Alp`): `Betelgeuse`, `alpha Ori`, `α Orionis`, `HR 2061`, `M 31`, `Messier 31`, `NGC 224`, `Andromeda Galaxy`, `ベテルギウス`. A text that two rows share (`Alpha Centauri` is both `α1 Cen` and `α2 Cen`) finds none. `searchNames(text, { limit, kinds })` lists the rows whose names start with the text and then those that contain it, each by weight, for a type-ahead box. The NGC and IC chunk has the same three: `ngcIcRows`, `ngcIcRowById`, `findNgcIc` and `searchNgcIc`.
+`findName(text)` returns the one row a text names exactly, ignoring case, spacing, accents and how the Greek letter is spelt (`α`, `alpha`, `Alp`, `alf`, a superscript `π³` or a number written apart `pi 3 Ori`): `Betelgeuse`, `alpha Ori`, `α Orionis`, `HR 2061`, `M 31`, `Messier 31`, `NGC 224`, `Andromeda Galaxy`, `ベテルギウス`. A text that two rows share (`Alpha Centauri` is both `α1 Cen` and `α2 Cen`) finds none. `searchNames(text, { limit, kinds })` lists the rows whose names start with the text and then those that contain it, each by weight, for a type-ahead box. The NGC and IC chunk has the same three: `ngcIcRows`, `ngcIcRowById`, `findNgcIc` and `searchNgcIc`.
 
 ## Size
 

@@ -22,6 +22,30 @@ test("Betelgeuse by name, by Bayer designation spelt three ways, by HR number an
   assert.ok(row.otherNames.includes("alpha Orionis") && row.otherNames.includes("Alp Ori") && !row.otherNames.includes("Betelgeuse"));
 });
 
+test("Greek letters in every spelling, superscripts, a number written apart, the database's three letters, case and spacing give one row", () => {
+  const tabit = findName("pi3 Ori")!;
+  for (const text of ["π3 Ori", "π³ Ori", "pi 3 Ori", "Pi 3 Ori", "PI3  ORI", "pi3 Orionis", "π³ Orionis"]) assert.equal(findName(text), tabit, text);
+  const betelgeuse = findName("Betelgeuse");
+  for (const text of ["ALPHA ORI", "alpha  ori", "alf Ori", "Alf Ori", "ALF  ORI", " Alp ori "]) assert.equal(findName(text), betelgeuse, text);
+  assert.equal(findName("tet Eri")?.id, findName("theta Eri")?.id);
+  assert.ok(findName("alf CMa") === findName("Sirius") && findName("alpha CMa") === findName("Sirius") && findName("Sirius")!.hr === 2491);
+});
+
+test("a named star's id is the name as the Space Program X site writes it for an address: lower case, letters and digits, one hyphen between", () => {
+  const site = (name: string): string => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const named = stars().filter((s) => s.name !== undefined);
+  assert.ok(named.length >= 335);
+  for (const star of named) assert.equal(nameRowById(site(star.name!))?.hr, star.hr, star.name);
+});
+
+test("a star with only an HR number has the id hr- and its number, found by HR number and by id", () => {
+  const star = stars().find((s) => s.name === undefined && s.designation === undefined)!;
+  const row = findName(`HR ${star.hr}`)!;
+  assert.equal(row.id, `hr-${star.hr}`);
+  assert.equal(findName(row.id), row);
+  assert.equal(nameRowById(`hr-${star.hr}`), row);
+});
+
 test("a star with only a Flamsteed number is found by its number and constellation, spelt out too", () => {
   const star = stars().find((s) => s.name === undefined && /^\d+ \S+$/.test(s.designation ?? ""))!;
   const [number, abbreviation] = star.designation!.split(" ") as [string, string];
