@@ -11,7 +11,7 @@ const NOTICE = "https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.
 
 /** The family's footer, with a link to every data credit beside the one-line credit, so a reader need not open anything to find the sources. */
 const footer = (): string => familyFooter({ id }).replace('<span data-say="foot"></span>', `<span><span data-say="foot"></span> <a href="${NOTICE}" data-say="creditsAll"></a></span>`);
-const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "layers-3d.html", say: "pageDistance" }, { href: "kids.html", say: "pageKids" }, { href: "tonight.html", say: "pageTonight" }, { href: "markers.html", say: "pageMarkers" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
+const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "layers-3d.html", say: "pageDistance" }, { href: "kids.html", say: "pageKids" }, { href: "tonight.html", say: "pageTonight" }, { href: "planisphere.html", say: "pageWheel" }, { href: "markers.html", say: "pageMarkers" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
 export function renderIndex(): string {
@@ -44,6 +44,17 @@ export function renderTonight(): string {
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
     .replace("<!--family:footer-->", footer())
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/tonight.js"></script>`);
+}
+
+/** The planisphere page: a star wheel with a horizon window to turn. */
+export function renderPlanisphere(): string {
+  const html = readFileSync(new URL("../demo/planisphere.html", import.meta.url), "utf8");
+  return html
+    .replace("<!--family:head-->", familyHead({ id, title: WORDS.en.pl_title, description: WORDS.en.pl_description }))
+    .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
+    .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
+    .replace("<!--family:footer-->", footer())
+    .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/planisphere.js"></script>`);
 }
 
 /** One of the constellation pages (gallery.html, constellation.html), made as the others are. `title` and `description` are the English words' keys. */

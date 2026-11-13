@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="planisphere" aria-labelledby="pl-heading">
+        <h1 id="pl-heading" class="kids-title" data-say="pl_heading"></h1>
+        <p class="lead" data-say="pl_lede"></p>
+        <div class="kids-picks">
+          <div class="fam-row">
+            <span class="fam-label" data-say="pl_hemisphere"></span>
+            <span class="fam-seg" id="pl-hemisphere" role="group" data-say-label="pl_hemisphere">
+              <button type="button" data-value="n" data-say="pl_north"></button>
+              <button type="button" data-value="s" data-say="pl_south"></button>
+            </span>
+            <label class="field"><span data-say="pl_latitude"></span><input id="pl-latitude" class="fam-field" type="number" min="20" max="70" step="1" inputmode="numeric" /></label>
+          </div>
+          <div class="fam-row">
+            <label class="field"><span data-say="pl_date"></span><input id="pl-date" class="fam-field" type="date" /></label>
+            <label class="field"><span data-say="pl_time"></span><input id="pl-time" class="fam-field" type="time" /></label>
+            <button type="button" class="fam-button" id="pl-earlier" data-say="pl_earlier"></button>
+            <button type="button" class="fam-button" id="pl-later" data-say="pl_later"></button>
+          </div>
+        </div>
+        <p id="pl-summary" class="tn-summary" data-testid="pl-summary" role="status"></p>
+        <div class="tn-body">
+          <div id="pl-wheel" class="pl-wheel" data-testid="pl-wheel" tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="1440"></div>
+          <div class="tn-list-box">
+            <h2 class="tn-h2" data-say="pl_listHeading"></h2>
+            <ul id="pl-list" class="pl-list" data-testid="pl-list"></ul>
+            <p class="fam-fine" data-say="pl_keys"></p>
+            <p class="fam-fine" data-say="pl_hours"></p>
+            <p class="fam-fine" data-say="pl_note"></p>
+          </div>
+        </div>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

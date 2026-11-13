@@ -134,3 +134,27 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 .tn-list th, .tn-list td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--rule); }
 .tn-list td.tn-num { font-variant-numeric: tabular-nums; }
 @media (max-width: 720px) { .tn-body { grid-template-columns: minmax(0, 1fr); } .tn-list { font-size: .85rem; } }
+/* The planisphere: the printable wheel's black line work takes the page's ink, its white halo the sky, so the one drawing is a paper wheel in the light page and a night one in the dark. */
+.pl-wheel { --pl-sky: #f1ebdb; --pl-ink: #1f2320; --pl-plate: #bdb7a4; --pl-ring: #e4ddc8; --pl-focus: var(--accent); touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; border-radius: 50%; }
+.pl-wheel:active { cursor: grabbing; }
+.pl-wheel:focus-visible { outline: 3px solid var(--pl-focus); outline-offset: 2px; }
+.pl-wheel svg { display: block; width: 100%; height: auto; aspect-ratio: 1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pl-wheel { --pl-sky: #0b1020; --pl-ink: #e8ecff; --pl-plate: #2b3453; --pl-ring: #141b33; } }
+:root[data-theme="dark"] .pl-wheel { --pl-sky: #0b1020; --pl-ink: #e8ecff; --pl-plate: #2b3453; --pl-ring: #141b33; }
+.pl-wheel svg [stroke="#000"] { stroke: var(--pl-ink); }
+.pl-wheel svg [stroke="#fff"] { stroke: var(--pl-sky); }
+.pl-wheel svg [fill="#000"] { fill: var(--pl-ink); }
+.pl-wheel .wh-sky { fill: var(--pl-sky); }
+.pl-wheel .wh-ra-back { fill: var(--pl-ring); }
+.pl-wheel .wh-ra-edge { fill: none; stroke: var(--pl-ink); stroke-width: .3; }
+.pl-wheel .wh-clock-back, .pl-wheel .wh-mask { fill: var(--pl-plate); }
+.pl-wheel .wh-mask { stroke: var(--pl-ink); stroke-width: .3; }
+.pl-wheel .wh-window { fill: none; stroke: var(--pl-ink); stroke-width: .8; }
+.pl-wheel .wh-pin { fill: var(--pl-sky); stroke: var(--pl-ink); stroke-width: .5; }
+.pl-wheel [class$="-tick"] { stroke: var(--pl-ink); stroke-width: .3; }
+.pl-wheel [class$="-hour"] { fill: var(--pl-ink); font-size: 3.6px; font-weight: 700; }
+.pl-wheel .wh-name { fill: var(--pl-ink); font-size: 3px; font-weight: 700; stroke: var(--pl-sky); stroke-width: .8; paint-order: stroke; stroke-linejoin: round; }
+.pl-wheel .wh-dir { fill: var(--pl-ink); font-size: 5.2px; font-weight: 800; stroke: var(--pl-sky); stroke-width: 1.1; paint-order: stroke; stroke-linejoin: round; }
+.pl-list { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.pl-list li { border: 1px solid var(--rule); border-radius: 999px; padding: 2px 10px; font-size: .85rem; background: var(--surface); }
+@media (max-width: 720px) { .pl-wheel { max-width: 100%; } }
