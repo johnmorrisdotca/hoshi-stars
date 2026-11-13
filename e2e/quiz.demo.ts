@@ -1,6 +1,7 @@
 // The constellation quiz: a chart with no names, six choices in a row, a right answer scores, and the style, the level and the question are kept in the address. The chart is an SVG drawn once for each question.
 import { expect, test, type Page } from "@playwright/test";
 import { quizHeightFor } from "../demo/quiz-code.ts";
+import { itemsFor } from "../demo/quiz-items.ts";
 import { seenIn } from "../demo/quiz-sky.ts";
 import { constellations } from "../src/constellations.ts";
 
@@ -357,4 +358,91 @@ test("the page's code to copy is the iframe, and follows kid mode, the style, th
   await expect(panel).toContainText("month=1");
   // the code never carries the question
   expect(await panel.textContent()).not.toMatch(/[?&;](q|c)=/);
+});
+
+/** The place of an item in its sky's list: what the address keeps as the question. */
+const placeIn = (culture: "japanese" | "chinese", id: string): number => itemsFor(culture).findIndex((item) => item.id === id) + 1;
+const leak = (text: string, words: string[]): void => {
+  for (const word of words) expect(text, `the page names "${word}" before it is answered`).not.toContain(word);
+};
+
+test("the Japanese sky: its figures, named in Japanese with the reading and in English, and the answer is not given away", async ({ page }) => {
+  const subaru = itemsFor("japanese").find((item) => item.id === "subaru")!;
+  await page.goto(`${PAGE}?culture=japanese&level=88&q=${placeIn("japanese", "subaru")}`);
+  await expect(choices(page)).toHaveCount(6);
+  await expect(page.getByTestId("qz-cultures").locator('button[aria-pressed="true"]')).toHaveText("Japanese");
+  await expect(page.getByTestId("qz-levels").getByRole("button", { name: /^All \d+$/ })).toBeVisible();
+  await expect(page.getByTestId("qz-styles").getByRole("button", { name: "Annotated" })).toBeHidden();
+  await expect(page.getByTestId("qz-culturenote")).toContainText("Japanese sky");
+  await expect(page.getByTestId("qz-choices").locator('button[data-abbr="subaru"]')).toHaveText("Subaru");
+  expect(await page.getByTestId("qz-sky").locator("circle").count()).toBeGreaterThan(3);
+  expect(await page.getByTestId("qz-sky").locator("text").count(), "no name on the chart").toBe(0);
+  leak(await outsideChoices(page), ["Subaru", "subaru", "昴", "すばる"]);
+  const names = await choices(page).allTextContents();
+  expect(new Set(names).size).toBe(6);
+  await page.getByTestId("qz-choices").locator('button[data-abbr="subaru"]').click();
+  await expect(page.getByTestId("qz-result")).toHaveText("Right! It is Subaru.");
+  await expect(page.getByTestId("qz-open")).toHaveAttribute("href", /constellation\.html\?c=subaru&culture=japanese/);
+  // in Japanese the name comes with its reading
+  await page.goto(`${PAGE}?culture=japanese&level=88&lang=ja&q=${placeIn("japanese", "subaru")}`);
+  await expect(page.getByTestId("qz-choices").locator('button[data-abbr="subaru"]')).toHaveText(subaru.label("ja"));
+  expect(subaru.label("ja")).toBe("昴 (すばる)");
+});
+
+test("the Chinese mansions: characters with the English name or the pinyin, characters alone in Japanese, never given away, misses with their pictures", async ({ page }) => {
+  const kui = itemsFor("chinese").find((item) => item.id === "kui2-xiu4")!;
+  await page.goto(`${PAGE}?culture=chinese&level=88&q=${placeIn("chinese", "kui2-xiu4")}`);
+  await expect(choices(page)).toHaveCount(6);
+  await expect(page.getByTestId("qz-cultures").locator('button[aria-pressed="true"]')).toHaveText("Chinese mansions");
+  await expect(page.getByTestId("qz-levels").getByRole("button", { name: "Bright 30" })).toBeHidden();
+  await expect(page.getByTestId("qz-culturenote")).toContainText("Twenty-Eight Mansions");
+  for (const name of await choices(page).allTextContents()) expect(name).toMatch(/^[\u4e00-\u9fff]+ \(.+\)$/);
+  await expect(page.getByTestId("qz-choices").locator('button[data-abbr="kui2-xiu4"]')).toHaveText(kui.label("en"));
+  leak(await outsideChoices(page), ["奎宿", "kui2", kui.label("en")]);
+  expect(param(page, "c")).toBeNull();
+  // a miss keeps its picture from the Chinese set and a link to that figure's page
+  await page.getByTestId("qz-choices").locator('button:not([data-abbr="kui2-xiu4"])').first().click();
+  await expect(page.getByTestId("qz-result")).toContainText("Not quite");
+  await expect(page.getByTestId("qz-missed").locator("img")).toHaveAttribute("src", /thumbnails\/chinese\/png\/160\/(light|dark)\/kui2-xiu4\.png/);
+  await expect(page.getByTestId("qz-missed").locator("a")).toHaveAttribute("href", /constellation\.html\?c=kui2-xiu4&culture=chinese/);
+  await page.goto(`${PAGE}?culture=chinese&level=88&lang=ja`);
+  for (const name of await choices(page).allTextContents()) expect(name).toMatch(/^[\u4e00-\u9fff]+$/);
+});
+
+test("the culture is chosen in a row of buttons, kept in the address, and the sky and the level follow it", async ({ page }) => {
+  await page.goto(`${PAGE}?level=30`);
+  await expect(page.getByTestId("qz-levels").getByRole("button", { name: "Bright 30" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByTestId("qz-cultures").getByRole("button", { name: "Chinese mansions" }).click();
+  await expect.poll(() => param(page, "culture")).toBe("chinese");
+  // the Chinese mansions are fewer than 30: the level is all of them
+  await expect.poll(() => param(page, "level")).toBe("88");
+  await expect(page.getByTestId("qz-levels").locator('button[aria-pressed="true"]')).toHaveText(`All ${itemsFor("chinese").length}`);
+  for (let i = 0; i < 4; i += 1) {
+    for (const one of await abbreviationsOf(page)) expect(itemsFor("chinese").some((item) => item.id === one)).toBe(true);
+    await choices(page).first().click();
+    await page.getByTestId("qz-next").click();
+  }
+  await page.getByTestId("qz-cultures").getByRole("button", { name: "Western" }).click();
+  await expect.poll(() => param(page, "culture")).toBeNull();
+  await expect(choices(page)).toHaveCount(6);
+  // the sky row works for a culture: the Chinese mansions up on a May evening in the south
+  await page.goto(`${PAGE}?culture=chinese&level=88&hemisphere=south&month=5`);
+  await expect(choices(page)).toHaveCount(6);
+  const seenOnes = new Set<string>();
+  for (let i = 0; i < 4; i += 1) {
+    for (const one of await abbreviationsOf(page)) seenOnes.add(one);
+    await choices(page).first().click();
+    await page.getByTestId("qz-next").click();
+  }
+  expect(seenOnes.size).toBeLessThan(itemsFor("chinese").length + 1);
+  expect(seenOnes.size).toBeGreaterThan(5);
+});
+
+test("the embed page and the code to copy carry the culture", async ({ page }) => {
+  await page.goto(`${EMBED}?culture=japanese&level=88&q=1`);
+  await expect(choices(page)).toHaveCount(6);
+  for (const one of await abbreviationsOf(page)) expect(itemsFor("japanese").some((item) => item.id === one)).toBe(true);
+  await page.goto(`${PAGE}?level=88`);
+  await page.getByTestId("qz-cultures").getByRole("button", { name: "Japanese" }).click();
+  await expect(page.getByTestId("embed-panel")).toContainText("culture=japanese");
 });

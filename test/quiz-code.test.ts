@@ -18,12 +18,18 @@ test("only what is not a default is written, and a month waits for a hemisphere"
 test("the choice an address says: every bad part is the default, and the question is never read", () => {
   const got = quizChoiceOf(new URLSearchParams("style=bold&level=7&kid=yes&hemisphere=west&month=99&q=60&c=Ori"));
   assert.deepEqual(got, QUIZ_DEFAULTS);
-  assert.deepEqual(quizChoiceOf(new URLSearchParams("style=annotated&level=30&kid=1&hemisphere=north&month=12&lang=ja")), { style: "annotated", level: "30", kid: true, hemisphere: "north", month: 12, lang: "ja" });
+  assert.deepEqual(quizChoiceOf(new URLSearchParams("style=annotated&level=30&kid=1&hemisphere=north&month=12&lang=ja")), { style: "annotated", level: "30", kid: true, hemisphere: "north", month: 12, culture: "western", lang: "ja" });
   assert.equal(quizChoiceOf(new URLSearchParams("month=3")).month, 0);
 });
 
+test("the culture is written when it is not the Western sky", () => {
+  assert.equal(quizQuery({ ...QUIZ_DEFAULTS, culture: "chinese", level: "88" }), "level=88&culture=chinese");
+  assert.equal(quizChoiceOf(new URLSearchParams("culture=japanese")).culture, "japanese");
+  assert.equal(quizChoiceOf(new URLSearchParams("culture=martian")).culture, "western");
+});
+
 test("a choice goes round: its query gives the same choice back", () => {
-  const choice = { style: "lines", level: "88", kid: true, hemisphere: "south", month: 7, lang: "ja" } as const;
+  const choice = { style: "lines", level: "88", kid: true, hemisphere: "south", month: 7, culture: "chinese", lang: "ja" } as const;
   assert.deepEqual(quizChoiceOf(new URLSearchParams(quizQuery(choice))), choice);
 });
 

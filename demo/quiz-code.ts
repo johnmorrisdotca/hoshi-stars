@@ -15,10 +15,12 @@ export interface QuizChoice {
   hemisphere: "all" | "north" | "south";
   /** 1 to 12, or 0 for any month. */
   month: number;
+  /** The sky culture: the Western 88, the Japanese sky, or the Chinese mansions. */
+  culture: "western" | "japanese" | "chinese";
   lang: "en" | "ja";
 }
 
-export const QUIZ_DEFAULTS: QuizChoice = { style: "plain", level: "12", kid: false, hemisphere: "all", month: 0, lang: "en" };
+export const QUIZ_DEFAULTS: QuizChoice = { style: "plain", level: "12", kid: false, hemisphere: "all", month: 0, culture: "western", lang: "en" };
 
 /** The choice an address says, with every missing or bad part at its default. */
 export function quizChoiceOf(query: URLSearchParams): QuizChoice {
@@ -31,6 +33,7 @@ export function quizChoiceOf(query: URLSearchParams): QuizChoice {
     kid: query.get("kid") === "1",
     hemisphere,
     month: hemisphere === "all" || month < 1 || month > 12 ? 0 : month,
+    culture: pick("culture", ["western", "japanese", "chinese"] as const, "western"),
     lang: query.get("lang") === "ja" ? "ja" : "en",
   };
 }
@@ -43,6 +46,7 @@ export function quizQuery(choice: QuizChoice): string {
   if (choice.kid) query.set("kid", "1");
   if (choice.hemisphere !== "all") query.set("hemisphere", choice.hemisphere);
   if (choice.hemisphere !== "all" && choice.month > 0) query.set("month", String(choice.month));
+  if (choice.culture !== "western") query.set("culture", choice.culture);
   if (choice.lang === "ja") query.set("lang", "ja");
   return query.toString();
 }

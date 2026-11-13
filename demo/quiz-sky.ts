@@ -14,6 +14,17 @@ export const LATITUDE: Readonly<Record<Hemisphere, number>> = { north: 40, south
 /** How far above the horizon a star must be to count, in degrees. */
 export const MIN_ALTITUDE = 10;
 
+/** Whether a figure is in the evening sky of a hemisphere in a month: more than half of its stars are more than `MIN_ALTITUDE` degrees up. */
+export function isSeen(stars: ReadonlyArray<{ rightAscension: number; declination: number }>, hemisphere: Hemisphere, month: number): boolean {
+  const when = new Date(Date.UTC(2026, month - 1, 15, 21));
+  const observer = { latitude: LATITUDE[hemisphere], longitude: 0 };
+  const up = stars.filter((star) => horizontal({ rightAscension: star.rightAscension, declination: star.declination }, observer, when).altitude > MIN_ALTITUDE).length;
+  return up * 2 > stars.length;
+}
+
+/** Whether a figure is in the sky of a hemisphere in a month, or (month 0) in some month of the year. */
+export const isSeenIn = (stars: ReadonlyArray<{ rightAscension: number; declination: number }>, hemisphere: Hemisphere, month: number): boolean => (month > 0 ? isSeen(stars, hemisphere, month) : Array.from({ length: 12 }, (_, i) => i + 1).some((m) => isSeen(stars, hemisphere, m)));
+
 const cache = new Map<string, readonly string[]>();
 
 /**
@@ -26,14 +37,10 @@ export function seenIn(hemisphere: Hemisphere, month: number): readonly string[]
   const key = `${hemisphere}${month}`;
   const held = cache.get(key);
   if (held !== undefined) return held;
-  const when = new Date(Date.UTC(2026, month - 1, 15, 21));
-  const observer = { latitude: LATITUDE[hemisphere], longitude: 0 };
   const seen = constellations()
     .filter((c) => {
       const figure = figureOf(c.abbreviation).stars;
-      const marks = figure.length > 0 ? figure : starsIn(c.abbreviation).filter((star) => star.magnitude < 5);
-      const up = marks.filter((star) => horizontal({ rightAscension: star.rightAscension, declination: star.declination }, observer, when).altitude > MIN_ALTITUDE).length;
-      return up * 2 > marks.length;
+      return isSeen(figure.length > 0 ? figure : starsIn(c.abbreviation).filter((star) => star.magnitude < 5), hemisphere, month);
     })
     .map((c) => c.abbreviation);
   cache.set(key, seen);
