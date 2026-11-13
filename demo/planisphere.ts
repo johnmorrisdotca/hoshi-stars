@@ -16,14 +16,19 @@ const LABEL_LIMIT = 24;
 /** What a key turns the disc by, in degrees: 15 minutes of the sky's turn. */
 const KEY_DEGREES = 3.75;
 
+/** The device's own date and clock time, or the given hour on its date (its time zone and daylight saving time included) as a moment on the wheel's clock: the dial is set to the numbers the reader's clock shows, and the page says that the sky of a zone's clock can differ from the Sun's time. */
+const deviceClock = (hour?: number): number => {
+  const d = new Date();
+  return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), hour ?? d.getHours(), hour === undefined ? d.getMinutes() : 0);
+};
 const clampLatitude = (value: number): number => Math.min(70, Math.max(20, Math.round(value)));
 const startLatitude = Number(address.get("lat"));
 const startMoment = parseMoment(address.get("date"), address.get("time"));
 const state = {
   south: address.get("hemi") === "s",
   latitude: Number.isFinite(startLatitude) && startLatitude >= 20 && startLatitude <= 70 ? Math.round(startLatitude) : 45,
-  /** Milliseconds on the wheel's own clock: the Sun's time at the place, read as UTC. Kept exact while dragging, to the minute in the address. */
-  ms: startMoment ?? (Math.floor(Date.now() / 86_400_000) * 86_400_000 + 21 * 3_600_000),
+  /** Milliseconds on the wheel's own clock: the Sun's time at the place, read as UTC. Kept exact while dragging, to the minute in the address. With none in the address, 21:00 on the reader's own date. */
+  ms: startMoment ?? deviceClock(21),
 };
 const signed = (): number => (state.south ? -state.latitude : state.latitude);
 
@@ -106,12 +111,18 @@ function turned(): void {
   const inside = namedStarsInWindow(signed(), state.ms);
   const parts = describe();
   const list = $("#pl-list");
-  list.replaceChildren(...inside.slice(0, LABEL_LIMIT).map((star) => {
-    const item = document.createElement("li");
-    item.dataset["hr"] = String(star.hr);
-    item.textContent = nameOf(star);
-    return item;
-  }));
+  const shown = inside.slice(0, LABEL_LIMIT);
+  // the list is made again only when the stars in the window, or the language, change
+  const key = `${lang()} ${shown.map((star) => star.hr).join(",")}`;
+  if (list.dataset["key"] !== key) {
+    list.dataset["key"] = key;
+    list.replaceChildren(...shown.map((star) => {
+      const item = document.createElement("li");
+      item.dataset["hr"] = String(star.hr);
+      item.textContent = nameOf(star);
+      return item;
+    }));
+  }
   $("#pl-summary").textContent = inside.length === 0 ? say("pl_summaryNone", parts) : say("pl_summary", { ...parts, n: inside.length, name: nameOf(inside[0]!) });
   $("#pl-summary").dataset["count"] = String(inside.length);
   const text = momentText(state.ms);
@@ -122,10 +133,12 @@ function turned(): void {
   const latBox = $<HTMLInputElement>("#pl-latitude");
   if (document.activeElement !== latBox) latBox.value = String(state.latitude);
   const wheel = $("#pl-wheel");
+  wheel.dataset["turn"] = f(turn);
+  // the slider's words change when the hand is lifted, not on every frame of a drag
+  if (dragging !== null) return;
   wheel.setAttribute("aria-valuenow", String(Number(text.time.slice(0, 2)) * 60 + Number(text.time.slice(3))));
   wheel.setAttribute("aria-valuetext", `${text.date} ${text.time}`);
   wheel.setAttribute("aria-label", say("pl_chartLabel", parts));
-  wheel.dataset["turn"] = f(turn);
 }
 
 let frame = 0;
@@ -159,6 +172,8 @@ const angleOf = (event: PointerEvent): number => {
 wheel.addEventListener("pointerdown", (event) => {
   if (event.pointerType === "mouse" && event.button !== 0) return;
   dragging = { id: event.pointerId, last: angleOf(event) };
+  // a drag is not read out frame by frame: the summary is silent until the hand is lifted
+  $("#pl-summary").setAttribute("aria-live", "off");
   wheel.setPointerCapture(event.pointerId);
   wheel.focus({ preventScroll: true });
 });
@@ -173,6 +188,7 @@ wheel.addEventListener("pointermove", (event) => {
 const release = (event: PointerEvent): void => {
   if (dragging === null || event.pointerId !== dragging.id) return;
   dragging = null;
+  $("#pl-summary").removeAttribute("aria-live");
   turned();
   keep();
 };
@@ -197,6 +213,11 @@ $("#pl-earlier").addEventListener("click", () => {
 });
 $("#pl-later").addEventListener("click", () => {
   state.ms += 3_600_000;
+  turned();
+  keep();
+});
+$("#pl-now").addEventListener("click", () => {
+  state.ms = deviceClock();
   turned();
   keep();
 });

@@ -36,7 +36,7 @@ async function compare(page: Page, latitude: number): Promise<{ drawn: Set<strin
     const altitude = horizontal(starPosition(starByName(star.name)!), { latitude, longitude: 0 }, when).altitude;
     sky.set(star.name, altitude);
     if (spots[i] === true) drawn.add(star.name);
-    // a star within two degrees of the horizon may be on either side: the disc is not carried to the date
+    // a star within two degrees of the horizon may be on either side: the disc is not carried to the date (up to about 0.4 degrees of precession in 26 years), and the circle's place is read from the screen
     if (spots[i] !== null && Math.abs(altitude) > 2) {
       expect(spots[i], `${star.name} at latitude ${latitude}, ${new Date(when).toISOString()}: altitude ${altitude.toFixed(1)}`).toBe(altitude > 0);
       checked += 1;
@@ -192,4 +192,57 @@ test("Japanese words, the stars in katakana, and the dark page; and the wheel dr
     setTimeout(() => resolve(count), 1000);
   }));
   expect(changes).toBe(0);
+});
+
+test.describe("the time is the Sun's time, said beside the time boxes, and Now is the device's own clock", () => {
+  // 05:30 UTC on 13 November is 21:30 on the 12th in Vancouver: the UTC date and the device's date differ
+  test.use({ timezoneId: "America/Vancouver" });
+  test("the page starts at 21:00 on the reader's date and Now sets the dial to the device's date and clock time", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-11-13T05:30:00Z"));
+    await page.goto(PAGE);
+    await expect(page.locator("#pl-date")).toHaveValue("2026-11-12");
+    await expect(page.locator("#pl-time")).toHaveValue("21:00");
+    await page.goto(`${PAGE}?date=2026-06-21&time=03:00`);
+    await page.locator("#pl-now").click();
+    await expect(page.locator("#pl-date")).toHaveValue("2026-11-12");
+    await expect(page.locator("#pl-time")).toHaveValue("21:30");
+    await expect(summary(page)).toContainText("2026-11-12, 21:30");
+    await expect.poll(() => param(page, "date")).toBe("2026-11-12");
+    await expect.poll(() => param(page, "time")).toBe("21:30");
+    // the sky is the one for those numbers on the wheel's own clock
+    const { checked } = await compare(page, 45);
+    expect(checked).toBeGreaterThan(12);
+  });
+
+  test("the note beside the time boxes says it is not the zone's clock, and that the sky can be an hour out, in English and Japanese", async ({ page }) => {
+    for (const [lang, words] of [["en", ["not the clock of your time zone", "up to about an hour", "daylight saving"]], ["ja", ["時間帯の時計ではありません", "最大1時間", "サマータイム"]]] as const) {
+      await page.goto(`${PAGE}?date=2026-11-08&time=21:00&lang=${lang}`);
+      const note = page.getByTestId("pl-time-note");
+      for (const word of words) await expect(note).toContainText(word);
+      await expect(page.locator("#pl-now")).toHaveText(lang === "ja" ? "いま" : "Now");
+      // it sits with the time control: under the date and time row, above the wheel
+      const [time, noteBox, wheel] = await Promise.all([page.locator("#pl-time").boundingBox(), note.boundingBox(), page.getByTestId("pl-wheel").boundingBox()]);
+      expect(noteBox!.y).toBeGreaterThan(time!.y);
+      expect(noteBox!.y + noteBox!.height).toBeLessThanOrEqual(wheel!.y + 1);
+      await expect(page.locator("label", { has: page.locator("#pl-time") })).toContainText(lang === "ja" ? "太陽時" : "the Sun's time");
+    }
+  });
+});
+
+test("a drag is not read out frame by frame: the summary is silent while the hand is down and speaks when it is lifted", async ({ page }) => {
+  await page.goto(`${PAGE}?hemi=n&lat=45&date=2026-12-21&time=18:00`);
+  await expect(summary(page)).toHaveAttribute("role", "status");
+  await expect(summary(page)).not.toHaveAttribute("aria-live", "off");
+  await page.getByTestId("pl-svg").scrollIntoViewIfNeeded();
+  const svg = (await page.getByTestId("pl-svg").boundingBox())!;
+  const [x, y, r] = [svg.x + svg.width / 2, svg.y + svg.height / 2, svg.width * 0.3];
+  await page.mouse.move(x, y - r);
+  await page.mouse.down();
+  await page.mouse.move(x + r * Math.sin(0.3), y - r * Math.cos(0.3));
+  await expect(summary(page)).toHaveAttribute("aria-live", "off");
+  await page.mouse.move(x + r * Math.sin(0.6), y - r * Math.cos(0.6));
+  await expect(page.getByTestId("pl-wheel")).toHaveAttribute("aria-valuetext", "2026-12-21 18:00");
+  await page.mouse.up();
+  await expect(summary(page)).not.toHaveAttribute("aria-live", "off");
+  await expect(page.getByTestId("pl-wheel")).toHaveAttribute("aria-valuetext", /^2026-12-21 17:/);
 });

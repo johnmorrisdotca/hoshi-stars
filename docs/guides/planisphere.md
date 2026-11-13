@@ -19,11 +19,11 @@ From the middle out: the stars to magnitude 5 round the pole (the north celestia
 | Sky's hours | Right ascension, 0 to 23, on the disc. | Even: 15 degrees an hour. |
 | Clock | The hours of the day on the plate, 12 at the top and the later hours the way the stars set. | Even: 15 degrees an hour. |
 
-The window is a circle of the same chart. Its radius is `k / sin(latitude)` and its middle is `k / tan(latitude)` from the pole, where `k` is the chart's scale: that circle is the horizon, because a stereographic chart keeps circles round. N, E, S and W are written round its edge. A wheel is made for 20 to 70 degrees north or south; a place nearer the equator is drawn as 20.
+The window is a circle of the same chart. Its radius is `k / sin(latitude)` and its middle is `k / tan(latitude)` from the pole, where `k` is the chart's scale: that circle is the horizon, because a stereographic chart keeps circles round. N, E, S and W are written round its edge: the window is the sky as you face north on the north wheel (south on the south one), so east is on the right of the north wheel and on the left of the south one, as on the printed wheel. A wheel is made for 20 to 70 degrees north or south; a place nearer the equator is drawn as 20.
 
 ## What turning does
 
-The disc turns by the local sidereal time: minus it in the north, plus it in the south. The time is **the Sun's time at your place** (it is noon when the Sun is highest) read as if the place were on the Greenwich meridian, so the page has no time zone and no longitude to ask for. The date and the time boxes, the buttons for an hour earlier and later, a drag and the arrow keys all change that one moment, and the wheel is drawn from it.
+The disc turns by the local sidereal time: minus it in the north, plus it in the south. The time is **the Sun's time at your place** (local mean solar time: a sundial can differ from it by up to about 16 minutes through the year) read as if the place were on the Greenwich meridian, so the page has no time zone and no longitude to ask for. It is not your time zone's clock, and the page says so beside the time boxes. **Now** sets the dial to your device's own date and clock time as they show, so the window can differ from the real sky by up to about an hour, from the time zone and from daylight saving time. The page starts at 21:00 on your own date. The date and the time boxes, the buttons for an hour earlier and later, a drag and the arrow keys all change that one moment, and the wheel is drawn from it.
 
 - A drag turns the wheel as your hand does. In the north the sky goes round the pole anticlockwise, so a clockwise turn is an earlier time; in the south it is the other way.
 - A key turns the disc 15 minutes of the sky's turn (about 3.75 degrees), with Shift an hour, and Page Up and Page Down move the date by a day. Arrow Right and Arrow Up turn it clockwise, Arrow Left and Arrow Down anticlockwise.
@@ -31,7 +31,7 @@ The disc turns by the local sidereal time: minus it in the north, plus it in the
 
 ## Does the window agree with the sky?
 
-The window holds a star exactly when `horizontal()` puts it above the horizon. The page's tests check that three ways: against the printed plate's window circle and the printed disc's star positions, against `horizontal()` for every star to magnitude 4.5 at eleven latitudes (north and south, 20 to 70) and twelve hours of a night, and in the browser by reading where the star's circle is on the screen against the window's circle. The disc is drawn at J2000 and not carried to the date, so a star within a degree of the horizon may be on either side; the tests leave those out and say so.
+The window holds a star exactly when `horizontal()` puts it above the horizon. The page's tests check that three ways: against the printed plate's window circle and the printed disc's star positions, against `horizontal()` for every star to magnitude 4.5 at eleven latitudes (north and south, 20 to 70) and twelve hours of a night, and in the browser by reading where the star's circle is on the screen against the window's circle. The disc is drawn at J2000 and not carried to the date (26 years of precession move a star by up to about 0.4 degrees), so a star within a degree of the horizon may be on either side; the tests leave those out and say so (two degrees in the browser, where the circle's place is read from the screen).
 
 ## Limits
 

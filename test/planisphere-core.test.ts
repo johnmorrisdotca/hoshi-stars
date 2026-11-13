@@ -46,7 +46,7 @@ test("inside the window is above the horizon: every star to magnitude 4.5 agains
       const turn = discTurn(latitude, when);
       for (const star of bright) {
         const sky = horizontal(starPosition(star), { latitude, longitude: 0 }, when);
-        if (Math.abs(sky.altitude) < 1) continue; // the disc is not precessed: a star within a degree of the horizon may be on either side
+        if (Math.abs(sky.altitude) < 1) continue; // the disc keeps J2000 positions while horizontal() carries the star to the date: 26 years of precession move a star by up to about 0.4 degrees, so one within a degree of the horizon may be on either side
         assert.equal(insideWindow(sheetPosition(star, latitude, turn), latitude), sky.altitude > 0, `HR ${star.hr} at latitude ${latitude}, ${hour}:17 (altitude ${sky.altitude.toFixed(2)})`);
         compared += 1;
       }
