@@ -59,10 +59,31 @@ test("a picture is not fetched at the opening view; zoomed in on a galaxy it is 
   expect(mine.length).toBeGreaterThanOrEqual(1);
   expect(new Set(mine).size, "each picture is fetched once").toBe(mine.length);
   expect(asked.length).toBeLessThanOrEqual(6);
-  // the picture is centred on the object it shows: its middle is within a tenth of its width of the outline's
-  const picture = await middleOf(page, "#chart image[data-pic='M51']");
-  const outline = await middleOf(page, '#chart [data-deep="M51"]');
-  expect(Math.hypot(picture.x - outline.x, picture.y - outline.y)).toBeLessThan(picture.width * 0.1 + 30);
+  // the picture is centred on the object it shows: its middle is within a tenth of its width of the outline's. The flight is over when the address has taken the new zoom (the page writes it as the
+  // flight settles); the chart draws on the next frame and WebKit lays a moved picture out a frame after that, so the two middles are read together, in one task after two frames, no draw can fall
+  // between them, until they agree. A picture that is really off its object never does.
+  await expect.poll(() => param(page, "zoom"), { message: "the flight to M51 settled and the address has its zoom" }).not.toBeNull();
+  await expect
+    .poll(async () => {
+      const { apart, width } = await page.evaluate(
+        () =>
+          new Promise<{ apart: number; width: number }>((resolve) =>
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                const middle = (selector: string): { x: number; y: number; width: number } => {
+                  const box = document.querySelector(selector)!.getBoundingClientRect();
+                  return { x: box.x + box.width / 2, y: box.y + box.height / 2, width: box.width };
+                };
+                const picture = middle("#chart image[data-pic='M51']");
+                const outline = middle('#chart [data-deep="M51"]');
+                resolve({ apart: Math.hypot(picture.x - outline.x, picture.y - outline.y), width: picture.width });
+              }),
+            ),
+          ),
+      );
+      return apart < width * 0.1 + 30;
+    }, { message: "the picture's middle is on the outline's" })
+    .toBe(true);
 });
 
 test("the Pictures layer is a toggle kept in the address", async ({ page }) => {
