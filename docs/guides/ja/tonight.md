@@ -7,7 +7,7 @@ description: "ある場所・ある時刻に見える星を、太陽・空の暗
 
 [English](../tonight.md)
 
-`@johnmorrisdotca/hoshi-stars/tonight` は「いま、ここから、何が見えるか」に答えます。[自分の空](sky-charts.md)の `horizontal`(高度と方位)を土台に、星が見えるかどうかを決める3つ(太陽、空そのものの明るさ、大気)を加えます。純粋な計算でDOMも時計も読まず(時刻は渡します)、独立したimportなので、使わないページが余計なものを読みこむことはありません。[デモのTonightページ](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html?lang=ja)は、この呼び出しに場所の選択をつけたものです。
+`@johnmorrisdotca/hoshi-stars/tonight` は「いま、ここから、何が見えるか」に答えます。[星図](sky-charts.md)の `horizontal`(高度と方位)を土台に、星が見えるかどうかを決める3つ(太陽、空そのものの明るさ、大気)を加えます。純粋な計算でDOMも時計も読まず(時刻は渡します)、独立したimportなので、使わないページが余計なものを読みこむことはありません。[デモのTonightページ](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html?lang=ja)は、この呼び出しに場所の選択をつけたものです。
 
 ```js
 import { visibleStars } from "@johnmorrisdotca/hoshi-stars/tonight";
