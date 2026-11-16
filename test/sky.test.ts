@@ -304,12 +304,12 @@ test("this package never imports wakusei-planets: no source mentions it and no d
   assert.equal(pkg.optionalDependencies, undefined);
 });
 
-test("only the chart element loads kazoku-ui: no other source imports it", () => {
+test("only the elements' hands load kazoku-ui: no other source imports it", () => {
   const dir = new URL("../src/", import.meta.url);
   const importing = readdirSync(dir, { recursive: true, encoding: "utf8" })
     .filter((f) => f.endsWith(".ts") && /from "@johnmorrisdotca\/kazoku-ui/.test(readFileSync(new URL(f, dir), "utf8")))
     .sort();
-  assert.deepEqual(importing, [join("chart", "hands.ts")]);
+  assert.deepEqual(importing, [join("chart", "hands.ts"), join("my-sky", "hands.ts")]);
 });
 
 test("bad input throws, naming the argument and the value", () => {

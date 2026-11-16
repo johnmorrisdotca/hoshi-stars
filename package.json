@@ -80,7 +80,9 @@
   "type": "module",
   "sideEffects": [
     "./dist/chart/define.js",
-    "./src/chart/define.ts"
+    "./src/chart/define.ts",
+    "./dist/my-sky/define.js",
+    "./src/my-sky/define.ts"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -140,6 +142,21 @@
       "types": "./dist/chart/define.d.ts",
       "import": "./dist/chart/define.js",
       "default": "./dist/chart/define.js"
+    },
+    "./my-sky": {
+      "types": "./dist/my-sky/index.d.ts",
+      "import": "./dist/my-sky/index.js",
+      "default": "./dist/my-sky/index.js"
+    },
+    "./my-sky/element": {
+      "types": "./dist/my-sky/element.d.ts",
+      "import": "./dist/my-sky/element.js",
+      "default": "./dist/my-sky/element.js"
+    },
+    "./my-sky/define": {
+      "types": "./dist/my-sky/define.d.ts",
+      "import": "./dist/my-sky/define.js",
+      "default": "./dist/my-sky/define.js"
     },
     "./boundaries": {
       "types": "./dist/boundaries.d.ts",

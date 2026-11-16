@@ -11,7 +11,7 @@ const NOTICE = "https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.
 
 /** The family's footer, with a link to every data credit beside the one-line credit, so a reader need not open anything to find the sources. */
 const footer = (): string => familyFooter({ id }).replace('<span data-say="foot"></span>', `<span><span data-say="foot"></span> <a href="${NOTICE}" data-say="creditsAll"></a></span>`);
-const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "quiz.html", say: "pageQuiz" }, { href: "layers-3d.html", say: "pageDistance" }, { href: "kids.html", say: "pageKids" }, { href: "tonight.html", say: "pageTonight" }, { href: "life.html", say: "pageLife" }, { href: "planisphere.html", say: "pageWheel" }, { href: "tap-dots.html", say: "pageTap" }, { href: "markers.html", say: "pageMarkers" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
+const LINKS = [{ href: "whole-sky.html", say: "pageWholeSky" }, { href: "constellations.html", say: "pageGallery" }, { href: "constellation-list.html", say: "pageList" }, { href: "constellation-3d.html", say: "pageSpace" }, { href: "birthday.html", say: "pageBirthday" }, { href: "quiz.html", say: "pageQuiz" }, { href: "layers-3d.html", say: "pageDistance" }, { href: "kids.html", say: "pageKids" }, { href: "tonight.html", say: "pageTonight" }, { href: "my-sky.html", say: "pageMySky" }, { href: "life.html", say: "pageLife" }, { href: "planisphere.html", say: "pageWheel" }, { href: "tap-dots.html", say: "pageTap" }, { href: "markers.html", say: "pageMarkers" }, { href: "docs/index.html", say: "pageDocs" }, { href: "embed.html", say: "pageEmbed" }];
 
 /** The page's text with the family's blocks put in where its comments say, in English: the language chooser changes the words in the browser. */
 export function renderIndex(): string {
@@ -44,6 +44,17 @@ export function renderTonight(): string {
     .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
     .replace("<!--family:footer-->", footer())
     .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/tonight.js"></script>`);
+}
+
+/** The my sky page: the sky as someone standing outside sees it, in the `<hoshi-my-sky>` element. */
+export function renderMySky(): string {
+  const html = readFileSync(new URL("../demo/my-sky.html", import.meta.url), "utf8");
+  return html
+    .replace("<!--family:head-->", familyHead({ id, title: WORDS.en.ms_title, description: WORDS.en.ms_description }))
+    .replace("<!--family:header-->", familyHeader({ id, links: LINKS }))
+    .replace("<!--family:unreviewed-->", familyUnreviewed({ id }))
+    .replace("<!--family:footer-->", footer())
+    .replace("<!--family:scripts-->", `<script src="family-boot.js"></script>\n    <script type="module" src="kazoku-parts.js"></script>\n    <script type="module" src="js/my-sky.js"></script>`);
 }
 
 /** The life of a star page: the Hertzsprung-Russell diagram of the graded stars. */

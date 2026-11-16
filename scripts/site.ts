@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
-import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderLayers, renderLife, renderPlanisphere, renderSpace, renderTap, renderTonight } from "./page.ts";
+import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderLayers, renderLife, renderMySky, renderPlanisphere, renderSpace, renderTap, renderTonight } from "./page.ts";
 import { chinese } from "../src/cultures/chinese.ts";
 import { japanese } from "../src/cultures/japanese.ts";
 import { writeCultureThumbnails, writeThumbnails } from "./thumbnail-files.ts";
@@ -22,6 +22,7 @@ writeFileSync(join(site, "index.html"), renderIndex().replace("</head>", `${thum
 publishThumbnails(root, site);
 writeFileSync(join(site, "kids.html"), renderKids());
 writeFileSync(join(site, "tonight.html"), renderTonight());
+writeFileSync(join(site, "my-sky.html"), renderMySky());
 writeFileSync(join(site, "life.html"), renderLife());
 writeFileSync(join(site, "planisphere.html"), renderPlanisphere());
 writeFileSync(join(site, "tap-dots.html"), renderTap());
@@ -45,7 +46,7 @@ writeFileSync(join(site, "family-boot.js"), familyBoot());
 cpSync(join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui", "dist", "body-label", "fonts"), join(site, "fonts"), { recursive: true });
 for (const file of ["embed.html", "embed-3d.html", "embed-layers.html", "embed-quiz.html", "markers.html", "star.html", "demo.css", "family.css", "gallery.css", "quiz.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
 await build({
-  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), tonight: join(root, "demo", "tonight.ts"), life: join(root, "demo", "life.ts"), planisphere: join(root, "demo", "planisphere.ts"), "tap-dots": join(root, "demo", "tap-dots.ts"), gallery: join(root, "demo", "gallery.ts"), quiz: join(root, "demo", "quiz.ts"), "quiz-panel": join(root, "demo", "quiz-panel.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts"), markers: join(root, "demo", "markers.ts") },
+  entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), kids: join(root, "demo", "kids.ts"), tonight: join(root, "demo", "tonight.ts"), "my-sky": join(root, "demo", "my-sky.ts"), life: join(root, "demo", "life.ts"), planisphere: join(root, "demo", "planisphere.ts"), "tap-dots": join(root, "demo", "tap-dots.ts"), gallery: join(root, "demo", "gallery.ts"), quiz: join(root, "demo", "quiz.ts"), "quiz-panel": join(root, "demo", "quiz-panel.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts"), markers: join(root, "demo", "markers.ts") },
   outdir: join(site, "js"),
   bundle: true,
   splitting: true,

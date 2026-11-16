@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--family:head-->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <link rel="stylesheet" href="family.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <main>
+      <!--family:header-->
+      <!--family:unreviewed-->
+      <section class="mysky" aria-labelledby="ms-heading">
+        <h1 id="ms-heading" class="kids-title" data-say="ms_heading"></h1>
+        <p class="lead" data-say="ms_lede"></p>
+        <div class="kids-picks">
+          <div class="fam-row">
+            <span class="fam-label" data-say="ms_where"></span>
+            <span class="fam-seg" id="places" role="group" data-say-label="ms_where"></span>
+            <button type="button" class="fam-button" id="here" data-say="ms_here"></button>
+          </div>
+          <div class="fam-row">
+            <span class="fam-label" data-say="ms_own"></span>
+            <label class="field"><span data-say="ms_latitude"></span><input id="lat" class="fam-field" type="number" min="-90" max="90" step="0.01" /></label>
+            <label class="field"><span data-say="ms_longitude"></span><input id="lon" class="fam-field" type="number" min="-180" max="180" step="0.01" /></label>
+          </div>
+          <p class="fam-fine" id="where-note" role="status"></p>
+          <div class="fam-row">
+            <span class="fam-label" data-say="ms_when"></span>
+            <button type="button" class="fam-button" id="now" data-say="ms_now"></button>
+            <label class="field"><span data-say="ms_moment"></span><input id="moment" class="fam-field" type="datetime-local" /></label>
+            <button type="button" class="fam-button" id="reset" data-say="ms_reset"></button>
+          </div>
+        </div>
+        <hoshi-my-sky id="sky" class="mysky-sky" data-testid="my-sky"></hoshi-my-sky>
+      </section>
+      <!--family:footer-->
+    </main>
+    <!--family:scripts-->
+  </body>
+</html>

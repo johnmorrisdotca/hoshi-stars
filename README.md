@@ -404,6 +404,24 @@ const sydney = skyForLatitude(-33.9);
 console.log(page.includes("Join the dots from 1 to"), sydney.find((one) => one.constellation.abbreviation === "UMi")?.standing); // true never
 ```
 
+## See my sky
+
+`<hoshi-my-sky>` is the sky as someone standing outside sees it, at a place and a moment: a horizon with N, E, S and W, stars and constellations where they really are, the Moon in its real phase with its % lit and its rise and set, the planets that are up, and a dark ground under the horizon. A drag turns you round and up. With no `time` it is live. The maths is pure and tested, and is its own import:
+
+```js
+import { skyReport } from "@johnmorrisdotca/hoshi-stars/my-sky";
+
+const report = skyReport({ latitude: 49.28, longitude: -123.12 }, new Date("2026-11-17T04:00:00Z"));
+console.log(Math.round(report.moon.phase.illuminated * 100), report.moon.phase.name, report.planets.filter((p) => p.up).map((p) => p.id).join()); // 47 first-quarter saturn
+```
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/my-sky/define/+esm"></script>
+<hoshi-my-sky latitude="49.28" longitude="-123.12" style="height: 80vh"></hoshi-my-sky>
+```
+
+The attributes, the events, the Moon, planet and camera functions and how to open it from a button are in [See my sky](docs/guides/my-sky.md), and the [My sky page](https://johnmorrisdotca.github.io/hoshi-stars/my-sky.html) of the demo is the element with a place and a time to choose.
+
 ## Put a chart in a page
 
 The demo's sky chart is an element: `<hoshi-chart>` draws the bright stars on any of seven projections, with the Milky Way, the figures' lines, the names, the boundaries, the deep-sky objects and the black holes, in English or Japanese and in the Western, Japanese or Chinese sky. A drag moves it, a pinch or Ctrl and the wheel zoom, and a tap says what it landed on (`hoshi-pick`).

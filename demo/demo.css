@@ -191,3 +191,5 @@ kazoku-embed-panel { --kazoku-ink: var(--ink); --kazoku-surface: var(--surface);
 }
 @keyframes tap-shake { 0%, 100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 @keyframes tap-grow { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+/* the my sky page: one tall box of sky under the choices, as wide as the page and no taller than a screen */
+.mysky-sky { width: 100%; height: min(78vh, 760px); min-height: 380px; aspect-ratio: auto; border-radius: 10px; margin-top: 10px; }
