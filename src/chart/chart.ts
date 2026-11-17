@@ -15,7 +15,7 @@ import { western } from "../cultures/western.ts";
 import { milkyWayBands } from "../milky-way.ts";
 import { faintMarks, type FaintDraw } from "./faint-layer.ts";
 import { dimsForUncertainty, UNCERTAIN_OPACITY } from "./uncertainty.ts";
-import { project, unproject, type Projection, type SkyPoint } from "../projection.ts";
+import { project, projector, unproject, type Projection, type SkyPoint } from "../projection.ts";
 import type { SeenSky } from "../sky-from.ts";
 import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
 import { figureLinesSvg, figureNameSvg, starNamesSvg } from "./sky-labels-svg.ts";
@@ -253,9 +253,38 @@ type Placer = (point: SkyPoint) => [number, number] | undefined;
 
 function placer(view: View, width: number, height: number): Placer {
   const reach = Math.max(6 * Math.max(width, height), 1e5);
+  // the projection is set up once for the frame, not for each of the thousands of points placed in it
+  const project = projector(view.projection, { centre: centreOf(view), scale: scaleOf(view, width, height) });
   return (point) => {
-    const at = toScreen(view, width, height, point);
+    const p = project(point);
+    const at: [number, number] | undefined = p === undefined ? undefined : [width / 2 + p.x, height / 2 - p.y];
     return at === undefined || Math.abs(at[0] - width / 2) > reach || Math.abs(at[1] - height / 2) > reach ? undefined : at;
+  };
+}
+
+const ROUND_PROJECTIONS: readonly Projection[] = ["stereographic", "gnomonic", "orthographic", "equidistant"];
+const unitVectors = new WeakMap<object, [number, number, number]>();
+/**
+ * For a projection that spreads the sky out round the middle (distance from the middle on the chart grows with the angle from it): a test that is false for a point too far from the middle to
+ * be inside the chart's margin of 24 pixels, and true for every other, with a hair of slack. `undefined` where it cannot tell (the whole-sky maps, or a chart wider than the sky it shows).
+ */
+export function nearEnough(view: View, width: number, height: number): ((point: SkyPoint) => boolean) | undefined {
+  if (!ROUND_PROJECTIONS.includes(view.projection)) return undefined;
+  const corner = Math.hypot(width / 2 + 24, height / 2 + 24);
+  const far = unproject(view.projection, { x: corner, y: 0 }, { centre: centreOf(view), scale: scaleOf(view, width, height) });
+  if (far === undefined) return undefined;
+  const d = Math.PI / 180;
+  const unit = (p: SkyPoint): [number, number, number] => [Math.cos(p.declination * d) * Math.cos(p.rightAscension * d), Math.cos(p.declination * d) * Math.sin(p.rightAscension * d), Math.sin(p.declination * d)];
+  const [cx, cy, cz] = unit(centreOf(view));
+  const [fx, fy, fz] = unit(far);
+  // the angle from the middle to the point where the corner's distance falls, and a hair more (a millionth of a radian)
+  const angle = Math.acos(Math.max(-1, Math.min(1, cx * fx + cy * fy + cz * fz))) + 1e-6;
+  if (angle >= Math.PI / 2) return undefined;
+  const floor = Math.cos(angle);
+  return (point) => {
+    let v = unitVectors.get(point);
+    if (v === undefined) unitVectors.set(point, (v = unit(point)));
+    return cx * v[0] + cy * v[1] + cz * v[2] >= floor;
   };
 }
 
@@ -491,6 +520,14 @@ function withinWidth(ring: Array<[number, number]>): Array<Array<[number, number
   return pieces;
 }
 
+const bandCache = new Map<number, ReturnType<typeof milkyWayBands>>();
+/** The Milky Way's ribbons at a step: worked out once, not on every frame of a pan (they depend on no view, and nothing here changes them). */
+function bandsAt(step: number): ReturnType<typeof milkyWayBands> {
+  let found = bandCache.get(step);
+  if (found === undefined) bandCache.set(step, (found = milkyWayBands(MILKY.levels, { step })));
+  return found;
+}
+
 /** The Milky Way: a few soft bands of light, each a set of ribbons along the galactic equator, drawn under everything else. */
 function milkyWay(view: View, place: Placer, width: number, height: number): string {
   const here = toScreen(view, width, height, centreOf(view));
@@ -541,7 +578,7 @@ function milkyWay(view: View, place: Placer, width: number, height: number): str
     return found;
   };
   let svg = "";
-  milkyWayBands(MILKY.levels, { step: view.zoom >= 1.8 ? 1 : 2 }).forEach((band, i) => {
+  bandsAt(view.zoom >= 1.8 ? 1 : 2).forEach((band, i) => {
     let d = "";
     for (const strip of band.strips) {
       for (const polygon of polygons(strip)) {
@@ -750,7 +787,9 @@ function drawChart(o: ChartOptions): Chart {
       const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;
       if (extra !== undefined && extra.magnitude > depth) drawn.push(extra);
     }
-    for (const star of drawn) plot(String(star.hr), star, star.magnitude, () => starColour(star), lang === "ja" ? star.nameJa ?? star.name : star.name, star.designation ?? `HR ${star.hr}`, o.showUncertainty === true && dimsForUncertainty(star));
+    // a star farther from the middle than the chart's corner cannot land on it: it is passed by without being placed (the stars drawn are the same)
+    const reachable = nearEnough(view, width, height);
+    for (const star of drawn) if (reachable === undefined || reachable(star)) plot(String(star.hr), star, star.magnitude, () => starColour(star), lang === "ja" ? star.nameJa ?? star.name : star.name, star.designation ?? `HR ${star.hr}`, o.showUncertainty === true && dimsForUncertainty(star));
   } else {
     for (const star of o.sky) {
       if (star.magnitude > depth && !near.has(`S:${keyOfSeen(star.id)}`)) continue;

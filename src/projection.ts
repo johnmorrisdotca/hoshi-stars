@@ -191,7 +191,31 @@ function mollweideAngle(latitude: number): number {
  * ```
  */
 export function project(kind: Projection, point: SkyPoint, options: ProjectionOptions): MapPoint | undefined {
+  return projectWith(kind, setup(kind, options), point);
+}
+
+/**
+ * `project` for many points of one view: the projection and its options are checked and set up once, and the function returned places a point as `project(kind, point, options)` does, to the last digit.
+ *
+ * @param kind - The projection.
+ * @param options - The same options `project` takes.
+ * @returns A function from a sky position to its place on the chart, or `undefined` where `project` gives none.
+ * @throws RangeError if `kind` is unknown, or an option is not a finite number, or `scale` is not above 0. The returned function throws what `project` throws for a bad point.
+ *
+ * @example
+ * ```ts
+ * import { projector } from "@johnmorrisdotca/hoshi-stars/projection";
+ *
+ * const place = projector("stereographic", { centre: { rightAscension: 83.8, declination: -5.4 }, scale: 300 });
+ * console.log(place({ rightAscension: 88.79, declination: 7.41 }));
+ * ```
+ */
+export function projector(kind: Projection, options: ProjectionOptions): (point: SkyPoint) => MapPoint | undefined {
   const o = setup(kind, options);
+  return (point) => projectWith(kind, o, point);
+}
+
+function projectWith(kind: Projection, o: Setup, point: SkyPoint): MapPoint | undefined {
   sky("point", point);
   const dec = point.declination * RAD;
   const dl = wrapPi(point.rightAscension * RAD - o.ra0);

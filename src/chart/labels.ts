@@ -75,6 +75,8 @@ export function withMeasure<T>(measure: ((text: string, font: string) => number)
 export const overlaps = (a: Box, b: Box): boolean => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
 
 const CELL = 48;
+/** An obstacle more than this many cells across is tested outright (see `placeLabels`). */
+const BIG = 8;
 
 /**
  * Chooses a place for each label so that no two labels touch and none sits on an obstacle. Labels are taken in the order given, so the most important comes first; a label none of whose
@@ -95,19 +97,25 @@ const CELL = 48;
  */
 export function placeLabels(candidates: ReadonlyArray<readonly Box[]>, obstacles: readonly Box[]): Array<number | undefined> {
   const grid = new Map<number, Box[]>();
+  // an obstacle many cells across (the chart's four edges are each 20,000 pixels long) is kept in a short list and tested outright, not entered in a hundred thousand cells: a label touches it exactly when they overlap
+  const wide: Box[] = [];
   const keys = (box: Box): number[] => {
     const out: number[] = [];
     for (let gx = Math.floor(box.x0 / CELL); gx <= Math.floor(box.x1 / CELL); gx += 1) for (let gy = Math.floor(box.y0 / CELL); gy <= Math.floor(box.y1 / CELL); gy += 1) out.push(gx * 100_003 + gy);
     return out;
   };
   const add = (box: Box): void => {
+    if (box.x1 - box.x0 > CELL * BIG || box.y1 - box.y0 > CELL * BIG) {
+      wide.push(box);
+      return;
+    }
     for (const key of keys(box)) {
       const cell = grid.get(key);
       if (cell === undefined) grid.set(key, [box]);
       else cell.push(box);
     }
   };
-  const free = (box: Box): boolean => keys(box).every((key) => !(grid.get(key) ?? []).some((other) => overlaps(box, other)));
+  const free = (box: Box): boolean => !wide.some((other) => overlaps(box, other)) && keys(box).every((key) => !(grid.get(key) ?? []).some((other) => overlaps(box, other)));
   for (const box of obstacles) add(box);
   return candidates.map((places) => {
     const at = places.findIndex(free);

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A pan frame costs a tenth of what it did** (MODULES-920). Dragging the demo's map at zoom 80 over Cygnus took 31 ms a frame at the 95th percentile on a laptop drawing in software and 118 ms with the CPU slowed four times; it now takes 3.6 ms and 14.6 ms, and the picture is the same to the byte (SVG strings and tap targets of 1,372 views, and seven screenshots, equal before and after). The time was not in the faint stars, the Milky Way or the pictures: it was the names' placing. `placeLabels` entered each of the chart's four 20,000-pixel edges in every cell of its grid, about 700,000 entries a frame, and the garbage collector paid for them; an obstacle many cells across is now tested outright. Also: the projection is set up once for a frame (new `projector` in `/projection`, the same numbers as `project`), the Milky Way's ribbons are worked out once instead of on every frame, and on the projections that spread the sky round the middle a star too far from it to land on the chart is passed by without being placed. Tests: `test/pan-frame.test.ts` and `e2e/pan-frame.demo.ts` (the new bar: 12 ms a step of CPU slowing for the 95th percentile of a pan, 50 ms on CI); the faint test's ceiling is 60 ms, not 250, and it tells a frame by the drawing it made, not by taking over 1.5 ms.
+
 ## [0.49.2] - 2026-11-17
 
 - **Kid mode's month box is as tall as its buttons in Safari** (MODULES-1444). In WebKit the native month select kept the 48 px height the demo gives every select and ignored kid mode's bigger `min-height`, so it stood 48 px high beside 60 px buttons; kid mode now sets its height to 60 px, as the other browsers already drew it.
