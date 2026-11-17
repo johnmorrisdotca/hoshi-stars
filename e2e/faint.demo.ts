@@ -105,7 +105,7 @@ async function dragFrames(page: Page, query: string): Promise<{ frames: number[]
   const box = (await page.locator("#chart-box").boundingBox())!;
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
-  const drawn = (): Promise<number> => page.evaluate(() => (window as unknown as { drawMs: number[] }).drawMs.filter((ms) => ms > 1.5).length);
+  const drawn = (): Promise<number> => page.evaluate(() => (window as unknown as { drawMs: number[] }).drawMs.length);
   const most = { paths: 0, dots: 0 };
   await page.mouse.move(x, y);
   await page.mouse.down();
@@ -122,7 +122,7 @@ async function dragFrames(page: Page, query: string): Promise<{ frames: number[]
   }
   await page.mouse.up();
   if (faint) await expect.poll(() => dots(page)).toBeGreaterThan(20);
-  const all = (await page.evaluate(() => (window as unknown as { drawMs: number[] }).drawMs)).filter((ms) => ms > 1.5);
+  const all = await page.evaluate(() => (window as unknown as { drawMs: number[] }).drawMs);
   expect(all.length).toBeGreaterThanOrEqual(120);
   return { frames: all.slice(10), ...most };
 }
@@ -131,18 +131,22 @@ const p95Of = (frames: number[]): number => [...frames].sort((a, b) => a - b)[Ma
 // The faint stars must add little to a frame. The bar is set against the same drag without them, in the same browser, so it holds on a runner of any speed: on a laptop drawing in
 // software a frame here is about 22 ms; with the CPU slowed five times, about CI's speed, the 95th percentile was 61 to 113 ms with the faint stars on and 62 to 95 without, run to run,
 // and 66 with only lines, names and grid (the Milky Way and the pictures are most of a frame). The two are taken in turn, twice, so a runner that slows part way through slows both.
-// The ceiling of 250 ms (four frames a second) only catches a broken chart.
+// The ceiling of 60 ms only catches a broken chart (it was 250 while a frame took 22 to 100 ms; a frame now takes about 3 ms, 15 with the CPU slowed four times, and e2e/pan-frame.demo.ts holds the frame itself).
 // The time bar is this computer's. On CI a shared runner's frame times say how busy its neighbours are: there the 95th percentile with the faint stars read 83.5 ms against a bar of 81.5 (55 without) once,
 // and in the CI image on one CPU 128 to 133 with and 113 to 119 without. So CI holds the faint layer's work, which does not vary with the runner: at every tenth step of the drag the layer is at most
-// a path for each size and colour class (18) holding at most FAINT_DOT_CAP dots, and it draws (more than 20 dots); and the ceiling of 250 ms.
+// a path for each size and colour class (18) holding at most FAINT_DOT_CAP dots, and it draws (more than 20 dots); and the ceiling of 60 ms.
 test("panning the zoomed-in map: the faint stars add little to a frame, and they follow the sky", async ({ page, browserName, isMobile }) => {
   test.skip(browserName !== "chromium" || isMobile, "the drag is a Chromium mouse drag; the frame budget is measured once");
   test.setTimeout(240_000);
   await page.addInitScript(() => {
     const w = window as unknown as { drawMs: number[] };
     w.drawMs = [];
+    // a frame is the callback that put a drawing in the map (it can take under 1.5 ms now, so it is no longer told by its length)
+    const wd = window as unknown as { drew: boolean };
+    const html = Object.getOwnPropertyDescriptor(Element.prototype, "innerHTML")!;
+    Object.defineProperty(Element.prototype, "innerHTML", { ...html, set(value: string) { if (this.tagName === "svg") wd.drew = true; html.set!.call(this, value); } });
     const raf = window.requestAnimationFrame.bind(window);
-    window.requestAnimationFrame = (cb) => raf((t) => { const start = performance.now(); cb(t); w.drawMs.push(performance.now() - start); });
+    window.requestAnimationFrame = (cb) => raf((t) => { wd.drew = false; const start = performance.now(); cb(t); if (wd.drew) w.drawMs.push(performance.now() - start); });
   });
   const on: number[] = [];
   const off: number[] = [];
@@ -163,7 +167,7 @@ test("panning the zoomed-in map: the faint stars add little to a frame, and they
   expect(most.dots, "the faint layer's dots in a step").toBeLessThanOrEqual(FAINT_DOT_CAP);
   expect(most.dots, "the faint layer's dots in a step").toBeGreaterThan(20);
   if (!process.env.CI) expect(withFaint, `the 95th percentile of ${on.length} frames with the faint stars, against ${without.toFixed(1)} ms without, ms`).toBeLessThanOrEqual(1.3 * without + 10);
-  expect(withFaint, "the 95th percentile with the faint stars, ms").toBeLessThan(250);
+  expect(withFaint, "the 95th percentile with the faint stars, ms").toBeLessThan(60);
 });
 
 test("nothing is drawn and nothing is fetched at rest", async ({ page }) => {
