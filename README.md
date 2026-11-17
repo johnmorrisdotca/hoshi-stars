@@ -208,6 +208,7 @@ console.log(unproject("stereographic", betelgeuse!, options).rightAscension.toFi
 - `project` gives `undefined` for a point that is not on the visible side (the far hemisphere of `orthographic` and `gnomonic`, the antipode of `stereographic`). `unproject` gives `undefined` outside the map.
 - `scale` is the radius of the sky in drawing units (default 1). `rotation` turns the chart anticlockwise, in degrees. For `equirectangular` to give degrees, pass `scale: 180 / Math.PI`.
 - `mollweide` and `hammer` are equal-area ovals of the whole sky, 2 sqrt(2) by sqrt(2) times `scale`, turned so the centre is the middle.
+- To place many points with the same kind and options, `projector(kind, options)` sets the projection up once and returns a function of one point, with the same answers as `project`. The chart uses it once per frame.
 - A million projections take 50 to 230 ms on a laptop (Mollweide is the slowest). The formulas are from J. P. Snyder, *Map Projections: A Working Manual* (USGS Professional Paper 1395, 1987).
 
 ## Your sky, and the sky from another planet
