@@ -8,6 +8,7 @@ import { paintBackground } from "./background.ts";
 import { drawMoonDisc, drawMoonGlow, drawPlanet, drawSun, halo, planetRadius, ring } from "./bodies-draw.ts";
 import type { Direction, LocalFrame } from "./frame.ts";
 import type { SkyMark } from "./marks.ts";
+import { nameSpot, PLANET_REACH, type Box } from "./reach.ts";
 import type { SkyReport } from "./report.ts";
 import { drawMarks, drawTarget, type SceneTarget } from "./target-draw.ts";
 import { cameraAxes, projectDirection, viewScale, type SkyCamera } from "./view.ts";
@@ -63,6 +64,8 @@ export interface DrawnBody {
   x: number;
   y: number;
   r: number;
+  /** Where the body's name is written, when it has one: a press on it counts as a press on the body. */
+  name?: Box;
 }
 
 /** Everything a draw needs. */
@@ -291,17 +294,26 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
   const drawn: DrawnBody[] = [];
   const ppd = viewScale(camera) * RAD;
   ctx.font = `12px ${FONT}`;
-  // the planets above the horizon
+  // the planets above the horizon, then their names, each clear of the other planets and of the names already written
+  const here: Array<{ id: (typeof report.planets)[number]["id"]; x: number; y: number; radius: number }> = [];
+  const taken: Box[] = [];
   for (const planet of report.planets) {
     if (!planet.up || !place(directionOf(planet.altitude, planet.azimuth))) continue;
     const x = spot.x;
     const y = spot.y;
     if (x < -20 || x > width + 20 || y < -20 || y > height + 20) continue;
     drawPlanet(ctx, planet, x, y);
-    ctx.textAlign = "left";
-    halo(ctx, words.planet[planet.id], x + planetRadius(planet.magnitude) + 5, y + 4, "rgba(255, 244, 214, 0.95)");
-    drawn.push({ kind: "planet", id: planet.id, x, y, r: 16 });
-    if (scene.picked === planet.id) ring(ctx, x, y, planetRadius(planet.magnitude) + 9);
+    const radius = planetRadius(planet.magnitude);
+    here.push({ id: planet.id, x, y, radius });
+    taken.push({ x0: x - radius, y0: y - radius, x1: x + radius, y1: y + radius });
+    if (scene.picked === planet.id) ring(ctx, x, y, radius + 9);
+  }
+  for (const planet of here) {
+    const text = words.planet[planet.id];
+    const named = nameSpot(taken, planet.x, planet.y, planet.radius, ctx.measureText(text).width);
+    ctx.textAlign = named.align;
+    halo(ctx, text, named.x, named.y, "rgba(255, 244, 214, 0.95)");
+    drawn.push({ kind: "planet", id: planet.id, x: planet.x, y: planet.y, r: PLANET_REACH, name: named.box });
   }
   // the Sun
   if (report.sun.altitude > -2 && place(sunDirection)) {

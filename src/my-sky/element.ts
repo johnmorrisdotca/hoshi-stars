@@ -7,6 +7,7 @@ import { drawScene, placeStars, type DrawnBody, type PlacedStars, type Scene } f
 import { localFrame, type LocalFrame } from "./frame.ts";
 import { attachSkyHands, type SkyHands, type SkyView } from "./hands.ts";
 import { cleanMarks, sameMarks, type SkyMark } from "./marks.ts";
+import { pickBody } from "./reach.ts";
 import { skyReport, type SkyReport } from "./report.ts";
 import { resolveStarId, resolveTarget, type ResolvedTarget } from "./target-stars.ts";
 import { glideView, riseAndSet, targetInSky, viewOfGroup, viewOfObject, type RiseAndSet, type SkyTarget, type TargetInSky } from "./target.ts";
@@ -476,10 +477,10 @@ export class HoshiMySkyElement extends Base {
     return this.#report;
   }
 
-  /** @internal How many times the sky has drawn, where the target's ring and the marks were drawn, and whether a glide is going: for the tests that nothing is drawn at rest and that a ring is on its target. */
-  get _stats(): { draws: number; ring: { x: number; y: number; r: number } | null; marks: Array<{ id: string; x: number; y: number }>; gliding: boolean } {
+  /** @internal How many times the sky has drawn, where the target's ring, the marks and the planets with their names were drawn, and whether a glide is going: for the tests that nothing is drawn at rest and that a ring is on its target. */
+  get _stats(): { draws: number; ring: { x: number; y: number; r: number } | null; marks: Array<{ id: string; x: number; y: number }>; planets: Array<{ id: string; x: number; y: number; name: { x0: number; y0: number; x1: number; y1: number } | undefined }>; gliding: boolean } {
     const ring = this.#drawn.find((b) => b.kind === "target");
-    return { draws: this.#draws, ring: ring === undefined ? null : { x: ring.x, y: ring.y, r: ring.r }, marks: this.#drawn.filter((b) => b.kind === "mark").map((b) => ({ id: b.id, x: b.x, y: b.y })), gliding: this.#glide !== undefined };
+    return { draws: this.#draws, ring: ring === undefined ? null : { x: ring.x, y: ring.y, r: ring.r }, marks: this.#drawn.filter((b) => b.kind === "mark").map((b) => ({ id: b.id, x: b.x, y: b.y })), planets: this.#drawn.filter((b) => b.kind === "planet").map((b) => ({ id: b.id, x: b.x, y: b.y, name: b.name })), gliding: this.#glide !== undefined };
   }
 
   #lang(): MySkyLanguage {
@@ -957,16 +958,7 @@ export class HoshiMySkyElement extends Base {
 
   /** A tap: the Moon, a planet or the Sun within a finger's reach, else the constellation under it, else nothing. */
   #tap(x: number, y: number): void {
-    let best: DrawnBody | undefined;
-    let near = Infinity;
-    for (const body of this.#drawn) {
-      if (body.kind === "target") continue;
-      const away = Math.hypot(body.x - x, body.y - y);
-      if (away <= body.r && away < near) {
-        near = away;
-        best = body;
-      }
-    }
+    const best = pickBody(this.#drawn, x, y);
     let detail: MySkyPick;
     this.#pickText = "";
     if (best?.kind === "mark") {
