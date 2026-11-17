@@ -37,7 +37,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ENDPOINT = "https://query.wikidata.org/sparql"
-USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars; john@johnmorris.ca)"
+USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "src" / "data"
 

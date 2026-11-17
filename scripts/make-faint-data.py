@@ -92,7 +92,7 @@ WHERE = "(momag <= 12.6 OR vmag <= 12)"
 BAND_DEGREES = 10
 PAUSE_SECONDS = 10
 POLL_SECONDS = 10
-USER_AGENT = "hoshi-stars make-faint-data.py (john@johnmorris.ca)"
+USER_AGENT = "hoshi-stars make-faint-data.py (https://github.com/johnmorrisdotca/hoshi-stars)"
 
 # ----- the ghosts (MODULES-769) -----
 GHOST_BASE_ARCSEC = 30.0  # the radius round a bright star of V 5.5 ...

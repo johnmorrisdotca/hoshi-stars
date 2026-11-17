@@ -132,7 +132,7 @@ def is_ucac4_duplicate(index, ra, dec, mag):
 
 
 # ----- TAP -----
-USER_AGENT = "hoshi-stars gap scripts (john@johnmorris.ca)"
+USER_AGENT = "hoshi-stars gap scripts (https://github.com/johnmorrisdotca/hoshi-stars)"
 
 
 def _request(url, data=None, method=None):
