@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.49.2] - 2026-11-17
+
 - **Kid mode's month box is as tall as its buttons in Safari** (MODULES-1444). In WebKit the native month select kept the 48 px height the demo gives every select and ignored kid mode's bigger `min-height`, so it stood 48 px high beside 60 px buttons; kid mode now sets its height to 60 px, as the other browsers already drew it.
 
 ## [0.49.1] - 2026-11-17
