@@ -179,7 +179,7 @@ const WORDS: Record<MySkyLanguage, MySkyWords> = {
     targetAlwaysUp: "{name}はここでは、いつも地平線の上にあります",
     targetBelowTag: "{name}(地平線の下)",
     targetUnknown: "「{name}」は見つかりませんでした",
-    marksLabel: "空の印",
+    marksLabel: "空のマーカー",
   },
 };
 
