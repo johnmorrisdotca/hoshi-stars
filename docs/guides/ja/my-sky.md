@@ -31,8 +31,9 @@ description: "外に立った人に見える空を表示する <hoshi-my-sky> �
 | `constellation-lines` | 0から1の強さ、または `off`。暗い空での初期値は控えめな0.32です。 |
 | `star-names` | 星の名前の数、または `off`。初期値は表示の大きさに合わせて決まります。 |
 | `daylight="show"` | 太陽が出ていても星を描きます。 |
+| `target` | 指定した対象に向きを合わせ、丸で囲みます。[自分の空で見る](#自分の空で見る)を参照してください。 |
 
-プロパティは、`latitude`、`longitude`、`time`(`Date`、リアルタイムなら `null`)、`heading`、`pitch`、`fov`、`setView({ heading, pitch, fov })`、そして読み取り専用の `sky`(下の `skyReport` と同じ内容)です。要素は、向きが変わるたびに `hoshi-sky-view`(`MySkyViewDetail`: `heading`、`pitch`、`fov`、`final`)を、何かをタップしたときに `hoshi-sky-pick`(`MySkyPick`: `kind` は `sun`、`moon`、`planet`、`figure`、`none` のどれか、と `id`)を送ります。クラスは `HoshiMySkyElement`、タグは `MY_SKY_TAG`(`hoshi-my-sky`)で、`defineMySky()` が定義します。`@johnmorrisdotca/hoshi-stars/my-sky/define` はimportすると定義し、`/my-sky/element` はクラスをexportするだけです。
+プロパティは、`latitude`、`longitude`、`time`(`Date`、リアルタイムなら `null`)、`heading`、`pitch`、`fov`、`setView({ heading, pitch, fov })`、`target` と `marks`(次の節)、そして読み取り専用の `sky`(`MySkyReport`: 下の `skyReport` と同じ内容に `target` を加えたもの)です。要素は、向きが変わるたびに `hoshi-sky-view`(`MySkyViewDetail`: `heading`、`pitch`、`fov`、`final`)を、何かをタップしたときに `hoshi-sky-pick`(`MySkyPick`: `kind` は `sun`、`moon`、`planet`、`figure`、`none` のどれか、と `id`)を送ります。クラスは `HoshiMySkyElement`、タグは `MY_SKY_TAG`(`hoshi-my-sky`)で、`defineMySky()` が定義します。`@johnmorrisdotca/hoshi-stars/my-sky/define` はimportすると定義し、`/my-sky/element` はクラスをexportするだけです。
 
 ドラッグ、2本指(ピンチ)、Ctrlとホイール、矢印キー(Shiftで大きく動く)、+ と -、Home は、シリーズ共通の表示操作で、`@johnmorrisdotca/kazoku-ui` が担います。空は、形を保ったまま視野130度まで広げられるステレオ投影で描くので、地平線は曲線になります。月と惑星は、どんな空の図とも同じように、実際より大きく描きます。太陽が昇るにつれて星は隠れます(見える星の限界等級は、暗いときの6等から昼間の-3等まで下がり、それより明るい星だけが見えます)。地平線の近くは大気で暗くなります。
 
@@ -61,6 +62,80 @@ console.log(moonPhase(new Date("2026-11-24T15:01:00Z")).name); // full
 - カメラは、`SkyCamera`、`ScreenSpot`、`CameraAxes`、`cameraAxes`、`projectDirection`、`directionAt`、`viewScale`、`degreesPerPixel`、`clampView`、`openingHeading`、`PITCH_MIN`、`PITCH_MAX`、`FOV_MIN`、`FOV_MAX` です。
 - 空と地面の色は、`skyColours(sunAltitude)` と `paintBackground` です。
 - 表示文言は、`mySkyWords(language)`(`MySkyWords`、`MySkyLanguage`)、`say`、`compassPoint`、`COMPASS`(`CompassPoint`)です。
+
+## 自分の空で見る
+
+星、惑星、星座を紹介するページから、`<hoshi-my-sky>` を対象に向けて開けます。`target` を指定すると、視点が対象へなめらかに動き(動きを減らす設定の人には、すぐ切り替わります)、対象を丸で囲んで名前を添え、地平線の上にあるかどうかを示します。
+
+```html
+<hoshi-my-sky id="sky" latitude="49.28" longitude="-123.12" timezone="America/Vancouver" style="height: 80vh"></hoshi-my-sky>
+<button id="mars">See Mars in my sky</button>
+<script type="module">
+  import "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/my-sky/define/+esm";
+  const sky = document.getElementById("sky");
+  document.getElementById("mars").addEventListener("click", () => {
+    sky.target = "planet:mars";
+  });
+  sky.addEventListener("hoshi-sky-target", (event) => console.log(event.detail.label, event.detail.up, event.detail.reached));
+</script>
+```
+
+`target` は属性にもプロパティにもでき、次のものを指定できます。
+
+| 指定 | 向ける先 |
+|---|---|
+| 星のid(`betelgeuse`、`hr-2061`、`alpha-orionis` など) | その星。idは[名前の索引](names.md)の `nameRows` のもので、`m31` のようなメシエ天体も使えます。 |
+| `planet:mars` | 明るい5つの惑星のどれか(`mercury`、`venus`、`mars`、`jupiter`、`saturn`)。 |
+| `moon`、`sun` | 月、または太陽。 |
+| `constellation:Ori` | 星座。略称か、`constellation` が受け付ける名前(`constellation:Orion`、`constellation:オリオン座`)で指定します。 |
+| `{ azimuth, altitude, label }` | ページ独自の点(プロパティのみ)。北から東回りの方位と地平線からの高度を度で、そして横に添える名前を指定します。 |
+
+指定したときの動きは次のとおりです。
+
+- **視点が対象へ向きます。** 星、惑星、月、太陽、点は中央に置きます(視野角はそのままですが、90度より広いときは90度に狭めます)。星座は全体が収まるように、星々の中心を向き、いちばん遠い星まで入る視野角(20〜130度)にして、星座線を明るくします。動きは長くても1秒足らずで、一度に1フレームしか要求せず、着いたあとは何かが変わるまで何も描きません。ドラッグ、ホイール、キー操作をすると、その場で止まります。同じ `target` をもう一度指定すると、もう一度そこへ動き、`null` を指定すると丸が消えます。
+- **丸で囲んで名前を添えます。** 欄には、位置を `土星: 地平線から40°、南東の方角` のように示し、沈む時刻も添えます。丸は、空が動いても対象に付いていきます。リアルタイムの空は10秒ごと(動きを減らす設定では1分ごと)に位置を求め直し、昇る時刻と沈む時刻は、その時刻を過ぎるまで求め直しません。
+- **地平線の下にあるとき**は、欄がそれを知らせ、どちらの方角かも示します(`シリウスは地平線の下にあります。東の方角、地平線から25°下です`)。次に昇る時刻(`23:31に昇ります`)も出し、視点は地平線が見えるようにその方角を向き、地平線上のマーカーが昇ってくる場所を示します。その場所では昇らない星は `ここでは、一度も昇りません`、沈まない星は `ここでは、いつも地平線の上にあります` と表示します。この先24時間以内に昇らない惑星、月、太陽も、そのことを表示します。星座は、星々の中心が地平線の上にあるときに「出ている」と数えます。
+- **ページに知らせます。** 視点が着くと、`reached` を true にして `hoshi-sky-target`(`MySkyTargetDetail`)を送ります。着く前にドラッグなどの操作や新しい `target` で止まったときは、`reached` を false にして送ります。内容は、指定された `target`、`kind`、表示中の言語での `label`、`altitude`、`azimuth`、`up` です。`sky.target`(`MySkyTargetReport`、`MySkyReport` の中)も同じ内容に、次の `rise` と `set`(1970年からのミリ秒、ないときは `null`)と `always`、`never` を加えたもので、`target` がないときや、idに当てはまるものがないときは `null` です(そのとき欄には `「…」は見つかりませんでした` と出ます)。
+- **場所が決まるまで待ちます。** `target` を `latitude` と `longitude` より先に指定しても、2つが決まった時点でその対象を向きます。要素にまだ大きさがないとき(閉じたダイアログの中など)は、視点がすぐ切り替わるので、ダイアログを開いたときにはもう向いています。
+
+星のidは、初めて必要になったときに名前の索引で調べます。そのため、惑星、月、太陽、星座、点だけを使うページでは、索引を読み込みません。星をカタログ番号(`hr-2061`)で指定するときも、索引は要りません。
+
+### ページ独自の印
+
+`marks` は、ページ自身が空に描く点の一覧です。毎秒更新される人工衛星の位置、探査機、目印などに使います。それぞれ `{ id, azimuth, altitude, label, kind? }`(`SkyMark`)で、`kind` が `satellite` のものはひし形、それ以外は点で描き、横に名前を添えます。地平線の下にあるものは薄く描きます。
+
+```html
+<script type="module">
+  const sky = document.getElementById("sky");
+  sky.marks = [{ id: "iss", azimuth: 250, altitude: 42, label: "ISS", kind: "satellite" }];
+  sky.addEventListener("hoshi-sky-mark", (event) => console.log(event.detail.id));
+</script>
+```
+
+印をタップするか、そのボタンでEnterを押すと、`hoshi-sky-mark`(`MySkyMarkDetail`: `id`、`label`、`kind`、`azimuth`、`altitude`)を送ります。印はどれも、スクリーンリーダーやTabキーで届く一覧の中のボタンです。静止しているときは何も描かず、印か視点が変わったときだけ描き直します。そのため、ページが `marks` を毎秒設定しても構いませんし、前の一覧と(印ごとに)同じなら何も描きません。`id` がない項目、有限でない数値の項目、すでに一覧にある `id` の項目は取り除き、保持するのは500件までです(`cleanMarks`、`MARKS_MAX`、`sameMarks`)。
+
+### 計算だけを使う
+
+要素が使っているのと同じ純粋な関数が `@johnmorrisdotca/hoshi-stars/my-sky` にあるので、ページは要素なしでも、対象がどこにあるかを求められます。
+
+```js
+import { resolveStarId, resolveTarget, targetInSky, viewOfObject } from "@johnmorrisdotca/hoshi-stars/my-sky";
+
+const vancouver = { latitude: 49.28, longitude: -123.12 };
+const evening = new Date("2026-11-17T04:00:00Z");
+
+const mars = targetInSky(resolveTarget("planet:mars").locator, vancouver, evening);
+console.log(mars.up, Math.round(mars.altitude), new Date(mars.rise).toISOString().slice(0, 16)); // false -23 2026-11-17T07:09
+
+const sirius = targetInSky((await resolveStarId("sirius")).locator, vancouver, evening);
+console.log(sirius.up, Math.round(sirius.altitude), new Date(sirius.rise).toISOString().slice(0, 16)); // false -25 2026-11-17T06:31
+console.log(viewOfObject(sirius.altitude, sirius.azimuth, 90).pitch); // 10
+```
+
+- `parseTarget(target)`(`ParsedTarget`、`SkyTarget`、`SkyPoint`)は、指定の文字列または点を読んで、どの種類かを返します。何も調べません。`resolveTarget(target)` は、何も読み込まずに決められるもの(惑星、月、太陽、星座、点、カタログ番号で指定した星)をその場で決め、名前の索引で調べる `resolveStarId(id)` が必要なidには `"later"` を返します(`ResolvedTarget`: `kind`、英語と日本語の `label`、`locator`、星座なら `figure`)。
+- `locate(locator, observer, when)` は、対象がある位置(`altitude`、`azimuth`)です。`riseAndSet(locator, observer, when)`(`RiseAndSet`)は、次の `rise` と `set`、そして `always`(常に出ている)か `never`(決して出ない)かです。`targetInSky(locator, observer, when, times?)`(`TargetInSky`)は、その両方に `up` を加えたものです。`SkyLocator` は、惑星、月、太陽、星々の間の場所(星や星座の中心)、または点です。星と惑星は26時間を6分刻みでたどり、光が大気で曲がって見える高度(-34分角)での出入りを秒単位まで求めます。太陽は上の縁(-50分角)、月は `moonRiseSet` によります。地球が1回転する間に一度も地平線を越えない星は、`always` か `never` です。
+- `viewOfObject(altitude, azimuth, fov)` は、対象を中央に置く視点です(地平線より8度を超えて下にあるものは、頭を10度上げて地平線の方角を向きます)。`viewOfGroup(directions)` は、方向の集まりが収まる視点で、広がりの1.3倍の視野角にします。`glideView(from, to, fraction)` は、なめらかな移動の途中の視点で、短いほうの回り方をし、始めと終わりはゆっくり動きます。
+- 要素自身の型は `@johnmorrisdotca/hoshi-stars/my-sky/element` にあります。イベントの `MySkyTargetDetail` と `MySkyMarkDetail`、`sky` プロパティの `MySkyReport` と `MySkyTargetReport` です。
 
 ## ボタンから開く
 

@@ -5,9 +5,11 @@ import { constellation } from "../constellations.ts";
 import type { FigureLines, SkyProjector, StarNames } from "../sky-labels.ts";
 import { starColour, stars as catalogue } from "../stars.ts";
 import { paintBackground } from "./background.ts";
-import { drawMoonDisc, drawMoonGlow, drawPlanet, drawSun, planetRadius } from "./bodies-draw.ts";
+import { drawMoonDisc, drawMoonGlow, drawPlanet, drawSun, halo, planetRadius, ring } from "./bodies-draw.ts";
 import type { Direction, LocalFrame } from "./frame.ts";
+import type { SkyMark } from "./marks.ts";
 import type { SkyReport } from "./report.ts";
+import { drawMarks, drawTarget, type SceneTarget } from "./target-draw.ts";
 import { cameraAxes, projectDirection, viewScale, type SkyCamera } from "./view.ts";
 import { COMPASS, mySkyWords, type MySkyLanguage } from "./words.ts";
 
@@ -55,7 +57,8 @@ export function placeStars(frame: LocalFrame): PlacedStars {
 
 /** Something drawn that a tap can pick: where it is and how far a tap may be from it. */
 export interface DrawnBody {
-  kind: "sun" | "moon" | "planet";
+  /** `mark` is one of the page's own marks (its `id` is the mark's) and `target` is the ring round the target; neither is a body of the sky. */
+  kind: "sun" | "moon" | "planet" | "mark" | "target";
   id: string;
   x: number;
   y: number;
@@ -78,6 +81,10 @@ export interface Scene {
   daylight: boolean;
   /** The body a tap picked, to ring. */
   picked: string | undefined;
+  /** What a page asked the sky to turn to, to ring and name. */
+  target?: SceneTarget;
+  /** The page's own points. */
+  marks?: readonly SkyMark[];
   /** A rectangle (a panel over the picture) that names keep clear of, in pixels. */
   keepClear?: { x0: number; y0: number; x1: number; y1: number };
 }
@@ -110,15 +117,6 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, scene: Scene, axesSun: Dir
   small.putImageData(image, 0, 0);
   ctx.imageSmoothingEnabled = true;
   ctx.drawImage(backdrop, 0, 0, columns * cell, rows * cell);
-}
-
-function halo(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, fill: string): void {
-  ctx.lineWidth = 3;
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "rgba(4, 7, 18, 0.85)";
-  ctx.strokeText(text, x, y);
-  ctx.fillStyle = fill;
-  ctx.fillText(text, x, y);
 }
 
 /**
@@ -338,6 +336,13 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
     }
   }
 
+  // what the page asked for: the ring round the target and its name, then the page's own marks over everything of the sky
+  if (scene.target !== undefined) {
+    const ringed = drawTarget(ctx, camera, axes, scene.frame, scene.target);
+    if (ringed !== undefined) drawn.push(ringed);
+  }
+  if (scene.marks !== undefined) drawn.push(...drawMarks(ctx, camera, axes, scene.marks));
+
   // the compass letters on the ground just under the horizon
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -350,12 +355,4 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
     ctx.fillText(words.compass[point], spot.x, spot.y);
   });
   return drawn;
-}
-
-function ring(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number): void {
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.stroke();
 }

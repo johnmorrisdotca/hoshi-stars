@@ -5,6 +5,9 @@ export { altitudeAzimuth, localFrame, type Direction, type LocalFrame } from "./
 export { moonHorizontal, moonPhase, moonPosition, moonRiseSet, type MoonPhase, type MoonPhaseName, type MoonPosition } from "./moon.ts";
 export { limitingMagnitude, skyReport, type MoonInSky, type PlanetInSky, type SkyReport } from "./report.ts";
 export { NAKED_EYE_PLANETS, planetPlaces, type NakedEyePlanet, type PlanetPlace } from "./planets.ts";
+export { cleanMarks, MARKS_MAX, sameMarks, type SkyMark } from "./marks.ts";
 export { sunPlace } from "./sun.ts";
+export { resolveStarId, resolveTarget, type ResolvedTarget } from "./target-stars.ts";
+export { glideView, locate, parseTarget, riseAndSet, targetInSky, viewOfGroup, viewOfObject, type ParsedTarget, type RiseAndSet, type SkyLocator, type SkyPoint, type SkyTarget, type TargetInSky } from "./target.ts";
 export { cameraAxes, clampView, degreesPerPixel, directionAt, FOV_MAX, FOV_MIN, openingHeading, PITCH_MAX, PITCH_MIN, projectDirection, viewScale, type CameraAxes, type ScreenSpot, type SkyCamera } from "./view.ts";
 export { COMPASS, compassPoint, mySkyWords, say, type CompassPoint, type MySkyLanguage, type MySkyWords } from "./words.ts";

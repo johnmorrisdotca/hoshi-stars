@@ -32,6 +32,22 @@
             <button type="button" class="fam-button" id="reset" data-say="ms_reset"></button>
           </div>
         </div>
+        <div class="kids-picks">
+          <div class="fam-row">
+            <span class="fam-label" data-say="ms_look"></span>
+            <span class="fam-seg" id="kinds" role="group" data-say-label="ms_look"></span>
+            <button type="button" class="fam-button" id="look-clear" data-say="ms_lookClear"></button>
+          </div>
+          <div class="fam-row" id="choices-row" hidden>
+            <span class="fam-label" data-say="ms_pick"></span>
+            <span class="fam-seg" id="choices" role="group" data-say-label="ms_pick"></span>
+          </div>
+          <div class="fam-row">
+            <span class="fam-label" data-say="ms_marks"></span>
+            <button type="button" class="fam-button" id="marks" aria-pressed="false" data-say="ms_marksShow"></button>
+            <span class="fam-fine" id="mark-note" role="status"></span>
+          </div>
+        </div>
         <hoshi-my-sky id="sky" class="mysky-sky" data-testid="my-sky"></hoshi-my-sky>
       </section>
       <!--family:footer-->

@@ -420,7 +420,7 @@ console.log(Math.round(report.moon.phase.illuminated * 100), report.moon.phase.n
 <hoshi-my-sky latitude="49.28" longitude="-123.12" style="height: 80vh"></hoshi-my-sky>
 ```
 
-The attributes, the events, the Moon, planet and camera functions and how to open it from a button are in [See my sky](docs/guides/my-sky.md), and the [My sky page](https://johnmorrisdotca.github.io/hoshi-stars/my-sky.html) of the demo is the element with a place and a time to choose.
+Set `target` (`planet:mars`, `moon`, `constellation:Ori`, a star's id or a point of your own) and it turns to the thing, rings it and says whether it is up; `marks` draws a page's own points. The attributes, the events, the Moon, planet and camera functions and how to open it from a button are in [See my sky](docs/guides/my-sky.md), and the [My sky page](https://johnmorrisdotca.github.io/hoshi-stars/my-sky.html) of the demo is the element with a place and a time to choose.
 
 ## Put a chart in a page
 

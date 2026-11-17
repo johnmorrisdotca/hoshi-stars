@@ -81,6 +81,23 @@ export interface MySkyWords {
   picked: string;
   pickedMagnitude: string;
   needsPlace: string;
+  /** What a target says when it is up: its name, its height and its direction. */
+  targetUp: string;
+  /** When it is below the horizon: its name, how far down and the direction it is in. */
+  targetDown: string;
+  /** Its next rise and set, with a time from `{time}`. */
+  targetRises: string;
+  targetSets: string;
+  /** A star that never rises at this place, a planet, the Moon or the Sun that does not in the next day, and a star that never sets. */
+  targetNeverRises: string;
+  targetNoRise: string;
+  targetAlwaysUp: string;
+  /** The name beside the marker on the horizon for a target that is below it. */
+  targetBelowTag: string;
+  /** An id that names nothing. */
+  targetUnknown: string;
+  /** The name of the list of a page's own marks, for a screen reader. */
+  marksLabel: string;
 }
 
 const WORDS: Record<MySkyLanguage, MySkyWords> = {
@@ -113,6 +130,16 @@ const WORDS: Record<MySkyLanguage, MySkyWords> = {
     picked: "{name}: {altitude}° above the horizon, {direction}{magnitude}",
     pickedMagnitude: ", magnitude {n}",
     needsPlace: "A latitude and a longitude are needed to show a sky",
+    targetUp: "{name}: {altitude}° above the horizon, {direction}",
+    targetDown: "{name} is below the horizon: {depth}° down, toward the {direction}",
+    targetRises: "Rises {time}",
+    targetSets: "Sets {time}",
+    targetNeverRises: "{name} never rises from here",
+    targetNoRise: "{name} does not rise in the next 24 hours",
+    targetAlwaysUp: "{name} is always above the horizon here",
+    targetBelowTag: "{name} (below the horizon)",
+    targetUnknown: "Nothing called {name} was found",
+    marksLabel: "Marked on the sky",
   },
   ja: {
     moon: "月",
@@ -143,6 +170,16 @@ const WORDS: Record<MySkyLanguage, MySkyWords> = {
     picked: "{name}: 地平線から{altitude}°、{direction}の方角{magnitude}",
     pickedMagnitude: "、明るさ{n}等",
     needsPlace: "空を表示するには、緯度と経度が必要です",
+    targetUp: "{name}: 地平線から{altitude}°、{direction}の方角",
+    targetDown: "{name}は地平線の下にあります。{direction}の方角、地平線から{depth}°下です",
+    targetRises: "{time}に昇ります",
+    targetSets: "{time}に沈みます",
+    targetNeverRises: "{name}はここでは、一度も昇りません",
+    targetNoRise: "{name}は24時間以内には昇りません",
+    targetAlwaysUp: "{name}はここでは、いつも地平線の上にあります",
+    targetBelowTag: "{name}(地平線の下)",
+    targetUnknown: "「{name}」は見つかりませんでした",
+    marksLabel: "空の印",
   },
 };
 

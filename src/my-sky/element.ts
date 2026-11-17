@@ -6,7 +6,10 @@ import { drawMoonDisc } from "./bodies-draw.ts";
 import { drawScene, placeStars, type DrawnBody, type PlacedStars, type Scene } from "./draw.ts";
 import { localFrame, type LocalFrame } from "./frame.ts";
 import { attachSkyHands, type SkyHands, type SkyView } from "./hands.ts";
+import { cleanMarks, sameMarks, type SkyMark } from "./marks.ts";
 import { skyReport, type SkyReport } from "./report.ts";
+import { resolveStarId, resolveTarget, type ResolvedTarget } from "./target-stars.ts";
+import { glideView, riseAndSet, targetInSky, viewOfGroup, viewOfObject, type RiseAndSet, type SkyTarget, type TargetInSky } from "./target.ts";
 import { clampView, openingHeading, type SkyCamera } from "./view.ts";
 import { compassPoint, mySkyWords, say, type MySkyLanguage } from "./words.ts";
 
@@ -60,6 +63,85 @@ export interface MySkyPick {
   id: string | null;
 }
 
+/**
+ * What `hoshi-sky-target` says once the view has turned to the target (`reached` true), or was turned away by the reader or the page before it got there (`reached` false): the target as it was set, its name in the language shown, where it stands and whether it is up.
+ *
+ * @example
+ * ```ts no-run
+ * import type { MySkyTargetDetail } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
+ *
+ * document.querySelector("hoshi-my-sky")!.addEventListener("hoshi-sky-target", (event) => {
+ *   const { label, up, reached } = (event as CustomEvent<MySkyTargetDetail>).detail;
+ *   if (reached) console.log(up ? `${label} is up` : `${label} is below the horizon`);
+ * });
+ * ```
+ */
+export interface MySkyTargetDetail {
+  /** The target as it was set: the text, or the point. */
+  target: SkyTarget;
+  /** What it is: `star`, `constellation`, `planet`, `moon`, `sun` or `point`. */
+  kind: ResolvedTarget["kind"];
+  /** Its name in the language shown. */
+  label: string;
+  /** Whether the view got to it. */
+  reached: boolean;
+  /** Where it stands now, and whether it is up. */
+  altitude: number;
+  azimuth: number;
+  up: boolean;
+}
+
+/**
+ * What `hoshi-sky-mark` says when a mark of the page's is pressed (with a tap, or Enter or Space on its button for a keyboard): the mark's own numbers.
+ *
+ * @example
+ * ```ts no-run
+ * import type { MySkyMarkDetail } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
+ *
+ * document.querySelector("hoshi-my-sky")!.addEventListener("hoshi-sky-mark", (event) => {
+ *   console.log((event as CustomEvent<MySkyMarkDetail>).detail.id);
+ * });
+ * ```
+ */
+export interface MySkyMarkDetail {
+  id: string;
+  label: string;
+  kind: string | undefined;
+  azimuth: number;
+  altitude: number;
+}
+
+/**
+ * The target in `sky`: where it stands over the place, whether it is up (`up`), its next `rise` and `set` and whether it is `always` or `never` up there, with what it is and its name in each language.
+ *
+ * @example
+ * ```ts no-run
+ * import type { MySkyTargetReport } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
+ *
+ * const say = (t: MySkyTargetReport): string => `${t.label.en} is ${t.up ? "up" : "down"}`;
+ * console.log(typeof say);
+ * ```
+ */
+export interface MySkyTargetReport extends TargetInSky {
+  kind: ResolvedTarget["kind"];
+  label: { en: string; ja: string };
+}
+
+/**
+ * What the element's `sky` property gives: the Sun, the Moon and the planets (`SkyReport`) and the target, or `null` while there is none (or it names nothing).
+ *
+ * @example
+ * ```ts no-run
+ * import type { MySkyReport } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
+ *
+ * const up = (report: MySkyReport): boolean => report.target?.up === true;
+ * console.log(typeof up);
+ * ```
+ */
+export interface MySkyReport extends SkyReport {
+  target: MySkyTargetReport | null;
+}
+
 /** The field of view the sky opens at, in degrees across the smaller side. */
 const OPENING_FOV = 90;
 /** The pitch it opens at: 35 degrees up, so the horizon is in view and most of the picture is sky. */
@@ -86,7 +168,13 @@ canvas.sky{position:absolute;inset:0;width:100%;height:100%;display:block}
 .panel[data-collapsed] .title{display:none}
 .facing{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);max-width:calc(100% - 16px);box-sizing:border-box;padding:4px 12px;border-radius:999px;background:rgba(8,12,28,.62);color:#dfe7ff;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 .message{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#cbd6f5}
+.target{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;padding:6px 12px;border-radius:10px;background:rgba(8,12,28,.84);border:1px solid rgba(255,226,140,.45);color:#ffe9a8;text-align:center;pointer-events:none}
+.target p{margin:1px 0}
+.target .more{color:#cbd6f5}
+.marklist{position:absolute;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;list-style:none}
 [hidden]{display:none!important}`;
+/** How long a glide to a target takes: at least this, and up to the same again for a long way round. */
+const GLIDE_MS = 450;
 
 const number = (text: string | null, fallback: number): number => {
   const n = Number(text);
@@ -115,7 +203,7 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * ```
  */
 export class HoshiMySkyElement extends Base {
-  static observedAttributes = ["latitude", "longitude", "time", "lang", "heading", "pitch", "fov", "timezone", "info", "constellation-lines", "star-names", "daylight"];
+  static observedAttributes = ["latitude", "longitude", "time", "lang", "heading", "pitch", "fov", "timezone", "info", "constellation-lines", "star-names", "daylight", "target"];
 
   #canvas: HTMLCanvasElement | undefined;
   #ctx: CanvasRenderingContext2D | null = null;
@@ -126,6 +214,8 @@ export class HoshiMySkyElement extends Base {
   #title: HTMLElement | undefined;
   #rows: HTMLElement | undefined;
   #note: HTMLElement | undefined;
+  #card: HTMLElement | undefined;
+  #markList: HTMLElement | undefined;
   #toggle: HTMLButtonElement | undefined;
   #size = { width: 0, height: 0 };
   #dpr = 1;
@@ -141,7 +231,7 @@ export class HoshiMySkyElement extends Base {
   #longitude: number | undefined;
   #fixed: number | undefined;
   #frameOf: LocalFrame | undefined;
-  #report: SkyReport | undefined;
+  #report: MySkyReport | undefined;
   #placed: PlacedStars | undefined;
   #lines: FigureLines | undefined;
   #names: StarNames | undefined;
@@ -156,11 +246,26 @@ export class HoshiMySkyElement extends Base {
   #attributesRead = false;
   /** Whether the reader (or the page) has turned the view: until then a new place may pick the way it opens. */
   #turned = false;
+  /** What the page asked the sky to turn to, as it set it, and what that came to (worked out, or `"unknown"` for an id that names nothing). */
+  #target: SkyTarget | null = null;
+  #resolved: ResolvedTarget | "unknown" | undefined;
+  /** Changes with every new target, so an id that was looked up late for a target that has since been replaced is let go. */
+  #targetToken = 0;
+  /** A new target is waiting for its place (and the numbers for it) to turn the view to it. */
+  #toGlide = false;
+  #glide: { from: SkyView; to: SkyView; began: number; duration: number; frame: number } | undefined;
+  /** The next rise and set of the target and when and for what they were worked out: a rise stays true until it has passed, so a tick does not work them out again. */
+  #times: Pick<RiseAndSet, "rise" | "set" | "always" | "never"> | undefined;
+  #timesKey = "";
+  #timesAt = 0;
+  #cardKey = "";
+  #marks: SkyMark[] = [];
+  #markKey = "";
 
   connectedCallback(): void {
     const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
     if (this.#canvas === undefined) {
-      root.innerHTML = `<style>${STYLE}</style><canvas class="sky" part="sky" role="img"></canvas><div class="panel" part="panel"><div class="head"><canvas class="icon" width="72" height="72" aria-hidden="true"></canvas><span class="title"></span><button class="toggle" type="button" aria-expanded="true"></button></div><ul class="rows"></ul><p class="note" hidden></p></div><div class="facing" part="facing" role="status"></div><div class="message" hidden></div>`;
+      root.innerHTML = `<style>${STYLE}</style><canvas class="sky" part="sky" role="img"></canvas><div class="panel" part="panel"><div class="head"><canvas class="icon" width="72" height="72" aria-hidden="true"></canvas><span class="title"></span><button class="toggle" type="button" aria-expanded="true"></button></div><ul class="rows"></ul><p class="note" hidden></p></div><div class="target" part="target" role="status" hidden></div><ul class="marklist"></ul><div class="facing" part="facing" role="status"></div><div class="message" hidden></div>`;
       this.#canvas = root.querySelector<HTMLCanvasElement>("canvas.sky")!;
       this.#ctx = this.#canvas.getContext("2d");
       this.#panel = root.querySelector<HTMLElement>(".panel")!;
@@ -168,6 +273,8 @@ export class HoshiMySkyElement extends Base {
       this.#title = root.querySelector<HTMLElement>(".title")!;
       this.#rows = root.querySelector<HTMLElement>(".rows")!;
       this.#note = root.querySelector<HTMLElement>(".note")!;
+      this.#card = root.querySelector<HTMLElement>(".target")!;
+      this.#markList = root.querySelector<HTMLElement>(".marklist")!;
       this.#toggle = root.querySelector<HTMLButtonElement>(".toggle")!;
       this.#facing = root.querySelector<HTMLElement>(".facing")!;
       this.#message = root.querySelector<HTMLElement>(".message")!;
@@ -179,6 +286,7 @@ export class HoshiMySkyElement extends Base {
         this.#schedule();
       });
     }
+    this.#listMarks();
     if (!this.hasAttribute("tabindex")) this.tabIndex = 0;
     if (!this.#attributesRead) {
       this.#attributesRead = true;
@@ -186,7 +294,7 @@ export class HoshiMySkyElement extends Base {
       this.#readTime();
     }
     // properties set before the element was defined hide the accessors: take them back
-    for (const name of ["latitude", "longitude", "time", "heading", "pitch", "fov"] as const) {
+    for (const name of ["latitude", "longitude", "time", "heading", "pitch", "fov", "target", "marks"] as const) {
       if (Object.hasOwn(this, name)) {
         const value = Reflect.get(this, name);
         Reflect.deleteProperty(this, name);
@@ -195,6 +303,8 @@ export class HoshiMySkyElement extends Base {
     }
     this.#resize = new ResizeObserver(() => this.#measure());
     this.#resize.observe(this);
+    // a hand on the sky turns a glide to the target off: capture, so it is before the family's hands see the same press
+    for (const type of ["pointerdown", "wheel", "keydown"]) this.addEventListener(type, this.#interrupt, true);
     this.addEventListener("pointerdown", this.#down);
     this.addEventListener("pointermove", this.#move);
     this.addEventListener("pointerup", this.#up);
@@ -215,6 +325,8 @@ export class HoshiMySkyElement extends Base {
     this.#resize = undefined;
     cancelAnimationFrame(this.#frame);
     this.#frame = 0;
+    for (const type of ["pointerdown", "wheel", "keydown"]) this.removeEventListener(type, this.#interrupt, true);
+    this.#cancelGlide();
     this.removeEventListener("pointerdown", this.#down);
     this.removeEventListener("pointermove", this.#move);
     this.removeEventListener("pointerup", this.#up);
@@ -227,7 +339,12 @@ export class HoshiMySkyElement extends Base {
     this.#hands = undefined;
   }
 
-  attributeChangedCallback(name: string): void {
+  attributeChangedCallback(name: string, _old?: string | null, value?: string | null): void {
+    if (name === "target") {
+      // a point given as a property has no attribute: taking the attribute off for it is not a request to clear it
+      if (!this.#settingObject) this.#setTarget(value === null || value === undefined || value.trim() === "" ? null : value);
+      return;
+    }
     if (name === "latitude" || name === "longitude") {
       this.#readPlace();
       // the way the sky opens depends on the hemisphere, which a page may give after the element is up
@@ -309,21 +426,60 @@ export class HoshiMySkyElement extends Base {
     this.setView({ fov: value });
   }
 
+  /**
+   * What the sky is turned to: a star's id (`betelgeuse`, `alpha-orionis`, `hr-2061`), `planet:mars`, `moon`, `sun`, `constellation:Ori`, or a point `{ azimuth, altitude, label }` (a property only). Setting it glides the view to it (it jumps for a reader who prefers
+   * reduced motion), rings it with its name (a constellation is framed whole and its lines lit) and sends `hoshi-sky-target`. A target below the horizon says so, with the direction and the next rise. `null` takes it away. Setting a target again glides to it again.
+   */
+  get target(): SkyTarget | null {
+    return this.#target;
+  }
+
+  set target(value: SkyTarget | null | undefined) {
+    if (typeof value === "string") {
+      this.setAttribute("target", value);
+    } else if (value === null || value === undefined) {
+      if (this.hasAttribute("target")) this.removeAttribute("target");
+      else this.#setTarget(null);
+    } else {
+      this.#settingObject = true;
+      this.removeAttribute("target");
+      this.#settingObject = false;
+      this.#setTarget(value);
+    }
+  }
+
+  /** The page's own points on the sky: `[{ id, azimuth, altitude, label, kind? }]`. They are drawn and named, a press sends `hoshi-sky-mark` with the `id`, and the sky is drawn again only when they differ from the last list. */
+  get marks(): readonly SkyMark[] {
+    return this.#marks;
+  }
+
+  set marks(value: readonly SkyMark[] | null | undefined) {
+    const next = cleanMarks(value);
+    if (sameMarks(next, this.#marks)) return;
+    this.#marks = next;
+    this.#listMarks();
+    this.#schedule();
+  }
+
+  #settingObject = false;
+
   /** Turn the view: any of `heading`, `pitch` and `fov`, held to their ranges. Sends `hoshi-sky-view` as final. */
   setView(change: Partial<SkyView>): void {
+    this.#cancelGlide();
     const next = clampView({ ...(this.#view ?? this.#opening()), ...change });
     this.#moved(next, true);
     this.#hands?.sync();
   }
 
   /** What is where in this sky now (the Sun, the Moon with its shape, rise and set, the planets), or `undefined` until a place is given. */
-  get sky(): SkyReport | undefined {
+  get sky(): MySkyReport | undefined {
     return this.#report;
   }
 
-  /** @internal How many times the sky has drawn, for the tests that nothing is drawn at rest. */
-  get _stats(): { draws: number } {
-    return { draws: this.#draws };
+  /** @internal How many times the sky has drawn, where the target's ring and the marks were drawn, and whether a glide is going: for the tests that nothing is drawn at rest and that a ring is on its target. */
+  get _stats(): { draws: number; ring: { x: number; y: number; r: number } | null; marks: Array<{ id: string; x: number; y: number }>; gliding: boolean } {
+    const ring = this.#drawn.find((b) => b.kind === "target");
+    return { draws: this.#draws, ring: ring === undefined ? null : { x: ring.x, y: ring.y, r: ring.r }, marks: this.#drawn.filter((b) => b.kind === "mark").map((b) => ({ id: b.id, x: b.x, y: b.y })), gliding: this.#glide !== undefined };
   }
 
   #lang(): MySkyLanguage {
@@ -413,11 +569,139 @@ export class HoshiMySkyElement extends Base {
     const observer = { latitude: this.#latitude, longitude: this.#longitude };
     const now = this.#when();
     this.#frameOf = localFrame(observer, now);
-    this.#report = skyReport(observer, now);
+    this.#report = { ...skyReport(observer, now), target: this.#locateTarget(observer, now) };
     this.#placed = placeStars(this.#frameOf);
     this.#version += 1;
     this.#schedule();
+    if (this.#toGlide && this.#report.target !== null) {
+      this.#toGlide = false;
+      this.#startGlide();
+    }
   }
+
+  /** Where the target is now, and (worked out again only when it has to be) when it rises and sets. */
+  #locateTarget(observer: { latitude: number; longitude: number }, now: number): MySkyTargetReport | null {
+    const resolved = this.#resolved;
+    if (resolved === undefined || resolved === "unknown") return null;
+    const key = `${this.#targetToken}|${observer.latitude}|${observer.longitude}`;
+    const times = this.#times;
+    // a rise or a set is true until it has passed; six hours is as long as the Moon's or a planet's pass is trusted
+    const stale = times === undefined || key !== this.#timesKey || now < this.#timesAt || now - this.#timesAt > 6 * 3_600_000 || (times.rise !== null && now > times.rise) || (times.set !== null && now > times.set);
+    if (stale) {
+      const found = riseAndSet(resolved.locator, observer, now);
+      this.#times = { rise: found.rise, set: found.set, always: found.always, never: found.never };
+      this.#timesKey = key;
+      this.#timesAt = now;
+    }
+    return { ...targetInSky(resolved.locator, observer, now, this.#times), kind: resolved.kind, label: resolved.label };
+  }
+
+  /** The target is set (or taken away): work out what it is, then let the next recompute find it in the sky and turn the view to it. */
+  #setTarget(value: SkyTarget | null): void {
+    this.#cancelGlide();
+    const token = ++this.#targetToken;
+    this.#target = value;
+    this.#resolved = undefined;
+    this.#times = undefined;
+    this.#toGlide = false;
+    if (this.#report !== undefined) this.#report = { ...this.#report, target: null };
+    if (value === null) {
+      this.#schedule();
+      return;
+    }
+    const first = resolveTarget(value);
+    if (first === undefined) {
+      this.#resolved = "unknown";
+      this.#schedule();
+      return;
+    }
+    const found = (resolved: ResolvedTarget | undefined): void => {
+      if (token !== this.#targetToken) return;
+      this.#resolved = resolved ?? "unknown";
+      if (resolved === undefined) {
+        this.#schedule();
+        return;
+      }
+      this.#toGlide = true;
+      this.#recompute();
+    };
+    if (first === "later") {
+      // a star's id is looked up in the names index, which is not loaded until one is needed
+      resolveStarId(String(value)).then(found, () => found(undefined));
+    } else found(first);
+  }
+
+  /** Turn the view to the target: a thing centred, a constellation framed whole; the view glides there, or jumps when the reader prefers reduced motion, the page is hidden or the element has no size yet (a dialog not yet open). */
+  #startGlide(): void {
+    const target = this.#report?.target;
+    const resolved = this.#resolved;
+    if (target === null || target === undefined || resolved === undefined || resolved === "unknown" || this.#frameOf === undefined) return;
+    const from = this.#view ?? this.#opening();
+    let to: SkyView;
+    if (resolved.figure === undefined) to = viewOfObject(target.altitude, target.azimuth, from.fov);
+    else {
+      const frame = this.#frameOf;
+      const spot = { east: 0, north: 0, up: 0 };
+      to = viewOfGroup(resolved.figure.stars.map((star) => ({ ...frame.fromJ2000(star.rightAscension, star.declination, spot) })));
+    }
+    const reduced = globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+    if (reduced || this.ownerDocument.visibilityState !== "visible" || this.#size.width === 0 || this.#size.height === 0) {
+      this.#land(to);
+      return;
+    }
+    const turn = Math.abs(((((to.heading - from.heading) % 360) + 540) % 360) - 180) + Math.abs(to.pitch - from.pitch);
+    this.#glide = { from, to, began: -1, duration: GLIDE_MS + Math.min(GLIDE_MS, turn * 4), frame: 0 };
+    this.#glideStep(performance.now());
+  }
+
+  /** One frame of a glide: the view part of the way, drawn at once (one frame asked for at a time, and none once it has arrived). */
+  #glideStep = (now: number): void => {
+    const glide = this.#glide;
+    if (glide === undefined) return;
+    if (glide.began < 0) glide.began = now;
+    const fraction = (now - glide.began) / glide.duration;
+    if (fraction >= 1) {
+      this.#glide = undefined;
+      this.#land(glide.to);
+      return;
+    }
+    this.#view = clampView(glideView(glide.from, glide.to, fraction));
+    this.#turned = true;
+    this.dispatchEvent(new CustomEvent<MySkyViewDetail>("hoshi-sky-view", { detail: { ...this.#view, final: false } }));
+    cancelAnimationFrame(this.#frame);
+    this.#frame = 0;
+    this.#draw();
+    glide.frame = requestAnimationFrame(this.#glideStep);
+  };
+
+  /** The view has arrived (or jumped): set it, tell the hands and the page, draw once. */
+  #land(to: SkyView): void {
+    this.#moved(to, true);
+    this.#hands?.sync();
+    this.#reached(true);
+  }
+
+  #reached(reached: boolean): void {
+    const target = this.#report?.target;
+    if (this.#target === null || target === null || target === undefined) return;
+    const lang = this.#lang();
+    this.dispatchEvent(new CustomEvent<MySkyTargetDetail>("hoshi-sky-target", { detail: { target: this.#target, kind: target.kind, label: target.label[lang], reached, altitude: target.altitude, azimuth: target.azimuth, up: target.up } }));
+  }
+
+  /** A glide stops where it is: for a hand on the sky, a view the page set, a new target or the element leaving the page. The page is told it did not get there. */
+  #cancelGlide(): void {
+    const glide = this.#glide;
+    if (glide === undefined) return;
+    cancelAnimationFrame(glide.frame);
+    this.#glide = undefined;
+    this.#moved(this.#view ?? glide.to, true);
+    this.#hands?.sync();
+    this.#reached(false);
+  }
+
+  #interrupt = (): void => {
+    this.#cancelGlide();
+  };
 
   #changed(): void {
     this.#schedule();
@@ -499,7 +783,14 @@ export class HoshiMySkyElement extends Base {
       names: this.#names,
       daylight: this.getAttribute("daylight") === "show",
       picked: this.#picked,
+      marks: this.#marks,
     };
+    const aimed = this.#report.target;
+    if (aimed !== null) {
+      const resolved = this.#resolved;
+      const name = aimed.label[lang];
+      scene.target = { label: name, belowLabel: say(words.targetBelowTag, { name }), altitude: aimed.altitude, azimuth: aimed.azimuth, up: aimed.up, ...(resolved !== undefined && resolved !== "unknown" && resolved.figure !== undefined ? { lines: resolved.figure.lines } : {}) };
+    }
     if (!this.#panel!.hidden) {
       const box = this.#panel!.getBoundingClientRect();
       const host = this.getBoundingClientRect();
@@ -511,7 +802,73 @@ export class HoshiMySkyElement extends Base {
     this.#facing!.hidden = false;
     this.#facing!.textContent = say(view.pitch > 1 ? words.facingUp : view.pitch < -1 ? words.facingDown : words.facingLevel, { direction: words.direction[compassPoint(view.heading)], n: Math.abs(Math.round(view.pitch)) });
     this.#showPanel();
+    this.#markList!.setAttribute("aria-label", words.marksLabel);
+    this.#showTarget(words);
     this.#draws += 1;
+  }
+
+  /** What the target says: where it is, or that it is below the horizon, which way and when it rises. Written again only when the numbers it is made from change. */
+  #showTarget(words: Readonly<ReturnType<typeof mySkyWords>>): void {
+    const card = this.#card;
+    if (card === undefined) return;
+    const lang = this.#lang();
+    const resolved = this.#resolved;
+    const aimed = this.#report?.target ?? null;
+    const unknown = this.#target !== null && resolved === "unknown";
+    const zone = this.getAttribute("timezone") ?? undefined;
+    const now = this.#when();
+    const shown = aimed === null ? "" : `${Math.round(aimed.altitude)}|${Math.round(aimed.azimuth)}|${aimed.up}|${aimed.rise}|${aimed.set}`;
+    const key = [lang, unknown, typeof this.#target === "string" ? this.#target : "", this.#targetToken, shown, zone].join("|");
+    if (key === this.#cardKey) return;
+    this.#cardKey = key;
+    const lines: Array<[string, boolean]> = [];
+    if (unknown) lines.push([say(words.targetUnknown, { name: typeof this.#target === "string" ? this.#target : "" }), false]);
+    else if (aimed !== null) {
+      const name = aimed.label[lang];
+      const direction = words.direction[compassPoint(aimed.azimuth)];
+      lines.push([aimed.up ? say(words.targetUp, { name, altitude: Math.round(aimed.altitude), direction }) : say(words.targetDown, { name, depth: Math.max(1, Math.round(-aimed.altitude)), direction }), false]);
+      const starlike = aimed.kind === "star" || aimed.kind === "constellation";
+      if (aimed.never) lines.push([say(starlike ? words.targetNeverRises : words.targetNoRise, { name }), true]);
+      else if (aimed.always && starlike) lines.push([say(words.targetAlwaysUp, { name }), true]);
+      else if (!aimed.up && aimed.rise !== null) lines.push([say(words.targetRises, { time: this.#clock(aimed.rise, now, lang, zone, words.tomorrow) }), true]);
+      else if (aimed.up && aimed.set !== null) lines.push([say(words.targetSets, { time: this.#clock(aimed.set, now, lang, zone, words.tomorrow) }), true]);
+    }
+    card.hidden = lines.length === 0;
+    card.replaceChildren(...lines.map(([text, more]) => {
+      const p = this.ownerDocument.createElement("p");
+      p.textContent = text;
+      if (more) p.className = "more";
+      return p;
+    }));
+  }
+
+  /** The page's marks as buttons a keyboard and a screen reader can reach, one for each id and name; written again only when those change (a mark that moves does not). */
+  #listMarks(): void {
+    const list = this.#markList;
+    if (list === undefined) return;
+    const words = mySkyWords(this.#lang());
+    const key = this.#marks.map((m) => `${m.id}\u0000${m.label}`).join("\u0001");
+    // the same marks in new places change nothing here: a mark's place is read out when it is asked for, not every time it moves
+    if (key !== this.#markKey) {
+      this.#markKey = key;
+      list.setAttribute("aria-label", words.marksLabel);
+      list.replaceChildren(...this.#marks.map((mark) => {
+        const li = this.ownerDocument.createElement("li");
+        const button = this.ownerDocument.createElement("button");
+        button.type = "button";
+        button.dataset.mark = mark.id;
+        button.textContent = mark.label;
+        button.addEventListener("click", () => this.#pressMark(mark.id));
+        li.append(button);
+        return li;
+      }));
+    }
+  }
+
+  #pressMark(id: string): void {
+    const mark = this.#marks.find((m) => m.id === id);
+    if (mark === undefined) return;
+    this.dispatchEvent(new CustomEvent<MySkyMarkDetail>("hoshi-sky-mark", { detail: { id: mark.id, label: mark.label, kind: mark.kind, azimuth: mark.azimuth, altitude: mark.altitude } }));
   }
 
   /** The panel's words: the Moon's phase and rise and set, the planets that are up and a note for the day or for what was tapped. */
@@ -603,6 +960,7 @@ export class HoshiMySkyElement extends Base {
     let best: DrawnBody | undefined;
     let near = Infinity;
     for (const body of this.#drawn) {
+      if (body.kind === "target") continue;
       const away = Math.hypot(body.x - x, body.y - y);
       if (away <= body.r && away < near) {
         near = away;
@@ -611,7 +969,11 @@ export class HoshiMySkyElement extends Base {
     }
     let detail: MySkyPick;
     this.#pickText = "";
-    if (best !== undefined) {
+    if (best?.kind === "mark") {
+      this.#pressMark(best.id);
+      return;
+    }
+    if (best !== undefined && best.kind !== "target") {
       this.#picked = best.id;
       this.#lines?.point();
       detail = { kind: best.kind, id: best.id };

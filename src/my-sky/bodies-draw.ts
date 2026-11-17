@@ -104,3 +104,51 @@ export function drawPlanet(ctx: Context, planet: PlanetInSky, x: number, y: numb
   ctx.fillStyle = colour;
   ctx.fill();
 }
+
+/**
+ * Write a text with a dark edge round it so it reads over stars and over the sky's light: the way the names in the sky are drawn.
+ *
+ * @param ctx - A 2D canvas context, its font, alignment and baseline already set.
+ * @param text - The text.
+ * @param x - Where it is drawn, by the context's alignment.
+ * @param y - Its baseline.
+ * @param fill - The colour of the letters.
+ *
+ * @example
+ * ```ts no-run
+ * import { halo } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
+ *
+ * halo(document.createElement("canvas").getContext("2d")!, "Mars", 20, 20, "#fff");
+ * ```
+ */
+export function halo(ctx: Context, text: string, x: number, y: number, fill: string): void {
+  ctx.lineWidth = 3;
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "rgba(4, 7, 18, 0.85)";
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fill;
+  ctx.fillText(text, x, y);
+}
+
+/**
+ * A thin white ring round a point: what a tap on a body draws.
+ *
+ * @param ctx - A 2D canvas context.
+ * @param x - The ring's centre x.
+ * @param y - The ring's centre y.
+ * @param radius - Its radius in pixels.
+ *
+ * @example
+ * ```ts no-run
+ * import { ring } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
+ *
+ * ring(document.createElement("canvas").getContext("2d")!, 50, 50, 20);
+ * ```
+ */
+export function ring(ctx: Context, x: number, y: number, radius: number): void {
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+}
