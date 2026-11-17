@@ -23,4 +23,5 @@
 .quiz[data-kid="true"] .qz-score { font-size: 1.2rem; }
 .quiz[data-kid="true"] .lead { font-size: 1.2rem; }
 #qz-month { min-height: 44px; }
-.quiz[data-kid="true"] #qz-month { min-height: 60px; font-size: 1.15rem; }
+/* a native select in WebKit keeps the height demo.css gives it (48 px) and ignores a bigger min-height, so kid mode sets the height itself */
+.quiz[data-kid="true"] #qz-month { height: 60px; min-height: 60px; font-size: 1.15rem; }

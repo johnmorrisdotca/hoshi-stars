@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Kid mode's month box is as tall as its buttons in Safari** (MODULES-1444). In WebKit the native month select kept the 48 px height the demo gives every select and ignored kid mode's bigger `min-height`, so it stood 48 px high beside 60 px buttons; kid mode now sets its height to 60 px, as the other browsers already drew it.
+
 ## [0.49.1] - 2026-11-17
 
 - **Japanese: マーカー for the marks on My sky** (MODULES-1442 follow-up). 空の印 and the demo's 印 become 空のマーカー, ページ独自のマーカー, 見本のマーカーを表示する / 隠す and 見本のマーカー: on its own 印 reads as a stamp or seal, and マーカー is the word for a point a program puts on a map or chart. The press message is 「{label}」（ID: {id}）を押しました。, full-width punctuation throughout.
