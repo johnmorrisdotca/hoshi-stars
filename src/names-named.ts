@@ -13,9 +13,10 @@ function build(): NameIndex {
   if (index !== undefined) return index;
   const byAbbreviation = constellationsByAbbreviation();
   const rows: NameRow[] = NAMED_STAR_ROWS.split("\n").map((line) => {
-    const [id, hr, name, nameJa, designation, constellation, ra, dec, magnitude, spectralType] = line.split("|") as [string, string, string, string, string, string, string, string, string, string];
+    const [id, hr, name, nameJa, designation, constellation, ra, dec, magnitude, spectralType, hd] = line.split("|") as [string, string, string, string, string, string, string, string, string, string, string];
     const star = {
       hr: Number(hr),
+      hd: hd === "" ? undefined : Number(hd),
       name,
       nameJa: nameJa === "" ? undefined : nameJa,
       designation: designation === "" ? undefined : designation,

@@ -6,6 +6,7 @@ import { stars } from "../src/stars.ts";
 import { messier } from "../src/deep-sky.ts";
 import { deepSky } from "../src/deep-sky-ngc-ic.ts";
 import { findName, nameRowById, nameRows, NAME_KINDS, searchNames, slugOf } from "../src/names.ts";
+import { findName as findNamed } from "../src/names-named.ts";
 import { findNgcIc, ngcIcRowById, ngcIcRows, searchNgcIc } from "../src/names-ngc-ic.ts";
 
 test("Betelgeuse by name, by Bayer designation spelt three ways, by HR number and by katakana give one row", () => {
@@ -69,9 +70,28 @@ test("M31, NGC 224, Messier 31 and the Andromeda Galaxy give one row, with an id
   assert.equal(nameRowById("m31"), row);
 });
 
-test("the HD number of a bright star is a documented gap: the package holds none for the 5,080 (MODULES-1224)", () => {
-  assert.equal(findName("HD 39801"), undefined);
-  assert.ok(nameRows({ kinds: ["star"] }).every((row) => row.designations.every((text) => !text.startsWith("HD "))));
+test("a bright star is found by its Henry Draper number: HD 39801, HR 2061 and alpha Ori are Betelgeuse (MODULES-1224)", () => {
+  const row = findName("HD 39801")!;
+  assert.equal(row.id, "betelgeuse");
+  for (const text of ["hd39801", "HD 039801", "hd 39801", "HR 2061", "alpha Ori", "α Orionis", "Betelgeuse"]) assert.equal(findName(text), row, text);
+  assert.ok(row.designations.includes("HD 39801") && row.designations.includes("HR 2061"));
+  assert.equal(findName("HD 48915")?.id, "sirius");
+  assert.equal(findName("HD 172167")?.id, "vega");
+  // a star the catalogue gives no HD number has none to find, and no row carries a made-up one
+  const withHd = stars().filter((star) => star.hd !== undefined);
+  for (const row of nameRows({ kinds: ["star"] })) {
+    const star = stars().find((one) => one.hr === row.hr)!;
+    assert.equal(row.designations.includes(`HD ${star.hd}`), star.hd !== undefined, `HR ${star.hr}`);
+  }
+  assert.ok(withHd.length > 5000);
+  assert.equal(findName("HD 1"), undefined);
+});
+
+test("the small chunk of the named stars finds them by their HD number too", () => {
+  assert.equal(findNamed("HD 39801")?.id, "betelgeuse");
+  assert.equal(findNamed("HR 2061")?.id, "betelgeuse");
+  assert.equal(findNamed("HD 48915")?.id, "sirius");
+  assert.equal(findNamed("HD 1"), undefined);
 });
 
 test("every id is address-safe and unique, and every row is found again by its id and its first designation", () => {
