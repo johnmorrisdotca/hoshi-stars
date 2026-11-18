@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.50.2] - 2026-11-17
+
 - **Seven source files are smaller** (MODULES-258). Types, style sheets, figures, the Milky Way layer and the placing of points moved out of `chart/chart.ts`, `chart/element.ts`, `my-sky/element.ts`, `door.ts`, `figure-lines.ts`, `milky-way.ts` and `profile.ts` into files beside them. Nothing changed in behaviour or in the exports: each moved type is still exported from the file it was in, `site/api.html` is byte for byte the same, and the API pages differ only in the source links.
 
 ## [0.50.1] - 2026-11-17
