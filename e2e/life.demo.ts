@@ -99,9 +99,12 @@ test("a tap near a dot picks a dot, and a star left off the diagram says so", as
   // six pixels to the side of the dot, where nothing is drawn under the finger
   await page.mouse.click(box.x + box.width / 2 + 6, box.y + box.height / 2);
   await expect.poll(() => param(page, "star")).not.toBeNull();
-  await page.getByTestId("hr-find").fill("Adhara");
+  // Adhara's rounded 1 mas parallax now grades it C, so the finder (the graded stars) no longer reaches it (MODULES-1221): a B star that the A-only filter leaves off is the example
+  await page.locator('#shows button[data-value="a"]').click();
+  await expect.poll(() => param(page, "show")).toBe("a");
+  await page.getByTestId("hr-find").fill("Betelgeuse");
   await page.getByTestId("hr-find").press("Enter");
-  await expect(page.getByTestId("hr-card").locator("h2")).toHaveText("Adhara");
+  await expect(page.getByTestId("hr-card").locator("h2")).toHaveText("Betelgeuse");
   await expect(page.getByTestId("hr-card")).toContainText("not drawn here");
   await expect(page.getByTestId("hr-ring")).toHaveAttribute("display", "none");
 });
