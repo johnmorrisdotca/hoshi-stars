@@ -2,7 +2,7 @@
 // a place near a far camera keeps its digits, and the sky from where the flight is agrees with the sky-from tier.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { FLIGHT_SPEEDS, LIGHT_SPEED, flightPoint, flightReadout, flightStart, flightTime, flyStep, flyToward, fromCamera, stepFlightSpeed } from "../src/flight.ts";
+import { FLIGHT_SPEEDS, flightPoint, flightPointOf, flightPointText, flightReadout, flightSpeedFor, flightStart, flightTime, flyStep, flyToward, fromCamera, LIGHT_SPEED, stepFlightSpeed } from "../src/flight.ts";
 import { skyFrom } from "../src/sky-from.ts";
 import { starByName, starDistance } from "../src/stars.ts";
 
@@ -102,4 +102,75 @@ test("a wrong input is refused by name", () => {
   assert.throws(() => fromCamera({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }, 0), RangeError);
   assert.throws(() => flightPoint(0, 0, -1), RangeError);
   assert.throws(() => stepFlightSpeed(1, 0 as 1), RangeError);
+});
+
+test("a flight that eases slows as it arrives, the same at any frame rate, and does arrive", () => {
+  const vega = { x: 0.96, y: -5.93, z: 4.83 };
+  const stopAt = 1e-7;
+  const run = (fps: number): { steps: number; seconds: number; moves: number[] } => {
+    let flight = { ...flightStart(), speed: 1e8 };
+    const moves: number[] = [];
+    for (let step = 1; step <= 60 * fps; step += 1) {
+      const leg = flyToward(flight, vega, 1 / fps, { stopAt, easeSeconds: 0.3 });
+      assert.ok(leg.remaining >= stopAt, "it never passes the stop");
+      assert.ok(Math.abs(Math.hypot(leg.state.position.x - flight.position.x, leg.state.position.y - flight.position.y, leg.state.position.z - flight.position.z) - leg.moved) <= 1e-12 + leg.moved * 1e-9);
+      moves.push(leg.moved);
+      flight = leg.state;
+      if (leg.arrived) {
+        assert.equal(leg.remaining, stopAt);
+        return { steps: step, seconds: step / fps, moves };
+      }
+    }
+    throw new Error("it did not arrive in a minute");
+  };
+  const at30 = run(30);
+  const at15 = run(15);
+  assert.ok(at30.moves[0]! === 1e8 * LIGHT_SPEED / 30, "full speed far out");
+  assert.ok(at30.moves.at(-2)! < at30.moves[0]! * 1e-6, "slow at the end");
+  assert.ok(Math.abs(at30.seconds - at15.seconds) < 0.5, `${at30.seconds} and ${at15.seconds} seconds`);
+  assert.ok(at30.seconds < flightTime(Math.hypot(vega.x, vega.y, vega.z), 1e8) + 10);
+  // without easing the last step is as long as the others: nothing slows
+  const plain = flyToward({ ...flightStart(), speed: 1e8 }, vega, 1 / 30, { stopAt });
+  assert.equal(plain.moved, at30.moves[0]);
+  // out at the Andromeda galaxy, and back to the Sun itself (no stopping distance), it still arrives
+  const andromeda = { x: 250_000, y: 700_000, z: 200_000 };
+  for (const [from, to] of [[flightStart().position, andromeda], [andromeda, flightStart().position]]) {
+    let flight = { ...flightStart(), position: from!, speed: 1e13 };
+    let steps = 0;
+    for (; steps < 3000; steps += 1) {
+      const leg = flyToward(flight, to!, 1 / 30, { easeSeconds: 0.3 });
+      flight = leg.state;
+      if (leg.arrived) break;
+    }
+    assert.ok(steps < 3000, "it arrives");
+    assert.deepEqual(flight.position, to);
+  }
+  assert.throws(() => flyToward(flightStart(), vega, 1, { easeSeconds: -1 }), RangeError);
+});
+
+test("flightSpeedFor is the slowest dial speed that gets there in time", () => {
+  assert.equal(flightSpeedFor(7.68, 10), 1e8);
+  assert.equal(flightSpeedFor(0, 10), 1);
+  assert.equal(flightSpeedFor(770_000, 10), 1e13);
+  assert.equal(flightSpeedFor(1e12, 1), FLIGHT_SPEEDS.at(-1));
+  for (const parsecs of [1e-8, 1.3, 170, 770_000]) {
+    const speed = flightSpeedFor(parsecs, 10);
+    assert.ok(flightTime(parsecs, speed) <= 10 && (speed === 1 || flightTime(parsecs, speed / 10) > 10), String(parsecs));
+  }
+  assert.throws(() => flightSpeedFor(-1, 10), RangeError);
+  assert.throws(() => flightSpeedFor(1, 0), RangeError);
+});
+
+test("a point has one text, flightPointOf reads it back exactly, and a query string carries it as it is", () => {
+  assert.equal(flightPointText({ x: 1.5, y: -2, z: 0.25 }), "pc_1.5_-2_0.25");
+  assert.equal(flightPointText({ x: -0, y: 0, z: 0 }), "pc_0_0_0");
+  for (const at of [{ x: 0.9644916448028142, y: -5.932261361563125, z: 4.829459243222731 }, { x: 1e-9, y: -2.25e-8, z: 770_000.123456 }, { x: 1e22, y: 0, z: -1e-300 }]) {
+    const text = flightPointText(at);
+    assert.deepEqual(flightPointOf(text), at);
+    assert.equal(flightPointText(flightPointOf(text)!), text);
+    assert.equal(new URLSearchParams({ at: text }).toString(), `at=${text}`);
+  }
+  assert.deepEqual(flightPointOf(" pc_1.50_-2_0 "), { x: 1.5, y: -2, z: 0 });
+  for (const text of ["", "sun", "hr-7001", "pc_1_2", "pc_1_2_3_4", "pc_a_b_c", "pc_1_2_Infinity", "pc_1..2_0_0", "1_2_3"]) assert.equal(flightPointOf(text), undefined, text);
+  assert.throws(() => flightPointText({ x: Number.NaN, y: 0, z: 0 }), TypeError);
 });

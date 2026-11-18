@@ -3,9 +3,9 @@
 // own import and `/flight` stays arithmetic. Pure: no DOM, no clock, no state.
 import { deepSkyObject, galaxyDistance } from "./deep-sky.ts";
 import { certaintyOf, type Certainty } from "./distance.ts";
-import { flightPoint, type FlightPoint } from "./flight.ts";
-import { nearbyStarByName, type NearbyStar } from "./nearby.ts";
-import { starByName, starDistance, type Star } from "./stars.ts";
+import { flightPoint, flightPointOf, flightPointText, type FlightPoint } from "./flight.ts";
+import { nearbyStarByName, nearbyStars, type NearbyStar } from "./nearby.ts";
+import { starByHr, starByName, starDistance, type Star } from "./stars.ts";
 import type { DeepSkyObject } from "./deep-sky-core.ts";
 
 /**
@@ -20,7 +20,7 @@ import type { DeepSkyObject } from "./deep-sky-core.ts";
  * ```
  */
 export interface FlightPlace {
-  /** A key that stays the same: `hr-2491` for a bright star, `gctp-3278` for a nearby star, `M31` for a deep-sky object. */
+  /** A key that stays the same: `hr-2491` for a bright star, `gctp-3278` for a nearby star, `M31` for a deep-sky object, `sun` for the Sun. */
   id: string;
   /** The English name, where there is one. */
   name: string | undefined;
@@ -107,4 +107,79 @@ export function flightPlaces(): FlightPlace[] {
   const andromeda = deepSkyObject("M31");
   if (andromeda !== undefined) add(flightPlace(andromeda));
   return places.sort((a, b) => a.lightYears - b.lightYears);
+}
+
+/**
+ * The place an id names: the id of a `FlightPlace`, which is also the id `skyFrom` gives a seen star. `sun` is the Sun, at the origin; `hr-7001` is the bright star HR 7001 (Vega);
+ * `gctp-3278` is a nearby star; `M31` is a deep-sky object. Upper and lower case are the same.
+ *
+ * @param id - The id.
+ * @returns The place, or `undefined` where nothing has that id or the package has no distance for it.
+ *
+ * @example
+ * ```ts
+ * import { flightPlaceById } from "@johnmorrisdotca/hoshi-stars/flight/places";
+ *
+ * console.log(flightPlaceById("hr-7001")?.name, flightPlaceById("sun")?.lightYears); // "Vega", 0
+ * ```
+ */
+export function flightPlaceById(id: string): FlightPlace | undefined {
+  if (typeof id !== "string") throw new TypeError(`id must be a string, got ${String(id)}`);
+  const key = id.trim().toLowerCase();
+  if (key === "sun") return { id: "sun", name: "Sun", kind: "star", position: { x: 0, y: 0, z: 0 }, lightYears: 0, lightYearsError: 0, certainty: "good" };
+  const hr = /^hr-([0-9]+)$/.exec(key);
+  if (hr !== null) {
+    const star = starByHr(Number(hr[1]));
+    return star === undefined ? undefined : flightPlace(star);
+  }
+  if (key.startsWith("gctp-")) {
+    const star = nearbyStars().find((near) => near.id === key);
+    return star === undefined ? undefined : flightPlace(star);
+  }
+  const listed = flightPlaces().find((place) => place.id.toLowerCase() === key);
+  if (listed !== undefined) return listed;
+  const object = /^[a-z]+ ?[0-9]+$/.test(key) ? deepSkyObject(key) : undefined;
+  return object === undefined ? undefined : flightPlace(object);
+}
+
+/**
+ * Where a camera is, as an address carries it.
+ *
+ * @example
+ * ```ts
+ * import { flightAddress, type FlightAddress } from "@johnmorrisdotca/hoshi-stars/flight/places";
+ *
+ * const vega: FlightAddress = flightAddress("HR-7001")!;
+ * console.log(vega.at, vega.place?.name); // "hr-7001", "Vega"
+ * ```
+ */
+export interface FlightAddress {
+  /** The one way to write it: the place's id as `FlightPlace` has it, or `pc_<x>_<y>_<z>` for a point with no name. */
+  at: string;
+  /** The place, where the text is an id. A view puts the camera at its own stopping distance from it. */
+  place: FlightPlace | undefined;
+  /** The place's position, or the point itself. */
+  position: FlightPoint;
+}
+
+/**
+ * Read where a camera is from the text of an address: a place's id (`sun`, `hr-7001`, `gctp-3278`, `M31`) or a point in parsecs (`pc_1.5_-2_0.25`, what `flightPointText` writes).
+ * `at` is the one form to write back, so two addresses of the same place are the same text.
+ *
+ * @param text - The id or the point.
+ * @returns The address, or `undefined` where the text is neither.
+ *
+ * @example
+ * ```ts
+ * import { flightAddress } from "@johnmorrisdotca/hoshi-stars/flight/places";
+ *
+ * console.log(flightAddress("m31")?.at, flightAddress("pc_1.50_-2_0")?.at); // "M31", "pc_1.5_-2_0"
+ * ```
+ */
+export function flightAddress(text: string): FlightAddress | undefined {
+  if (typeof text !== "string") throw new TypeError(`text must be a string, got ${String(text)}`);
+  const position = flightPointOf(text);
+  if (position !== undefined) return { at: flightPointText(position), place: undefined, position };
+  const place = flightPlaceById(text);
+  return place === undefined ? undefined : { at: place.id, place, position: place.position };
 }

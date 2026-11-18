@@ -3,8 +3,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { deepSkyObject } from "../src/deep-sky.ts";
-import { flightReadout } from "../src/flight.ts";
-import { flightPlace, flightPlaces } from "../src/flight-places.ts";
+import { flightPointText, flightReadout } from "../src/flight.ts";
+import { flightAddress, flightPlace, flightPlaceById, flightPlaces } from "../src/flight-places.ts";
 import { nearbyStarByName } from "../src/nearby.ts";
 import { skyFrom } from "../src/sky-from.ts";
 import { starByName, starDistance, stars } from "../src/stars.ts";
@@ -52,4 +52,40 @@ test("a thing the tables have no distance for is no place; a nearby star and a g
   assert.equal(andromeda.kind, "deep-sky");
   assert.equal(andromeda.certainty, "rough"); // the source states no error for it
   assert.throws(() => flightPlace({} as never), TypeError);
+});
+
+test("flightPlaceById finds the Sun, Vega, a nearby star and a galaxy by the ids the places and skyFrom carry", () => {
+  const sun = flightPlaceById("sun")!;
+  assert.deepEqual(sun.position, { x: 0, y: 0, z: 0 });
+  assert.equal(sun.lightYears, 0);
+  const vega = flightPlaceById("hr-7001")!;
+  assert.equal(vega.name, "Vega");
+  assert.deepEqual(vega, flightPlace(starByName("Vega")!));
+  assert.ok(Math.abs(vega.lightYears - 25) < 0.5);
+  assert.deepEqual(flightPlaceById(" HR-7001 "), vega);
+  // every place of the short list, and every star skyFrom sees, is found again by its id
+  for (const place of flightPlaces()) assert.deepEqual(flightPlaceById(place.id), place, place.id);
+  for (const seen of skyFrom({ x: 0, y: 0, z: 0 }, { magnitude: 2 })) assert.equal(flightPlaceById(seen.id)?.id, seen.id);
+  assert.equal(flightPlaceById("m31")?.id, "M31");
+  for (const id of ["", "hr-0", "hr-99999", "gctp-0", "M1", "vega", "pc_1_2_3"]) assert.equal(flightPlaceById(id), undefined, id);
+  const noParallax = stars().find((star) => starDistance(star) === undefined)!;
+  assert.equal(flightPlaceById(`hr-${noParallax.hr}`), undefined);
+  assert.throws(() => flightPlaceById(7001 as unknown as string), TypeError);
+});
+
+test("flightAddress reads an id or a point and gives the one text to write back", () => {
+  const vega = flightAddress("HR-7001")!;
+  assert.equal(vega.at, "hr-7001");
+  assert.equal(vega.place?.name, "Vega");
+  assert.deepEqual(vega.position, vega.place!.position);
+  assert.equal(flightAddress("Sun")!.at, "sun");
+  assert.equal(flightAddress("m45")!.at, "M45");
+  const point = flightAddress("pc_1.50_-2_0")!;
+  assert.equal(point.at, "pc_1.5_-2_0");
+  assert.equal(point.place, undefined);
+  assert.deepEqual(point.position, { x: 1.5, y: -2, z: 0 });
+  // what it writes, it reads as the same thing
+  for (const text of ["sun", "hr-2061", "gctp-3278", "M31", flightPointText(vega.position)]) assert.equal(flightAddress(flightAddress(text)!.at)!.at, text);
+  assert.equal(flightAddress("nowhere"), undefined);
+  assert.equal(flightAddress(""), undefined);
 });

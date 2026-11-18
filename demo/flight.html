@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; base-uri 'self'; form-action 'none'" />
+    <title>Hoshi Stars: a flight through the stars</title>
+    <meta name="robots" content="noindex" />
+    <style>
+      html, body { margin: 0; min-height: 100%; background: #0b1020; color: #e8ecff; font: 1rem/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+      [hidden] { display: none !important; }
+      #flight { display: grid; gap: 10px; max-width: 1100px; margin: 0 auto; padding: 30px 12px 12px; box-sizing: border-box; }
+      h1 { font-size: 1.15rem; margin: 0; }
+      .fl-frame { position: relative; height: clamp(320px, 62vh, 720px); border: 1px solid #2c3760; border-radius: 10px; overflow: hidden; background: #05070f; }
+      .fl-stage { position: absolute; inset: 0; outline: none; touch-action: pan-y; cursor: grab; user-select: none; -webkit-user-select: none; }
+      .fl-stage:focus-visible { outline: 3px solid #ffd86b; outline-offset: -3px; }
+      .fl-stage canvas { display: block; }
+      .fl-marks { position: absolute; inset: 0; pointer-events: none; overflow: hidden; font-size: .8rem; }
+      .fl-mark { position: absolute; left: 0; top: 0; display: flex; align-items: center; gap: 4px; margin: -9px 0 0 -9px; white-space: nowrap; text-shadow: 0 0 3px #05070f, 0 0 3px #05070f; will-change: transform; }
+      .fl-ring { width: 16px; height: 16px; border: 1px solid #ffd86b; border-radius: 50%; }
+      .fl-name { font-weight: 650; color: #ffe9a8; }
+      .fl-none { margin: 0; padding: 24px; text-align: center; color: #aab4d8; }
+      .fl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+      .fl-row button, .fl-row select { min-height: 44px; padding: 0 14px; border: 1px solid #46578c; border-radius: 8px; background: #1a2340; color: #e8ecff; font: inherit; cursor: pointer; }
+      .fl-row button:hover, .fl-row select:hover { border-color: #e8ecff; }
+      .fl-row button:focus-visible, .fl-row select:focus-visible { outline: 3px solid #ffd86b; outline-offset: 2px; }
+      #flight p { margin: 0; }
+      #fl-where { font-weight: 650; }
+      #fl-readout, #fl-dial { font-variant-numeric: tabular-nums; }
+      .fl-fine { color: #aab4d8; font-size: .85rem; }
+    </style>
+  </head>
+  <body>
+    <main id="flight" data-testid="flight">
+      <h1 id="fl-title"></h1>
+      <div id="fl-art"></div>
+      <div class="fl-row" role="group">
+        <label for="fl-to" id="fl-to-label"></label>
+        <select id="fl-to" data-testid="fl-to"></select>
+        <button type="button" id="fl-go" data-testid="fl-go"></button>
+        <button type="button" id="fl-sun" data-testid="fl-sun"></button>
+        <button type="button" id="fl-home" data-testid="fl-home"></button>
+      </div>
+      <div class="fl-row" role="group">
+        <button type="button" id="fl-slower" data-testid="fl-slower"></button>
+        <span id="fl-dial" data-testid="fl-dial"></span>
+        <button type="button" id="fl-faster" data-testid="fl-faster"></button>
+      </div>
+      <p id="fl-where" data-testid="fl-where" role="status"></p>
+      <p id="fl-readout" data-testid="fl-readout"></p>
+      <p class="fl-fine" id="fl-note"></p>
+    </main>
+    <script type="module" src="js/flight.js"></script>
+  </body>
+</html>

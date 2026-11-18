@@ -91,6 +91,8 @@ export interface FlightLeg {
   arrived: boolean;
   /** How far the place still is, in parsecs. */
   remaining: number;
+  /** How far the camera moved in this step, in parsecs: less than the speed allows while it slows to arrive. */
+  moved: number;
 }
 
 /**
@@ -230,8 +232,10 @@ export function flyStep(state: FlightState, seconds: number): FlightState {
  * @param state - The flight now. It is not changed.
  * @param target - The place to fly to.
  * @param seconds - How long the step lasts, 0 or more.
- * @param options - `stopAt`: how far from the place to stop, in parsecs (default 0: at the place itself). A star wants a little room.
- * @returns The flight after the step, whether it has arrived, and how far the place still is.
+ * @param options - `stopAt`: how far from the place to stop, in parsecs (default 0: at the place itself). A star wants a little room. `easeSeconds`: slow down to arrive: a step covers no more
+ *   than the share of what is left that `1 - exp(-seconds / easeSeconds)` is, so the last of the way is flown ever slower, whatever the frame rate, and a star grows from a point to a ball
+ *   instead of jumping (default 0: full speed to the stop).
+ * @returns The flight after the step, whether it has arrived, how far the place still is and how far the step moved.
  *
  * @example
  * ```ts
@@ -243,21 +247,30 @@ export function flyStep(state: FlightState, seconds: number): FlightState {
  * console.log(flight.position);
  * ```
  */
-export function flyToward(state: FlightState, target: FlightPoint, seconds: number, options: { stopAt?: number } = {}): FlightLeg {
+export function flyToward(state: FlightState, target: FlightPoint, seconds: number, options: { stopAt?: number; easeSeconds?: number } = {}): FlightLeg {
   const now = stateOf(state);
   const to = point("target", target);
   if (finite("seconds", seconds) < 0) throw new RangeError(`seconds must be 0 or more, got ${seconds}`);
   const stopAt = options?.stopAt ?? 0;
   if (finite("stopAt", stopAt) < 0) throw new RangeError(`stopAt must be 0 or more, got ${stopAt}`);
+  const ease = options?.easeSeconds ?? 0;
+  if (finite("easeSeconds", ease) < 0) throw new RangeError(`easeSeconds must be 0 or more, got ${ease}`);
   const dx = to.x - now.position.x;
   const dy = to.y - now.position.y;
   const dz = to.z - now.position.z;
   const away = Math.hypot(dx, dy, dz);
-  if (away <= stopAt) return { state: now, arrived: true, remaining: away };
+  if (away <= stopAt) return { state: now, arrived: true, remaining: away, moved: 0 };
   const heading = { x: dx / away, y: dy / away, z: dz / away };
-  const far = Math.min(now.speed * LIGHT_SPEED * seconds, away - stopAt);
+  const left = away - stopAt;
+  let far = Math.min(now.speed * LIGHT_SPEED * seconds, left);
+  if (ease > 0) {
+    const eased = left * -Math.expm1(-seconds / ease);
+    // What is left after an eased step never reaches nothing by itself: under a thousandth of the stopping distance, or under what the numbers can hold this far out, the step takes it all.
+    const close = stopAt * 1e-3 + (away + Math.hypot(to.x, to.y, to.z)) * 1e-13 + 1e-15;
+    if (eased < far) far = left - eased <= close ? left : eased;
+  }
   const remaining = away - far;
-  return { state: { position: { x: now.position.x + heading.x * far, y: now.position.y + heading.y * far, z: now.position.z + heading.z * far }, heading, speed: now.speed }, arrived: remaining <= stopAt, remaining };
+  return { state: { position: { x: now.position.x + heading.x * far, y: now.position.y + heading.y * far, z: now.position.z + heading.z * far }, heading, speed: now.speed }, arrived: remaining <= stopAt, remaining, moved: far };
 }
 
 /**
@@ -278,6 +291,26 @@ export function flightTime(parsecs: number, speed: number): number {
   if (finite("parsecs", parsecs) < 0) throw new RangeError(`parsecs must be 0 or more, got ${parsecs}`);
   if (!(finite("speed", speed) > 0)) throw new RangeError(`speed must be above 0, got ${speed}`);
   return parsecs / (speed * LIGHT_SPEED);
+}
+
+/**
+ * The slowest speed of the dial that covers a distance within a time: the speed a page sets for a flight to a place, so that the Moon and the Andromeda galaxy are both a few seconds away.
+ *
+ * @param parsecs - The distance, 0 or more.
+ * @param seconds - The longest the leg may take, above 0.
+ * @returns One of `FLIGHT_SPEEDS`; the fastest of them where none is fast enough.
+ *
+ * @example
+ * ```ts
+ * import { flightSpeedFor } from "@johnmorrisdotca/hoshi-stars/flight";
+ *
+ * console.log(flightSpeedFor(7.68, 10)); // 100000000: Vega in 7.7 seconds
+ * ```
+ */
+export function flightSpeedFor(parsecs: number, seconds: number): number {
+  if (finite("parsecs", parsecs) < 0) throw new RangeError(`parsecs must be 0 or more, got ${parsecs}`);
+  if (!(finite("seconds", seconds) > 0)) throw new RangeError(`seconds must be above 0, got ${seconds}`);
+  return FLIGHT_SPEEDS.find((speed) => parsecs <= speed * LIGHT_SPEED * seconds) ?? FLIGHT_SPEEDS[FLIGHT_SPEEDS.length - 1]!;
 }
 
 /**
@@ -325,4 +358,48 @@ export function fromCamera(place: FlightPoint, camera: FlightPoint, unit = 1): [
   const eye = point("camera", camera);
   if (!(finite("unit", unit) > 0)) throw new RangeError(`unit must be above 0, got ${unit}`);
   return [(at.x - eye.x) / unit, (at.y - eye.y) / unit, (at.z - eye.z) / unit];
+}
+
+const POINT_TEXT = /^pc_(-?[0-9.]+(?:e-?[0-9]+)?)_(-?[0-9.]+(?:e-?[0-9]+)?)_(-?[0-9.]+(?:e-?[0-9]+)?)$/;
+
+/**
+ * A place as text for an address: `pc_<x>_<y>_<z>`, the three parsecs written as the shortest numbers that read back the same. It is the one form of a point: `flightPointOf` reads what
+ * this writes and gives the same point, and every character is one a query string carries as it is. (A place with a name has its id instead: `flightAddress` of `/flight/places` reads both.)
+ *
+ * @param position - A place.
+ * @returns The text.
+ *
+ * @example
+ * ```ts
+ * import { flightPointText } from "@johnmorrisdotca/hoshi-stars/flight";
+ *
+ * console.log(flightPointText({ x: 1.5, y: -2, z: 0.25 })); // "pc_1.5_-2_0.25"
+ * ```
+ */
+export function flightPointText(position: FlightPoint): string {
+  const at = point("position", position);
+  // 0 for -0, and no "+" in an exponent: 1e21 parsecs is past anything there is, and is written out in full.
+  const text = (value: number): string => (value === 0 ? "0" : Math.abs(value) >= 1e21 ? BigInt(value).toString() : String(value));
+  return `pc_${text(at.x)}_${text(at.y)}_${text(at.z)}`;
+}
+
+/**
+ * The place a text of `flightPointText` names.
+ *
+ * @param text - `pc_<x>_<y>_<z>`.
+ * @returns The point, or `undefined` where the text is not one.
+ *
+ * @example
+ * ```ts
+ * import { flightPointOf } from "@johnmorrisdotca/hoshi-stars/flight";
+ *
+ * console.log(flightPointOf("pc_1.5_-2_0.25")); // { x: 1.5, y: -2, z: 0.25 }
+ * ```
+ */
+export function flightPointOf(text: string): FlightPoint | undefined {
+  const found = typeof text === "string" ? POINT_TEXT.exec(text.trim()) : null;
+  if (found === null) return undefined;
+  const [x, y, z] = [Number(found[1]), Number(found[2]), Number(found[3])];
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return undefined;
+  return { x: x === 0 ? 0 : x, y: y === 0 ? 0 : y, z: z === 0 ? 0 : z };
 }

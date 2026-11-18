@@ -435,3 +435,136 @@ test.describe("the sky by distance in 3D", () => {
     expect(Math.max(...settled.slice(2)), "no more GPU objects after 24 rounds than after the third").toBeLessThanOrEqual(settled[2]! + 4);
   });
 });
+
+test.describe("the flight", () => {
+  const FLIGHT = "/hoshi-stars/flight.html";
+  const stage = (page: Page) => page.getByTestId("fl-stage");
+  const flightFrames = (page: Page) => stage(page).evaluate((el) => (Reflect.get(el, "stats") as { draws: number }).draws);
+  const flightWindow = async (page: Page, ms: number) => {
+    const began = Date.now();
+    const start = await readCounts(page);
+    const framesStart = await flightFrames(page);
+    await page.waitForTimeout(ms);
+    const end = await readCounts(page);
+    const framesEnd = await flightFrames(page);
+    return { seconds: (Date.now() - began) / 1000, frames: framesEnd - framesStart, draws: end.draws - start.draws, requests: end.rafRequests - start.rafRequests, callbacks: end.rafCallbacks - start.rafCallbacks, outstanding: end.rafRequests - end.rafCallbacks };
+  };
+  async function openFlight(page: Page, query = ""): Promise<void> {
+    await page.addInitScript(COUNT_SCRIPT);
+    await page.goto(`${FLIGHT}${query}`);
+    await stage(page).and(page.locator("[data-live=true]")).waitFor({ timeout: 60_000 });
+    await expect.poll(async () => (await readCounts(page)).draws).toBeGreaterThan(0);
+    await page.waitForTimeout(800);
+  }
+  /** Start a flight to Betelgeuse and slow the dial a hundred times, so it is still on its way for as long as a test watches. */
+  const fly = (page: Page) =>
+    stage(page).evaluate((el) => {
+      const flight = Reflect.get(el, "flight") as { goTo(id: string): boolean; stepSpeed(direction: 1 | -1): void };
+      flight.goTo("hr-2061");
+      flight.stepSpeed(-1);
+      flight.stepSpeed(-1);
+    });
+
+  test("at rest beside the Sun nothing is drawn and no frame is asked for", async ({ page }) => {
+    await openFlight(page);
+    const rest = await flightWindow(page, 3000);
+    expect(rest.draws).toBe(0);
+    expect(rest.frames).toBe(0);
+    expect(rest.requests).toBeLessThanOrEqual(2);
+  });
+
+  test.describe("flying", () => {
+    test.use({ reducedMotion: "no-preference" });
+
+    test("it flies at most 30 frames a second, one frame asked for at a time, and rests when it arrives", async ({ page }) => {
+      await openFlight(page);
+      await fly(page);
+      const flying = await flightWindow(page, 3000);
+      expect(flying.frames, "it flies").toBeGreaterThan(5);
+      expect(flying.frames, `no more than 30 a second, over ${flying.seconds.toFixed(1)} seconds`).toBeLessThanOrEqual(flying.seconds * 30 + 4);
+      expect(flying.draws, "GL draw calls for each frame drawn").toBeLessThanOrEqual(Math.max(1, flying.frames) * 4);
+      expect(flying.requests).toBeLessThanOrEqual(flying.callbacks + 3);
+      expect(flying.outstanding, "one request waiting at a time").toBeLessThanOrEqual(3);
+      // a short flight, to its stop: Proxima Centauri at the speed chosen for it
+      await stage(page).evaluate((el) => (Reflect.get(el, "flight") as { goTo(id: string): boolean }).goTo("gctp-3278"));
+      await expect.poll(() => page.locator("html").getAttribute("data-moving"), { timeout: 60_000 }).toBe("false");
+      await page.waitForTimeout(500);
+      const rest = await flightWindow(page, 2000);
+      expect(rest.draws).toBe(0);
+      expect(rest.frames).toBe(0);
+      expect(rest.requests).toBeLessThanOrEqual(2);
+    });
+
+    test("out of sight, and in a hidden tab, it draws nothing while it would fly", async ({ page }) => {
+      await openFlight(page);
+      await fly(page);
+      await page.evaluate(() => {
+        const spacer = document.createElement("div");
+        spacer.style.height = "6000px";
+        document.body.prepend(spacer);
+        window.scrollTo(0, 0);
+      });
+      await expect.poll(async () => stage(page).evaluate((el) => el.getBoundingClientRect().top)).toBeGreaterThan(1000);
+      await page.waitForTimeout(800);
+      const away = await flightWindow(page, 2500);
+      expect(away.draws, "no GL draws out of sight").toBe(0);
+      expect(away.frames).toBe(0);
+      await stage(page).evaluate((el) => el.scrollIntoView());
+      await page.waitForTimeout(800);
+      expect((await flightWindow(page, 1000)).frames, "back in sight it flies on").toBeGreaterThan(2);
+      await page.evaluate(() => {
+        Object.defineProperty(document, "visibilityState", { configurable: true, get: () => "hidden" });
+        Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      await page.waitForTimeout(500);
+      const hidden = await flightWindow(page, 2500);
+      expect(hidden.draws, "no GL draws in a hidden tab").toBe(0);
+      expect(hidden.frames).toBe(0);
+    });
+  });
+
+  test("with reduced motion a flight is one step: it is drawn there and then rests", async ({ page }) => {
+    await openFlight(page);
+    const before = await flightFrames(page);
+    await page.getByTestId("fl-go").click();
+    await expect(page.locator("html")).toHaveAttribute("data-at", "hr-7001");
+    await page.waitForTimeout(800);
+    expect((await flightFrames(page)) - before, "a frame or two for the step, not a flight").toBeLessThanOrEqual(3);
+    const rest = await flightWindow(page, 2500);
+    expect(rest.draws).toBe(0);
+    expect(rest.frames).toBe(0);
+  });
+
+  test("on a 5K screen at a pixel ratio of 2 its canvas stays inside 6 million pixels and 4096 a side", async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 2560, height: 1440 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
+    const page = await context.newPage();
+    await openFlight(page);
+    await stage(page).evaluate((el) => {
+      el.parentElement!.style.cssText += ";position:fixed;inset:0;width:2560px;height:1440px;max-width:none;z-index:9";
+    });
+    await page.waitForTimeout(2000);
+    const size = await canvasSize(page);
+    expect(size.count).toBe(1);
+    expect(withinPixelBudget(size)).toBe(true);
+    expect((await readCounts(page)).contexts, "one WebGL context").toBe(1);
+    await context.close();
+  });
+
+  test("going to a star and back to the Sun over and over gives back what it took: GPU objects stay flat in the one context", async ({ page }) => {
+    await openFlight(page);
+    const settled: number[] = [];
+    const places = ["hr-7001", "sun", "hr-2061", "sun"];
+    for (let round = 0; round < 16; round += 1) {
+      const to = places[round % places.length]!;
+      await stage(page).evaluate((el, id) => (Reflect.get(el, "flight") as { goTo(id: string): boolean }).goTo(id), to);
+      await expect(page.locator("html")).toHaveAttribute("data-at", to);
+      await untilStill(page, drawCounts);
+      const counted = await readCounts(page);
+      settled.push(gpuObjects(counted));
+      expect(counted.contexts, "one WebGL context for the page").toBe(1);
+    }
+    console.log(`live GPU objects after each round: ${settled.join(", ")}`);
+    expect(Math.max(...settled.slice(2)), "no more GPU objects after 16 rounds than after the third").toBeLessThanOrEqual(settled[2]! + 4);
+  });
+});

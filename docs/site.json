@@ -176,13 +176,13 @@
       "platform": "neutral"
     },
     "./flight": {
-      "en": "A flight through space: position, heading and speed in multiples of light speed, a flight to a place, the distance readout, and places relative to the camera",
-      "ja": "宇宙を飛ぶ (位置・向き・光速の何倍かの速さ、目的地への飛行、距離の表示、カメラから見た位置)",
+      "en": "A flight through space: position, heading and speed in multiples of light speed, a flight to a place that slows to stop, the distance readout, places relative to the camera, and a point as text for an address",
+      "ja": "宇宙を飛ぶ (位置・向き・光速の何倍かの速さ、ゆっくり止まる目的地への飛行、距離の表示、カメラから見た位置、アドレスに書く位置)",
       "platform": "neutral"
     },
     "./flight/places": {
-      "en": "Places a flight can go to: a star, a nearby star or a Messier galaxy as a point in space, how well its distance is known, and a short list to start from",
-      "ja": "飛んで行ける場所 (星・近くの星・メシエの銀河の位置、距離の確かさ、最初のリスト)",
+      "en": "Places a flight can go to: a star, a nearby star or a Messier galaxy as a point in space, how well its distance is known, a short list to start from, a place by its id, and where a camera is read from an address",
+      "ja": "飛んで行ける場所 (星・近くの星・メシエの銀河の位置、距離の確かさ、最初のリスト、IDで探す場所、アドレスから読むカメラの位置)",
       "platform": "neutral"
     },
     "./near-stars": {
