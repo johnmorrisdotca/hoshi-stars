@@ -8,7 +8,8 @@ import { starByName, stars } from "../src/stars.ts";
 
 test("stars({ minGrade }) keeps the grade and better, in the table's order", () => {
   assert.equal(stars({ minGrade: "A" }).length, 68);
-  assert.equal(stars({ minGrade: "B" }).length, 68 + 461);
+  // 461 B stars before MODULES-1221, which moved nine dynamical parallaxes of 1 and 2 mas from B to C
+  assert.equal(stars({ minGrade: "B" }).length, 68 + 452);
   assert.equal(stars({ minGrade: "C" }).length, 5080);
   assert.equal(stars().length, 5080);
   assert.ok(stars({ minGrade: "B" }).every((star) => gradeAtLeast(starAccuracy(star).grade, "B")));
