@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Seven source files are smaller** (MODULES-258). Types, style sheets, figures, the Milky Way layer and the placing of points moved out of `chart/chart.ts`, `chart/element.ts`, `my-sky/element.ts`, `door.ts`, `figure-lines.ts`, `milky-way.ts` and `profile.ts` into files beside them. Nothing changed in behaviour or in the exports: each moved type is still exported from the file it was in, `site/api.html` is byte for byte the same, and the API pages differ only in the source links.
+
 ## [0.50.1] - 2026-11-17
 
 - **`<hoshi-my-sky>`: a press on a planet picks the planet, and close planets write their names apart** (MODULES-1496). A press on a planet's dot or on its name now picks it before any mark of the page's, even a mark nearer to the press; the planet's reach is 18 px, the same as a mark's (it was 16), and its name counts as part of it (it did not, so a press on "Mars" a little beyond the dot went to a satellite mark). The names of the planets are placed with a collision test: a name goes to the right of its dot, else the left, else a line down or up, and never over another planet's dot or name (Mars and Jupiter had printed one over the other). Tests: `test/my-sky-press.test.ts` and, in the browser, `e2e/my-sky-target.demo.ts` ("a press on a planet's name or dot picks the planet, not a mark of the page beside it").

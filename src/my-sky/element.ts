@@ -8,11 +8,13 @@ import { localFrame, type LocalFrame } from "./frame.ts";
 import { attachSkyHands, type SkyHands, type SkyView } from "./hands.ts";
 import { cleanMarks, sameMarks, type SkyMark } from "./marks.ts";
 import { pickBody } from "./reach.ts";
-import { skyReport, type SkyReport } from "./report.ts";
+import { skyReport } from "./report.ts";
 import { resolveStarId, resolveTarget, type ResolvedTarget } from "./target-stars.ts";
-import { glideView, riseAndSet, targetInSky, viewOfGroup, viewOfObject, type RiseAndSet, type SkyTarget, type TargetInSky } from "./target.ts";
+import { glideView, riseAndSet, targetInSky, viewOfGroup, viewOfObject, type RiseAndSet, type SkyTarget } from "./target.ts";
 import { clampView, openingHeading, type SkyCamera } from "./view.ts";
 import { compassPoint, mySkyWords, say, type MySkyLanguage } from "./words.ts";
+import { FONT, STYLE } from "./style.ts";
+import type { MySkyMarkDetail, MySkyPick, MySkyReport, MySkyTargetDetail, MySkyTargetReport, MySkyViewDetail } from "./types.ts";
 
 /**
  * The tag, defined by `@johnmorrisdotca/hoshi-stars/my-sky/define`.
@@ -29,119 +31,7 @@ import { compassPoint, mySkyWords, say, type MySkyLanguage } from "./words.ts";
  */
 export const MY_SKY_TAG = "hoshi-my-sky";
 
-/**
- * What `hoshi-sky-view` says: which way the sky faces now, and `final` once the hand has settled.
- *
- * @example
- * ```ts no-run
- * import type { MySkyViewDetail } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
- *
- * document.querySelector("hoshi-my-sky")!.addEventListener("hoshi-sky-view", (event) => {
- *   const { heading, pitch, fov, final } = (event as CustomEvent<MySkyViewDetail>).detail;
- *   if (final) console.log(`facing ${Math.round(heading)}, looking ${Math.round(pitch)} up, ${Math.round(fov)} across`);
- * });
- * ```
- */
-export interface MySkyViewDetail extends SkyView {
-  final: boolean;
-}
-
-/**
- * What `hoshi-sky-pick` says: a tap landed on the Sun (`kind` `sun`), the Moon (`moon`), a planet (`planet`, `id` its name in lower case), a constellation (`figure`, `id` its three-letter abbreviation) or nothing (`none`).
- *
- * @example
- * ```ts no-run
- * import type { MySkyPick } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
- *
- * document.querySelector("hoshi-my-sky")!.addEventListener("hoshi-sky-pick", (event) => {
- *   const { kind, id } = (event as CustomEvent<MySkyPick>).detail;
- *   console.log(kind, id);
- * });
- * ```
- */
-export interface MySkyPick {
-  kind: "sun" | "moon" | "planet" | "figure" | "none";
-  id: string | null;
-}
-
-/**
- * What `hoshi-sky-target` says once the view has turned to the target (`reached` true), or was turned away by the reader or the page before it got there (`reached` false): the target as it was set, its name in the language shown, where it stands and whether it is up.
- *
- * @example
- * ```ts no-run
- * import type { MySkyTargetDetail } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
- *
- * document.querySelector("hoshi-my-sky")!.addEventListener("hoshi-sky-target", (event) => {
- *   const { label, up, reached } = (event as CustomEvent<MySkyTargetDetail>).detail;
- *   if (reached) console.log(up ? `${label} is up` : `${label} is below the horizon`);
- * });
- * ```
- */
-export interface MySkyTargetDetail {
-  /** The target as it was set: the text, or the point. */
-  target: SkyTarget;
-  /** What it is: `star`, `constellation`, `planet`, `moon`, `sun` or `point`. */
-  kind: ResolvedTarget["kind"];
-  /** Its name in the language shown. */
-  label: string;
-  /** Whether the view got to it. */
-  reached: boolean;
-  /** Where it stands now, and whether it is up. */
-  altitude: number;
-  azimuth: number;
-  up: boolean;
-}
-
-/**
- * What `hoshi-sky-mark` says when a mark of the page's is pressed (with a tap, or Enter or Space on its button for a keyboard): the mark's own numbers.
- *
- * @example
- * ```ts no-run
- * import type { MySkyMarkDetail } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
- *
- * document.querySelector("hoshi-my-sky")!.addEventListener("hoshi-sky-mark", (event) => {
- *   console.log((event as CustomEvent<MySkyMarkDetail>).detail.id);
- * });
- * ```
- */
-export interface MySkyMarkDetail {
-  id: string;
-  label: string;
-  kind: string | undefined;
-  azimuth: number;
-  altitude: number;
-}
-
-/**
- * The target in `sky`: where it stands over the place, whether it is up (`up`), its next `rise` and `set` and whether it is `always` or `never` up there, with what it is and its name in each language.
- *
- * @example
- * ```ts no-run
- * import type { MySkyTargetReport } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
- *
- * const say = (t: MySkyTargetReport): string => `${t.label.en} is ${t.up ? "up" : "down"}`;
- * console.log(typeof say);
- * ```
- */
-export interface MySkyTargetReport extends TargetInSky {
-  kind: ResolvedTarget["kind"];
-  label: { en: string; ja: string };
-}
-
-/**
- * What the element's `sky` property gives: the Sun, the Moon and the planets (`SkyReport`) and the target, or `null` while there is none (or it names nothing).
- *
- * @example
- * ```ts no-run
- * import type { MySkyReport } from "@johnmorrisdotca/hoshi-stars/my-sky/element";
- *
- * const up = (report: MySkyReport): boolean => report.target?.up === true;
- * console.log(typeof up);
- * ```
- */
-export interface MySkyReport extends SkyReport {
-  target: MySkyTargetReport | null;
-}
+export type { MySkyMarkDetail, MySkyPick, MySkyReport, MySkyTargetDetail, MySkyTargetReport, MySkyViewDetail };
 
 /** The field of view the sky opens at, in degrees across the smaller side. */
 const OPENING_FOV = 90;
@@ -150,30 +40,8 @@ const OPENING_PITCH = 35;
 /** How often a live sky redraws for the turn of the Earth: the sky moves a quarter of a degree a minute. */
 const TICK_MS = 10_000;
 const TICK_REDUCED_MS = 60_000;
-const FONT = '"Hiragino Sans", "Noto Sans JP", system-ui, sans-serif';
 
-const STYLE = `:host{display:block;position:relative;aspect-ratio:4/5;min-height:320px;background:#05081a;color:#e6ecff;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;outline:none;font:13px/1.35 ${FONT}}
-:host(:focus-visible){box-shadow:inset 0 0 0 3px var(--hoshi-focus,#8fb3ff)}
-canvas.sky{position:absolute;inset:0;width:100%;height:100%;display:block}
-.panel{position:absolute;top:8px;left:8px;max-width:min(19em,calc(100% - 16px));box-sizing:border-box;padding:8px 10px;background:rgba(8,12,28,.84);border:1px solid rgba(160,185,245,.28);border-radius:10px;touch-action:manipulation;cursor:default}
-.head{display:flex;align-items:center;gap:10px}
-.icon{width:36px;height:36px;flex:none;display:block}
-.title{font-weight:600;font-size:14px}
-.rows{margin:6px 0 0;padding:0;list-style:none;color:#cbd6f5}
-.rows li{margin:2px 0}
-.rows .dim{color:#9fb0dc}
-.note{margin:6px 0 0;color:#ffd9a0}
-.toggle{margin-left:auto;flex:none;min-width:32px;min-height:32px;padding:0;border:1px solid rgba(160,185,245,.35);border-radius:8px;background:transparent;color:inherit;font:inherit;cursor:pointer}
-.toggle:focus-visible{outline:2px solid var(--hoshi-focus,#8fb3ff)}
-.panel[data-collapsed] .rows,.panel[data-collapsed] .note{display:none}
-.panel[data-collapsed] .title{display:none}
-.facing{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);max-width:calc(100% - 16px);box-sizing:border-box;padding:4px 12px;border-radius:999px;background:rgba(8,12,28,.62);color:#dfe7ff;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-.message{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#cbd6f5}
-.target{position:absolute;left:50%;bottom:40px;transform:translateX(-50%);width:max-content;max-width:calc(100% - 16px);box-sizing:border-box;padding:6px 12px;border-radius:10px;background:rgba(8,12,28,.84);border:1px solid rgba(255,226,140,.45);color:#ffe9a8;text-align:center;pointer-events:none}
-.target p{margin:1px 0}
-.target .more{color:#cbd6f5}
-.marklist{position:absolute;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;list-style:none}
-[hidden]{display:none!important}`;
+
 /** How long a glide to a target takes: at least this, and up to the same again for a long way round. */
 const GLIDE_MS = 450;
 

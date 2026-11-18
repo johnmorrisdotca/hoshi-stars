@@ -5,13 +5,16 @@ import type { Culture } from "../culture.ts";
 import type { Projection } from "../projection.ts";
 import { western } from "../cultures/western.ts";
 import { chart, constellationUnder, defaultZoom, figureById, figureUnder, type Hit, type View } from "./chart.ts";
-import { pickAccuracy, type PickAccuracy } from "./uncertainty.ts";
+import { pickAccuracy } from "./uncertainty.ts";
 import { starByHr } from "../index.ts";
 import { attachHands, type Hands } from "./hands.ts";
 import { normaliseMarkers, type MarkerRange, type MarkerWhen, type SkyMarker } from "./markers.ts";
 import type { MarkerHit } from "./markers-draw.ts";
-import { normaliseBodies, type SkyBody, type SkyBodyNames } from "./bodies.ts";
-import { CHART_BACKGROUND, CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAULT_CHART_MAGNITUDE, type ChartLayer } from "./svg.ts";
+import { normaliseBodies, type SkyBody } from "./bodies.ts";
+import { CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAULT_CHART_MAGNITUDE, type ChartLayer } from "./svg.ts";
+import { CHART_ZOOM_LIMIT, CHART_ZOOM_MAX, CHART_ZOOM_MIN, constellationOf, CULTURES, number, PROJECTIONS, TAB_STOPS } from "./element-config.ts";
+import { STYLE } from "./element-style.ts";
+import type { ChartMarkerDetail, ChartPick, ChartViewDetail } from "./element-types.ts";
 
 /**
  * The tag, defined by `@johnmorrisdotca/hoshi-stars/chart/define`.
@@ -28,98 +31,8 @@ import { CHART_BACKGROUND, CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAU
 export const CHART_TAG = "hoshi-chart";
 
 export type { View };
-/** The zoom range when the page names none: 0.1 to 500, in the chart's own unit (1 is the projection's fit of the whole sky). `zoom-max` raises it as far as 8000, the deep-sky pictures' own range. */
-const CHART_ZOOM_MIN = 0.1;
-const CHART_ZOOM_MAX = 500;
-const CHART_ZOOM_LIMIT = 8000;
+export type { ChartMarkerDetail, ChartPick, ChartViewDetail };
 
-const PROJECTIONS: readonly Projection[] = ["stereographic", "orthographic", "gnomonic", "equidistant", "equirectangular", "mollweide", "hammer"];
-const CULTURES: Record<string, () => Promise<Culture>> = {
-  western: async () => western,
-  japanese: async () => (await import("../cultures/japanese.ts")).japanese,
-  chinese: async () => (await import("../cultures/chinese.ts")).chinese,
-};
-
-/**
- * What `hoshi-pick` says: a body of the page's `bodies` (`kind` `body`, `id` its own, with `names`), a star (`id` its HR number, with `accuracy`: its grade, the distance range and the position resolution), a deep-sky object (`M42`), a black hole (`cygnus-x-1`), a figure (`id` the figure's, with `abbreviation` for a constellation), or nothing (`kind` `none`).
- *
- * @example
- * ```ts no-run
- * import type { ChartPick } from "@johnmorrisdotca/hoshi-stars/chart/element";
- *
- * document.querySelector("hoshi-chart")!.addEventListener("hoshi-pick", (event) => {
- *   const { kind, id, abbreviation, accuracy } = (event as CustomEvent<ChartPick>).detail;
- *   console.log(kind, id, abbreviation ?? "", accuracy?.grade ?? "");
- * });
- * ```
- */
-export interface ChartPick {
-  kind: "star" | "deep" | "hole" | "figure" | "body" | "none";
-  id: string | null;
-  /** For a body only: its names in English and Japanese, as the page gave them. */
-  names?: SkyBodyNames | undefined;
-  abbreviation?: string | undefined;
-  /** For a star only: how well it is known (`PickAccuracy`): the grade A, B or C, the distance range in light-years (`null` where there is none) and the position resolution in arc-seconds. */
-  accuracy?: PickAccuracy | undefined;
-}
-
-/**
- * What `hoshi-view` says: where the chart looks now, and `final` once the hand has settled.
- *
- * @example
- * ```ts no-run
- * import type { ChartViewDetail } from "@johnmorrisdotca/hoshi-stars/chart/element";
- *
- * document.querySelector("hoshi-chart")!.addEventListener("hoshi-view", (event) => {
- *   const { ra, dec, zoom, final } = (event as CustomEvent<ChartViewDetail>).detail;
- *   if (final) history.replaceState(null, "", `?ra=${ra.toFixed(2)}&dec=${dec.toFixed(2)}&zoom=${zoom.toFixed(2)}`);
- * });
- * ```
- */
-export interface ChartViewDetail {
-  projection: Projection;
-  ra: number;
-  dec: number;
-  zoom: number;
-  final: boolean;
-}
-
-/**
- * What `hoshi-marker` says: a marker was clicked, tapped, or chosen with Enter or Space while it had the focus.
- *
- * @example
- * ```ts no-run
- * import type { ChartMarkerDetail } from "@johnmorrisdotca/hoshi-stars/chart/element";
- *
- * document.querySelector("hoshi-chart")!.addEventListener("hoshi-marker", (event) => {
- *   const { marker, id, source } = (event as CustomEvent<ChartMarkerDetail>).detail;
- *   console.log(id, marker.label ?? "", source);
- * });
- * ```
- */
-export interface ChartMarkerDetail {
-  /** The marker, as the page gave it (the same object when it was set as a property). */
-  marker: SkyMarker;
-  /** The marker's `id`, or `m<position>` when it has none. */
-  id: string;
-  /** Its position in `markers`. */
-  index: number;
-  /** `pointer` for a click or a tap, `key` for Enter or Space on a marker that has the focus. */
-  source: "pointer" | "key";
-}
-
-/** At most this many markers are reached with the Tab key (the first drawn, in the order given); every marker can still be clicked. */
-const TAB_STOPS = 40;
-
-const STYLE = `:host{display:block;position:relative;aspect-ratio:16/10;min-height:160px;background:${CHART_BACKGROUND};border-radius:8px;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;outline:none}
-:host(:focus-visible){box-shadow:0 0 0 3px var(--hoshi-focus,#8fb3ff)}:host([theme="light"]:focus-visible){box-shadow:0 0 0 3px var(--hoshi-focus,#1d4ed8)}
-svg{position:absolute;inset:0;width:100%;height:100%;display:block}
-[data-marker]{cursor:pointer;outline:none}[data-marker]:focus-visible circle{stroke:var(--hoshi-focus,#8fb3ff);stroke-width:3}`;
-
-const number = (text: string | null, fallback: number): number => {
-  const n = Number(text);
-  return text !== null && text.trim() !== "" && Number.isFinite(n) ? n : fallback;
-};
 
 // On a server (a framework's render, or Node) there is no HTMLElement: the class still loads, as a stand-in nothing defines, so importing the chart never throws there.
 const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
@@ -578,9 +491,4 @@ export class HoshiChartElement extends Base {
     const figure = figureById(found.abbreviation, this.#culture);
     return figure === undefined ? undefined : { id: figure.asterism.id, abbreviation: found.abbreviation };
   }
-}
-
-/** A Western or Japanese figure's id is its constellation's abbreviation when it is one of the 88 (`Ori`), and an asterism's own id otherwise. */
-function constellationOf(id: string): { abbreviation?: string } {
-  return /^[A-Z][a-z]{2}$/.test(id) ? { abbreviation: id } : {};
 }
