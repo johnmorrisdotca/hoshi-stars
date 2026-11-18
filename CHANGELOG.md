@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A flight through space, the arithmetic: `@johnmorrisdotca/hoshi-stars/flight`** (MODULES-670, step 1). A flight is a position in parsecs (the Sun at the origin, the point `skyFrom` takes, so the sky from where the flight is now is `skyFrom(state.position)`), a heading and a speed in multiples of the speed of light. `flyStep` moves it for a time; `flyToward` turns it to a place, moves it and stops at a stopping distance without passing it; `FLIGHT_SPEEDS` and `stepFlightSpeed` are the dial, 1 c to 10 million million c in tens (the Andromeda galaxy in 8 seconds at the top); `flightTime` says how long a leg takes; `flightReadout` gives the distance from the Sun in kilometres, astronomical units, light-years and parsecs, the light-travel time, and which unit suits; `flightPoint` turns a right ascension, declination and distance into a place; `fromCamera` gives a place relative to the camera, taken in 64-bit numbers first, so what is near the camera is drawn with small numbers however far out it is. No data and no drawing yet: the view that flies is the next step.
+
 ## [0.50.2] - 2026-11-17
 
 - **Seven source files are smaller** (MODULES-258). Types, style sheets, figures, the Milky Way layer and the placing of points moved out of `chart/chart.ts`, `chart/element.ts`, `my-sky/element.ts`, `door.ts`, `figure-lines.ts`, `milky-way.ts` and `profile.ts` into files beside them. Nothing changed in behaviour or in the exports: each moved type is still exported from the file it was in, `site/api.html` is byte for byte the same, and the API pages differ only in the source links.

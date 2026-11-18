@@ -258,6 +258,11 @@
       "import": "./dist/sky-from-nearby.js",
       "default": "./dist/sky-from-nearby.js"
     },
+    "./flight": {
+      "types": "./dist/flight.d.ts",
+      "import": "./dist/flight.js",
+      "default": "./dist/flight.js"
+    },
     "./constellation-3d": {
       "types": "./dist/constellation-3d.d.ts",
       "import": "./dist/constellation-3d.js",
