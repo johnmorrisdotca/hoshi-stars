@@ -59,10 +59,13 @@ test("Japanese words, the star in katakana, and the page fits the width of the s
 
 test("the darkness of the site changes how many stars show, and the moment is kept in the address", async ({ page }) => {
   await page.goto(`${PAGE}?country=CA&region=CA-BC&${NIGHT}`);
-  const rural = await page.locator('[data-testid="tn-stars"] circle').count();
+  const stars = page.locator('[data-testid="tn-stars"] circle');
+  // the chart draws after the page has loaded: read the rural count once stars are drawn and the count holds, not before (a slow page read 0)
+  let rural = 0;
+  await expect.poll(async () => { const now = await stars.count(); const steady = now > 0 && now === rural; rural = now; return steady; }, { intervals: [250] }).toBe(true);
   await page.locator('#limits button[data-value="city"]').click();
   await expect(page.locator('#limits button[data-value="city"]')).toHaveAttribute("aria-pressed", "true");
-  await expect.poll(() => page.locator('[data-testid="tn-stars"] circle').count()).toBeLessThan(rural / 3);
+  await expect.poll(() => stars.count()).toBeLessThan(rural / 3);
   await expect.poll(() => param(page, "limit")).toBe("city");
   await expect.poll(() => param(page, "t")).toBe("2026-11-08T10:00Z");
   await page.locator("#now").click();
