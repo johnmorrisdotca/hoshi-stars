@@ -44,6 +44,8 @@ export function attachSkyHands(box: HTMLElement, host: SkyHandsHost): SkyHands {
   const controller = createViewController({
     turnable: true,
     limits: { tiltMax: 1e9, zoomMin: 0.01, zoomMax: 10 },
+    // The sky is a dome with no edge to hold, so two fingers move it at every field of view and as far as they like (the controller's own pan stops at its Fit, which is the opening field, and at the edge of the picture), and the element's `touch-action: none` is kept: the controller sets `pan-y` on it at Fit, and the browser then takes a finger's vertical drag for the page.
+    freePan: 1000,
     objectSize: { width: 1e7, height: 1e7 },
     onChange: (state, info) => {
       // The family's gesture check reads the view from the element: its `controller`, its `state` and a `kazoku-viewchange` event for every change.
@@ -84,13 +86,14 @@ export function attachSkyHands(box: HTMLElement, host: SkyHandsHost): SkyHands {
     const open = host.opening();
     let { heading, pitch, fov } = camera;
     const k = state.zoom / before.zoom;
-    if (Math.abs(k - 1) > 1e-9) {
-      fov = fovFor(state.zoom, open);
-    } else {
+    const zooming = Math.abs(k - 1) > 1e-9;
+    if (zooming) fov = fovFor(state.zoom, open);
+    // Two fingers move and zoom the view in one event (the pair never moves in step, so the distance between them is hardly ever the same twice): the zoom is played, and so is the move of their middle, which is what a two-finger drag is. A wheel or a key that zooms keeps the turn it had.
+    if (!zooming || reason === "pinch") {
       const turnX = wrap180(state.yaw - before.yaw);
       const turnY = state.tilt - before.tilt;
       // One pixel of the picture is `degreesPerPixel` of sky: dragging the sky right turns you left, and dragging it down lifts your eyes.
-      const degrees = degreesPerPixel(camera);
+      const degrees = degreesPerPixel({ ...camera, fov });
       if (reason === "key") {
         const step = shift ? KEY_STEP_FAR : KEY_STEP;
         const side = turnX !== 0 ? turnX : shift ? wrap180(state.roll! - before.roll!) : 0;
@@ -99,9 +102,12 @@ export function attachSkyHands(box: HTMLElement, host: SkyHandsHost): SkyHands {
       } else if (turnX !== 0 || turnY !== 0) {
         heading -= turnX;
         pitch -= turnY;
-      } else if (state.panX !== before.panX || state.panY !== before.panY) {
-        heading -= (state.panX - before.panX) * degrees;
-        pitch += (state.panY - before.panY) * degrees;
+      } else {
+        // The pan the zoom itself scales (an offset the sky already played is not played again as the fingers' distance wobbles) is left out: only the fingers' own move counts.
+        const moveX = state.panX - before.panX * k;
+        const moveY = state.panY - before.panY * k;
+        heading -= moveX * degrees;
+        pitch += moveY * degrees;
       }
     }
     const held = { heading: (((heading % 360) + 360) % 360), pitch: Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch)), fov: Math.max(FOV_MIN, Math.min(FOV_MAX, fov)) };

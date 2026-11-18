@@ -105,6 +105,30 @@ test("a touch drag turns the view too", async ({ page, browserName }) => {
   await expect.poll(async () => (await view(page)).heading).toBeGreaterThan(185);
 });
 
+test("two fingers dragging together turn the sky, at the opening field of view and zoomed in (MODULES-1530)", async ({ page, browserName }) => {
+  test.skip(browserName !== "chromium", "touch events are sent through Chromium's own protocol");
+  await ready(page, EVENING);
+  const client = await page.context().newCDPSession(page);
+  for (const fov of [undefined, 40]) {
+    await sky(page).evaluate((el, narrow) => (el as SkyElement).setView({ heading: 180, pitch: 20, ...(narrow === undefined ? {} : { fov: narrow }) }), fov);
+    const before = await view(page);
+    const box = (await sky(page).boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: x - 40, y, id: 1 }, { x: x + 40, y, id: 2 }] });
+    // the two fingers do not arrive together: the first moves, then the second, as a real pair do
+    for (let step = 1; step <= 8; step++) {
+      await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x - 40 - step * 8, y: y + step * 3, id: 1 }, { x: x + 40 - (step - 1) * 8, y: y + (step - 1) * 3, id: 2 }] });
+      await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x - 40 - step * 8, y: y + step * 3, id: 1 }, { x: x + 40 - step * 8, y: y + step * 3, id: 2 }] });
+    }
+    await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    // the sky was pulled left and down, so you now face to the right of south, and tipped up
+    await expect.poll(async () => (await view(page)).heading, { message: `at a field of ${fov ?? "the opening"}` }).toBeGreaterThan(before.heading + 3);
+    expect((await view(page)).pitch).toBeGreaterThan(before.pitch + 1);
+    expect(Math.abs((await view(page)).fov - before.fov)).toBeLessThan(1);
+  }
+});
+
 test("the arrow keys look the way they point, + and - change the field of view, Home goes back, and each says so", async ({ page }) => {
   await ready(page, EVENING);
   await sky(page).focus();
