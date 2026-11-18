@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **`<hoshi-my-sky>`: two fingers dragging together turn the sky** (MODULES-1530). On a touch screen the controller moved the view by the middle of the two fingers, but the sky played only the zoom of each event: a pair of fingers never moves in step, so the distance between them changed in almost every event and the move of their middle was dropped. The sky now plays both, the move at the scale of the field of view the event leaves it at. A pinch, a wheel and the keys are as they were.
+
 ## [0.50.2] - 2026-11-17
 
 - **Seven source files are smaller** (MODULES-258). Types, style sheets, figures, the Milky Way layer and the placing of points moved out of `chart/chart.ts`, `chart/element.ts`, `my-sky/element.ts`, `door.ts`, `figure-lines.ts`, `milky-way.ts` and `profile.ts` into files beside them. Nothing changed in behaviour or in the exports: each moved type is still exported from the file it was in, `site/api.html` is byte for byte the same, and the API pages differ only in the source links.

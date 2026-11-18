@@ -84,13 +84,14 @@ export function attachSkyHands(box: HTMLElement, host: SkyHandsHost): SkyHands {
     const open = host.opening();
     let { heading, pitch, fov } = camera;
     const k = state.zoom / before.zoom;
-    if (Math.abs(k - 1) > 1e-9) {
-      fov = fovFor(state.zoom, open);
-    } else {
+    const zooming = Math.abs(k - 1) > 1e-9;
+    if (zooming) fov = fovFor(state.zoom, open);
+    // Two fingers move and zoom the view in one event (the pair never moves in step, so the distance between them is hardly ever the same twice): the zoom is played, and so is the move of their middle, which is what a two-finger drag is. A wheel or a key that zooms keeps the turn it had.
+    if (!zooming || reason === "pinch") {
       const turnX = wrap180(state.yaw - before.yaw);
       const turnY = state.tilt - before.tilt;
       // One pixel of the picture is `degreesPerPixel` of sky: dragging the sky right turns you left, and dragging it down lifts your eyes.
-      const degrees = degreesPerPixel(camera);
+      const degrees = degreesPerPixel({ ...camera, fov });
       if (reason === "key") {
         const step = shift ? KEY_STEP_FAR : KEY_STEP;
         const side = turnX !== 0 ? turnX : shift ? wrap180(state.roll! - before.roll!) : 0;
