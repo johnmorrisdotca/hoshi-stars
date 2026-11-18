@@ -32,7 +32,7 @@ interface SkyElement extends HTMLElement {
   time: Date | null;
   setView(change: { heading?: number; pitch?: number; fov?: number }): void;
   sky: { target: TargetReport | null } | undefined;
-  _stats: { draws: number; ring: { x: number; y: number; r: number } | null; marks: Array<{ id: string; x: number; y: number }>; gliding: boolean };
+  _stats: { draws: number; ring: { x: number; y: number; r: number } | null; marks: Array<{ id: string; x: number; y: number }>; planets: Array<{ id: string; x: number; y: number; name: { x0: number; y0: number; x1: number; y1: number } | undefined }>; gliding: boolean };
 }
 
 const sky = (page: Page) => page.locator("hoshi-my-sky");
@@ -325,6 +325,42 @@ test("the page's own marks are drawn and named, and a press on one tells the pag
   await sky(page).evaluate((el) => ((el as SkyElement).marks = []));
   await expect.poll(async () => (await stats(page)).marks.length).toBe(0);
   await expect(sky(page).locator(".marklist button")).toHaveCount(0);
+});
+
+test("a press on a planet's name or dot picks the planet, not a mark of the page beside it", async ({ page }) => {
+  await ready(page, EVENING);
+  await sky(page).evaluate((el) => {
+    (window as unknown as { log: string[] }).log = [];
+    el.addEventListener("hoshi-sky-mark", (event) => (window as unknown as { log: string[] }).log.push(`mark:${(event as CustomEvent).detail.id}`));
+    el.addEventListener("hoshi-sky-pick", (event) => (window as unknown as { log: string[] }).log.push(`pick:${(event as CustomEvent).detail.kind}:${(event as CustomEvent).detail.id}`));
+  });
+  await aim(page, "planet:saturn");
+  await expect.poll(async () => (await stats(page)).planets.find((p) => p.id === "saturn")?.name !== undefined && !(await stats(page)).gliding).toBe(true);
+  const saturn = (await aimed(page))!;
+  // a satellite one degree beside Saturn gives the pixels to a degree; it is then put where the end of Saturn's name is, so that it reaches the press on the name
+  const markAt = (offset: number) => sky(page).evaluate((el, at) => ((el as SkyElement).marks = [{ id: "iss", azimuth: at.azimuth + at.offset, altitude: at.altitude, label: "ISS", kind: "satellite" }]), { ...saturn, offset });
+  await markAt(1);
+  await expect.poll(async () => (await stats(page)).marks.length).toBe(1);
+  const first = await stats(page);
+  const dot = first.planets.find((p) => p.id === "saturn")!;
+  const pixelsPerDegree = Math.abs(first.marks[0]!.x - dot.x);
+  const onName = { x: dot.name!.x1 - 3, y: (dot.name!.y0 + dot.name!.y1) / 2 };
+  await markAt(((onName.x - dot.x) / pixelsPerDegree) * Math.sign(first.marks[0]!.x - dot.x));
+  await expect.poll(async () => Math.abs((await stats(page)).marks[0]!.x - onName.x) < 4).toBe(true);
+  const now = await stats(page);
+  const planet = now.planets.find((p) => p.id === "saturn")!;
+  const mark = now.marks[0]!;
+  // the press is on the name, inside the mark's reach and out of the planet's dot's: the old rule gave it to the mark
+  expect(Math.hypot(onName.x - mark.x, onName.y - mark.y)).toBeLessThanOrEqual(18);
+  expect(Math.hypot(onName.x - planet.x, onName.y - planet.y)).toBeGreaterThan(18);
+  // the page may scroll when the element takes the focus: the box is read again for each press
+  const press = async (spot: { x: number; y: number }) => {
+    const here = (await sky(page).boundingBox())!;
+    await page.mouse.click(here.x + spot.x, here.y + spot.y);
+  };
+  await press(onName);
+  await press(planet);
+  expect(await page.evaluate(() => (window as unknown as { log: string[] }).log)).toEqual(["pick:planet:saturn", "pick:planet:saturn"]);
 });
 
 test("the freeze rule: at rest nothing is drawn and no frame is asked for; the same marks again draw nothing and new places draw once", async ({ page }) => {

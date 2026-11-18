@@ -4,6 +4,7 @@ import { halo } from "./bodies-draw.ts";
 import type { DrawnBody } from "./draw.ts";
 import type { Direction, LocalFrame } from "./frame.ts";
 import type { SkyMark } from "./marks.ts";
+import { MARK_REACH } from "./reach.ts";
 import { projectDirection, type CameraAxes, type SkyCamera } from "./view.ts";
 
 const RAD = Math.PI / 180;
@@ -179,7 +180,7 @@ export function drawMarks(ctx: CanvasRenderingContext2D, camera: SkyCamera, axes
     ctx.fill();
     writeBeside(ctx, mark.label, x, y, 10, camera.width, "rgba(255, 232, 190, 0.96)");
     ctx.globalAlpha = 1;
-    hits.push({ kind: "mark", id: mark.id, x, y, r: 18 });
+    hits.push({ kind: "mark", id: mark.id, x, y, r: MARK_REACH });
   }
   return hits;
 }
