@@ -561,6 +561,43 @@ console.log(sky.length, sky.skipped);                                           
 
 The demo has a **View from** choice (the Earth's sky, Alpha Centauri, Sirius and more, or the star you picked) that redraws the chart, the constellation lines and the Nearby panel from there, kept in the address as `from=HR5459`. `scripts/check-sky-from.py` checks the result against astropy by hand. [The sky from another star](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
+## A flight through the stars
+
+`@johnmorrisdotca/hoshi-stars/flight` is the arithmetic of a camera that flies: a position in parsecs with the Sun at the origin (the point `skyFrom` takes, so the sky from where the flight is now is `skyFrom(state.position)`), a heading and a speed in multiples of the speed of light. `/flight/places` turns a star, a nearby star or a Messier galaxy into a place to fly to, with how well its distance is known. Neither draws anything.
+
+```ts
+import { flightReadout, flightSpeedFor, flightStart, flyToward } from "@johnmorrisdotca/hoshi-stars/flight";
+import { flightAddress, flightPlaceById } from "@johnmorrisdotca/hoshi-stars/flight/places";
+
+const vega = flightPlaceById("hr-7001")!;
+let flight = { ...flightStart(), speed: flightSpeedFor(vega.lightYears / 3.2616, 4) };
+let seconds = 0;
+for (;;) {
+  const leg = flyToward(flight, vega.position, 1 / 30, { stopAt: 1e-6, easeSeconds: 0.25 });
+  flight = leg.state;
+  seconds += 1 / 30;
+  if (leg.arrived) break;
+}
+console.log(flight.speed, seconds.toFixed(1), flightReadout(flight.position).lightYears.toFixed(1)); // 1000000000 6.0 25.1
+console.log(flightAddress("HR-7001")?.at);                                                           // hr-7001
+```
+
+| Function | Gives |
+|---|---|
+| `flightStart()` | a `FlightState` at the Sun: `position`, `heading`, `speed` |
+| `flyStep(state, seconds)` | the state after moving along its heading |
+| `flyToward(state, target, seconds, { stopAt?, easeSeconds? })` | a `FlightLeg`: the `state` turned to the place and moved, `arrived`, `remaining` and `moved`; it never passes the stop, and with `easeSeconds` it slows to arrive |
+| `FLIGHT_SPEEDS`, `stepFlightSpeed(speed, 1 or -1)`, `flightSpeedFor(parsecs, seconds)` | the dial, 1 c to 10 million million c in tens; a step of it; the slowest of it that covers a distance in a time |
+| `LIGHT_SPEED`, `flightTime(parsecs, speed)` | parsecs a second at 1 c; the seconds a leg takes |
+| `flightReadout(position)` | the distance from the Sun in `parsecs`, `lightYears`, `astronomicalUnits` and `kilometres`, `lightSeconds`, and the `scale` that suits it |
+| `flightPoint(rightAscension, declination, lightYears)` | the place of a direction and a distance |
+| `fromCamera(place, camera, unit?)` | the place relative to the camera, subtracted in 64-bit numbers first (a floating origin) |
+| `flightPointText(position)`, `flightPointOf(text)` | a point as `pc_<x>_<y>_<z>` for an address, and back |
+| `flightPlace(thing)`, `flightPlaceById(id)`, `flightPlaces()` (`/flight/places`) | a `FlightPlace` (`id`, `name`, `kind`, `position`, `lightYears`, `lightYearsError`, `certainty`) from a star, a nearby star or a Messier galaxy; by its id (`sun`, `hr-7001`, `gctp-3278`, `M31`); a short list, nearest first |
+| `flightAddress(text)` (`/flight/places`) | where a camera is, read from an address: a place's id or a point, with `at`, the one form to write back |
+
+The demo's [flight page](https://johnmorrisdotca.github.io/hoshi-stars/flight.html) flies from the Sun to Vega and back on these: the sky is redrawn from where the camera is, the Sun is a star from afar, and a bright star is a ball up close. Limits: a position is a 64-bit number of parsecs, which is metres near the Sun and thousands of kilometres at the Andromeda galaxy; a cluster has no distance of its own in the tables (the Pleiades carry Alcyone's); the flying view is in the demo, not yet an element of the package.
+
 ## A constellation in 3D
 
 `@johnmorrisdotca/hoshi-stars/constellation-3d` places the stars of a constellation's figure in space from their positions and parallaxes, each with the range its parallax error allows and the Earth's line of sight to it. Seen from the Earth every star is where the sky chart puts it, whatever its distance; turned to the side, the distances lie side by side. The Yale catalogue's ground-based parallaxes are rough, so each star has a quality (`good` under 5% error, `fair` to 20%, `rough` above, `none`) and a star is never put at a guessed distance: with no parallax it is a line of sight, and with an error bar wider than its distance it is a range with no point in the middle. Of the 593 stars in the 88 figures 25 have a good distance, 108 a fair one, 370 a rough one and 90 none; `distanceQualityTable()` says which constellations are worth turning today.
