@@ -51,8 +51,8 @@ export function shown(star: Star, show: Show): boolean {
 
 /**
  * Whether the parallax is good enough to place the star in brightness. The Bright Star Catalogue gives its own parallaxes (the dynamical ones among them) to a whole milliarcsecond with no error, so a parallax of 1 or 2
- * mas is only known to 25% to 50% by its rounding alone: Adhara, with 1 mas, would sit at absolute magnitude -8.5 (about 1,200,000 suns) and not near -4. The grade counts every dynamical parallax as fair, so the diagram applies the grade's own
- * 20% limit to the rounding (half a milliarcsecond over the parallax) as well.
+ * mas is only known to 25% to 50% by its rounding alone: Adhara, with 1 mas, would sit at absolute magnitude -8.5 (about 1,200,000 suns) and not near -4. The grade now applies the same 20% limit to the rounding of a dynamical
+ * parallax (MODULES-1221), so the graded set already leaves those off; this keeps the rule in the diagram too, for a catalogue parallax (BSC) and for a set that is not filtered by grade.
  */
 export function placeable(star: Pick<Star, "parallaxMas" | "parallaxSource">): boolean {
   const rounded = star.parallaxSource === "dynamical" || star.parallaxSource === "BSC";

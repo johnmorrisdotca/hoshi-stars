@@ -29,10 +29,18 @@ test("distanceQuality: good under 5%, fair to 20%, rough above it or with no err
   assert.equal(distanceQuality({ parallaxMas: 100, parallaxErrorMas: 20.1, parallaxSource: "GCTP" }), "rough");
   assert.equal(distanceQuality({ parallaxMas: 100, parallaxErrorMas: undefined, parallaxSource: "BSC" }), "rough");
   assert.equal(distanceQuality({ parallaxMas: 100, parallaxErrorMas: undefined, parallaxSource: "dynamical" }), "fair");
+  // a dynamical parallax is a whole number of milliarcseconds: its rounding, half of one, is its error, so it is fair from 2.5 mas up and rough below (MODULES-1221)
+  assert.equal(distanceQuality({ parallaxMas: 3, parallaxErrorMas: undefined, parallaxSource: "dynamical" }), "fair");
+  assert.equal(distanceQuality({ parallaxMas: 2.5, parallaxErrorMas: undefined, parallaxSource: "dynamical" }), "fair");
+  assert.equal(distanceQuality({ parallaxMas: 2, parallaxErrorMas: undefined, parallaxSource: "dynamical" }), "rough");
+  assert.equal(distanceQuality({ parallaxMas: 1, parallaxErrorMas: undefined, parallaxSource: "dynamical" }), "rough");
+  // a stated error is the stated error, whatever the source
+  assert.equal(distanceQuality({ parallaxMas: 1, parallaxErrorMas: 0.1, parallaxSource: "dynamical" }), "fair");
   assert.equal(distanceQuality(starByName("Alnilam")!), "none");
   assert.equal(distanceQuality(starByName("Rigel")!), "rough");
   assert.equal(distanceQuality(starByName("Betelgeuse")!), "fair");
   assert.equal(distanceQuality(starByName("Sirius")!), "good");
+  assert.equal(distanceQuality(starByName("Adhara")!), "rough");
 });
 
 test("Orion: eight figure stars, seven with a distance, Alnilam with none and so no place", () => {

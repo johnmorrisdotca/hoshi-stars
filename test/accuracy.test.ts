@@ -1,7 +1,7 @@
 // The accuracy record: the source of each field of a bright and of a nearby star, the stated error or the resolution, the rules of the grade at their edges, and the counts the guide prints.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GRADE_RULES, STAR_GRADES, gradeAtLeast, starAccuracy, type StarGrade } from "../src/accuracy.ts";
+import { GRADE_RULES, STAR_GRADES, gradeAtLeast, starAccuracy, starGrade, type StarGrade } from "../src/accuracy.ts";
 import { QUALITY_LIMITS, distanceQuality } from "../src/constellation-3d.ts";
 import { nearbyStarByName, nearbyStars } from "../src/nearby.ts";
 import { starByName, stars } from "../src/stars.ts";
@@ -98,6 +98,20 @@ test("a parallax with no error is rough, except a dynamical one, which is fair",
   assert.equal(starAccuracy({ ...sirius, parallaxErrorMas: undefined, parallaxSource: "BSC" }).grade, "C");
   assert.equal(starAccuracy({ ...sirius, parallaxErrorMas: undefined, parallaxSource: "dynamical" }).grade, "B");
   assert.equal(starAccuracy({ ...sirius, parallaxErrorMas: undefined, parallaxSource: "dynamical" }).distance.relativeError, undefined);
+});
+
+test("a dynamical parallax of 1 or 2 mas is rough: its rounding alone is 25% to 50% of it (MODULES-1221); the nine stars that moved from B to C", () => {
+  const moved = ["Adhara", "52 Sgr", "6 Cas", "33 Ori", "δ Ant"].map((text) => stars().find((s) => s.name === text || s.designation === text)!);
+  for (const star of moved) {
+    assert.equal(star.parallaxSource, "dynamical", star.designation);
+    assert.ok(star.parallaxMas <= 2);
+    assert.equal(starAccuracy(star).grade, "C", `${star.name ?? star.designation}`);
+    assert.equal(starAccuracy(star).distance.quality, "rough");
+  }
+  // every dynamical parallax of 1 or 2 mas is C, every one of 3 and more is as it was (B)
+  const dynamical = stars().filter((s) => s.parallaxSource === "dynamical");
+  assert.equal(dynamical.filter((s) => s.parallaxMas <= 2).length, 9);
+  for (const star of dynamical) assert.equal(starGrade(star), star.parallaxMas <= 2 ? "C" : "B", `HR ${star.hr}: ${star.parallaxMas} mas`);
 });
 
 test("known stars: Betelgeuse (a paper's distance within 20%) is B, Rigel (a range of 590 to 1,480 light-years) is C, Vega is B or better", () => {

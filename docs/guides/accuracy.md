@@ -57,13 +57,13 @@ The grade is a rule on the stated figures, not a verdict on the star, and `GRADE
 | B | the distance is known to 20% or better (or to under 5% with a coarse position) |
 | C | anything else: a position and a rough distance, or no distance |
 
-A position is **modern** when its error, or its resolution where it states no error, is 2 arc-seconds or less. The Bright Star Catalogue states no error for its positions, so for a bright star the figure is the resolution of the printed position, 1.5 arc-seconds at most, not a measured error; it is within the 2 arc-seconds, so it counts; a nearby star's is modern when it comes from 2MASS and coarse when it is the Yale catalogue's own position carried from 1900. A parallax with no stated error is rough, so the star is grade C, except a dynamical parallax, which is fair. `STAR_GRADES` lists the grades, best first, and `gradeAtLeast(grade, "B")` tests a grade against a minimum.
+A position is **modern** when its error, or its resolution where it states no error, is 2 arc-seconds or less. The Bright Star Catalogue states no error for its positions, so for a bright star the figure is the resolution of the printed position, 1.5 arc-seconds at most, not a measured error; it is within the 2 arc-seconds, so it counts; a nearby star's is modern when it comes from 2MASS and coarse when it is the Yale catalogue's own position carried from 1900. A parallax with no stated error is rough, so the star is grade C, except a dynamical parallax of 2.5 milliarcseconds or more, which is fair: it is given to a whole milliarcsecond, so its rounding, half of one, is its error, and that is over 20% of a parallax of 1 or 2 milliarcseconds, which is rough (Adhara's 1 milliarcsecond is known to 50%). `STAR_GRADES` lists the grades, best first, and `gradeAtLeast(grade, "B")` tests a grade against a minimum.
 
 ## The counts
 
 | Tier | Stars | Grade A | Grade B | Grade C | Source of the numbers | Licence |
 | --- | --- | --- | --- | --- | --- | --- |
-| Bright (the main import) | 5,080 | 68 | 461 | 4,551 | Yale Bright Star Catalogue and, for some of them, Yale parallaxes | Yale Bright Star Catalogue: public domain, informally, with credit; Yale parallaxes: no licence stated, used with credit and removed on request (`NOTICE.md`) |
+| Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue and, for some of them, Yale parallaxes | Yale Bright Star Catalogue: public domain, informally, with credit; Yale parallaxes: no licence stated, used with credit and removed on request (`NOTICE.md`) |
 | Nearby (`/nearby`) | 5,565 | 235 | 1,282 | 4,048 | Yale General Catalogue of Trigonometric Stellar Parallaxes; 2MASS positions | Yale parallaxes: as above; 2MASS: a US government work, credited (`NOTICE.md`) |
 
 Most of the bright stars are grade C because the Bright Star Catalogue has a parallax for few of them, and states no error for those: a distance with no stated error is not graded as if it had one. A modern catalogue would raise many of them; the ones that could be used here cannot be passed on under an MIT licence (`NOTICE.md`, "Deliberately not used").

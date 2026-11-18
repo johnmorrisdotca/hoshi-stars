@@ -4,7 +4,8 @@ import type { Star } from "./stars.ts";
 
 /**
  * How well a star's distance is known, from its parallax and the error the catalogue states:
- * `good` (the error is under 5% of the parallax), `fair` (5% to 20%, or a dynamical parallax from a binary's orbit), `rough` (over 20%, or a parallax with no stated error) and `none` (no parallax: the distance is unknown).
+ * `good` (the error is under 5% of the parallax), `fair` (5% to 20%, or a dynamical parallax from a binary's orbit that is 2.5 milliarcseconds or more), `rough` (over 20%, or a parallax with no stated error) and `none` (no parallax: the distance is unknown).
+ * A dynamical parallax is given to a whole milliarcsecond with no error, so its rounding (half a milliarcsecond) is its error: over 20% of a parallax under 2.5 mas, which is then `rough`.
  *
  * @example
  * ```ts
@@ -40,6 +41,9 @@ export const DISTANCE_QUALITIES: readonly DistanceQuality[] = ["good", "fair", "
  */
 export const QUALITY_LIMITS = { good: 0.05, rough: 0.2 } as const;
 
+/** The error of a parallax given to a whole milliarcsecond: half of one. */
+const ROUNDING_MAS = 0.5;
+
 /**
  * How well a star's distance is known (see `DistanceQuality`).
  *
@@ -56,7 +60,10 @@ export const QUALITY_LIMITS = { good: 0.05, rough: 0.2 } as const;
  */
 export function distanceQuality(star: Pick<Star, "parallaxMas" | "parallaxErrorMas" | "parallaxSource">): DistanceQuality {
   if (!(star.parallaxMas > 0)) return "none";
-  if (star.parallaxErrorMas === undefined) return star.parallaxSource === "dynamical" ? "fair" : "rough";
+  if (star.parallaxErrorMas === undefined) {
+    // a dynamical parallax is a binary's own, to a whole milliarcsecond: it is fair only where half a milliarcsecond is within the 20% limit (2.5 mas and more); Adhara's 1 mas is known to 50%
+    return star.parallaxSource === "dynamical" && ROUNDING_MAS / star.parallaxMas <= QUALITY_LIMITS.rough ? "fair" : "rough";
+  }
   const share = star.parallaxErrorMas / star.parallaxMas;
   return share < QUALITY_LIMITS.good ? "good" : share <= QUALITY_LIMITS.rough ? "fair" : "rough";
 }
