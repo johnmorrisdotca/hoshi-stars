@@ -185,6 +185,16 @@
       "ja": "飛んで行ける場所 (星・近くの星・メシエの銀河の位置、距離の確かさ、最初のリスト、IDで探す場所、アドレスから読むカメラの位置)",
       "platform": "neutral"
     },
+    "./flight/element": {
+      "en": "A flight through the stars as an element: <hoshi-flight>, with goTo, lookAt, its status and the hoshi-flight event (moving, arrived, home), drawn with three.js",
+      "ja": "星の間を飛ぶ要素 <hoshi-flight> (goTo、lookAt、status、hoshi-flight イベント (moving・arrived・home)。three.jsで描きます)",
+      "platform": "browser"
+    },
+    "./flight/define": {
+      "en": "Defines <hoshi-flight>, once",
+      "ja": "<hoshi-flight> を一度だけ定義します",
+      "platform": "browser"
+    },
     "./near-stars": {
       "en": "The 73 star systems within 20 light-years, with names in English and Japanese, place, distance, companions and the source of each value",
       "ja": "20光年以内の73の星系 (英語と日本語の名前、位置、距離、伴星、値ごとの出典つき)",

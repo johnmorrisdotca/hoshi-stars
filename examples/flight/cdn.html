@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A flight through the stars from jsDelivr</title>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars/flight/define/+esm"></script>
+  </head>
+  <body>
+    <hoshi-flight at="sun" sun-stop="40" style="height: 60vh"></hoshi-flight>
+    <button id="vega" type="button">Fly to Vega</button>
+    <button id="home" type="button">Back to the Sun</button>
+    <p id="where">At the Sun.</p>
+    <script type="module">
+      const flight = document.querySelector("hoshi-flight");
+      flight.addEventListener("hoshi-flight", (event) => {
+        const { change, at } = event.detail;
+        if (change === "home") document.getElementById("where").textContent = "Home at the Sun.";
+        else if (change === "arrived") document.getElementById("where").textContent = `At ${at}.`;
+      });
+      document.getElementById("vega").addEventListener("click", () => flight.goTo("hr-7001"));
+      document.getElementById("home").addEventListener("click", () => flight.goTo("sun"));
+    </script>
+  </body>
+</html>

@@ -499,6 +499,85 @@ await step("chart-angular", async () => {
   });
 });
 
+// The flight: <hoshi-flight> from a CDN, in an iframe of the embed page, and in each bundler and framework. It draws with three.js, the package's optional peer, put beside it as a reader installs it.
+const three = join(usage, "node_modules", "three");
+if (!existsSync(three)) for (const part of ["package.json", "build"]) cpSync(join(root, "node_modules", "three", part), join(three, part), { recursive: true, dereference: true });
+/** A <hoshi-flight> draws in 3D: the stars seen from where it is. */
+const seesFlight = async (page: Page): Promise<void> => {
+  await page.waitForFunction(() => {
+    const flight = document.querySelector("hoshi-flight") as unknown as { live: boolean; stats: { points: number } } | null;
+    return flight?.live === true && flight.stats.points > 2000;
+  }, undefined, { timeout: 60_000 });
+};
+/** The page's button flies to Vega (at once, for a reader who prefers reduced motion), and the page says where it stopped. */
+const fliesToVega = async (page: Page, said: string): Promise<void> => {
+  await page.getByRole("button", { name: "Fly to Vega" }).click();
+  await page.getByText(said, { exact: true }).waitFor({ timeout: 10_000 });
+};
+
+await step("flight-cdn", async () => {
+  await opened(browser, async (page) => {
+    await page.route("https://cdn.jsdelivr.net/**", async (route) => {
+      const { pathname } = new URL(route.request().url());
+      if (pathname !== "/npm/@johnmorrisdotca/hoshi-stars/flight/define/+esm") return route.fulfill({ status: 404, body: "" });
+      return route.fulfill({ body: await bundleOf(join(installed, "dist", "flight-define.js")), contentType: "text/javascript" });
+    });
+    await showPage(page, "flight/cdn.html");
+    await seesFlight(page);
+    await fliesToVega(page, "At hr-7001.");
+    await page.getByRole("button", { name: "Back to the Sun" }).click();
+    await page.getByText("Home at the Sun.", { exact: true }).waitFor({ timeout: 10_000 });
+    const away = await page.evaluate(() => {
+      const { x, y, z } = (document.querySelector("hoshi-flight") as unknown as { status: { position: { x: number; y: number; z: number } } }).status.position;
+      return (Math.hypot(x, y, z) * 3.085677581491367e13) / 149_597_870.7;
+    });
+    if (Math.abs(away - 40) > 1e-6) throw new Error(`home is ${away} astronomical units from the Sun, not the 40 sun-stop asks for`);
+  });
+});
+
+await step("flight-iframe", async () => {
+  if (!existsSync(at("site", "embed-flight.html"))) throw new Error("site/ is not built: `pnpm test:usage` builds it");
+  await opened(browser, async (page) => {
+    await serve(page, "https://johnmorrisdotca.github.io", at("site"), "/hoshi-stars");
+    await showPage(page, "flight/iframe.html");
+    await page.frameLocator("iframe").locator("hoshi-flight").waitFor({ state: "attached", timeout: 20_000 });
+    const frame = page.frames().find((one) => one.url().includes("embed-flight.html"))!;
+    await frame.waitForFunction(() => {
+      const flight = document.querySelector("hoshi-flight") as unknown as { live: boolean; status: { at: string } } | null;
+      return flight?.live === true && flight.status.at === "hr-7001";
+    }, undefined, { timeout: 60_000 });
+  });
+});
+
+const flightApp = async (name: string, plugins: unknown[] = []): Promise<void> => {
+  const dir = examples(join("flight", name));
+  const out = join(usage, "out", `flight-${name}`);
+  await viteBuild({ root: dir, plugins: plugins as never[], logLevel: "warn", build: { outDir: out, emptyOutDir: true }, base: "./", configFile: false });
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesFlight(page);
+    await fliesToVega(page, "hr-7001");
+  });
+};
+await step("flight-vite", () => flightApp("vite"));
+await step("flight-react", () => flightApp("react"));
+await step("flight-vue", async () => flightApp("vue", [(await import("@vitejs/plugin-vue")).default({ template: { compilerOptions: { isCustomElement: (tag: string) => tag.startsWith("hoshi-") } } })]));
+await step("flight-svelte", async () => flightApp("svelte", [(await import("@sveltejs/vite-plugin-svelte")).svelte()]));
+await step("flight-angular", async () => {
+  const dir = examples(join("flight", "angular"));
+  const out = join(usage, "out", "flight-angular");
+  writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022", module: "esnext", experimentalDecorators: true, useDefineForClassFields: false } }));
+  await esbuild({ entryPoints: [join(dir, "main.ts")], outdir: out, bundle: true, splitting: true, format: "esm", tsconfig: join(dir, "tsconfig.json"), absWorkingDir: root, logLevel: "silent", minify: true });
+  writeFileSync(join(out, "index.html"), readFileSync(join(dir, "index.html")));
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesFlight(page);
+    await fliesToVega(page, "hr-7001");
+  });
+});
+
 // The package installed as a reader installs it, in a project of its own: npm brings kazoku-ui with it, and a Vite app that imports only /chart/define builds and moves (as an optional peer it did not
 // build: Vite stopped at kazoku-ui's missing export).
 await step("chart-installed", async () => {
@@ -653,6 +732,13 @@ const FILES: Record<string, string[]> = {
   "chart/vue/SkyChart.vue": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/svelte/SkyChart.svelte": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/angular/sky-chart.component.ts": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "flight/cdn.html": ["docs/guides/flight.md", "docs/guides/ja/flight.md"],
+  "flight/iframe.html": ["docs/guides/flight.md", "docs/guides/ja/flight.md"],
+  "flight/vite/main.ts": ["docs/guides/flight.md", "docs/guides/ja/flight.md"],
+  "flight/react/Flight.tsx": ["docs/guides/flight.md", "docs/guides/ja/flight.md"],
+  "flight/vue/Flight.vue": ["docs/guides/flight.md", "docs/guides/ja/flight.md"],
+  "flight/svelte/Flight.svelte": ["docs/guides/flight.md", "docs/guides/ja/flight.md"],
+  "flight/angular/flight.component.ts": ["docs/guides/flight.md", "docs/guides/ja/flight.md"],
 };
 const normal = (text: string) => text.replace(/\r\n/g, "\n").trim();
 for (const [file, places] of everything ? Object.entries(FILES) : []) {
@@ -662,7 +748,7 @@ for (const [file, places] of everything ? Object.entries(FILES) : []) {
   }
 }
 const unlisted = (folder: string): string[] => readdirSync(at("examples", folder), { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? unlisted(join(folder, entry.name)) : [relative("", join(folder, entry.name)).split("\\").join("/")]));
-const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html", "chart/vite/index.html", "chart/react/index.html", "chart/react/main.tsx", "chart/vue/index.html", "chart/vue/main.ts", "chart/svelte/index.html", "chart/svelte/main.ts", "chart/angular/index.html", "chart/angular/main.ts"]);
+const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html", "chart/vite/index.html", "chart/react/index.html", "chart/react/main.tsx", "chart/vue/index.html", "chart/vue/main.ts", "chart/svelte/index.html", "chart/svelte/main.ts", "chart/angular/index.html", "chart/angular/main.ts", "flight/vite/index.html", "flight/react/index.html", "flight/react/main.tsx", "flight/vue/index.html", "flight/vue/main.ts", "flight/svelte/index.html", "flight/svelte/main.ts", "flight/angular/index.html", "flight/angular/main.ts"]);
 for (const file of everything ? unlisted("") : []) if (!known.has(file)) failures.push(`examples/${file} is not listed in scripts/check-usage.ts: say where the guides show it`);
 
 console.log(failures.length === 0 ? `\nusage ok: ${results.length} ways to use ${NAME}` : `\n${failures.length} failure${failures.length === 1 ? "" : "s"}:\n- ${failures.join("\n- ")}`);

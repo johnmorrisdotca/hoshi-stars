@@ -596,7 +596,9 @@ console.log(flightAddress("HR-7001")?.at);                                      
 | `flightPlace(thing)`, `flightPlaceById(id)`, `flightPlaces()` (`/flight/places`) | a `FlightPlace` (`id`, `name`, `kind`, `position`, `lightYears`, `lightYearsError`, `certainty`) from a star, a nearby star or a Messier galaxy; by its id (`sun`, `hr-7001`, `gctp-3278`, `M31`); a short list, nearest first |
 | `flightAddress(text)` (`/flight/places`) | where a camera is, read from an address: a place's id or a point, with `at`, the one form to write back |
 
-The demo's [flight page](https://johnmorrisdotca.github.io/hoshi-stars/flight.html) flies from the Sun to Vega and back on these: the sky is redrawn from where the camera is, the Sun is a star from afar, and a bright star is a ball up close. Limits: a position is a 64-bit number of parsecs, which is metres near the Sun and thousands of kilometres at the Andromeda galaxy; a cluster has no distance of its own in the tables (the Pleiades carry Alcyone's); the flying view is in the demo, not yet an element of the package.
+The demo's [flight page](https://johnmorrisdotca.github.io/hoshi-stars/flight.html) flies from the Sun to Vega and back on these: the sky is redrawn from where the camera is, the Sun is a star from afar, and a bright star is a ball up close. Limits: a position is a 64-bit number of parsecs, which is metres near the Sun and thousands of kilometres at the Andromeda galaxy; a cluster has no distance of its own in the tables (the Pleiades carry Alcyone's).
+
+The flying view is an element: `<hoshi-flight at="sun"></hoshi-flight>` (`/flight/element`, defined by `/flight/define`), with `goTo(id)`, `lookAt(id)`, a `status` and a `hoshi-flight` event that says `moving`, `arrived`, and `home` at the Sun's stop, whose distance `sun-stop` sets. It draws with three.js, the package's optional peer (`npm install three`), and the demo's `embed-flight.html` puts it in an iframe. The attributes, the events and the frameworks are in [A flight through the stars in your page](docs/guides/flight.md).
 
 ## A constellation in 3D
 
