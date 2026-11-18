@@ -6,7 +6,6 @@ export type FlightLang = "en" | "ja";
 export const FLIGHT_WORDS = {
   en: {
     title: "A flight through the stars",
-    stage: "The sky from where the flight is. Drag to look around.",
     to: "Go to",
     go: "Go",
     lookSun: "Look at the Sun",
@@ -30,11 +29,9 @@ export const FLIGHT_WORDS = {
     days: "days",
     years: "years",
     note: "Each star is drawn where it would be seen from here, worked out from its measured distance, so a star with no measured distance is left out. Beside the Sun or a bright star you see it as a ball; a nearby star with no radius here stays a point, and galaxies and clusters are not drawn yet.",
-    noWebGL: "This browser cannot draw 3D here.",
   },
   ja: {
     title: "星の間を飛ぶ",
-    stage: "飛んでいる場所から見た空。ドラッグで見回せます。",
     to: "行き先",
     go: "行く",
     lookSun: "太陽を見る",
@@ -58,7 +55,6 @@ export const FLIGHT_WORDS = {
     days: "日",
     years: "年",
     note: "星は、はかった距離から計算して、ここから見える場所にかいています。距離がわからない星はかいていません。太陽や明るい星のそばでは球に見えます。半径がわからない近くの星は点のままで、銀河や星団はまだかいていません。",
-    noWebGL: "このブラウザでは3Dを表示できません。",
   },
 } as const;
 

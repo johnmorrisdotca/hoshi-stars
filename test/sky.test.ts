@@ -298,18 +298,19 @@ test("this package never imports wakusei-planets: no source mentions it and no d
   assert.ok(files.includes(join("chart", "element.ts")), "the scan reaches src/chart");
   for (const file of files) assert.ok(!/wakusei/i.test(readFileSync(new URL(file, dir), "utf8")), `src/${file} mentions wakusei`);
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as Record<string, unknown>;
-  // the one dependency is kazoku-ui, for the chart element's hands; there are no peers, and wakusei-planets is never either
+  // the one dependency is kazoku-ui, for the elements' hands; the one peer is three.js, optional, for the flight; wakusei-planets is never either
   assert.deepEqual(Object.keys((pkg.dependencies ?? {}) as object), ["@johnmorrisdotca/kazoku-ui"]);
-  assert.equal(pkg.peerDependencies, undefined);
+  assert.deepEqual(pkg.peerDependencies, { three: ">=0.160.0" });
+  assert.deepEqual(pkg.peerDependenciesMeta, { three: { optional: true } });
   assert.equal(pkg.optionalDependencies, undefined);
 });
 
-test("only the elements' hands load kazoku-ui: no other source imports it", () => {
+test("only the elements' hands and the flight load kazoku-ui: no other source imports it", () => {
   const dir = new URL("../src/", import.meta.url);
   const importing = readdirSync(dir, { recursive: true, encoding: "utf8" })
     .filter((f) => f.endsWith(".ts") && /from "@johnmorrisdotca\/kazoku-ui/.test(readFileSync(new URL(f, dir), "utf8")))
     .sort();
-  assert.deepEqual(importing, [join("chart", "hands.ts"), join("my-sky", "hands.ts")]);
+  assert.deepEqual(importing, [join("chart", "hands.ts"), "flight-element.ts", "flight-scene.ts", join("my-sky", "hands.ts")]);
 });
 
 test("bad input throws, naming the argument and the value", () => {

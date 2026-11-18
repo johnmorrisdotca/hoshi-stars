@@ -82,7 +82,9 @@
     "./dist/chart/define.js",
     "./src/chart/define.ts",
     "./dist/my-sky/define.js",
-    "./src/my-sky/define.ts"
+    "./src/my-sky/define.ts",
+    "./dist/flight-define.js",
+    "./src/flight-define.ts"
   ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -268,6 +270,16 @@
       "import": "./dist/flight-places.js",
       "default": "./dist/flight-places.js"
     },
+    "./flight/element": {
+      "types": "./dist/flight-element.d.ts",
+      "import": "./dist/flight-element.js",
+      "default": "./dist/flight-element.js"
+    },
+    "./flight/define": {
+      "types": "./dist/flight-define.d.ts",
+      "import": "./dist/flight-define.js",
+      "default": "./dist/flight-define.js"
+    },
     "./constellation-3d": {
       "types": "./dist/constellation-3d.d.ts",
       "import": "./dist/constellation-3d.js",
@@ -372,6 +384,14 @@
   },
   "dependencies": {
     "@johnmorrisdotca/kazoku-ui": "^0.41.0"
+  },
+  "peerDependencies": {
+    "three": ">=0.160.0"
+  },
+  "peerDependenciesMeta": {
+    "three": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@angular/common": "^22.2.5",

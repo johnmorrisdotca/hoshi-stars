@@ -439,7 +439,7 @@ test.describe("the sky by distance in 3D", () => {
 test.describe("the flight", () => {
   const FLIGHT = "/hoshi-stars/flight.html";
   const stage = (page: Page) => page.getByTestId("fl-stage");
-  const flightFrames = (page: Page) => stage(page).evaluate((el) => (Reflect.get(el, "stats") as { draws: number }).draws);
+  const flightFrames = (page: Page) => stage(page).evaluate((el) => (Reflect.get(el, "stats") as { renderer: { draws: number } }).renderer.draws);
   const flightWindow = async (page: Page, ms: number) => {
     const began = Date.now();
     const start = await readCounts(page);
@@ -452,14 +452,14 @@ test.describe("the flight", () => {
   async function openFlight(page: Page, query = ""): Promise<void> {
     await page.addInitScript(COUNT_SCRIPT);
     await page.goto(`${FLIGHT}${query}`);
-    await stage(page).and(page.locator("[data-live=true]")).waitFor({ timeout: 60_000 });
+    await page.waitForFunction(() => (document.querySelector("hoshi-flight") as unknown as { live: boolean } | null)?.live === true, undefined, { timeout: 60_000 });
     await expect.poll(async () => (await readCounts(page)).draws).toBeGreaterThan(0);
     await page.waitForTimeout(800);
   }
   /** Start a flight to Betelgeuse and slow the dial a hundred times, so it is still on its way for as long as a test watches. */
   const fly = (page: Page) =>
     stage(page).evaluate((el) => {
-      const flight = Reflect.get(el, "flight") as { goTo(id: string): boolean; stepSpeed(direction: 1 | -1): void };
+      const flight = el as unknown as { goTo(id: string): boolean; stepSpeed(direction: 1 | -1): void };
       flight.goTo("hr-2061");
       flight.stepSpeed(-1);
       flight.stepSpeed(-1);
@@ -486,7 +486,7 @@ test.describe("the flight", () => {
       expect(flying.requests).toBeLessThanOrEqual(flying.callbacks + 3);
       expect(flying.outstanding, "one request waiting at a time").toBeLessThanOrEqual(3);
       // a short flight, to its stop: Proxima Centauri at the speed chosen for it
-      await stage(page).evaluate((el) => (Reflect.get(el, "flight") as { goTo(id: string): boolean }).goTo("gctp-3278"));
+      await stage(page).evaluate((el) => (el as unknown as { goTo(id: string): boolean }).goTo("gctp-3278"));
       await expect.poll(() => page.locator("html").getAttribute("data-moving"), { timeout: 60_000 }).toBe("false");
       await page.waitForTimeout(500);
       const rest = await flightWindow(page, 2000);
@@ -541,10 +541,14 @@ test.describe("the flight", () => {
     const page = await context.newPage();
     await openFlight(page);
     await stage(page).evaluate((el) => {
-      el.parentElement!.style.cssText += ";position:fixed;inset:0;width:2560px;height:1440px;max-width:none;z-index:9";
+      el.style.cssText += ";position:fixed;inset:0;width:2560px;height:1440px;max-width:none;z-index:9";
     });
     await page.waitForTimeout(2000);
-    const size = await canvasSize(page);
+    // The canvas is in the element's shadow root, where canvasSize does not look.
+    const size = await stage(page).evaluate((el) => {
+      const all = [...el.shadowRoot!.querySelectorAll("canvas")];
+      return { pixels: Math.max(0, ...all.map((c) => c.width * c.height)), side: Math.max(0, ...all.map((c) => Math.max(c.width, c.height))), count: all.length };
+    });
     expect(size.count).toBe(1);
     expect(withinPixelBudget(size)).toBe(true);
     expect((await readCounts(page)).contexts, "one WebGL context").toBe(1);
@@ -557,7 +561,7 @@ test.describe("the flight", () => {
     const places = ["hr-7001", "sun", "hr-2061", "sun"];
     for (let round = 0; round < 16; round += 1) {
       const to = places[round % places.length]!;
-      await stage(page).evaluate((el, id) => (Reflect.get(el, "flight") as { goTo(id: string): boolean }).goTo(id), to);
+      await stage(page).evaluate((el, id) => (el as unknown as { goTo(id: string): boolean }).goTo(id), to);
       await expect(page.locator("html")).toHaveAttribute("data-at", to);
       await untilStill(page, drawCounts);
       const counted = await readCounts(page);

@@ -1,12 +1,13 @@
 // The flight page: fly from the Sun to a star and back. Choose a place and Go; Look at the Sun turns to it from wherever the flight is; Back to the Sun flies home. The address is read as text:
 //   ?at=hr-7001        where the camera is: a place's id (sun, hr-7001 Vega, gctp-3278 Proxima Centauri, M31) or a point in parsecs (pc_1.5_-2_0.25); the page keeps it up to date at each stop
 //   &lang=ja           the words in Japanese
-// Everything drawn is in flight-view.ts and flight-scene.ts; this file is the page around them. A page that holds the view calls `goTo(id)` on what `mountFlight` returns.
+// Everything drawn is the package's <hoshi-flight> (src/flight-element.ts); this file is the page around it, and calls its `goTo(id)` and `lookAt(id)` as a site would.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
+import "../src/flight-define.ts";
+import { setThreeLoader, type FlightChange, type FlightStatus, type HoshiFlightElement } from "../src/flight-element.ts";
 import { flightPlaceById, flightPlaces, type FlightPlace } from "../src/flight-places.ts";
 import { starByHr } from "../src/stars.ts";
 import { distanceText, fill, FLIGHT_WORDS, lightTimeText, speedText, type FlightLang, type FlightWords } from "./flight-text.ts";
-import { mountFlight, type FlightStatus } from "./flight-view.ts";
 import { frameCredit } from "./frame-credit.ts";
 
 const address = createAddressState({ defaults: { at: "sun" } });
@@ -45,7 +46,15 @@ function show(status: FlightStatus): void {
   if (!status.moving && (address.get("at") ?? "sun") !== status.at) address.set("at", status.at === "sun" ? null : status.at);
 }
 
-const flight = mountFlight($("fl-art"), { at: address.get("at") ?? undefined, lang, nameOf, stageLabel: words.stage, noWebGL: words.noWebGL, still: () => matchMedia("(prefers-reduced-motion: reduce)").matches, onChange: show });
+// The page's own cut of three.js, which the other 3D pages share.
+setThreeLoader(() => import("./three-subset.ts"));
+const flight = document.createElement("hoshi-flight") as HoshiFlightElement;
+flight.dataset.testid = "fl-stage";
+flight.setAttribute("lang", lang);
+flight.setAttribute("at", address.get("at") ?? "sun");
+flight.addEventListener("hoshi-flight", (event) => show((event as CustomEvent<FlightChange>).detail));
+$("fl-art").append(flight);
+show(flight.status);
 select.value = flight.status.place?.id ?? "sun";
 if (select.value === "sun") select.value = "hr-7001";
 $("fl-go").addEventListener("click", () => flight.goTo(select.value));

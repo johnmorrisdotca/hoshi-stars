@@ -4,7 +4,7 @@ Thank you for helping. Bug reports and ideas go in the [issues](https://github.c
 
 ## The rules
 
-- **No runtime dependencies except kazoku-ui, for the element.** The package is plain TypeScript. `@johnmorrisdotca/kazoku-ui` (the family's view controls) is its one dependency, and only `/chart/element`, `/chart/define`, `/my-sky/element` and `/my-sky/define` import it: `chartSvg` and every other entry load nothing of it.
+- **No runtime dependencies except kazoku-ui, for the element.** The package is plain TypeScript. `@johnmorrisdotca/kazoku-ui` (the family's view controls) is its one dependency, and only `/chart/element`, `/chart/define`, `/my-sky/element`, `/my-sky/define`, `/flight/element` and `/flight/define` import it: `chartSvg` and every other entry load nothing of it. three.js is an optional peer that only `/flight/element` loads, when its view first goes live.
 - **The core is pure.** Every function returns a new value; nothing reads the clock, uses randomness or does I/O. A moment is an explicit argument.
 - **Data licences.** Only data a MIT package can pass on goes in. `NOTICE.md` names every source with the sentence relied on and the date read. ESA's catalogues (CC BY-NC) and CC BY-SA or GPL sets are not used.
 - **Every export has TSDoc with an `@example`**, and a test that names it.

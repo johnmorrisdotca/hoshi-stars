@@ -1,12 +1,16 @@
 // The flying view's scene, through kazoku-ui's shared renderer: the camera stays at the middle of the scene and the sky is put around it again from where the flight is (`skyFrom`), each star a point in its
-// direction, as large and as strong as its magnitude from there, in the colour of its temperature. The Sun is one of them. The star the camera is beside is the ball the star's own page draws (star-scene.ts),
+// direction, as large and as strong as its magnitude from there, in the colour of its temperature. The Sun is one of them. The star the camera is beside is the ball the demo's star page draws too (star-body.ts),
 // placed in units of its own radius from the camera (the floating origin: `fromCamera`), so it grows from the point it was; its point fades as the ball takes over, and the ball hides the stars behind it.
-// The view (flight-view.ts) moves the flight: `advance` is called before each draw and says whether it is still moving. Nothing is drawn while it is not.
+// The element (flight-element.ts) moves the flight: `advance` is called before each draw and says whether it is still moving. Nothing is drawn while it is not.
+import type * as THREE from "three";
 import type { BuildContext, Item3D, Scene3D } from "@johnmorrisdotca/kazoku-ui/renderer";
-import { blackBodyColour, starTemperatureK } from "../src/colour.ts";
-import type { FlightPoint } from "../src/flight.ts";
-import type { SeenSky } from "../src/sky-from.ts";
-import { starBody, type StarBody, type StarLook, type Three } from "./star-scene.ts";
+import { blackBodyColour, starTemperatureK } from "./colour.ts";
+import type { FlightPoint } from "./flight.ts";
+import type { SeenSky } from "./sky-from.ts";
+import { starBody, type BodyThree, type StarBody, type StarLook } from "./star-body.ts";
+
+/** The parts of three.js the flight draws with: a page that hands over its own module (`setThreeLoader`) needs only these. */
+export type FlightThree = BodyThree & Pick<typeof THREE, "AdditiveBlending" | "PerspectiveCamera" | "Points" | "Scene" | "WebGLRenderer">;
 
 /** The faintest star drawn: what the eye sees under a dark sky. */
 export const FAINTEST = 6.5;
@@ -104,10 +108,10 @@ function colourOf(colourIndex: number | undefined): [number, number, number] {
 
 const RADIANS = Math.PI / 180;
 
-export function flightItem(input: FlightSceneInput): Item3D<Three> {
+export function flightItem(input: FlightSceneInput): Item3D<FlightThree> {
   return {
     key: "flight",
-    build({ three: T, width, height }: BuildContext<Three>): FlightScene {
+    build({ three: T, width, height }: BuildContext<FlightThree>): FlightScene {
       const scene = new T.Scene();
       const camera = new T.PerspectiveCamera(60, Math.max(1e-3, width / Math.max(1, height)), 0.05, 4 * BALL_WITHIN);
       camera.up.set(0, 0, 1);
