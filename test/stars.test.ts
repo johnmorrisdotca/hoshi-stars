@@ -183,7 +183,8 @@ test("the table's size stays within its budget", async () => {
   const { gzipSync } = await import("node:zlib");
   const { readFileSync } = await import("node:fs");
   const bytes = gzipSync(readFileSync(new URL("../src/data/stars.ts", import.meta.url))).byteLength;
-  assert.ok(bytes < 125_000, `the star table (with every star's whole spectral type and a parallax with its error) is ${bytes} bytes gzipped`);
+  // 125,000 before the Henry Draper number was added to every row (MODULES-1224: about 16 kB gzipped for 5,080 numbers)
+  assert.ok(bytes < 145_000, `the star table (with every star's whole spectral type, a parallax with its error and its Henry Draper number) is ${bytes} bytes gzipped`);
 });
 
 test("every named star has a katakana name, and only a named star has one", () => {
@@ -254,4 +255,17 @@ test("the supergiants whose catalogue parallax is poor: a published distance whe
   assert.equal(starDistance(starByName("Deneb")!), undefined);
   // Only these six stars carry a note; every other star's distance is the catalogue's.
   assert.deepEqual(stars().filter((s) => s.parallaxNote !== undefined).map((s) => s.hr).sort((a, b) => a - b), [424, 1713, 2061, 2326, 6134, 8316]);
+});
+
+test("the Henry Draper number: the catalogue's own for every bright star that has one, right for the famous ones, and no number on two stars but a pair's components", () => {
+  const known: Record<string, number> = { Sirius: 48915, Canopus: 45348, Arcturus: 124897, Vega: 172167, Capella: 34029, Rigel: 34085, Betelgeuse: 39801, Polaris: 8890, Antares: 148478, Spica: 116658, Aldebaran: 29139 };
+  for (const [name, hd] of Object.entries(known)) assert.equal(starByName(name)?.hd, hd, name);
+  const all = stars();
+  const withHd = all.filter((star) => star.hd !== undefined);
+  assert.ok(withHd.length > 5000 && withHd.length <= all.length);
+  for (const star of withHd) assert.ok(Number.isInteger(star.hd) && star.hd! > 0 && star.hd! < 360_000, `HR ${star.hr}: ${star.hd}`);
+  const seen = new Map<number, number>();
+  for (const star of withHd) seen.set(star.hd!, (seen.get(star.hd!) ?? 0) + 1);
+  const twice = [...seen.values()].filter((n) => n > 1).length;
+  assert.ok(twice < 40, `${twice} Henry Draper numbers are on more than one star`);
 });

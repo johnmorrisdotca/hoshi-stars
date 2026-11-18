@@ -6,7 +6,7 @@ import { CONSTELLATION_ROWS } from "./data/constellations.ts";
 import type { Star } from "./stars.ts";
 
 /** The fields of a star a names row is made from: a part of `Star`, so that the small `/names/named` chunk need not load the bright-star table. */
-export type NameStar = Pick<Star, "hr" | "name" | "nameJa" | "designation" | "constellation" | "rightAscension" | "declination" | "magnitude" | "spectralType">;
+export type NameStar = Pick<Star, "hr" | "hd" | "name" | "nameJa" | "designation" | "constellation" | "rightAscension" | "declination" | "magnitude" | "spectralType">;
 /** The fields of a constellation a names row is made from. */
 export type NameConstellation = Pick<Constellation, "abbreviation" | "name" | "genitive" | "japanese">;
 
@@ -231,6 +231,7 @@ export function starRow(star: NameStar, c: NameConstellation | undefined, id: st
   const text = star.designation;
   if (text !== undefined) designations.push(text);
   designations.push(`HR ${star.hr}`);
+  if (star.hd !== undefined) designations.push(`HD ${star.hd}`);
   if (text !== undefined && c !== undefined) {
     const bayer = BAYER.exec(text);
     const flamsteed = FLAMSTEED.exec(text);

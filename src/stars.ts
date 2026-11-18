@@ -25,6 +25,8 @@ export { blackBodyColour, starTemperatureK };
 export interface Star {
   /** The Bright Star Catalogue (Harvard Revised) number: stable, and the key for `starByHr`. */
   hr: number;
+  /** The Henry Draper catalogue number the Bright Star Catalogue gives (39801 for Betelgeuse), else `undefined`. */
+  hd: number | undefined;
   /** The common name where the star has one (the IAU Working Group on Star Names' spelling), else `undefined`. */
   name: string | undefined;
   /** The name in katakana (`シリウス`) for every star that has a `name`, else `undefined`. */
@@ -107,6 +109,7 @@ function load(): void {
     const error = p[12] === "" ? undefined : Number(p[12]) / 10;
     const star: Star = Object.freeze({
       hr,
+      hd: p[14] === "" || p[14] === undefined ? undefined : Number(p[14]),
       name: STAR_NAMES[hr],
       nameJa: STAR_NAMES_JA[hr],
       designation: letter === "" && flamsteed === "" ? undefined : designation,

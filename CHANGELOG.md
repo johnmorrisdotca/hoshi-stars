@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The bright stars have their Henry Draper numbers, and `HD 39801` finds Betelgeuse** (MODULES-1224). `Star.hd` is the HD number the Bright Star Catalogue gives each star (all 5,080 have one), and the names index adds `HD n` to the designations of every star row, in the full index and in the small named chunk. The column is the catalogue's own, read from the HEASARC file already saved (2026-11-09); the table is rebuilt by `scripts/make-star-data.py` (the rest of it is identical, row for row) and the named table by `scripts/make-names-named.ts`. The star table grows by about 16 kB gzipped (125 to 141 kB; its test budget is now 145 kB). Tests: `HD 39801`, `HR 2061` and `alpha Ori` give one row in both chunks, the famous stars' HD numbers, and no row carries a made-up number.
+
 ## [0.50.2] - 2026-11-17
 
 - **Seven source files are smaller** (MODULES-258). Types, style sheets, figures, the Milky Way layer and the placing of points moved out of `chart/chart.ts`, `chart/element.ts`, `my-sky/element.ts`, `door.ts`, `figure-lines.ts`, `milky-way.ts` and `profile.ts` into files beside them. Nothing changed in behaviour or in the exports: each moved type is still exported from the file it was in, `site/api.html` is byte for byte the same, and the API pages differ only in the source links.
