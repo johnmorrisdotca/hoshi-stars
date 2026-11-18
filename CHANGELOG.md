@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.50.1] - 2026-11-17
+
 - **`<hoshi-my-sky>`: a press on a planet picks the planet, and close planets write their names apart** (MODULES-1496). A press on a planet's dot or on its name now picks it before any mark of the page's, even a mark nearer to the press; the planet's reach is 18 px, the same as a mark's (it was 16), and its name counts as part of it (it did not, so a press on "Mars" a little beyond the dot went to a satellite mark). The names of the planets are placed with a collision test: a name goes to the right of its dot, else the left, else a line down or up, and never over another planet's dot or name (Mars and Jupiter had printed one over the other). Tests: `test/my-sky-press.test.ts` and, in the browser, `e2e/my-sky-target.demo.ts` ("a press on a planet's name or dot picks the planet, not a mark of the page beside it").
 
 ## [0.50.0] - 2026-11-17
