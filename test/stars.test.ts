@@ -122,8 +122,8 @@ test("every star has its whole spectral type and a parallax with a source; the e
   assert.ok(all.every((s) => (s.parallaxMas > 0) === (s.parallaxSource !== undefined)));
   assert.ok(all.every((s) => (s.parallaxErrorMas !== undefined) === (s.parallaxSource === "GCTP" || s.parallaxSource === "literature") && (s.parallaxErrorMas === undefined || s.parallaxErrorMas > 0)));
   assert.equal(all.filter((s) => s.parallaxMas > 0).length, 2563);
-  assert.equal(all.filter((s) => s.parallaxSource === "GCTP").length, 2326);
-  assert.equal(all.filter((s) => s.parallaxSource === "literature").length, 3);
+  assert.equal(all.filter((s) => s.parallaxSource === "GCTP").length, 2325);
+  assert.equal(all.filter((s) => s.parallaxSource === "literature").length, 4);
   assert.equal(all.filter((s) => s.parallaxSource === "dynamical").length, 163);
   assert.ok(all.filter((s) => s.parallaxSource === "GCTP").some((s) => !Number.isInteger(s.parallaxMas)));
   assert.equal(all.filter((s) => s.luminosityClass === undefined).length, 265);
@@ -241,8 +241,16 @@ test("the supergiants whose catalogue parallax is poor: a published distance whe
   assert.match(polaris.parallaxNote!, /Bond et al\. 2018, ApJ 853, 55/);
   const polarisRange = get("Polaris");
   assert.ok(within(polarisRange.lightYears, 521, 1) && polarisRange.lightYearsRange![0] <= 430 && polarisRange.lightYearsRange![1] >= 541, String(polarisRange.lightYearsRange));
-  // Antares, Canopus and Mu Cephei: no clear-licence figure replaces the Yale parallax, so its error is at least the parallax itself: rough, with no upper limit.
-  for (const hr of [6134, 2326, 8316]) {
+  // Antares: de Zeeuw et al. 1999, AJ 117, 354, section 4.2 and Table 2: a member of Upper Scorpius, mean distance 145 +/- 2 pc; the association's depth (a parallax spread of about 1.6 mas) is the error (MODULES-1189).
+  const antares = starByName("Antares")!;
+  assert.deepEqual([antares.parallaxMas, antares.parallaxErrorMas, antares.parallaxSource], [6.9, 1.6, "literature"]);
+  assert.match(antares.parallaxNote!, /de Zeeuw et al\. 1999, AJ 117, 354, section 4\.2 and Table 2/);
+  const antaresRange = starDistance(antares)!;
+  assert.ok(within(antaresRange.lightYears, 473, 1), String(antaresRange.lightYears));
+  assert.ok(antaresRange.lightYearsRange![0] > 380 && antaresRange.lightYearsRange![0] < 390 && antaresRange.lightYearsRange![1] > 610 && antaresRange.lightYearsRange![1] < 620, String(antaresRange.lightYearsRange));
+  assert.ok(antaresRange.lightYearsRange![0] <= 554 && antaresRange.lightYearsRange![1] >= 554, "the range holds the 170 pc (554 light-years) the literature adopts");
+  // Canopus and Mu Cephei: no refereed distance that is not a catalogue value, so the Yale parallax is kept with its error at least the parallax itself: rough, with no upper limit.
+  for (const hr of [2326, 8316]) {
     const star = starByHr(hr)!;
     const distance = starDistance(star)!;
     assert.equal(star.parallaxSource, "GCTP", star.name);
@@ -250,6 +258,8 @@ test("the supergiants whose catalogue parallax is poor: a published distance whe
     assert.equal(distance.lightYearsRange![1], Number.POSITIVE_INFINITY, star.name);
     assert.match(star.parallaxNote!, /Yale parallax/, star.name);
   }
+  assert.match(starByName("Canopus")!.parallaxNote!, /No refereed distance that is not a Hipparcos catalogue value exists/);
+  assert.match(starByName("Canopus")!.parallaxNote!, /Gaia has none for a star this bright/);
   // Deneb has no parallax in the catalogue and is given none.
   assert.equal(starDistance(starByName("Deneb")!), undefined);
   // Only these six stars carry a note; every other star's distance is the catalogue's.
