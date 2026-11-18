@@ -319,6 +319,16 @@
       "import": "./dist/names-ngc-ic.js",
       "default": "./dist/names-ngc-ic.js"
     },
+    "./provenance": {
+      "types": "./dist/provenance.d.ts",
+      "import": "./dist/provenance.js",
+      "default": "./dist/provenance.js"
+    },
+    "./provenance/ngc-ic": {
+      "types": "./dist/provenance-ngc-ic.d.ts",
+      "import": "./dist/provenance-ngc-ic.js",
+      "default": "./dist/provenance-ngc-ic.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [

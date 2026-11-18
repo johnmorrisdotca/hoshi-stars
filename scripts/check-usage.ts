@@ -596,6 +596,18 @@ await step("names-named", () => {
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 
+await step("provenance", () => {
+  const out = execFileSync(process.execPath, [join(examples("node"), "provenance.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  const expected = [
+    "John Bevis 1731 Charles Messier",
+    "NGC 7000 William Herschel 1786-10-24 1888",
+    "Betelgeuse 2016-06-30 Arabic https://www.pas.rochester.edu/~emamajek/WGSN/IAU-CSN.txt",
+    "The date is later than the catalogue the object is in, so it cannot be its discovery; it is shown as Wikidata gives it, and no other source was read to correct it.",
+    "5386 objects in the IC",
+  ].join("\n");
+  if (out !== expected) throw new Error(`unexpected output: ${out}`);
+});
+
 await browser.close();
 lock.release();
 
@@ -639,6 +651,7 @@ const FILES: Record<string, string[]> = {
   "node/hr-diagram.mjs": ["docs/guides/hr-diagram.md", "docs/guides/ja/hr-diagram.md"],
   "node/names.mjs": ["docs/guides/names.md", "docs/guides/ja/names.md"],
   "node/names-named.mjs": ["docs/guides/names.md", "docs/guides/ja/names.md"],
+  "node/provenance.mjs": ["docs/guides/provenance.md", "docs/guides/ja/provenance.md"],
   "node/near-stars.mjs": ["docs/guides/near-stars.md", "docs/guides/ja/near-stars.md"],
   "chart/node.mjs": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
