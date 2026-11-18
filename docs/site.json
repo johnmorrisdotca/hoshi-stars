@@ -180,6 +180,11 @@
       "ja": "宇宙を飛ぶ (位置・向き・光速の何倍かの速さ、目的地への飛行、距離の表示、カメラから見た位置)",
       "platform": "neutral"
     },
+    "./flight/places": {
+      "en": "Places a flight can go to: a star, a nearby star or a Messier galaxy as a point in space, how well its distance is known, and a short list to start from",
+      "ja": "飛んで行ける場所 (星・近くの星・メシエの銀河の位置、距離の確かさ、最初のリスト)",
+      "platform": "neutral"
+    },
     "./near-stars": {
       "en": "The 73 star systems within 20 light-years, with names in English and Japanese, place, distance, companions and the source of each value",
       "ja": "20光年以内の73の星系 (英語と日本語の名前、位置、距離、伴星、値ごとの出典つき)",

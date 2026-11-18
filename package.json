@@ -263,6 +263,11 @@
       "import": "./dist/flight.js",
       "default": "./dist/flight.js"
     },
+    "./flight/places": {
+      "types": "./dist/flight-places.d.ts",
+      "import": "./dist/flight-places.js",
+      "default": "./dist/flight-places.js"
+    },
     "./constellation-3d": {
       "types": "./dist/constellation-3d.d.ts",
       "import": "./dist/constellation-3d.js",
