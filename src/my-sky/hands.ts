@@ -44,6 +44,8 @@ export function attachSkyHands(box: HTMLElement, host: SkyHandsHost): SkyHands {
   const controller = createViewController({
     turnable: true,
     limits: { tiltMax: 1e9, zoomMin: 0.01, zoomMax: 10 },
+    // The sky is a dome with no edge to hold, so two fingers move it at every field of view and as far as they like (the controller's own pan stops at its Fit, which is the opening field, and at the edge of the picture), and the element's `touch-action: none` is kept: the controller sets `pan-y` on it at Fit, and the browser then takes a finger's vertical drag for the page.
+    freePan: 1000,
     objectSize: { width: 1e7, height: 1e7 },
     onChange: (state, info) => {
       // The family's gesture check reads the view from the element: its `controller`, its `state` and a `kazoku-viewchange` event for every change.
@@ -100,9 +102,12 @@ export function attachSkyHands(box: HTMLElement, host: SkyHandsHost): SkyHands {
       } else if (turnX !== 0 || turnY !== 0) {
         heading -= turnX;
         pitch -= turnY;
-      } else if (state.panX !== before.panX || state.panY !== before.panY) {
-        heading -= (state.panX - before.panX) * degrees;
-        pitch += (state.panY - before.panY) * degrees;
+      } else {
+        // The pan the zoom itself scales (an offset the sky already played is not played again as the fingers' distance wobbles) is left out: only the fingers' own move counts.
+        const moveX = state.panX - before.panX * k;
+        const moveY = state.panY - before.panY * k;
+        heading -= moveX * degrees;
+        pitch += moveY * degrees;
       }
     }
     const held = { heading: (((heading % 360) + 360) % 360), pitch: Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch)), fov: Math.max(FOV_MIN, Math.min(FOV_MAX, fov)) };

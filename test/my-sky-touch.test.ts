@@ -95,3 +95,24 @@ test("a pinch about the middle of the sky narrows the field of view and leaves t
   assert.ok(Math.abs(view.heading - 100) < 0.5 && Math.abs(view.pitch - 20) < 0.5, `heading ${view.heading} and pitch ${view.pitch} stayed`);
   destroy();
 });
+
+test("two fingers dragging together turn the sky at the opening field of view too, where the controller's own view has no room to move", () => {
+  const { box, view, destroy } = sky(90);
+  dragTogether(box, 50, 25);
+  assert.ok(view.heading < 99, `heading ${view.heading}`);
+  assert.ok(view.pitch > 20.5, `pitch ${view.pitch}`);
+  destroy();
+});
+
+test("the next two-finger drag turns the sky as far as the first did: the controller's pan is no longer held at an edge", () => {
+  const { box, view, destroy } = sky(90);
+  const heading = (): number => view.heading;
+  const turns: number[] = [];
+  for (let drag = 0; drag < 4; drag += 1) {
+    const before = heading();
+    dragTogether(box, 100, 0);
+    turns.push(((before - heading() + 540) % 360) - 180);
+  }
+  assert.ok(turns.every((turn) => Math.abs(turn - turns[0]!) < 0.5 && turn > 5), `each drag of 100 pixels turned the sky by about the same: ${turns.map((t) => t.toFixed(1)).join(", ")}`);
+  destroy();
+});

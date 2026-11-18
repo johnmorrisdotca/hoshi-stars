@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- **`<hoshi-my-sky>`: two fingers dragging together turn the sky** (MODULES-1530). On a touch screen the controller moved the view by the middle of the two fingers, but the sky played only the zoom of each event: a pair of fingers never moves in step, so the distance between them changed in almost every event and the move of their middle was dropped. The sky now plays both, the move at the scale of the field of view the event leaves it at. A pinch, a wheel and the keys are as they were.
+- **`<hoshi-my-sky>`: two fingers dragging together turn the sky** (MODULES-1530). Two causes. The controller moved the view by the middle of the two fingers, but the sky played only the zoom of each event: a pair of fingers never moves in step, so the distance between them changed in almost every event and the move of their middle was dropped. And at the opening field of view the controller has no room to move its view (its Fit), so a two-finger drag there moved nothing at all, and the same stop held a long drag at the edge of the picture. The sky now plays both the zoom and the move (at the scale of the field the event leaves it at, without the offset the zoom itself scales), the controller may move at every field and as far as the fingers go, and the controller keeps the sky's `touch-action: none` at every field (it had set `pan-y`, which hands a finger's vertical drag to the page). A pinch, a wheel and the keys are as they were.
 
 ## [0.50.2] - 2026-11-17
 
