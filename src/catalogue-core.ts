@@ -79,7 +79,7 @@ export interface CatalogueStar {
  *
  * const { nearbyLayer } = await import("@johnmorrisdotca/hoshi-stars/catalogue/nearby");
  * const nearby: CatalogueSource = nearbyLayer;
- * console.log(catalogueStars({ layers: ["bright", nearby] }).length); // 10645
+ * console.log(catalogueStars({ layers: ["bright", nearby] }).length); // 10646
  * ```
  */
 export interface CatalogueSource {

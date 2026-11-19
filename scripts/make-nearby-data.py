@@ -11,7 +11,8 @@ Sources
   NOT Gaia, Hipparcos or Tycho: their values are not read anywhere.
 
 Cross-match with the bright stars: by HD number first; a GCTP star with no HD, or an HD the Bright Star Catalogue does not hold, by position (within 15 arc-seconds after proper motion) and visual
-magnitude (within 1.0). Whatever is left is new. Each new star gets a 2MASS position when exactly one 2MASS source lies in a window that allows for the catalogue's position resolution and its
+magnitude (within 1.0). Whatever is left is new. A catalogue number is a system: its parallax is on one record, and a match by the HD of a bright component takes the whole system out. A fainter component of such a system
+that the Bright Star Catalogue holds (COMPANIONS) is kept as a new star of its own, with the system's parallax. Each new star gets a 2MASS position when exactly one 2MASS source lies in a window that allows for the catalogue's position resolution and its
 proper motion, and whose J magnitude agrees with what the star's V and B-V imply; otherwise it keeps the GCTP position and is flagged coarse.
 
     python3 -I scripts/make-nearby-data.py            # fetches into .cache/nearby (git-ignored), queries IRSA in batches (needs the network and astropy)
@@ -56,6 +57,9 @@ ARCSEC = DEGREE / 3600
 POSITION_MATCH_ARCSEC = 15.0
 MAGNITUDE_MATCH = 1.0
 NEAR_BRIGHT_ARCSEC = 30.0  # a bright star this close that was not matched makes the new star "ambiguous"
+# The HD numbers of Bright Star Catalogue stars fainter than the bright tier's 6.0 whose GCTP number a bright component's HD number matches, so that the match drops them with their system: 201092 is 61 Cygni B (HR 8086,
+# V 6.03) beside 61 Cygni A (HR 8085). Each is a new star with its own record's position and motion and the system's parallax.
+COMPANIONS = {201092}
 ANGLE_ERROR = 0.0087  # the position angle of the motion is given to a whole degree: half a degree is 0.0087 of the distance moved
 PROPER_MOTION_ERROR = 0.03  # of the catalogue's motion, over 100 years: its quality is not stated
 MAGNITUDE_TOLERANCE = 1.5  # J against what V and B-V imply
@@ -387,7 +391,9 @@ def main() -> None:
 
     # One star is one catalogue number; the records that share it are its components and its unresolved sum.
     groups = {}
+    records_of = {}
     for index, r in enumerate(rows):
+        records_of.setdefault(r["num"], []).append(index)
         if r["pi"] is not None and r["rah"] is not None:
             groups.setdefault(r["num"], []).append(index)
     positions = to_j2000(rows)
@@ -400,7 +406,7 @@ def main() -> None:
 
     bright_vectors = unit(np.array([b["ra"] for b in bright]), np.array([b["dec"] for b in bright]))
     bright_v = np.array([b["v"] for b in bright])
-    counts = dict(records=len(rows), withParallax=sum(1 for r in rows if r["pi"] is not None), stars=len(groups), matchedHd=0, matchedPosition=0, matchedAmbiguous=0)
+    counts = dict(records=len(rows), withParallax=sum(1 for r in rows if r["pi"] is not None), stars=len(groups), matchedHd=0, matchedPosition=0, matchedAmbiguous=0, companions=0)
     new = []
     for num, members in groups.items():
         hds = {hd_of(rows[i]["hd"]) for i in members} - {None}
@@ -411,6 +417,14 @@ def main() -> None:
             hr = next(hd_to_hr[hd] for hd in hds if hd in bright_hd)
             where = separation(at2000[lead], bright_vectors[[b["hr"] for b in bright].index(hr)])
             counts["matchedAmbiguous"] += int(where > NEAR_BRIGHT_ARCSEC)
+            for hd in sorted(COMPANIONS):
+                record = next((i for i in records_of[num] if hd_of(rows[i]["hd"]) == hd), None)
+                if record is None:
+                    continue
+                if hd in bright_hd or hd not in hd_to_hr:
+                    raise SystemExit(f"HD {hd} is in COMPANIONS but is not a Bright Star Catalogue star fainter than the bright tier's")
+                new.append((num, [record], lead))
+                counts["companions"] += 1
             continue
         if not (hds & hd_to_hr.keys()):
             apart = separation(bright_vectors, at2000[lead])
@@ -420,13 +434,13 @@ def main() -> None:
                 counts["matchedPosition"] += 1
                 counts["matchedAmbiguous"] += 1
                 continue
-        new.append((num, members))
+        new.append((num, members, None))
     counts["new"] = len(new)
     if limit is not None:
         new = new[:limit]
 
     stars = []
-    for num, members in new:
+    for num, members, owner in new:
         lead = members[0]
         primary = next((i for i in members if rows[i]["comp"] in ("", "A")), lead)
         row = rows[primary]
@@ -450,7 +464,7 @@ def main() -> None:
         centre_ra, centre_dec = radec(middle)
         near_bright = bool(apart.min() <= NEAR_BRIGHT_ARCSEC)
         stars.append(dict(
-            num=num, members=members, lead=lead, row=row, ra=float(ra_now), dec=float(dec_now), sortRa=float(ra2000[lead]), sortDec=float(dec2000[lead]), vector=at2000[lead], vector1900=vector1900[lead], east=east[lead], north=north[lead],
+            num=num, members=members, lead=lead, row=row, plx_row=row if owner is None else rows[owner], ra=float(ra_now), dec=float(dec_now), sortRa=float(ra2000[lead]), sortDec=float(dec2000[lead]), vector=at2000[lead], vector1900=vector1900[lead], east=east[lead], north=north[lead],
             muEast=float(mu_ra[lead]), muNorth=float(mu_dec[lead]), window=window, radius=(EPOCH_SPAN + EPOCH_AFTER) / 2 * speed + window, centre=middle, centreRa=float(centre_ra), centreDec=float(centre_dec), error=error, pm=pm, vmag=min(vs) if vs else None,
             expected=expectations, ambiguous=near_bright or (min(vs) <= 6.1 if vs else False), bright_close=near_bright,
         ))
@@ -495,9 +509,9 @@ def main() -> None:
 
     lines = []
     excluded = 0
-    for s in sorted(stars, key=lambda s: (-(s["row"]["pi"]), s["num"])):
+    for s in sorted(stars, key=lambda s: (-(s["plx_row"]["pi"]), s["num"])):
         r = s["row"]
-        plx = round(r["pi"] * 10000)  # parallax in tenths of a milliarcsecond
+        plx = round(s["plx_row"]["pi"] * 10000)  # parallax in tenths of a milliarcsecond
         if plx <= 0:
             excluded += 1
         designation = ""
@@ -518,13 +532,13 @@ def main() -> None:
         number_text = s["num"][:-3] if s["num"].endswith(".00") else s["num"]
         lines.append("|".join(str(x) for x in [
             number_text, hd, name, designation, ";".join(aliases), gliese, s["twomass"], round(s["finalRa"] * 360000), round(s["finalDec"] * 360000), round(s["finalError"] * 10),
-            plx, "" if r["epi"] is None else round(r["epi"]), pm, v, code if v else "", spectral, flags, s["offset"],
+            plx, "" if s["plx_row"]["epi"] is None else round(s["plx_row"]["epi"]), pm, v, code if v else "", spectral, flags, s["offset"],
         ]))
     coarse = sum(1 for s in stars if s["coarse"])
     ambiguous = sum(1 for s in stars if s["ambiguous"])
     positioned = sum(1 for s in stars if not s["coarse"])
     summary = (f"{len(stars)} new stars; {counts['matchedHd'] + counts['matchedPosition']} stars of the catalogue matched to the bright set ({counts['matchedHd']} by HD number, {counts['matchedPosition']} by position and magnitude, "
-               f"{counts['matchedAmbiguous']} of those two sets worth a second look); {ambiguous} new stars flagged ambiguous; {excluded} with a parallax of 0 or less, left out of 3D; "
+               f"{counts['matchedAmbiguous']} of those two sets worth a second look); {counts['companions']} of the new stars a fainter component of a matched system; {ambiguous} new stars flagged ambiguous; {excluded} with a parallax of 0 or less, left out of 3D; "
                f"{positioned} positioned from 2MASS, {coarse} on the GCTP position (coarse)")
     print(summary, file=sys.stderr)
     text = f"""// GENERATED by scripts/make-nearby-data.py. Do not edit by hand.

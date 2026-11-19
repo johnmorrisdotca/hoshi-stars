@@ -58,7 +58,7 @@ console.log(sky.skipped > 2500);
 
 ## 近くの星も入れる
 
-`/nearby`の5,565個も動かせます。小さいままにするため、別のimportです。`skyFromWithNearby`は同じ引数を取り、プロキシマ・ケンタウリ、バーナード星、赤色矮星(せきしょくわいせい)を動かす星に足し、近くの星の名前も見る場所として見つけます。
+`/nearby`の5,566個も動かせます。小さいままにするため、別のimportです。`skyFromWithNearby`は同じ引数を取り、プロキシマ・ケンタウリ、バーナード星、赤色矮星(せきしょくわいせい)を動かす星に足し、近くの星の名前も見る場所として見つけます。
 
 ```js
 import { skyFromWithNearby } from "@johnmorrisdotca/hoshi-stars/sky-from/nearby";

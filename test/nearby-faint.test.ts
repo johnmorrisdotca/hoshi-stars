@@ -27,7 +27,7 @@ test("the counts add up to the nearby table", () => {
   const c = NEARBY_FAINT_COUNTS;
   assert.equal(c.nearby, nearbyStars().length);
   assert.equal(c.matched + c.ambiguous + c.new + c.noMagnitude, c.nearby);
-  assert.deepEqual([c.matched, c.ambiguous, c.ambiguousSettled, c.new, c.noMagnitude, c.matchedCoarse, c.ucac4Positions], [2135, 55, 47, 3368, 7, 270, 133]);
+  assert.deepEqual([c.matched, c.ambiguous, c.ambiguousSettled, c.new, c.noMagnitude, c.matchedCoarse, c.ucac4Positions], [2135, 55, 47, 3369, 7, 270, 133]);
   assert.equal(rows.length, c.matched + c.ambiguousSettled);
   assert.equal(rows.filter((r) => r[3] === "n").length, c.ambiguousSettled);
   assert.equal(new Set(rows.map((r) => r[0])).size, rows.length);

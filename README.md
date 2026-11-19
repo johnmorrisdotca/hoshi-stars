@@ -530,7 +530,7 @@ For a page that cannot run script, use the embed page in an iframe; the demo's "
 
 ## Nearby stars
 
-`@johnmorrisdotca/hoshi-stars/nearby` adds the 5,565 stars of the Yale parallax catalogue that the bright stars leave out, among them Proxima Centauri, Barnard's Star and Wolf 359, each with its distance and the error of it. It is its own import (about 240 kB gzipped), so the bright-star import does not grow.
+`@johnmorrisdotca/hoshi-stars/nearby` adds the 5,566 stars of the Yale parallax catalogue that the bright stars leave out, among them Proxima Centauri, Barnard's Star and Wolf 359, each with its distance and the error of it. It is its own import (about 240 kB gzipped), so the bright-star import does not grow.
 
 ```ts
 import { stars } from "@johnmorrisdotca/hoshi-stars";
@@ -543,7 +543,7 @@ const close = nearest({ x: 0, y: 0, z: 0 }, { by: "space", among: [...stars(), .
 console.log(`${(close[0]!.thing as { name?: string }).name} ${close[0]!.distance.toFixed(2)}`); // Proxima Centauri 4.24
 ```
 
-A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,352 positions are from 2MASS and 133 from UCAC4 (found in the faint tiles); the other 1,080 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+A distance is good (error under 5%) for 330 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,353 positions are from 2MASS and 133 from UCAC4 (found in the faint tiles); the other 1,080 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 ## The sky from another star
 
@@ -741,9 +741,9 @@ console.log(stars({ minGrade: "A" }).length, stars().length);                 //
 | Tier | Stars | Grade A | Grade B | Grade C | Source | Licence |
 | --- | --- | --- | --- | --- | --- | --- |
 | Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue, Yale parallaxes | public domain, informally, with credit; Yale parallaxes credited |
-| Nearby (`/nearby`) | 5,565 | 236 | 1,281 | 4,048 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
+| Nearby (`/nearby`) | 5,566 | 237 | 1,281 | 4,048 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
 | Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | UCAC4, APASS magnitudes | free of charge, cited (`NOTICE.md`) |
-| **All three, each star once** | **2,470,327** | **304** | **1,733** | **2,468,290** | | |
+| **All three, each star once** | **2,470,328** | **305** | **1,733** | **2,468,290** | | |
 
 A faint star has no parallax, so it is grade C; the 2,182 faint stars that are also nearby stars are counted once. The [guide](docs/guides/accuracy.md) has the typical errors, what each layer costs and how a star is counted once.
 

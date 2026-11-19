@@ -111,4 +111,4 @@ The rows are made when first asked for from the tables the package already ships
 
 - **HD numbers.** `HD 39801` finds Betelgeuse: each bright star carries the Henry Draper number the Bright Star Catalogue gives it (`star.hd`, and `HD 39801` among the row's `designations`), so a search by it works in the small `/names/named` chunk and in the full index alike. A star the catalogue gives no HD number has none to find.
 - **Flamsteed numbers of a star that also has a Bayer letter** (58 Ori for Betelgeuse) are not in the data the package exposes, so they are not typed names; a star with only a Flamsteed number has one.
-- **The 5,565 nearby stars are not rows yet.**
+- **The 5,566 nearby stars are not rows yet.**

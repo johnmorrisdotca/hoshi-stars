@@ -58,7 +58,7 @@ Distances have errors, and the further a star is, the worse. Betelgeuse's distan
 
 ## With the nearby stars
 
-The 5,565 stars of `/nearby` can be moved too, from their own import so the plain one stays small. `skyFromWithNearby` takes the same arguments, adds Proxima Centauri, Barnard's Star and the red dwarfs to the stars it moves, and finds a nearby star's name as a viewpoint.
+The 5,566 stars of `/nearby` can be moved too, from their own import so the plain one stays small. `skyFromWithNearby` takes the same arguments, adds Proxima Centauri, Barnard's Star and the red dwarfs to the stars it moves, and finds a nearby star's name as a viewpoint.
 
 ```js
 import { skyFromWithNearby } from "@johnmorrisdotca/hoshi-stars/sky-from/nearby";

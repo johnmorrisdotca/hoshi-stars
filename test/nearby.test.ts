@@ -9,8 +9,8 @@ import { starByName, stars } from "../src/stars.ts";
 const RADIANS = Math.PI / 180;
 const all = nearbyStars();
 // The counts the build printed (scripts/make-nearby-data.py): a change in the data changes these on purpose.
-const GRADES = { under: 329, fair: 1188, rough: 3552, none: 496 };
-const FLAGS = { coarse: 1080, ucac4: 133, excluded: 496, ambiguous: 1029 };
+const GRADES = { under: 330, fair: 1188, rough: 3552, none: 496 };
+const FLAGS = { coarse: 1080, ucac4: 133, excluded: 496, ambiguous: 1030 };
 
 function haversine(a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number {
   const h = Math.sin(((b.declination - a.declination) * RADIANS) / 2) ** 2 + Math.cos(a.declination * RADIANS) * Math.cos(b.declination * RADIANS) * Math.sin(((b.rightAscension - a.rightAscension) * RADIANS) / 2) ** 2;
@@ -48,11 +48,11 @@ test("Proxima Centauri, Barnard's Star and Wolf 359 are there, at 4.2, 6.0 and 7
   assert.equal(nearbyStarByName("no such star"), undefined);
 });
 
-test("the table's counts: 5,565 stars, none twice, and the bright stars are not among them", () => {
-  assert.equal(all.length, 5565);
+test("the table's counts: 5,566 stars, none twice, and the bright stars are not among them", () => {
+  assert.equal(all.length, 5566);
   assert.equal(new Set(all.map((s) => s.id)).size, all.length);
   assert.equal(new Set(all.map((s) => s.gctp)).size, all.length);
-  assert.equal(stars().length + all.length, 5080 + 5565);
+  assert.equal(stars().length + all.length, 5080 + 5566);
   // HD numbers of well-known bright stars the Yale parallax catalogue also holds: Sirius, Alpha Centauri A, Procyon, 61 Cygni A, Epsilon Eridani, Tau Ceti, 70 Ophiuchi, Altair, Fomalhaut, Vega.
   const bright = new Set([48915, 128620, 61421, 201091, 22049, 10700, 165341, 187642, 216956, 172167]);
   assert.ok(all.every((s) => s.hd === undefined || !bright.has(s.hd)));

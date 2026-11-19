@@ -27,7 +27,7 @@ test("the data export has matching schemas, counts and checksums", () => {
       if (name === "nearby-stars") assert.equal(schema.rows, nearbyStars().length);
     }
     assert.equal(stars().length, 5080);
-    assert.equal(nearbyStars().length, 5565);
+    assert.equal(nearbyStars().length, 5566);
     const sirius = readFileSync(join(dir, "stars.csv"), "utf8").split("\n")[1]!.split(",");
     assert.equal(Number(sirius[0]), 2491);
     assert.equal(sirius[1], "Sirius");

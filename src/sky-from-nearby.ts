@@ -5,7 +5,7 @@ import { skyFrom, type SeenSky, type SkyFromOptions, type SkyFromViewpoint } fro
 import { starByName, stars } from "./stars.ts";
 
 /**
- * `skyFrom` over the 5,080 bright stars and the 5,565 nearby stars together. A name is looked up among the bright stars first, then the nearby ones (`Proxima Centauri`, `GJ 551`, `Barnard's Star`). A nearby star with no magnitude (the catalogue gives one for most) cannot be given a brightness and is counted in `skipped` with the stars that have no distance. The Sun is among the stars.
+ * `skyFrom` over the 5,080 bright stars and the 5,566 nearby stars together. A name is looked up among the bright stars first, then the nearby ones (`Proxima Centauri`, `GJ 551`, `Barnard's Star`). A nearby star with no magnitude (the catalogue gives one for most) cannot be given a brightness and is counted in `skipped` with the stars that have no distance. The Sun is among the stars.
  *
  * @param viewpoint - As for `skyFrom`, and the name of a nearby star.
  * @param options - `magnitude`, the faintest apparent magnitude to include. `among` is the table: it is set here.

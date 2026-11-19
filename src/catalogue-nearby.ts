@@ -6,14 +6,14 @@ import { nearbyStars } from "./nearby.ts";
 let records: readonly CatalogueStar[] | undefined;
 
 /**
- * The nearby layer: hand it to `catalogueStars`, `catalogueStar` or `catalogueCounts` of `/catalogue` in `layers`. Its 5,565 stars are those of `nearbyStars()`, nearest first.
+ * The nearby layer: hand it to `catalogueStars`, `catalogueStar` or `catalogueCounts` of `/catalogue` in `layers`. Its 5,566 stars are those of `nearbyStars()`, nearest first.
  *
  * @example
  * ```ts
  * import { catalogueCounts } from "@johnmorrisdotca/hoshi-stars/catalogue";
  * import { nearbyLayer } from "@johnmorrisdotca/hoshi-stars/catalogue/nearby";
  *
- * console.log(nearbyLayer.layer, nearbyLayer.stars().length, catalogueCounts({ layers: ["bright", nearbyLayer] }).map((count) => count.stars)); // nearby 5565 [ 5080, 5565 ]
+ * console.log(nearbyLayer.layer, nearbyLayer.stars().length, catalogueCounts({ layers: ["bright", nearbyLayer] }).map((count) => count.stars)); // nearby 5566 [ 5080, 5566 ]
  * ```
  */
 export const nearbyLayer: CatalogueSource = Object.freeze({
