@@ -1,7 +1,7 @@
 // The constellation quiz: a chart with no names, six choices in a row, a right answer scores, and the style, the level and the question are kept in the address. The chart is an SVG drawn once for each question.
 import { expect, test, type Page } from "@playwright/test";
 import { quizHeightFor } from "../demo/quiz-code.ts";
-import { itemsFor } from "../demo/quiz-items.ts";
+import { chineseFigureLevels, itemsFor, mansionIdsOf } from "../demo/quiz-items.ts";
 import { seenIn } from "../demo/quiz-sky.ts";
 import { constellations } from "../src/constellations.ts";
 
@@ -446,6 +446,51 @@ test("the Chinese mansions: characters with the English name or the pinyin, char
   for (const name of await choices(page).allTextContents()) expect(name).toMatch(/^[\u4e00-\u9fff]+$/);
 });
 
+test("the Chinese star officials: the enclosure and tranche levels ask a figure of their own level, the old addresses are still the mansions", async ({ page }) => {
+  const levels = page.getByTestId("qz-levels");
+  const pressed = levels.locator('button[aria-pressed="true"]');
+  // an old address: level=88 of the Chinese sky is the 21 mansions, "All 21", with the new levels beside it
+  await page.goto(`${PAGE}?culture=chinese&level=88`);
+  await expect(pressed).toHaveText("All 21");
+  await expect(levels.locator("button:visible")).toHaveText(["Bright 12", "All 21", "Purple Forbidden (14)", "Heavenly Market (8)", "Star officials 1 (24)", "Star officials 2 (24)", "Star officials 3 (24)", "Star officials 4 (24)"]);
+  for (const one of await abbreviationsOf(page)) expect(mansionIdsOf().has(one), `${one} is a mansion`).toBe(true);
+  await page.goto(`${PAGE}?culture=chinese&level=12`);
+  await expect(pressed).toHaveText("Bright 12");
+  for (const [label, level] of [["Purple Forbidden (14)", "purple-forbidden"], ["Heavenly Market (8)", "heavenly-market"], ["Star officials 2 (24)", "officials-2"]] as const) {
+    await levels.getByRole("button", { name: label }).click();
+    await expect.poll(() => param(page, "level")).toBe(level);
+    await expect(pressed).toHaveText(label);
+    const ids = chineseFigureLevels().find((one) => one.id === level)!.ids;
+    for (let i = 0; i < 4; i += 1) {
+      const asked = await abbreviationsOf(page);
+      expect(asked).toHaveLength(6);
+      for (const one of asked) expect(ids.includes(one), `${one} is in ${level}`).toBe(true);
+      expect(ids.includes(itemsFor("chinese")[Number(param(page, "q")) - 1]!.id), "the question in the address is of the level").toBe(true);
+      await choices(page).first().click();
+      await page.getByTestId("qz-next").click();
+    }
+  }
+  // the level is kept on a reload, and a Western sky has none of these levels
+  await page.reload();
+  await expect(pressed).toHaveText("Star officials 2 (24)");
+  await page.getByTestId("qz-cultures").getByRole("button", { name: "Western" }).click();
+  await expect(levels.locator("button:visible")).toHaveText(["Bright 12", "Bright 30", "All 88"]);
+  // a level this sky lacks is all of it: from 40 degrees south the northern Purple Forbidden has too few figures
+  await page.goto(`${PAGE}?culture=chinese&level=purple-forbidden&hemisphere=south`);
+  await expect(levels.getByRole("button", { name: /Purple Forbidden/ })).toBeHidden();
+  await expect(pressed).toHaveText(/^All \d+$/);
+  await expect(choices(page)).toHaveCount(6);
+});
+
+test("the Chinese star officials in Japanese: the level titles in Japanese and the names in characters alone", async ({ page }) => {
+  await page.goto(`${PAGE}?culture=chinese&level=purple-forbidden&lang=ja`);
+  const pressed = page.getByTestId("qz-levels").locator('button[aria-pressed="true"]');
+  await expect(pressed).toHaveText("紫微垣 (14)");
+  await expect(page.getByTestId("qz-levels").getByRole("button", { name: "天市垣 (8)" })).toBeVisible();
+  await expect(page.getByTestId("qz-levels").getByRole("button", { name: "星官 1 (24)" })).toBeVisible();
+  for (const name of await choices(page).allTextContents()) expect(name).toMatch(/^[\u4e00-\u9fff]+$/);
+});
+
 test("the culture is chosen in a row of buttons, kept in the address, and the sky and the level follow it", async ({ page }) => {
   await page.goto(`${PAGE}?level=30`);
   await expect(page.getByTestId("qz-levels").getByRole("button", { name: "Bright 30" })).toHaveAttribute("aria-pressed", "true");
@@ -453,7 +498,7 @@ test("the culture is chosen in a row of buttons, kept in the address, and the sk
   await expect.poll(() => param(page, "culture")).toBe("chinese");
   // the Chinese mansions are fewer than 30: the level is all of them
   await expect.poll(() => param(page, "level")).toBe("88");
-  await expect(page.getByTestId("qz-levels").locator('button[aria-pressed="true"]')).toHaveText(`All ${itemsFor("chinese").length}`);
+  await expect(page.getByTestId("qz-levels").locator('button[aria-pressed="true"]')).toHaveText("All 21");
   for (let i = 0; i < 4; i += 1) {
     for (const one of await abbreviationsOf(page)) expect(itemsFor("chinese").some((item) => item.id === one)).toBe(true);
     await choices(page).first().click();

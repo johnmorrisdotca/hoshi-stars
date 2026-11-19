@@ -28,6 +28,8 @@ export interface QuizItem {
   light: number;
   /** What makes two items alike: where a constellation was made, a Chinese mansion's quarter, or the kind of a Japanese figure. */
   group: string;
+  /** For a Chinese figure that is not a mansion: the enclosure Wikidata says it is part of (`purple-forbidden`, `supreme-palace`, `heavenly-market`) or the mansion's id, where it says so. */
+  part?: string;
   /** The name to choose, in the reader's language. */
   label: (lang: Lang) => string;
 }
@@ -49,7 +51,7 @@ function cultureLabel(id: CultureId, asterism: Asterism, lang: Lang): string {
   return asterism.names["en"] ?? asterism.name;
 }
 
-/** The items of a sky: the 88 for `western`, else the figures of the culture that are big enough to know (`chinese` is the mansions only). In the order of the culture's own list. */
+/** The items of a sky: the 88 for `western`, else the figures of the culture that are big enough to know (at least three stars and two lines; `chinese` is the 28 mansions first, in the data's order, then the star officials that have a name of their own). In the order of the culture's own list. */
 export function itemsFor(id: CultureId): readonly QuizItem[] {
   const found = held.get(id);
   if (found !== undefined) return found;
@@ -70,15 +72,19 @@ export function itemsFor(id: CultureId): readonly QuizItem[] {
       };
     });
   } else {
-    items = figures(culture)
-      .filter((f) => (id === "chinese" ? f.asterism.kind === "mansion" : true) && f.stars.length >= MIN_STARS && f.segments.length >= MIN_LINES)
+    const big = figures(culture).filter((f) => f.stars.length >= MIN_STARS && f.segments.length >= MIN_LINES);
+    // the old Chinese lists have two 五諸侯, two 柱 and so on: of two figures asked with one name neither can be the right one to choose, so neither is asked
+    const twice = new Set(big.map((f) => f.asterism.name).filter((name, i, names) => id === "chinese" && names.indexOf(name) !== i));
+    items = big
+      .filter((f) => !twice.has(f.asterism.name))
       .map((f) => ({
         id: f.asterism.id,
         stars: f.stars,
         drawStars: f.stars,
         centre: centreOfConstellation(f.asterism.id, culture)!,
         light: lightOf(f.stars),
-        group: f.asterism.group ?? f.asterism.kind,
+        group: f.asterism.group ?? f.asterism.partOf ?? f.asterism.kind,
+        ...(f.asterism.partOf === undefined ? {} : { part: f.asterism.partOf }),
         label: (lang: Lang) => cultureLabel(id, f.asterism, lang),
       }));
   }
@@ -97,3 +103,51 @@ export function itemNamed(id: CultureId, text: string): string | undefined {
   const found = culture === undefined ? constellations().find((c) => c.abbreviation.toLowerCase() === text.toLowerCase() || c.name.toLowerCase() === text.toLowerCase())?.abbreviation : culture.find(text)?.id;
   return found !== undefined && items.some((item) => item.id === found) ? found : undefined;
 }
+
+/** The ids of the Chinese sky's 28 mansions: the bright 12 and all (21) levels ask these only. */
+export const mansionIdsOf = (): ReadonlySet<string> => new Set(chinese.asterisms().filter((a) => a.kind === "mansion").map((a) => a.id));
+
+/** A level of the Chinese sky that is a set of figures and not the brightest so many: the enclosure Wikidata names, or a tranche of the other star officials. */
+export interface FigureLevel {
+  /** The id kept in the address (`level=purple-forbidden`, `level=officials-2`). */
+  id: string;
+  /** The enclosure for an enclosure level; `officials` for a tranche. */
+  kind: "purple-forbidden" | "heavenly-market" | "officials";
+  /** Which tranche, from 1, for the officials. */
+  tranche: number;
+  /** The ids of its figures, in the order of the data's own list for an enclosure and the brightest first for a tranche. */
+  ids: readonly string[];
+}
+
+/** About how many star officials a tranche holds. */
+export const TRANCHE_SIZE = 30;
+/** The enclosures that have a level: the ones with enough figures to ask (a level needs six names). The Supreme Palace has two in this data and stays with the other officials. */
+export const ENCLOSURE_LEVELS = ["purple-forbidden", "heavenly-market"] as const;
+let figureLevels: readonly FigureLevel[] | undefined;
+
+/**
+ * The Chinese sky's levels of star officials, apart from the mansions (whose levels are the bright 12 and all). Each figure of the sky other than a mansion is in exactly one: the enclosure level of the enclosure Wikidata says it is part of
+ * (the Purple Forbidden and the Heavenly Market), else a tranche of the rest (the Supreme Palace's, the one that is part of a mansion and the ones with no statement), brightest first, in tranches of about 30 of equal size.
+ */
+export function chineseFigureLevels(): readonly FigureLevel[] {
+  if (figureLevels !== undefined) return figureLevels;
+  const mansions = mansionIdsOf();
+  const officials = itemsFor("chinese").filter((item) => !mansions.has(item.id));
+  const levels: FigureLevel[] = ENCLOSURE_LEVELS.map((kind) => ({ id: kind, kind, tranche: 0, ids: officials.filter((item) => item.part === kind).map((item) => item.id) }));
+  const rest = officials.filter((item) => !(ENCLOSURE_LEVELS as readonly string[]).includes(item.part ?? "")).sort((a, b) => b.light - a.light || a.id.localeCompare(b.id));
+  const tranches = Math.max(1, Math.ceil(rest.length / TRANCHE_SIZE));
+  for (let t = 0; t < tranches; t += 1) {
+    const ids = rest.slice(Math.floor((t * rest.length) / tranches), Math.floor(((t + 1) * rest.length) / tranches)).map((item) => item.id);
+    levels.push({ id: `officials-${t + 1}`, kind: "officials", tranche: t + 1, ids });
+  }
+  figureLevels = levels;
+  return levels;
+}
+
+/** The level ids a sky offers, in the order of its buttons: the bright 12, 30 and all for the Western and Japanese skies; for the Chinese sky the mansions' bright 12 and all (21), then the enclosures and the tranches of star officials. */
+export function levelIdsFor(id: CultureId): readonly string[] {
+  return id === "chinese" ? ["12", "88", ...chineseFigureLevels().map((level) => level.id)] : ["12", "30", "88"];
+}
+
+/** The figure level an id names in a sky, or `undefined` (for the bright N levels and for any other sky). */
+export const figureLevelOf = (id: CultureId, level: string): FigureLevel | undefined => (id === "chinese" ? chineseFigureLevels().find((one) => one.id === level) : undefined);

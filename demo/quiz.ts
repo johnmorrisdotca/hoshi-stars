@@ -6,7 +6,7 @@ import { neighbouringConstellations } from "../src/nearest.ts";
 import { frameCredit } from "./frame-credit.ts";
 import { figureThumbSrc, langNow, lookNow, nameIn, thumbSrc } from "./thumbs.ts";
 import { ALL_WORDS } from "../scripts/gallery-words.ts";
-import { CULTURE_IDS, cultureFor, itemNamed, itemsFor, type CultureId, type QuizItem } from "./quiz-items.ts";
+import { CULTURE_IDS, cultureFor, figureLevelOf, itemNamed, itemsFor, levelIdsFor, mansionIdsOf, type CultureId, type QuizItem } from "./quiz-items.ts";
 import { distractors, nearestTies, shuffled, westernTies, type Ties } from "./quiz-pick.ts";
 import { HEMISPHERES, MIN_ALTITUDE, isSeenIn, type Hemisphere } from "./quiz-sky.ts";
 import { monthName, say } from "./words.ts";
@@ -22,8 +22,10 @@ if (embedded) frameCredit(document.documentElement.lang === "ja");
 const STYLES = ["plain", "lines", "annotated"] as const;
 type Style = (typeof STYLES)[number];
 const STYLE_WORDS: Record<Style, string> = { plain: "plain", lines: "lines", annotated: "annotated" };
-const LEVELS = ["12", "30", "88"] as const;
-type Level = (typeof LEVELS)[number];
+/** A level's id: `12`, `30` or `88` (the brightest so many, or all), or for the Chinese sky `purple-forbidden`, `heavenly-market` or `officials-1`, `officials-2` and so on (`levelIdsFor`). */
+type Level = string;
+/** The fewest figures a level of a set of figures needs in the sky chosen, so that the question has its six names. */
+const MIN_FIGURES = 6;
 const CHOICES = 6;
 
 const pick = <T extends string>(text: string | null, allowed: readonly T[], fallback: T): T => (allowed.includes(text as T) ? (text as T) : fallback);
@@ -43,8 +45,9 @@ function poolOf(level: Level): string[] {
   const key = `${cultureId}|${where}|${month}|${level}`;
   let found = pools.get(key);
   if (found === undefined) {
-    const seen = rankedOf().filter((item) => where === "all" || isSeenIn(item.stars, where, month));
-    found = (level === "88" ? seen : seen.slice(0, Number(level))).map((item) => item.id);
+    const set = figureLevelOf(cultureId, level);
+    const seen = rankedOf().filter((item) => (set === undefined || set.ids.includes(item.id)) && (cultureId !== "chinese" || set !== undefined || mansionIdsOf().has(item.id)) && (where === "all" || isSeenIn(item.stars, where, month)));
+    found = (set !== undefined || level === "88" ? seen : seen.slice(0, Number(level))).map((item) => item.id);
     pools.set(key, found);
   }
   return found;
@@ -55,11 +58,11 @@ const poolSize = (level: Level): number => poolOf(level).length;
 const tiesOf = (): Ties => (cultureId === "western" ? westernTies : nearestTies(items()));
 
 let style: Style = pick(address.get("style"), STYLES, "plain");
-let level: Level = pick(address.get("level"), LEVELS, "12");
+let level: Level = address.get("level") ?? "12";
 let where: Where = pick(address.get("hemisphere"), WHERE, "all");
 let month = where === "all" ? 0 : Math.max(0, Math.min(12, Math.round(Number(address.get("month")) || 0)));
-/** The 30 level is there only while the sky asked has more than 30 (the Chinese mansions are 21: the level is then all of them). */
-const levelOk = (value: Level): boolean => value !== "30" || totalOf() > 30;
+/** A level is offered while its sky has it: the 30 only where the sky asked has more than 30 (the Chinese mansions are 21: the level is then all of them), and a level of star officials only while the sky chosen (the hemisphere and month) leaves it six figures. */
+const levelOk = (value: Level): boolean => levelIdsFor(cultureId).includes(value) && (figureLevelOf(cultureId, value) === undefined ? value !== "30" || totalOf() > 30 : poolSize(value) >= MIN_FIGURES);
 if (!levelOk(level)) level = "88";
 /** Kid mode: big buttons and simpler words, kept in the address (kid=1). */
 let kid = address.get("kid") === "1";
@@ -89,6 +92,11 @@ function choicesFor(answer: string): string[] {
 }
 
 function ask(abbreviation?: string): void {
+  // a sky chosen after the level can leave it too few figures
+  if (!levelOk(level)) {
+    level = "88";
+    address.set("level", "88");
+  }
   const held = abbreviation === undefined ? undefined : itemNamed(cultureId, abbreviation);
   const pool = poolOf(level);
   const fresh = pool.filter((one) => one !== current);
@@ -164,7 +172,6 @@ function render(): void {
   const levels = $("qz-levels");
   if (styles.children.length === 0) {
     for (const value of STYLES) styles.append(valueButton(value));
-    for (const value of LEVELS) levels.append(valueButton(value));
     const cultures = $("qz-cultures");
     for (const value of CULTURE_IDS) cultures.append(valueButton(value));
     cultures.addEventListener("click", (event) => {
@@ -226,7 +233,7 @@ function render(): void {
   }
   const cultureNote = $("qz-culturenote");
   cultureNote.hidden = cultureId === "western";
-  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: items().length });
+  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: items().length, m: items().filter((item) => mansionIdsOf().has(item.id)).length });
   const months = $<HTMLSelectElement>("qz-month");
   months.replaceChildren(Object.assign(document.createElement("option"), { value: "0", textContent: w("anymonth") }), ...Array.from({ length: 12 }, (_, i) => Object.assign(document.createElement("option"), { value: String(i + 1), textContent: monthName(i + 1) })));
   months.value = String(month);
@@ -242,9 +249,17 @@ function render(): void {
     button.hidden = cultureId !== "western" && button.dataset["value"] === "annotated";
     button.setAttribute("aria-pressed", String(button.dataset["value"] === (cultureId !== "western" && style === "annotated" ? "lines" : style)));
   }
+  // the buttons are the sky's own levels: made again when the culture changes
+  const wanted = levelIdsFor(cultureId);
+  if (levels.dataset["culture"] !== cultureId) {
+    levels.replaceChildren(...wanted.map((value) => valueButton(value)));
+    levels.dataset["culture"] = cultureId;
+  }
   for (const button of Array.from(levels.querySelectorAll("button"))) {
     const value = button.dataset["value"] as Level;
-    button.textContent = value === "88" && totalOf() !== 88 ? w("lall", { n: totalOf() }) : w(`l${value}`);
+    const set = figureLevelOf(cultureId, value);
+    button.textContent =
+      set === undefined ? (value === "88" && totalOf() !== 88 ? w("lall", { n: totalOf() }) : w(`l${value}`)) : set.kind === "officials" ? w("lofficials", { k: set.tranche, n: poolSize(value) }) : w(`l${set.kind}`, { n: poolSize(value) });
     button.hidden = !levelOk(value);
     button.setAttribute("aria-pressed", String(value === level));
   }

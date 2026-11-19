@@ -2,8 +2,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { distractors, nearestTies } from "../demo/quiz-pick.ts";
-import { itemNamed, itemsFor } from "../demo/quiz-items.ts";
+import { chineseFigureLevels, figureLevelOf, itemNamed, itemsFor, levelIdsFor, mansionIdsOf, TRANCHE_SIZE } from "../demo/quiz-items.ts";
+import { quizChoiceOf } from "../demo/quiz-code.ts";
 import { chinese } from "../src/cultures/chinese.ts";
+import { figures } from "../src/lines.ts";
 
 test("the Western sky is the 88, each with stars, a middle and a name in two languages", () => {
   const all = itemsFor("western");
@@ -25,18 +27,76 @@ test("the Japanese sky: only figures with three stars and two lines, named in Ja
   assert.equal(new Set(all.map((item) => item.label("en"))).size, all.length);
 });
 
-test("the Chinese level is the mansions with at least three stars: characters for a reader of Japanese, characters with the English name or the pinyin for English", () => {
+test("the Chinese sky's mansions come first, in the data's order: the 21 with at least three stars, named in characters for Japanese and with the English name or the pinyin for English", () => {
   const all = itemsFor("chinese");
   const mansions = chinese.asterisms().filter((a) => a.kind === "mansion").map((a) => a.id);
-  assert.ok(all.length >= 15 && all.length <= 28, String(all.length));
-  assert.ok(all.every((item) => mansions.includes(item.id) && item.stars.length >= 3));
-  for (const item of all) {
+  const first = all.slice(0, 21);
+  assert.equal(all.filter((item) => mansionIdsOf().has(item.id)).length, 21);
+  assert.ok(first.every((item) => mansions.includes(item.id) && item.stars.length >= 3), "the first 21 are mansions, so a q= of an old address names the same one");
+  for (const item of first) {
     const a = chinese.asterisms().find((x) => x.id === item.id)!;
     assert.equal(item.label("ja"), a.name);
     assert.equal(item.label("en"), `${a.name} (${a.names.en ?? a.readings.zh})`);
   }
-  assert.equal(new Set(all.map((item) => item.label("en"))).size, all.length);
   assert.ok(all.find((item) => item.id === "kui2-xiu4"), "奎宿 has 14 stars");
+});
+
+test("the Chinese sky also asks the star officials: every figure has three stars and two lines, and no two have one name", () => {
+  const all = itemsFor("chinese");
+  assert.equal(all.length, 139, "21 mansions and 118 star officials");
+  const lines = new Map(figures(chinese).map((f) => [f.asterism.id, f.segments.length] as const));
+  for (const item of all) {
+    assert.ok(item.stars.length >= 3, `${item.id}: three stars`);
+    assert.ok((lines.get(item.id) ?? 0) >= 2, `${item.id}: two lines`);
+  }
+  assert.equal(new Set(all.map((item) => item.label("en"))).size, all.length, "no two with one English label");
+  assert.equal(new Set(all.map((item) => item.label("ja"))).size, all.length, "no two with one name in characters");
+  assert.equal(new Set(all.map((item) => item.id)).size, all.length);
+  assert.equal(itemNamed("chinese", "五諸侯"), undefined, "two asterisms of one name are neither asked");
+});
+
+test("the levels of star officials: the Purple Forbidden 14 and the Heavenly Market 8 where Wikidata says so, the rest in tranches of about 30, brightest first, and no figure in two levels", () => {
+  const all = itemsFor("chinese");
+  const levels = chineseFigureLevels();
+  const by = (id: string) => levels.find((level) => level.id === id)!;
+  assert.equal(by("purple-forbidden").ids.length, 14);
+  assert.equal(by("heavenly-market").ids.length, 8);
+  assert.ok(by("purple-forbidden").ids.every((id) => all.find((item) => item.id === id)!.part === "purple-forbidden"));
+  assert.ok(by("heavenly-market").ids.every((id) => all.find((item) => item.id === id)!.part === "heavenly-market"));
+  const tranches = levels.filter((level) => level.kind === "officials");
+  assert.deepEqual(tranches.map((level) => level.id), ["officials-1", "officials-2", "officials-3", "officials-4"]);
+  assert.deepEqual(tranches.map((level) => level.ids.length), [24, 24, 24, 24]);
+  assert.ok(tranches.every((level) => level.ids.length <= TRANCHE_SIZE));
+  // the Supreme Palace's two (too few for a level) and the one that is part of a mansion are with the officials
+  const rest = new Set(tranches.flatMap((level) => level.ids));
+  for (const id of ["chang2-chen2", "lang2-wei4", "jiu3-you2"]) assert.ok(rest.has(id), id);
+  // each tranche is dimmer than the one before
+  const light = (id: string) => all.find((item) => item.id === id)!.light;
+  for (let i = 1; i < tranches.length; i += 1) assert.ok(Math.min(...tranches[i - 1]!.ids.map(light)) >= Math.max(...tranches[i]!.ids.map(light)), `tranche ${i} is brighter than ${i + 1}`);
+  // every star official is in one level, none in two, and none is a mansion
+  const placed = levels.flatMap((level) => level.ids);
+  assert.equal(new Set(placed).size, placed.length, "no figure in two levels");
+  assert.deepEqual([...placed].sort(), all.filter((item) => !mansionIdsOf().has(item.id)).map((item) => item.id).sort(), "the levels cover all of the star officials and nothing else");
+  assert.equal(placed.length, 118);
+  // the wrong names of a question are of its own level, the nearest first
+  const ties = nearestTies(all, 4);
+  for (const level of levels) for (const id of level.ids) {
+    const got = distractors(id, level.ids, 5, Math.random, ties);
+    assert.equal(got.length, 5, `${level.id}: ${id}`);
+    assert.ok(got.every((one) => level.ids.includes(one) && one !== id));
+  }
+});
+
+test("the level ids: the old ones still resolve, and the Chinese sky adds the new", () => {
+  assert.deepEqual(levelIdsFor("western"), ["12", "30", "88"]);
+  assert.deepEqual(levelIdsFor("japanese"), ["12", "30", "88"]);
+  assert.deepEqual(levelIdsFor("chinese"), ["12", "88", "purple-forbidden", "heavenly-market", "officials-1", "officials-2", "officials-3", "officials-4"]);
+  // `level=88` of an old Chinese address is the mansions ("All 21"): not a set of star officials
+  assert.equal(figureLevelOf("chinese", "88"), undefined);
+  assert.equal(figureLevelOf("chinese", "12"), undefined);
+  assert.equal(figureLevelOf("japanese", "purple-forbidden"), undefined);
+  for (const level of ["12", "30", "88", "purple-forbidden", "heavenly-market", "officials-2"]) assert.equal(quizChoiceOf(new URLSearchParams(`culture=chinese&level=${level}`)).level, level);
+  assert.equal(quizChoiceOf(new URLSearchParams("level=officials-x")).level, "12", "a level that is not one is the default");
 });
 
 test("a hand-written name finds its item, in its own sky only", () => {
@@ -46,6 +106,7 @@ test("a hand-written name finds its item, in its own sky only", () => {
   assert.equal(itemNamed("chinese", "奎宿"), "kui2-xiu4");
   assert.equal(itemNamed("chinese", "Orion"), undefined);
   assert.equal(itemNamed("chinese", "氐宿"), undefined, "one star held: not asked");
+  assert.equal(itemNamed("chinese", "華蓋") !== undefined, true, "a star official of the Purple Forbidden Enclosure is asked now");
 });
 
 test("for a sky with no borders the wrong names are the nearest in the sky first, then of the same group", () => {

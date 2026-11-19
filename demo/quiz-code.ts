@@ -7,10 +7,13 @@ const PACKAGE = "@johnmorrisdotca/hoshi-stars";
 const SITE = "https://johnmorrisdotca.github.io/hoshi-stars/";
 const cdn = (): string => `https://cdn.jsdelivr.net/npm/${PACKAGE}@${typeof __HOSHI_VERSION__ === "string" ? __HOSHI_VERSION__ : "latest"}`;
 
+/** Whether text is a level of some sky: the bright 12, 30 or all, or (Chinese) an enclosure or a tranche of star officials. Whether the sky has it is for the page to say; a level it lacks becomes all. */
+const isLevel = (text: string | null): text is string => text !== null && /^(12|30|88|purple-forbidden|heavenly-market|officials-[1-9][0-9]?)$/.test(text);
+
 /** What the quiz is as a handful of choices: how it looks, how many constellations, kid mode, which sky, and the language. */
 export interface QuizChoice {
   style: "plain" | "lines" | "annotated";
-  level: "12" | "30" | "88";
+  level: string;
   kid: boolean;
   hemisphere: "all" | "north" | "south";
   /** 1 to 12, or 0 for any month. */
@@ -29,7 +32,7 @@ export function quizChoiceOf(query: URLSearchParams): QuizChoice {
   const month = Math.round(Number(query.get("month")) || 0);
   return {
     style: pick("style", ["plain", "lines", "annotated"] as const, "plain"),
-    level: pick("level", ["12", "30", "88"] as const, "12"),
+    level: isLevel(query.get("level")) ? query.get("level")! : "12",
     kid: query.get("kid") === "1",
     hemisphere,
     month: hemisphere === "all" || month < 1 || month > 12 ? 0 : month,
