@@ -697,27 +697,31 @@ console.log(starAccuracy(starByName("Rigel")!).grade);                       // 
 console.log(stars({ minGrade: "A" }).length, stars().length);                 // 68 5080
 ```
 
-`@johnmorrisdotca/hoshi-stars/catalogue` joins the bright and the nearby stars into one list, each star once, under an id that stays the same (`hr-2491` for Sirius, `gctp-3278` for Proxima Centauri), with its grade and its distance's range. The headline counts, by tier and grade:
+`@johnmorrisdotca/hoshi-stars/catalogue` joins the tiers into one list, each star once, under an id that stays the same (`hr-2491` for Sirius, `gctp-3278` for Proxima Centauri), with its grade and its distance's range. It loads only the bright stars (147 kB gzipped); the nearby stars (`nearbyLayer` from `/catalogue/nearby`, 244 kB more) and the faint stars a page loaded (`faintLayer(stars)` from `/catalogue/faint`, 34 kB more) are layers handed in through `layers`. The headline counts, by tier and grade:
 
 | Tier | Stars | Grade A | Grade B | Grade C | Source | Licence |
 | --- | --- | --- | --- | --- | --- | --- |
 | Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue, Yale parallaxes | public domain, informally, with credit; Yale parallaxes credited |
 | Nearby (`/nearby`) | 5,565 | 236 | 1,281 | 4,048 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
 | Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | UCAC4, APASS magnitudes | free of charge, cited (`NOTICE.md`) |
-| **Bright and nearby (`/catalogue`)** | **10,645** | **304** | **1,733** | **8,608** | | |
+| **All three, each star once** | **2,470,374** | **304** | **1,733** | **2,468,337** | | |
 
-A faint star has no parallax, so it is grade C. The [guide](docs/guides/accuracy.md) has the typical errors and how a star is counted once.
+A faint star has no parallax, so it is grade C; the 2,135 faint stars that are also nearby stars are counted once. The [guide](docs/guides/accuracy.md) has the typical errors, what each layer costs and how a star is counted once.
 
 ```js
 import { catalogueCounts, catalogueStar, catalogueStars } from "@johnmorrisdotca/hoshi-stars/catalogue";
 
-for (const count of catalogueCounts()) console.log(`${count.layer}: ${count.stars} stars, A ${count.grades.A}, B ${count.grades.B}, C ${count.grades.C}`);
+console.log(`${catalogueStars().length} bright stars load with /catalogue`);
 
-const proxima = catalogueStar("gctp-3278");
+const { nearbyLayer } = await import("@johnmorrisdotca/hoshi-stars/catalogue/nearby");
+const layers = ["bright", nearbyLayer];
+for (const count of catalogueCounts({ layers })) console.log(`${count.layer}: ${count.stars} stars, A ${count.grades.A}, B ${count.grades.B}, C ${count.grades.C}`);
+
+const proxima = catalogueStar("gctp-3278", { layers });
 const [near, far] = proxima.distance.lightYearsRange;
 console.log(`${proxima.id} ${proxima.name}: ${proxima.layer} tier, grade ${proxima.grade}, ${near.toFixed(2)} to ${far.toFixed(2)} light-years`);
 
-const sure = catalogueStars({ minGrade: "A", magnitude: 9 });
+const sure = catalogueStars({ layers, minGrade: "A", magnitude: 9 });
 console.log(`${sure.length} grade A stars to magnitude 9, the faintest ${sure.at(-1).name ?? sure.at(-1).id}`);
 ```
 

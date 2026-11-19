@@ -98,8 +98,8 @@
       "gzip": 138542
     },
     "./nearby": {
-      "minified": 511111,
-      "gzip": 235335
+      "minified": 517653,
+      "gzip": 243497
     },
     "./faint": {
       "minified": 13542,
@@ -150,12 +150,20 @@
       "gzip": 8867
     },
     "./accuracy": {
-      "minified": 4347,
-      "gzip": 1513
+      "minified": 4630,
+      "gzip": 1620
     },
     "./catalogue": {
-      "minified": 842250,
-      "gzip": 386235
+      "minified": 333373,
+      "gzip": 147157
+    },
+    "./catalogue/nearby": {
+      "minified": 518548,
+      "gzip": 244209
+    },
+    "./catalogue/faint": {
+      "minified": 69911,
+      "gzip": 34426
     },
     "./exoplanet-hosts": {
       "minified": 39291,

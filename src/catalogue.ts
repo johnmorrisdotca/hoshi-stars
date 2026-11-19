@@ -1,194 +1,81 @@
-// The stars of the bright tier and the nearby tier as one catalogue: each star once, under an id that stays the same (`hr-` and the Bright Star Catalogue number, or `gctp-` and the Yale parallax catalogue's),
-// with its grade and its distance with the range its error allows. The catalogue tier (`@johnmorrisdotca/hoshi-stars/catalogue`): it loads both tables, so a page that wants one tier imports that one. Pure: no DOM, no clock.
-// The two tiers never hold the same star: the nearby tier was built without the Yale parallax catalogue's stars that the bright tier holds (by HD number, else by position and magnitude), so the union counts every star once.
-import { checkGrade, starGrade, type StarGrade } from "./accuracy.ts";
-import { nearbyStarByName, nearbyStars, type NearbyStar } from "./nearby.ts";
-import { starByHr, starDistance, stars, type Star, type StarDistance } from "./stars.ts";
+// The stars of the package's tiers as one catalogue: each star once, under an id that stays the same, with its grade and its distance with the range its error allows.
+// The catalogue tier (`@johnmorrisdotca/hoshi-stars/catalogue`): it loads the bright stars only. The nearby tier (`/catalogue/nearby`) and the faint tier (`/catalogue/faint`) are layers a page imports when it needs them and hands in
+// through `layers`, so this entry point stays the size of the bright table. Pure: no DOM, no clock.
+// No star is in two tiers: the nearby tier was built without the Yale parallax catalogue's stars that the bright tier holds, the faint tiles without the bright stars, and a faint star that is a nearby star
+// carries that star's id in `sameAs` and is left out of a list that holds the nearby layer.
+import { CATALOGUE_LAYERS, catalogueId, entryOf, layersOf, listOf, type CatalogueCount, type CatalogueLayer, type CatalogueSource, type CatalogueStar } from "./catalogue-core.ts";
+import type { StarGrade } from "./accuracy.ts";
+import { stars } from "./stars.ts";
+
+export { CATALOGUE_LAYERS, catalogueId, type CatalogueCount, type CatalogueLayer, type CatalogueSource, type CatalogueStar };
 
 /**
- * The tier a star of the catalogue is from: `bright` (the 5,080 of the Yale Bright Star Catalogue, the main import) or `nearby` (the Yale parallax catalogue's stars the bright tier leaves out, `/nearby`).
+ * The layers to read: `"bright"`, and the layers a page brought in, `nearbyLayer` from `/catalogue/nearby` and a `faintLayer(stars)` from `/catalogue/faint`.
  *
  * @example
  * ```ts
- * import { type CatalogueLayer } from "@johnmorrisdotca/hoshi-stars/catalogue";
+ * import { catalogueStars, type CatalogueLayers } from "@johnmorrisdotca/hoshi-stars/catalogue";
  *
- * const layer: CatalogueLayer = "nearby";
- * console.log(layer);
+ * const layers: CatalogueLayers = ["bright"];
+ * console.log(catalogueStars({ layers }).length); // 5080
  * ```
  */
-export type CatalogueLayer = "bright" | "nearby";
+export type CatalogueLayers = ReadonlyArray<"bright" | CatalogueSource>;
+
+let brightRecords: readonly CatalogueStar[] | undefined;
+const bright = { layer: "bright" as const, stars: (): readonly CatalogueStar[] => (brightRecords ??= Object.freeze(stars().map((star) => entryOf(star)))) };
 
 /**
- * The tiers the catalogue joins, in the order it reads them.
+ * The stars of the layers asked for as one list, each star once, brightest first (the few with no magnitude last). The bright stars alone unless `layers` says more.
  *
- * @example
- * ```ts
- * import { CATALOGUE_LAYERS } from "@johnmorrisdotca/hoshi-stars/catalogue";
- *
- * console.log(CATALOGUE_LAYERS.join(", ")); // bright, nearby
- * ```
- */
-export const CATALOGUE_LAYERS: readonly CatalogueLayer[] = Object.freeze(["bright", "nearby"]);
-
-/**
- * One star of the catalogue: the same few values for a star of either tier, its grade, its distance, and the tier's own record in `star` for everything else.
- *
- * @example
- * ```ts
- * import { catalogueStar, type CatalogueStar } from "@johnmorrisdotca/hoshi-stars/catalogue";
- *
- * const proxima: CatalogueStar = catalogueStar("gctp-3278")!;
- * console.log(proxima.layer, proxima.name, proxima.grade, proxima.distance?.lightYears.toFixed(2));
- * ```
- */
-export interface CatalogueStar {
-  /** The id that stays the same: `hr-` and the HR number for a bright star (`hr-2491`, Sirius), `gctp-` and the catalogue number for a nearby star (`gctp-3278`, Proxima Centauri). The same ids `/distance`, `/names` and `/sky-from` use. */
-  id: string;
-  /** The tier the star is from. */
-  layer: CatalogueLayer;
-  /** The common name, or `undefined`. */
-  name: string | undefined;
-  /** The Bayer letter or Flamsteed number and constellation (`α CMa`), or `undefined`. */
-  designation: string | undefined;
-  /** The Henry Draper number, or `undefined`. */
-  hd: number | undefined;
-  /** Right ascension in degrees at J2000 (epoch 2000), 0 up to 360. */
-  rightAscension: number;
-  /** Declination in degrees at J2000 (epoch 2000), -90 to 90. */
-  declination: number;
-  /** The V magnitude, or `undefined` for the few nearby stars the Yale parallax catalogue gives none (`starAccuracy(star).magnitude` says what kind it is). */
-  magnitude: number | undefined;
-  /** The grade, A, B or C, by `GRADE_RULES` of `/accuracy`. */
-  grade: StarGrade;
-  /** The distance, its error and its range in light-years (`starDistance`), or `undefined` where there is no parallax or it is 0 or less. */
-  distance: StarDistance | undefined;
-  /** The tier's own record: a `Star` for `bright`, a `NearbyStar` for `nearby`. `starAccuracy(star)` gives the source and error of each value. */
-  star: Star | NearbyStar;
-}
-
-/**
- * How many stars a tier holds, and how many of them have each grade.
- *
- * @example
- * ```ts
- * import { catalogueCounts, type CatalogueCount } from "@johnmorrisdotca/hoshi-stars/catalogue";
- *
- * const bright: CatalogueCount = catalogueCounts()[0]!;
- * console.log(bright.layer, bright.stars, bright.grades.A);
- * ```
- */
-export interface CatalogueCount {
-  /** The tier. */
-  layer: CatalogueLayer;
-  /** The stars it holds. */
-  stars: number;
-  /** The stars of each grade. */
-  grades: Readonly<Record<StarGrade, number>>;
-}
-
-const made = new Map<Star | NearbyStar, CatalogueStar>();
-
-/**
- * A star's id in the catalogue: `hr-` and its HR number for a bright star, its own `id` (`gctp-` and its number) for a nearby star.
- *
- * @param star - A bright star or a nearby star.
- * @returns The id.
- *
- * @example
- * ```ts
- * import { starByName } from "@johnmorrisdotca/hoshi-stars";
- * import { catalogueId } from "@johnmorrisdotca/hoshi-stars/catalogue";
- *
- * console.log(catalogueId(starByName("Vega")!)); // hr-7001
- * ```
- */
-export function catalogueId(star: Star | NearbyStar): string {
-  return "hr" in star ? `hr-${star.hr}` : star.id;
-}
-
-function entryOf(star: Star | NearbyStar): CatalogueStar {
-  let entry = made.get(star);
-  if (entry === undefined) {
-    entry = Object.freeze({
-      id: catalogueId(star),
-      layer: "hr" in star ? "bright" : "nearby",
-      name: star.name,
-      designation: star.designation,
-      hd: star.hd,
-      rightAscension: star.rightAscension,
-      declination: star.declination,
-      magnitude: star.magnitude,
-      grade: starGrade(star),
-      distance: starDistance(star),
-      star,
-    });
-    made.set(star, entry);
-  }
-  return entry;
-}
-
-function checkLayers(layers: unknown): readonly CatalogueLayer[] {
-  if (layers === undefined) return CATALOGUE_LAYERS;
-  if (!Array.isArray(layers)) throw new TypeError(`layers must be an array, got ${String(layers)}`);
-  for (const layer of layers) if (!CATALOGUE_LAYERS.includes(layer)) throw new RangeError(`layers must hold only "bright" and "nearby", got ${String(layer)}`);
-  return layers;
-}
-
-/**
- * The stars of both tiers as one list, each star once, brightest first (the few with no magnitude last).
- *
- * @param options - `layers`: the tiers to include (both where left out). `magnitude`: the faintest V to include (a star with no magnitude is then left out). `minGrade`: the worst grade to include (`"B"` keeps grades A and B).
+ * @param options - `layers`: `"bright"` and the layers brought in (`["bright"]` where left out). `magnitude`: the faintest to include (a star with no magnitude is then left out). `minGrade`: the worst grade to include (`"B"` keeps grades A and B).
  * @returns A fresh array of the shared, frozen records.
- * @throws TypeError if `layers` is not an array or `magnitude` not a number; RangeError if `layers` names another tier or `minGrade` is not `"A"`, `"B"` or `"C"`.
+ * @throws TypeError if `layers` is not an array or `magnitude` not a number; RangeError if `layers` holds anything else (the name `"nearby"` or `"faint"` too: those layers load on request) or one layer twice, or if `minGrade` is not `"A"`, `"B"` or `"C"`.
  *
  * @example
  * ```ts
  * import { catalogueStars } from "@johnmorrisdotca/hoshi-stars/catalogue";
  *
- * const sure = catalogueStars({ minGrade: "A" });
- * console.log(sure.length, sure.filter((one) => one.layer === "nearby").length); // 303 235
+ * const { nearbyLayer } = await import("@johnmorrisdotca/hoshi-stars/catalogue/nearby");
+ * const sure = catalogueStars({ layers: ["bright", nearbyLayer], minGrade: "A" });
+ * console.log(catalogueStars().length, sure.length, sure.filter((one) => one.layer === "nearby").length);
  * ```
  */
-export function catalogueStars(options: { layers?: readonly CatalogueLayer[]; magnitude?: number; minGrade?: StarGrade } = {}): CatalogueStar[] {
-  const layers = checkLayers(options?.layers);
-  const minGrade = options?.minGrade === undefined ? undefined : checkGrade(options.minGrade, "minGrade");
-  const filter = { ...(options?.magnitude === undefined ? {} : { magnitude: options.magnitude }), ...(minGrade === undefined ? {} : { minGrade }) };
-  const found: CatalogueStar[] = [];
-  if (layers.includes("bright")) for (const star of stars(filter)) found.push(entryOf(star));
-  if (layers.includes("nearby")) for (const star of nearbyStars(filter)) found.push(entryOf(star));
-  return found.sort((a, b) => (a.magnitude ?? Number.POSITIVE_INFINITY) - (b.magnitude ?? Number.POSITIVE_INFINITY));
+export function catalogueStars(options: { layers?: CatalogueLayers; magnitude?: number; minGrade?: StarGrade } = {}): CatalogueStar[] {
+  return listOf(layersOf(options?.layers, bright), options?.magnitude, options?.minGrade);
 }
 
 /**
- * A star of the catalogue by its id, ignoring case: `hr-2491` (Sirius) or `gctp-3278` (Proxima Centauri).
+ * A star of the catalogue by its id, ignoring case, among the layers asked for: `hr-2491` (Sirius) among the bright stars, `gctp-3278` (Proxima Centauri) once `nearbyLayer` is handed in.
  *
  * @param id - The id, as `catalogueId` gives it.
- * @returns The star, or `undefined` where no star of either tier has that id.
+ * @param options - `layers`, as for `catalogueStars` (`["bright"]` where left out).
+ * @returns The star, or `undefined` where no star of those layers has that id.
+ * @throws TypeError or RangeError for a bad `layers`, as `catalogueStars`.
  *
  * @example
  * ```ts
  * import { catalogueStar } from "@johnmorrisdotca/hoshi-stars/catalogue";
+ * import { nearbyLayer } from "@johnmorrisdotca/hoshi-stars/catalogue/nearby";
  *
- * console.log(catalogueStar("hr-2491")?.name, catalogueStar("gctp-4098")?.name, catalogueStar("hr-0")); // Sirius Barnard's Star undefined
+ * console.log(catalogueStar("hr-2491")?.name, catalogueStar("gctp-4098"), catalogueStar("gctp-4098", { layers: [nearbyLayer] })?.name); // Sirius undefined Barnard's Star
  * ```
  */
-export function catalogueStar(id: string): CatalogueStar | undefined {
+export function catalogueStar(id: string, options: { layers?: CatalogueLayers } = {}): CatalogueStar | undefined {
   const text = String(id).trim().toLowerCase();
-  const bright = /^hr-([1-9]\d*)$/.exec(text);
-  if (bright !== null) {
-    const star = starByHr(Number(bright[1]));
-    return star === undefined ? undefined : entryOf(star);
+  for (const one of layersOf(options?.layers, bright)) {
+    const found = one.stars().find((entry) => entry.id.toLowerCase() === text);
+    if (found !== undefined) return found;
   }
-  const nearby = /^gctp-(\d+(?:\.\d+)?)$/.exec(text);
-  if (nearby === null) return undefined;
-  const star = nearbyStarByName(`gctp ${nearby[1]}`);
-  return star === undefined || star.id !== `gctp-${nearby[1]}` ? undefined : entryOf(star);
+  return undefined;
 }
 
 /**
- * The stars of each tier and of each grade: the headline counts.
+ * The stars of each layer asked for, and of each grade: the headline counts. A faint star that is a nearby star is counted with the nearby layer when both are asked for.
  *
- * @returns One count for each tier, in the order of `CATALOGUE_LAYERS`.
+ * @param options - `layers`, as for `catalogueStars` (`["bright"]` where left out).
+ * @returns One count for each layer, in the order of `layers`.
+ * @throws TypeError or RangeError for a bad `layers`, as `catalogueStars`.
  *
  * @example
  * ```ts
@@ -197,11 +84,17 @@ export function catalogueStar(id: string): CatalogueStar | undefined {
  * for (const count of catalogueCounts()) console.log(`${count.layer}: ${count.stars} (A ${count.grades.A}, B ${count.grades.B}, C ${count.grades.C})`);
  * ```
  */
-export function catalogueCounts(): CatalogueCount[] {
-  return CATALOGUE_LAYERS.map((layer) => {
+export function catalogueCounts(options: { layers?: CatalogueLayers } = {}): CatalogueCount[] {
+  const layers = layersOf(options?.layers, bright);
+  const all = listOf(layers, undefined, undefined);
+  return layers.map(({ layer }) => {
     const grades: Record<StarGrade, number> = { A: 0, B: 0, C: 0 };
-    const all = catalogueStars({ layers: [layer] });
-    for (const one of all) grades[one.grade] += 1;
-    return { layer, stars: all.length, grades: Object.freeze(grades) };
+    let count = 0;
+    for (const one of all) {
+      if (one.layer !== layer) continue;
+      grades[one.grade] += 1;
+      count += 1;
+    }
+    return { layer, stars: count, grades: Object.freeze(grades) };
   });
 }

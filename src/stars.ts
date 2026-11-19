@@ -10,6 +10,7 @@ import { blackBodyColour, starTemperatureK } from "./colour.ts";
 import { checkGrade, gradeAtLeast, starGrade, type StarGrade } from "./accuracy.ts";
 
 export { blackBodyColour, starTemperatureK };
+export { starDistance, type StarDistance } from "./star-distance.ts";
 
 /**
  * One star, as the Yale Bright Star Catalogue gives it. Positions are J2000 (equator and equinox of 2000, the FK5 frame, which is the ICRS to a fraction of an arc-second).
@@ -61,26 +62,6 @@ export interface Star {
   parallaxSource: "GCTP" | "BSC" | "dynamical" | "literature" | undefined;
   /** Said of the few stars whose catalogue parallax is poor: the paper the distance is typed from (`parallaxSource` is `"literature"`), or that the error was widened because no clear-licence figure replaces it; `undefined` for every other star. */
   parallaxNote: string | undefined;
-}
-
-/**
- * A star's distance with its uncertainty: what `starDistance` returns.
- *
- * @example
- * ```ts
- * import { starByName, starDistance, type StarDistance } from "@johnmorrisdotca/hoshi-stars";
- *
- * const distance: StarDistance | undefined = starDistance(starByName("Betelgeuse")!);
- * console.log(distance?.lightYearsRange);
- * ```
- */
-export interface StarDistance {
-  /** The distance in light-years: 3,261.56 divided by the parallax in milliarcseconds. */
-  lightYears: number;
-  /** The error of `lightYears`: the distance times the parallax's relative error (a first-order figure, good while that is small), or `undefined` where the parallax has no error. */
-  lightYearsError: number | undefined;
-  /** The nearest and the farthest the distance can be within one standard error of the parallax, or `undefined` where the parallax has no error. The farthest is `Infinity` where the error is as large as the parallax (the distance has no upper limit). */
-  lightYearsRange: readonly [number, number] | undefined;
 }
 
 const SOURCES: Readonly<Record<string, Star["parallaxSource"]>> = { g: "GCTP", b: "BSC", d: "dynamical" };
@@ -251,27 +232,6 @@ export function absoluteMagnitude(star: Pick<Star, "magnitude" | "parallaxMas">)
   return star.parallaxMas > 0 ? star.magnitude + 5 + 5 * Math.log10(star.parallaxMas / 1000) : undefined;
 }
 
-/**
- * A star's distance with its uncertainty, from the parallax and its error. Sirius is 8.5 light-years, to within 0.05; Betelgeuse's distance is a published paper's (168 parsecs, 548 light-years), so it is anywhere from 480 to 640 light-years. Rigel is rougher: from 590 to 1,480 light-years.
- *
- * @param star - A star, or anything with a parallax in milliarcseconds and its error (a nearby star from `/nearby`).
- * @returns The distance, its error and its range in light-years, or `undefined` where there is no parallax (or a non-positive one).
- *
- * @example
- * ```ts
- * import { starByName, starDistance } from "@johnmorrisdotca/hoshi-stars";
- *
- * const sirius = starDistance(starByName("Sirius")!)!;
- * console.log(sirius.lightYears.toFixed(2), sirius.lightYearsError?.toFixed(2), sirius.lightYearsRange?.map((ly) => ly.toFixed(2)));
- * ```
- */
-export function starDistance(star: Pick<Star, "parallaxMas" | "parallaxErrorMas">): StarDistance | undefined {
-  const { parallaxMas: parallax, parallaxErrorMas: error } = star;
-  if (!(parallax > 0)) return undefined;
-  const lightYears = 3261.563777 / parallax;
-  if (error === undefined) return { lightYears, lightYearsError: undefined, lightYearsRange: undefined };
-  return { lightYears, lightYearsError: (lightYears * error) / parallax, lightYearsRange: [3261.563777 / (parallax + error), error < parallax ? 3261.563777 / (parallax - error) : Number.POSITIVE_INFINITY] };
-}
 
 /**
  * The colour to draw a star: from its B-V index, or a plain white where the catalogue has none.
