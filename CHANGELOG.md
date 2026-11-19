@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The README, NOTICE and size counts are the data's** (MODULES-1665). NOTICE.md said 2,326 bright stars take a GCTP parallax and "three" published distances; the data has 2,325 and four (Antares joined). The README's "Where the data comes from" said stars fainter than 6.0 are not in the package; it now names the faint tiles. `test/docs-counts.test.ts` computes the counts from the tables and fails until the README, NOTICE.md and the accuracy guide say them. `docs/bundle-size.json` is measured again (`node scripts/docs-site.mjs size --write`).
+
 - **61 Cygni B (HR 8086, V 6.03) is a nearby star** (MODULES-1664). The Bright Star Catalogue holds it fainter than the bright tier's 6.0, and the build of `/nearby` matched the Yale parallax catalogue's number 5077 to the bright tier by 61 Cygni A's HD number and dropped the whole pair, so the star was in neither tier. `scripts/make-nearby-data.py` now keeps a named fainter component of a matched system (`COMPANIONS`, HD 201092) as a new star with its own position, motion and magnitude and the system's parallax: `gctp-5077`, grade A, at 11.37 light-years like 61 Cygni A. `/nearby` has 5,566 stars (grade A 237), `/catalogue` with the nearby layer 10,646, and the faint tiles hold no copy, so `catalogueCounts` counts it once. A test holds that.
 
 ## [0.53.0] - 2026-11-19
