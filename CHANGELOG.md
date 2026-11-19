@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-11-20
+
 ## [0.55.0] - 2026-11-20
 
 - **The quiz's Sky is a latitude you type, or My location** (MODULES-1219). The North and South buttons (a fixed 40 degrees) are replaced by a latitude field, a whole number of degrees from -90 to 90 (a decimal is rounded, a bad number is refused and the one before is kept), kept in the address as `lat`, and a *My location* button that asks the device only when pressed and uses only the latitude, rounded to a whole degree. The position is never written to the address or the code for a frame, never stored and never sent, as on the Tonight and My sky pages. A refusal is said in the panel, English and Japanese, and the latitude stays. Old `hemisphere=north` and `south` addresses still open as 40 and -40, and `lat` wins when both are there. The rule is the same: more than half of a figure's stars more than 10 degrees up at 21:00 on the 15th, or in some month for *Any month*; a level the sky leaves with too few figures is not offered. Demo only; no data change.
