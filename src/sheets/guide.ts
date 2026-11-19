@@ -4,7 +4,8 @@ import type { Constellation } from "../constellations.ts";
 import { figureOf } from "../lines.ts";
 import { project } from "../projection.ts";
 import { TYPES, esc, n, paragraph, svgOpen, text, textWidth, wrap, type Lang } from "./common.ts";
-import { monthName, skyForLatitude, whyFamous, type RegionEntry } from "./region.ts";
+import { altitudeAt, monthName, skyForLatitude, sunRightAscension, whyFamous, type RegionEntry } from "./region.ts";
+import { stars } from "../stars.ts";
 
 /** One constellation as a small picture: its figure's lines and dots in a square of `size` millimetres at `(x, y)`, with its name under it. */
 function thumbnail(c: Constellation, x: number, y: number, size: number, lang: Lang, type: "kid" | "normal"): string {
@@ -55,6 +56,7 @@ const SAY = {
     never: "Never seen from here",
     none: "None: here every constellation rises and sets.",
     noneBest: "Nothing high enough this month.",
+    stars: (list: string) => `Brightest up then: ${list}`,
   },
   ja: {
     always: "ここでは いつも みえる ほしざ",
@@ -62,11 +64,23 @@ const SAY = {
     never: "ここからは みえない ほしざ",
     none: "ここでは どの ほしざも のぼって しずみます。",
     noneBest: "この つきは たかく のぼる ほしざが ありません。",
+    stars: (list: string) => `そのとき いちばん あかるい ほし: ${list}`,
   },
 } as const;
 
+/** The brightest named stars above the horizon at about 21:00 by the Sun on the 15th, name and magnitude, brightest first. */
+function brightestEvening(latitude: number, month: number, lang: Lang): string {
+  const lst = (sunRightAscension(month, 15) + 135) % 360;
+  const up = stars()
+    .filter((star) => star.name !== undefined && altitudeAt(latitude, star.declination, star.rightAscension, lst) > 0)
+    .sort((a, b) => a.magnitude - b.magnitude || a.hr - b.hr)
+    .slice(0, 6);
+  const sep = lang === "ja" ? "、" : ", ";
+  return up.map((star) => `${lang === "ja" ? (star.nameJa ?? star.name!) : star.name!} ${star.magnitude.toFixed(1)}`).join(sep);
+}
+
 /**
- * The sheet "constellations for where you live" as an SVG string measured in millimetres: the constellations always up at a latitude, the best of the evening sky in a month (about 21:00 by the Sun) and the ones never seen, each with its figure and name, and a note on the most famous.
+ * The sheet "constellations for where you live" as an SVG string measured in millimetres: the constellations always up at a latitude, the best of the evening sky in a month (about 21:00 by the Sun) with the brightest named stars then up (name and magnitude), and the ones never seen, each figure with its name, and a note on the most famous.
  * @param latitude - Degrees north of the equator (negative south), -90 to 90.
  * @param month - 1 to 12.
  * @param options - `widthMm` and `heightMm` (the room of the page's body), `lang` and `type` (`kid` or `normal`).
@@ -96,6 +110,7 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
   const head = t.nameMm * 0.75;
   const neverWords = never6.map((e) => (lang === "ja" ? e.constellation.japanese : e.constellation.name)).join(lang === "ja" ? "、" : ", ");
   const neverLines = wrap(neverWords === "" ? "-" : neverWords, options.widthMm - 2.4, t.bodyMm);
+  const starLines = wrap(say.stars(brightestEvening(latitude, month, lang)), options.widthMm - 2.4, t.bodyMm);
   const whyEntry = [...always, ...best][0];
   const why = whyEntry === undefined ? undefined : whyFamous(whyEntry.constellation.abbreviation, lang);
   const lay = (shrink: number, withWhy: boolean, bestRows: number): { parts: string[]; end: number } => {
@@ -121,6 +136,8 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
       parts.push(text(1.2, y + t.bodyMm, t.bodyMm, say.noneBest));
       y += t.bodyMm * 1.5;
     } else grid(best, Math.min(bestRows, Math.ceil(best.length / columns)));
+    starLines.forEach((line, i) => parts.push(text(1.2, y + t.bodyMm + i * t.bodyMm * 1.3, t.bodyMm, line, i === 0 ? ' data-stars=""' : "")));
+    y += starLines.length * t.bodyMm * 1.3 + 2;
     heading(say.never);
     neverLines.forEach((line, i) => parts.push(text(1.2, y + t.bodyMm + i * t.bodyMm * 1.3, t.bodyMm, line)));
     y += neverLines.length * t.bodyMm * 1.3 + 3;

@@ -50,4 +50,4 @@ Polaris is up every night from the northern middle latitudes and never from the 
 
 ## Limits
 
-The limit is an approximation, good for "will I see Orion", not for the faintest star at the threshold. The Moon is not worked out: pass `moonPenalty`. The catalogue stops at magnitude 6.0, so a dark site sees no more than the list holds (the [faint stars](faint-stars.md) go deeper). A planet is not in the list.
+The limit is an approximation, good for "will I see Orion", not for the faintest star at the threshold. The Moon is worked out when `moonPenalty` is left out. Its place is the Astronomical Almanac's low-precision series (section D) and its phase angle is Meeus, Astronomical Algorithms, 2nd ed., chapter 48, equation 48.3. The glare is our own estimate: 0 when the Moon is down, otherwise twice the lit fraction of the disc (about 0.5 for a crescent, 2 when it is full and up). Pass `moonPenalty` to use your own. The catalogue stops at magnitude 6.0, so a dark site sees no more than the list holds (the [faint stars](faint-stars.md) go deeper). A planet is not in the list.

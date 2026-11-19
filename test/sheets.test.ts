@@ -203,6 +203,8 @@ test("the guide lists what is always up, what is best this month and what is nev
   const sydney = regionGuideSvg(-33.9, 7, { widthMm: 184.6, heightMm: 150, lang: "en" });
   assert.ok(sydney.includes('data-thumb="Cru"') && !sydney.includes('data-thumb="UMi"'), "Crux in the guide, Ursa Minor not");
   assert.ok(sydney.includes("Always up here") && sydney.includes("Best in July evenings") && sydney.includes("Never seen from here"));
+  assert.ok(sydney.includes('data-stars=""') && sydney.includes("Brightest up then:"), "the evening's brightest stars");
+  assert.match(sydney, /Brightest up then:[\s\S]*-?\d\.\d/);
   assert.ok(sydney.includes("Ursa Minor"), "the never list names Ursa Minor");
   const equator = regionGuideSvg(0, 3, { widthMm: 184.6, heightMm: 150, lang: "ja" });
   assert.ok(equator.includes("ここでは どの ほしざも のぼって しずみます"));

@@ -5,7 +5,7 @@ import { countries, countryName } from "@johnmorrisdotca/kuni";
 import { facts } from "@johnmorrisdotca/kuni/facts";
 import { WORDS } from "../scripts/page-words.ts";
 import { starColour } from "../src/stars.ts";
-import { visibleStars, type SkyLimit, type TonightSky, type Twilight, type VisibleStar } from "../src/tonight.ts";
+import { starsBelowHorizon, visibleStars, type SkyLimit, type TonightSky, type Twilight, type VisibleStar } from "../src/tonight.ts";
 import { regionFlag, regionPoints, REGION_COUNTRIES } from "./places.ts";
 
 type Lang = "en" | "ja";
@@ -28,6 +28,8 @@ interface State {
   /** A fixed moment in milliseconds, or null for now. */
   t: number | null;
   limit: Limit;
+  /** When on, stars below the horizon are drawn dimmed for this place and moment. Off by default. */
+  below: boolean;
 }
 const parsedTime = Date.parse(address.get("t") ?? "");
 const limitParam = address.get("limit");
@@ -37,6 +39,7 @@ const state: State = {
   here: null,
   t: Number.isFinite(parsedTime) ? parsedTime : null,
   limit: (LIMITS as readonly string[]).includes(limitParam ?? "") ? (limitParam as Limit) : "rural",
+  below: address.get("below") === "1",
 };
 let regions: { code: string; name: { en: string; ja: string }; lat: number; lon: number }[] = [];
 
@@ -89,11 +92,17 @@ function at(altitude: number, azimuth: number): { x: number; y: number } {
   const a = (azimuth * Math.PI) / 180;
   return { x: MIDDLE - r * Math.sin(a), y: MIDDLE - r * Math.cos(a) };
 }
+/** A star below the horizon, in the band outside the circle, down to 18 degrees below. */
+function atBelow(altitude: number, azimuth: number): { x: number; y: number } {
+  const r = RADIUS + ((SIZE / 2 - 8 - RADIUS) * Math.min(1, -altitude / 18));
+  const a = (azimuth * Math.PI) / 180;
+  return { x: MIDDLE - r * Math.sin(a), y: MIDDLE - r * Math.cos(a) };
+}
 const radiusOf = (magnitude: number): number => Math.max(1.2, Math.min(6.5, 4.6 - 1.1 * magnitude));
 const nameOf = (one: VisibleStar): string => (lang() === "ja" ? (one.star.nameJa ?? one.star.name) : one.star.name) ?? one.star.designation ?? `HR ${one.star.hr}`;
 const compass = (azimuth: number): string => say("tn_compass").split(",")[Math.round(azimuth / 45) % 8]!;
 
-function drawChart(sky: TonightSky, where: string): SVGElement {
+function drawChart(sky: TonightSky, where: string, dimmed: { altitude: number; azimuth: number; hr: number; colour: string }[]): SVGElement {
   const svg = el("svg", { viewBox: `0 0 ${SIZE} ${SIZE}`, role: "img", "aria-label": say("tn_chartLabel", { place: where }) });
   svg.append(el("rect", { width: SIZE, height: SIZE, fill: "#05080f" }));
   svg.append(el("circle", { cx: MIDDLE, cy: MIDDLE, r: RADIUS, fill: BACKGROUND[sky.twilight], stroke: "#9fb4d8", "stroke-width": 1.5 }));
@@ -103,6 +112,14 @@ function drawChart(sky: TonightSky, where: string): SVGElement {
     const spot = at(-6, index * 45);
     svg.append(el("text", { x: spot.x, y: spot.y + 4, "text-anchor": "middle", fill: "#c9d6ee", "font-size": 13, "font-weight": 600 }, names[index]!));
   });
+  if (dimmed.length > 0) {
+    const under = el("g", { "data-testid": "tn-below" });
+    for (const one of dimmed) {
+      const spot = atBelow(one.altitude, one.azimuth);
+      under.append(el("circle", { cx: spot.x.toFixed(1), cy: spot.y.toFixed(1), r: 2.2, fill: one.colour, "fill-opacity": 0.32, "data-hr": one.hr }));
+    }
+    svg.append(under);
+  }
   const stars = el("g", { "data-testid": "tn-stars" });
   for (const one of sky.stars) {
     const spot = at(one.altitude, one.azimuth);
@@ -129,6 +146,8 @@ async function render(): Promise<void> {
   const ms = state.t ?? Date.now();
   const spot = place();
   $<HTMLInputElement>("#moment").value = localInput(ms);
+  const below = $<HTMLButtonElement>("#below");
+  below.setAttribute("aria-pressed", String(state.below));
   $("#limits").replaceChildren(...LIMITS.map((value) => {
     const button = document.createElement("button");
     button.type = "button";
@@ -154,12 +173,16 @@ async function render(): Promise<void> {
     return;
   }
   const limit: SkyLimit = state.limit;
-  const sky = visibleStars({ observer: { latitude: spot.lat, longitude: spot.lon }, when: ms, sky: { limit } });
+  const observer = { latitude: spot.lat, longitude: spot.lon };
+  const sky = visibleStars({ observer, when: ms, sky: { limit } });
+  const dimmed = state.below
+    ? starsBelowHorizon({ observer, when: ms, magnitude: sky.limitingMagnitude }).map((one) => ({ altitude: one.altitude, azimuth: one.azimuth, hr: one.star.hr, colour: starColour(one.star) }))
+    : [];
   const where = placeName();
   const twilight = say(`tn_${sky.twilight}`);
   $("#tn-summary").textContent = sky.stars.length === 0 ? say("tn_none", { twilight, place: where }) : say("tn_summary", { twilight, place: where, n: sky.stars.length, name: nameOf(sky.stars[0]!) });
   $("#tn-summary").dataset["twilight"] = sky.twilight;
-  $("#tn-chart").replaceChildren(drawChart(sky, where));
+  $("#tn-chart").replaceChildren(drawChart(sky, where, dimmed));
   $("#tn-rows").replaceChildren(...sky.stars.slice(0, 12).map((one) => {
     const row = document.createElement("tr");
     row.dataset["hr"] = String(one.star.hr);
@@ -180,11 +203,13 @@ function choose(change: Partial<State>): void {
   address.set("region", state.region === "" ? null : state.region);
   address.set("t", state.t === null ? null : new Date(state.t).toISOString().slice(0, 16) + "Z");
   address.set("limit", state.limit === "rural" ? null : state.limit);
+  address.set("below", state.below ? "1" : null);
   void (change.country !== undefined ? loadRegions() : Promise.resolve()).then(render);
 }
 
 countrySelect.addEventListener("change", () => choose({ country: countrySelect.value, region: "", here: null }));
 regionSelect.addEventListener("change", () => choose({ region: regionSelect.value, here: null }));
+$("#below").addEventListener("click", () => choose({ below: !state.below }));
 $("#now").addEventListener("click", () => choose({ t: null }));
 $<HTMLInputElement>("#moment").addEventListener("change", (event) => {
   const value = Date.parse((event.target as HTMLInputElement).value);

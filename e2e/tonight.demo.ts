@@ -57,6 +57,26 @@ test("Japanese words, the star in katakana, and the page fits the width of the s
   expect(small).toBe(0);
 });
 
+test("dimming stars below the horizon is one control, off until it is turned on", async ({ page }) => {
+  await page.goto(`${PAGE}?country=CA&region=CA-BC&${NIGHT}`);
+  const toggle = page.locator("#below");
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await expect(toggle).toHaveText("Dim stars below the horizon");
+  await expect(page.locator('[data-testid="tn-below"]')).toHaveCount(0);
+  await expect(page.getByText("Nothing is copied from that scale.")).toBeVisible();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => param(page, "below")).toBe("1");
+  await expect.poll(async () => page.locator('[data-testid="tn-below"] circle').count()).toBeGreaterThan(0);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  await expect.poll(() => param(page, "below")).toBeNull();
+  await expect(page.locator('[data-testid="tn-below"]')).toHaveCount(0);
+  await page.goto(`${PAGE}?country=CA&region=CA-BC&${NIGHT}&lang=ja`);
+  await expect(page.locator("#below")).toHaveText("地平線の下の星を薄くする");
+  await expect(page.getByText("その等級表からは何も写していません。")).toBeVisible();
+});
+
 test("the darkness of the site changes how many stars show, and the moment is kept in the address", async ({ page }) => {
   await page.goto(`${PAGE}?country=CA&region=CA-BC&${NIGHT}`);
   const stars = page.locator('[data-testid="tn-stars"] circle');

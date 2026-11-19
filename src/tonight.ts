@@ -4,6 +4,7 @@
 // The Sun: the low-precision formula of The Astronomical Almanac (U.S. Naval Observatory and HM Nautical Almanac Office, section C), good to 0.01 degree from 1950 to 2050, a position of the date.
 // The air: the airmass of Kasten and Young (1989), X = 1 / (sin h + 0.50572 (h + 6.07995)^-1.6364) with h the altitude in degrees, and an extinction of 0.20 magnitude per airmass in V (a clear, low-altitude site).
 // The sky's limit: round presets of our own, each near the naked-eye limits of the Bortle dark-sky scale's classes (see NOTICE.md); the twilight's limit is our own rough line through what an observer sees (see `TWILIGHT_LIMITS`), not a measurement.
+import { moonHorizontal, moonPhase } from "./my-sky/moon.ts";
 import { horizontal, type Observer } from "./sky.ts";
 import { starPosition, stars, type Star } from "./stars.ts";
 import { J2000_MS, moment, type When } from "./when.ts";
@@ -81,7 +82,7 @@ export interface TonightOptions {
   minAltitude?: number;
   /** Magnitudes lost per airmass (default 0.2, the V band at a good low site; 0.3 to 0.4 in haze). Only the part above the zenith's one airmass is taken off, since a site's limit already holds the zenith's. */
   extinction?: number;
-  /** Magnitudes the limit falls by, passed in by the caller: the Moon's glare (about 0.5 at a crescent, 2 at the full Moon, 0 when it is down). */
+  /** Magnitudes the limit falls by. Omit it and the Moon is worked out: 0 when it is down, otherwise twice the lit fraction of the disc (about 0.5 for a crescent, 2 when it is full and up). */
   moonPenalty?: number;
   /** The Sun's altitude in degrees, if you already know it; otherwise it is worked out from the moment. */
   sunAltitude?: number;
@@ -184,6 +185,46 @@ export function sunAltitude(observer: Observer, when: When): number {
 }
 
 /**
+ * A star below the horizon, for drawing it dimmed. It is not a star you can see.
+ */
+export interface DimStar {
+  /** The catalogue star. */
+  star: Star;
+  /** Degrees above the horizon, negative. */
+  altitude: number;
+  /** Degrees from north through east. */
+  azimuth: number;
+}
+
+/**
+ * Stars below the horizon of a place at a moment, down to `floor` degrees (default -18) and no fainter than `magnitude` (the catalogue magnitude). They are for drawing dimmed; none of them is a star you can see.
+ * @param query - `observer`, `when`, `magnitude`, and an optional `floor`.
+ * @returns The stars, brightest first.
+ * @throws RangeError when `magnitude` or `floor` is not a finite number, or `floor` is not below 0.
+ */
+export function starsBelowHorizon(query: { observer: Observer; when: When; magnitude: number; floor?: number }): DimStar[] {
+  const ms = moment(query.when);
+  const magnitude = finite("magnitude", query.magnitude);
+  const floor = query.floor === undefined ? -18 : finite("floor", query.floor);
+  if (floor >= 0) throw new RangeError(`floor must be below 0 degrees, got ${floor}`);
+  const list: DimStar[] = [];
+  for (const star of stars()) {
+    if (star.magnitude > magnitude) continue;
+    const at = horizontal(starPosition(star, ms), query.observer, ms);
+    if (at.altitude > 0 || at.altitude < floor) continue;
+    list.push({ star, altitude: at.altitude, azimuth: at.azimuth });
+  }
+  list.sort((a, b) => a.star.magnitude - b.star.magnitude || a.star.hr - b.star.hr);
+  return list;
+}
+
+/** The Moon's glare in magnitudes when the caller does not pass one. Position and phase are `moonHorizontal` and `moonPhase`: the Astronomical Almanac's low-precision lunar series (section D) and Meeus, Astronomical Algorithms, 2nd ed., chapter 48, equation 48.3. The curve is our own estimate: 0 when the Moon is down, otherwise twice the lit fraction of the disc. */
+export function moonGlare(observer: Observer, when: When): number {
+  if (moonHorizontal(observer, when).altitude <= 0) return 0;
+  return 2 * moonPhase(when).illuminated;
+}
+
+/**
  * The kind of twilight for a Sun altitude: `"day"` above -0.833 degrees (the upper edge on the horizon, with refraction), `"civil"` to -6, `"nautical"` to -12, `"astronomical"` to -18, then `"night"`.
  *
  * @param altitude - The Sun's altitude in degrees.
@@ -270,7 +311,7 @@ export function visibleStars(query: { observer: Observer; when: When; sky?: Toni
   const minAltitude = sky.minAltitude === undefined ? 0 : finite("sky.minAltitude", sky.minAltitude);
   const k = sky.extinction === undefined ? 0.2 : finite("sky.extinction", sky.extinction);
   if (k < 0) throw new RangeError(`sky.extinction must be 0 or more, got ${k}`);
-  const penalty = sky.moonPenalty === undefined ? 0 : finite("sky.moonPenalty", sky.moonPenalty);
+  const penalty = sky.moonPenalty === undefined ? moonGlare(query.observer, ms) : finite("sky.moonPenalty", sky.moonPenalty);
   if (penalty < 0) throw new RangeError(`sky.moonPenalty must be 0 or more, got ${penalty}`);
   const sun = sky.sunAltitude === undefined ? sunAltitude(query.observer, ms) : finite("sky.sunAltitude", sky.sunAltitude);
   const limitingMagnitude = Math.min(limit, twilightLimit(sun)) - penalty;

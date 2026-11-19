@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { starByName, starPosition } from "../src/stars.ts";
 import { horizontal } from "../src/sky.ts";
-import { airmass, SKY_LIMITS, sunAltitude, sunPosition, twilightOf, visibleStars } from "../src/tonight.ts";
+import { moonHorizontal, moonPhase } from "../src/my-sky/moon.ts";
+import { airmass, moonGlare, SKY_LIMITS, starsBelowHorizon, sunAltitude, sunPosition, twilightOf, visibleStars } from "../src/tonight.ts";
 
 const vancouver = { latitude: 49.28, longitude: -123.12 };
 const HOUR = 3_600_000;
@@ -84,6 +85,13 @@ test("twilight and the site's darkness lower the limit, and the Moon lowers it m
   assert.ok(city.stars.length < dark.stars.length / 3);
   assert.ok(city.stars.every((s) => s.apparentMagnitude <= SKY_LIMITS.city));
   assert.equal(visibleStars({ observer: vancouver, when: Date.UTC(2026, 10, 8, 10), sky: { moonPenalty: 2 } }).limitingMagnitude, SKY_LIMITS.rural - 2);
+  // a passed penalty wins; with none passed, the worked-out glare is what the limit falls by
+  const night = Date.UTC(2026, 11, 24, 8);
+  const glare = moonGlare(vancouver, night);
+  assert.ok(moonHorizontal(vancouver, night).altitude > 0);
+  assert.ok(Math.abs(glare - 2 * moonPhase(night).illuminated) < 1e-9);
+  assert.equal(visibleStars({ observer: vancouver, when: night }).limitingMagnitude, SKY_LIMITS.rural - glare);
+  assert.equal(visibleStars({ observer: vancouver, when: night, sky: { moonPenalty: 0 } }).limitingMagnitude, SKY_LIMITS.rural);
 });
 
 test("extinction dims a star low in the sky, and minAltitude and all behave", () => {
@@ -99,6 +107,18 @@ test("extinction dims a star low in the sky, and minAltitude and all behave", ()
   assert.deepEqual(high.stars.map((s) => s.star.hr), sorted.map((s) => s.star.hr));
   const easy = visibleStars({ observer: vancouver, when, sky: { extinction: 0 } });
   assert.ok(easy.stars.length >= visibleStars({ observer: vancouver, when }).stars.length);
+});
+
+test("stars below the horizon stay below it and are no fainter than the cut", () => {
+  const night = Date.UTC(2026, 10, 8, 10);
+  const below = starsBelowHorizon({ observer: vancouver, when: night, magnitude: 3 });
+  assert.ok(below.length > 0);
+  for (const one of below) {
+    assert.ok(one.altitude <= 0 && one.altitude >= -18);
+    assert.ok(one.star.magnitude <= 3);
+  }
+  assert.equal(starsBelowHorizon({ observer: vancouver, when: night, magnitude: -5 }).length, 0);
+  assert.throws(() => starsBelowHorizon({ observer: vancouver, when: night, magnitude: 3, floor: 1 }), /floor/);
 });
 
 test("a number for the limit and a given Sun altitude, and bad input says what it got", () => {
