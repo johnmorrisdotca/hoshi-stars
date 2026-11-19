@@ -24,8 +24,9 @@ test("starGrade is the grade of starAccuracy, for every star of both tiers", () 
 });
 
 test("nearbyStars({ minGrade }) filters the same way and combines with the other options", () => {
-  assert.equal(nearbyStars({ minGrade: "A" }).length, 235);
-  assert.equal(nearbyStars({ minGrade: "B" }).length, 235 + 1282);
+  // 235 A and 1,282 B before one coarse star with a good distance took a UCAC4 position and became A
+  assert.equal(nearbyStars({ minGrade: "A" }).length, 236);
+  assert.equal(nearbyStars({ minGrade: "B" }).length, 236 + 1281);
   assert.equal(nearbyStars({ minGrade: "C" }).length, 5565);
   const both = nearbyStars({ minGrade: "A", maxRelativeError: 0.01 });
   assert.ok(both.length > 0 && both.every((star) => star.relativeError! <= 0.01 && starGrade(star) === "A"));

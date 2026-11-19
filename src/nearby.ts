@@ -1,12 +1,15 @@
 // The stars near the Sun that the 5,080 bright stars leave out: Proxima Centauri, Barnard's Star, Wolf 359 and the other red dwarfs, with a measured parallax and its error.
-// The nearby tier (`@johnmorrisdotca/hoshi-stars/nearby`): about 5,600 more stars from the Yale General Catalogue of Trigonometric Stellar Parallaxes, with a modern position from 2MASS where one could be found. Nothing else imports it,
+// The nearby tier (`@johnmorrisdotca/hoshi-stars/nearby`): about 5,600 more stars from the Yale General Catalogue of Trigonometric Stellar Parallaxes, with a modern position from 2MASS where one could be found, else from UCAC4
+// where the faint tiles hold the star surely enough (`./data/nearby-ucac4.ts`). Nothing else imports it,
 // so a page that never loads it pays nothing. Pure: no DOM, no clock, no state beyond the parsed table.
 import { NEARBY_ROWS } from "./data/nearby.ts";
+import { NEARBY_UCAC4_ROWS } from "./data/nearby-ucac4.ts";
 import { luminosityClass, type LuminosityClass } from "./spectral.ts";
 import { checkGrade, gradeAtLeast, starGrade, type StarGrade } from "./accuracy.ts";
 
 /**
- * Where a star's position comes from: a 2MASS source found for it (good to a fraction of an arc-second), or the Yale catalogue's own position (taken to J2000 from 1900, good to arc-seconds at best, an arc-minute at worst).
+ * Where a star's position comes from: a 2MASS source found for it (good to a fraction of an arc-second), a UCAC4 star found for it where 2MASS gave none (good to a fraction of an arc-second), or the Yale catalogue's own position
+ * (taken to J2000 from 1900, good to arc-seconds at best, an arc-minute at worst).
  *
  * @example
  * ```ts
@@ -16,7 +19,7 @@ import { checkGrade, gradeAtLeast, starGrade, type StarGrade } from "./accuracy.
  * console.log(source);
  * ```
  */
-export type NearbyPositionSource = "2MASS" | "GCTP";
+export type NearbyPositionSource = "2MASS" | "UCAC4" | "GCTP";
 
 /**
  * The kind of a V magnitude in the Yale catalogue: a photoelectric V, a visual or other magnitude of lower accuracy, or a photographic blue one.
@@ -43,7 +46,7 @@ export type NearbyMagnitudeKind = "photoelectric" | "visual" | "blue";
  * ```
  */
 export interface NearbyFlags {
-  /** The position is the Yale catalogue's, carried from 1900 to 2000, not a 2MASS position: see `positionErrorArcsec`. */
+  /** The position is the Yale catalogue's, carried from 1900 to 2000, not a 2MASS or UCAC4 position: see `positionErrorArcsec`. */
   coarsePosition: boolean;
   /** The parallax is 0 or less, so the star has no distance and a query by space leaves it out. */
   excludedFromSpace: boolean;
@@ -79,15 +82,17 @@ export interface NearbyStar {
   gliese: string | undefined;
   /** The 2MASS designation (`2MASS J14294291-6240465`) of the source the position comes from, or `undefined`. */
   twoMass: string | undefined;
+  /** The UCAC4 star (`UCAC4 344-007300`) the position comes from, where `positionSource` is `"UCAC4"`, else `undefined`. */
+  ucac4: string | undefined;
   /** Right ascension in degrees at J2000, 0 up to 360. */
   rightAscension: number;
   /** Declination in degrees at J2000, -90 to 90. */
   declination: number;
   /** Where the position comes from. */
   positionSource: NearbyPositionSource;
-  /** The error of the position in arc-seconds: 2MASS's own error plus the motion over the gap to 2000, or the catalogue's digits and a 3% error of its motion over a century. */
+  /** The error of the position in arc-seconds: 2MASS's own error plus the motion over the gap to 2000; UCAC4's own error carried to 2000 by the error of its proper motion; or the catalogue's digits and a 3% error of its motion over a century. */
   positionErrorArcsec: number;
-  /** For a 2MASS position, the arc-seconds between it and where the Yale position and motion put the star (the star is where 2MASS says); `undefined` for a Yale position. */
+  /** For a 2MASS or UCAC4 position, the arc-seconds between it and where the Yale position and motion put the star (the star is where 2MASS or UCAC4 says); `undefined` for a Yale position. */
   gctpOffsetArcsec: number | undefined;
   /** The annual parallax in milliarcseconds; it can be 0 or less, because it is a measurement with an error. */
   parallaxMas: number;
@@ -128,9 +133,11 @@ const byText = new Map<string, NearbyStar>();
 
 function load(): void {
   if (stored.length > 0) return;
+  const ucac4 = new Map(NEARBY_UCAC4_ROWS.split("\n").map((row) => [row.slice(0, row.indexOf("|")), row.split("|")]));
   for (const row of NEARBY_ROWS.split("\n")) {
     const p = row.split("|");
     const gctp = p[0]!;
+    const u = ucac4.get(gctp);
     const parallaxTenths = Number(p[10]);
     const parallaxMas = parallaxTenths / 10;
     const errorTenths = p[11] === "" ? undefined : Number(p[11]);
@@ -149,11 +156,12 @@ function load(): void {
       hd: p[1] === "" ? undefined : Number(p[1]),
       gliese: p[5] === "" ? undefined : `GJ ${p[5]}`,
       twoMass: p[6] === "" ? undefined : `2MASS J${p[6]}`,
-      rightAscension: Number(p[7]) / 360000,
-      declination: Number(p[8]) / 360000,
-      positionSource: p[6] === "" ? "GCTP" : "2MASS",
-      positionErrorArcsec: Number(p[9]) / 10,
-      gctpOffsetArcsec: p[17] === "" ? undefined : Number(p[17]),
+      ucac4: u === undefined ? undefined : `UCAC4 ${u[1]!.padStart(9, "0").slice(0, 3)}-${u[1]!.padStart(9, "0").slice(3)}`,
+      rightAscension: u === undefined ? Number(p[7]) / 360000 : Number(u[2]),
+      declination: u === undefined ? Number(p[8]) / 360000 : Number(u[3]),
+      positionSource: p[6] !== "" ? "2MASS" : u !== undefined ? "UCAC4" : "GCTP",
+      positionErrorArcsec: u === undefined ? Number(p[9]) / 10 : Number(u[4]) / 1000,
+      gctpOffsetArcsec: u !== undefined ? Number(u[5]) : p[17] === "" ? undefined : Number(p[17]),
       parallaxMas,
       parallaxErrorMas: errorTenths === undefined ? undefined : errorTenths / 10,
       lightYears,
@@ -169,10 +177,10 @@ function load(): void {
       magnitudeSource: kind === undefined ? undefined : "GCTP",
       spectralType: p[15]!,
       luminosityClass: luminosityClass(p[15]!),
-      flags: Object.freeze({ coarsePosition: flags.includes("c"), excludedFromSpace: flags.includes("x"), ambiguousMatch: flags.includes("a") }),
+      flags: Object.freeze({ coarsePosition: flags.includes("c") && u === undefined, excludedFromSpace: flags.includes("x"), ambiguousMatch: flags.includes("a") }),
     });
     stored.push(star);
-    const texts = [star.name, star.designation, ...star.aliases, star.gliese, star.hd === undefined ? undefined : `HD ${star.hd}`, `GCTP ${gctp}`, star.twoMass, star.twoMass?.slice(6)];
+    const texts = [star.name, star.designation, ...star.aliases, star.gliese, star.hd === undefined ? undefined : `HD ${star.hd}`, `GCTP ${gctp}`, star.twoMass, star.twoMass?.slice(6), star.ucac4];
     for (const text of texts) if (text !== undefined) byText.set(text.toLowerCase(), star);
     if (star.gliese !== undefined) byText.set(`gliese ${star.gliese.slice(3)}`, star);
   }
@@ -211,7 +219,7 @@ export function nearbyStars(options: { magnitude?: number; maxRelativeError?: nu
 }
 
 /**
- * A nearby star by a name, ignoring case: its common name (`Proxima Centauri`), a name the catalogue gives it (`G 158-027`), its designation (`33 Psc`), `GJ 551` or `Gliese 551`, `HD 95735`, `GCTP 2576` or its 2MASS designation (with or without `2MASS J`).
+ * A nearby star by a name, ignoring case: its common name (`Proxima Centauri`), a name the catalogue gives it (`G 158-027`), its designation (`33 Psc`), `GJ 551` or `Gliese 551`, `HD 95735`, `GCTP 2576`, its 2MASS designation (with or without `2MASS J`) or its UCAC4 one (`UCAC4 344-007300`).
  *
  * @param text - The name.
  * @returns The star, or `undefined`.

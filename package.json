@@ -316,6 +316,21 @@
       "import": "./dist/accuracy.js",
       "default": "./dist/accuracy.js"
     },
+    "./catalogue": {
+      "types": "./dist/catalogue.d.ts",
+      "import": "./dist/catalogue.js",
+      "default": "./dist/catalogue.js"
+    },
+    "./catalogue/nearby": {
+      "types": "./dist/catalogue-nearby.d.ts",
+      "import": "./dist/catalogue-nearby.js",
+      "default": "./dist/catalogue-nearby.js"
+    },
+    "./catalogue/faint": {
+      "types": "./dist/catalogue-faint.d.ts",
+      "import": "./dist/catalogue-faint.js",
+      "default": "./dist/catalogue-faint.js"
+    },
     "./exoplanet-hosts": {
       "types": "./dist/exoplanet-hosts.d.ts",
       "import": "./dist/exoplanet-hosts.js",

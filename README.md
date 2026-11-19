@@ -543,7 +543,7 @@ const close = nearest({ x: 0, y: 0, z: 0 }, { by: "space", among: [...stars(), .
 console.log(`${(close[0]!.thing as { name?: string }).name} ${close[0]!.distance.toFixed(2)}`); // Proxima Centauri 4.24
 ```
 
-A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,352 positions are from 2MASS; the other 1,213 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,352 positions are from 2MASS and 133 from UCAC4 (found in the faint tiles); the other 1,080 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 ## The sky from another star
 
@@ -734,6 +734,34 @@ const sirius = starAccuracy(starByName("Sirius")!);
 console.log(sirius.grade, sirius.parallax.source, sirius.distance.quality);  // A GCTP good
 console.log(starAccuracy(starByName("Rigel")!).grade);                       // C
 console.log(stars({ minGrade: "A" }).length, stars().length);                 // 68 5080
+```
+
+`@johnmorrisdotca/hoshi-stars/catalogue` joins the tiers into one list, each star once, under an id that stays the same (`hr-2491` for Sirius, `gctp-3278` for Proxima Centauri), with its grade and its distance's range. It loads only the bright stars (147 kB gzipped); the nearby stars (`nearbyLayer` from `/catalogue/nearby`, 244 kB more) and the faint stars a page loaded (`faintLayer(stars)` from `/catalogue/faint`, 34 kB more) are layers handed in through `layers`. The headline counts, by tier and grade:
+
+| Tier | Stars | Grade A | Grade B | Grade C | Source | Licence |
+| --- | --- | --- | --- | --- | --- | --- |
+| Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue, Yale parallaxes | public domain, informally, with credit; Yale parallaxes credited |
+| Nearby (`/nearby`) | 5,565 | 236 | 1,281 | 4,048 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
+| Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | UCAC4, APASS magnitudes | free of charge, cited (`NOTICE.md`) |
+| **All three, each star once** | **2,470,327** | **304** | **1,733** | **2,468,290** | | |
+
+A faint star has no parallax, so it is grade C; the 2,182 faint stars that are also nearby stars are counted once. The [guide](docs/guides/accuracy.md) has the typical errors, what each layer costs and how a star is counted once.
+
+```js
+import { catalogueCounts, catalogueStar, catalogueStars } from "@johnmorrisdotca/hoshi-stars/catalogue";
+
+console.log(`${catalogueStars().length} bright stars load with /catalogue`);
+
+const { nearbyLayer } = await import("@johnmorrisdotca/hoshi-stars/catalogue/nearby");
+const layers = ["bright", nearbyLayer];
+for (const count of catalogueCounts({ layers })) console.log(`${count.layer}: ${count.stars} stars, A ${count.grades.A}, B ${count.grades.B}, C ${count.grades.C}`);
+
+const proxima = catalogueStar("gctp-3278", { layers });
+const [near, far] = proxima.distance.lightYearsRange;
+console.log(`${proxima.id} ${proxima.name}: ${proxima.layer} tier, grade ${proxima.grade}, ${near.toFixed(2)} to ${far.toFixed(2)} light-years`);
+
+const sure = catalogueStars({ layers, minGrade: "A", magnitude: 9 });
+console.log(`${sure.length} grade A stars to magnitude 9, the faintest ${sure.at(-1).name ?? sure.at(-1).id}`);
 ```
 
 ## Outside data
