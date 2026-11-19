@@ -115,6 +115,13 @@ test("every companion of scripts/gctp-companions.tsv is a nearby star of its own
     assert.equal(all.filter((one) => one.id === id || one.hd === Number(hd)).length, 1, id);
   }
   assert.equal(new Set(table.map(([gctp, component]) => `${gctp}${component}`)).size, table.length);
+  // the accuracy guide names these: 36 Her with no distance, and the 9 on the Yale catalogue's own position, none of them grade A
+  const companions = nearbyStars().filter((one) => /[a-z]$/.test(one.gctp));
+  const her36 = companions.find((one) => one.id === "gctp-3788b")!;
+  assert.deepEqual([her36.parallaxMas, her36.lightYears, her36.flags.excludedFromSpace, starGrade(her36)], [-1, undefined, true, "C"]);
+  const coarse = companions.filter((one) => one.positionSource === "GCTP");
+  assert.deepEqual(coarse.map((one) => one.id).sort(), ["gctp-1293e", "gctp-1662b", "gctp-1941c", "gctp-2048b", "gctp-3266b", "gctp-3689b", "gctp-4095b", "gctp-4845b", "gctp-863b"]);
+  assert.ok(coarse.every((one) => one.flags.coarsePosition && starGrade(one) !== "A"));
 });
 
 test("each record carries the tier's values, its grade and its distance", () => {

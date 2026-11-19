@@ -25,7 +25,7 @@
 3657	B	6009	145000	6008	2.0	6.0	κ Her B
 3671	C	6026	145501	6027	22.8	9.6	ν Sco C
 3689	B	6064	146362	6063	47.3	3.3	σ CrB B
-3788	B	6194	150379	6195	-1.0	7.3	36 Her; the system's parallax is below 0, so it has no distance (flag x)
+3788	B	6194	150379	6195	-1.0	7.3	36 Her, B of the 36 and 37 Her pair; the GCTP gives the system -1.0 mas (error 7.3), a parallax below 0, so it is kept with no distance (flag x, lightYears undefined)
 4095	B	6694	163756	6693	8.8	9.3	HR 6693's companion
 4176	B	6809	166865	6810	26.0	5.7	40 Dra
 4326	B	7052	173583	7051	17.4	3.6	ε1 Lyr B
