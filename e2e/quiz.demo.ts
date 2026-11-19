@@ -452,7 +452,7 @@ test("the Chinese star officials: the enclosure and tranche levels ask a figure 
   // an old address: level=88 of the Chinese sky is the 21 mansions, "All 21", with the new levels beside it
   await page.goto(`${PAGE}?culture=chinese&level=88`);
   await expect(pressed).toHaveText("All 21");
-  await expect(levels.locator("button:visible")).toHaveText(["Bright 12", "All 21", "Purple Forbidden (14)", "Heavenly Market (8)", "Star officials 1 (24)", "Star officials 2 (24)", "Star officials 3 (24)", "Star officials 4 (24)"]);
+  await expect(levels.locator("button:visible")).toHaveText(["Bright 12", "All 21", "Small mansions (7)", "Purple Forbidden (14)", "Heavenly Market (8)", "Star officials 1 (24)", "Star officials 2 (24)", "Star officials 3 (24)", "Star officials 4 (24)"]);
   for (const one of await abbreviationsOf(page)) expect(mansionIdsOf().has(one), `${one} is a mansion`).toBe(true);
   await page.goto(`${PAGE}?culture=chinese&level=12`);
   await expect(pressed).toHaveText("Bright 12");
@@ -480,6 +480,49 @@ test("the Chinese star officials: the enclosure and tranche levels ask a figure 
   await expect(levels.getByRole("button", { name: /Purple Forbidden/ })).toBeHidden();
   await expect(pressed).toHaveText(/^All \d+$/);
   await expect(choices(page)).toHaveCount(6);
+});
+
+const SMALL_MANSIONS = ["jiao3-xiu4", "di1-xiu4", "xu1-xiu4", "shi4-xiu4", "bi4-xiu4", "lou2-xiu4", "zi1-xiu4"];
+
+test("the small mansions: a ringed star, six names, and which mansion holds it; the answer works and is not given away", async ({ page }) => {
+  await page.goto(`${PAGE}?culture=chinese&level=88`);
+  await page.getByTestId("qz-levels").getByRole("button", { name: "Small mansions (7)" }).click();
+  await expect.poll(() => param(page, "level")).toBe("small-mansions");
+  await expect(page.getByTestId("qz-levels").locator('button[aria-pressed="true"]')).toHaveText("Small mansions (7)");
+  await expect(page.locator("#qz-heading")).toHaveText("Which mansion holds the ringed star?");
+  const seen = new Set<string>();
+  for (let i = 0; i < 7; i += 1) {
+    const asked = itemsFor("chinese")[Number(param(page, "q")) - 1]!;
+    expect(SMALL_MANSIONS, `${asked.id} is one of the 7`).toContain(asked.id);
+    seen.add(asked.id);
+    // the chart: a ring round each held star and no other, faint neighbours, no names
+    const rings = await page.getByTestId("qz-sky").locator("circle[data-ring]").evaluateAll((all) => all.map((c) => Number(c.getAttribute("data-ring"))));
+    expect(rings.sort()).toEqual(asked.stars.map((star) => star.hr).sort());
+    expect(await page.getByTestId("qz-sky").locator("circle[data-near]").count()).toBeGreaterThan(5);
+    expect(await page.getByTestId("qz-sky").locator("text").count(), "no name on the chart").toBe(0);
+    const names = await choices(page).allTextContents();
+    expect(new Set(names).size).toBe(6);
+    const found = await abbreviationsOf(page);
+    expect(found).toContain(asked.id);
+    leak(await outsideChoices(page), [asked.id, asked.label("en")]);
+    if (i % 2 === 0) {
+      await page.getByTestId("qz-choices").locator(`button[data-abbr="${asked.id}"]`).click();
+      await expect(page.getByTestId("qz-result")).toContainText("Right!");
+    } else {
+      await page.getByTestId("qz-choices").locator(`button:not([data-abbr="${asked.id}"])`).first().click();
+      await expect(page.getByTestId("qz-result")).toContainText("Not quite");
+    }
+    await page.getByTestId("qz-next").click();
+  }
+  expect(seen.size, "more than one of the 7 comes up").toBeGreaterThan(1);
+  // Japanese: the question and the level in Japanese, the names in characters alone; the plain style has no neighbour lines
+  await page.goto(`${PAGE}?culture=chinese&level=small-mansions&lang=ja`);
+  await expect(page.getByTestId("qz-levels").locator('button[aria-pressed="true"]')).toHaveText("小さな宿 (7)");
+  await expect(page.locator("#qz-heading")).toHaveText("丸でかこんだ星は、どの宿?");
+  for (const name of await choices(page).allTextContents()) expect(name).toMatch(/^[\u4e00-\u9fff]+$/);
+  expect(await page.getByTestId("qz-sky").locator("line").count()).toBe(0);
+  await page.goto(`${PAGE}?culture=chinese&level=small-mansions&style=lines`);
+  expect(await page.getByTestId("qz-sky").locator("line").count()).toBeGreaterThan(3);
 });
 
 test("the Chinese star officials in Japanese: the level titles in Japanese and the names in characters alone", async ({ page }) => {

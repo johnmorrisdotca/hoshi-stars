@@ -6,7 +6,8 @@ import { neighbouringConstellations } from "../src/nearest.ts";
 import { frameCredit } from "./frame-credit.ts";
 import { figureThumbSrc, langNow, lookNow, nameIn, thumbSrc } from "./thumbs.ts";
 import { ALL_WORDS } from "../scripts/gallery-words.ts";
-import { CULTURE_IDS, cultureFor, figureLevelOf, itemNamed, itemsFor, levelIdsFor, mansionIdsOf, type CultureId, type QuizItem } from "./quiz-items.ts";
+import { CULTURE_IDS, cultureFor, figureLevelOf, itemNamed, itemsFor, levelIdsFor, mansionIdsOf, otherMansions, type CultureId, type QuizItem } from "./quiz-items.ts";
+import { FIELD_FILL, FIELD_RADIUS, marksSvg } from "./quiz-star.ts";
 import { distractors, nearestTies, shuffled, westernTies, type Ties } from "./quiz-pick.ts";
 import { HEMISPHERES, MIN_ALTITUDE, isSeenIn, type Hemisphere } from "./quiz-sky.ts";
 import { monthName, say } from "./words.ts";
@@ -26,6 +27,8 @@ const STYLE_WORDS: Record<Style, string> = { plain: "plain", lines: "lines", ann
 type Level = string;
 /** The fewest figures a level of a set of figures needs in the sky chosen, so that the question has its six names. */
 const MIN_FIGURES = 6;
+/** The fewest questions the small mansions level needs: it asks about 7 and has six names from all 28 mansions. */
+const MIN_STAR_QUESTIONS = 2;
 const CHOICES = 6;
 
 const pick = <T extends string>(text: string | null, allowed: readonly T[], fallback: T): T => (allowed.includes(text as T) ? (text as T) : fallback);
@@ -46,23 +49,29 @@ function poolOf(level: Level): string[] {
   let found = pools.get(key);
   if (found === undefined) {
     const set = figureLevelOf(cultureId, level);
-    const seen = rankedOf().filter((item) => (set === undefined || set.ids.includes(item.id)) && (cultureId !== "chinese" || set !== undefined || mansionIdsOf().has(item.id)) && (where === "all" || isSeenIn(item.stars, where, month)));
+    const seen = rankedOf().filter((item) => (set === undefined || set.ids.includes(item.id)) && (cultureId !== "chinese" || set !== undefined || (mansionIdsOf().has(item.id) && item.ask === "figure")) && (where === "all" || isSeenIn(item.stars, where, month)));
     found = (set !== undefined || level === "88" ? seen : seen.slice(0, Number(level))).map((item) => item.id);
     pools.set(key, found);
   }
   return found;
 }
+/** Where the six names of a question come from: the level's own figures, but for the small mansions all 28 mansions that the sky chosen shows (the question is which mansion, and any of them could hold the star). */
+function choicePoolOf(level: Level): string[] {
+  if (figureLevelOf(cultureId, level)?.kind !== "small-mansions") return poolOf(level);
+  return rankedOf().filter((item) => mansionIdsOf().has(item.id) && (where === "all" || isSeenIn(item.stars, where, month))).map((item) => item.id);
+}
 /** How many the whole of the sky asked has, for the label of the last level. */
 const totalOf = (): number => poolSize("88");
 const poolSize = (level: Level): number => poolOf(level).length;
-const tiesOf = (): Ties => (cultureId === "western" ? westernTies : nearestTies(items()));
+/** What makes two alike: the Western sky's borders, else the nearest in the sky (for the small mansions' question, the nearest of the 28 mansions: the answer is one of them). */
+const tiesOf = (): Ties => (cultureId === "western" ? westernTies : figureLevelOf(cultureId, level)?.kind === "small-mansions" ? nearestTies(items().filter((item) => mansionIdsOf().has(item.id))) : nearestTies(items()));
 
 let style: Style = pick(address.get("style"), STYLES, "plain");
 let level: Level = address.get("level") ?? "12";
 let where: Where = pick(address.get("hemisphere"), WHERE, "all");
 let month = where === "all" ? 0 : Math.max(0, Math.min(12, Math.round(Number(address.get("month")) || 0)));
 /** A level is offered while its sky has it: the 30 only where the sky asked has more than 30 (the Chinese mansions are 21: the level is then all of them), and a level of star officials only while the sky chosen (the hemisphere and month) leaves it six figures. */
-const levelOk = (value: Level): boolean => levelIdsFor(cultureId).includes(value) && (figureLevelOf(cultureId, value) === undefined ? value !== "30" || totalOf() > 30 : poolSize(value) >= MIN_FIGURES);
+const levelOk = (value: Level): boolean => levelIdsFor(cultureId).includes(value) && (figureLevelOf(cultureId, value) === undefined ? value !== "30" || totalOf() > 30 : figureLevelOf(cultureId, value)!.kind === "small-mansions" ? poolSize(value) >= MIN_STAR_QUESTIONS && choicePoolOf(value).length >= MIN_FIGURES : poolSize(value) >= MIN_FIGURES);
 if (!levelOk(level)) level = "88";
 /** Kid mode: big buttons and simpler words, kept in the address (kid=1). */
 let kid = address.get("kid") === "1";
@@ -88,7 +97,7 @@ const w = (name: string, values: Record<string, string | number> = {}): string =
 const labelOf = (id: string): string => itemOf(id).label(langNow());
 /** The question's six names: the answer and five others of the level that are easy to mix up with it (its neighbours, then ones of the same origin: `distractors`), in a random order. */
 function choicesFor(answer: string): string[] {
-  return shuffled([answer, ...distractors(answer, poolOf(level), CHOICES - 1, Math.random, tiesOf())]);
+  return shuffled([answer, ...distractors(answer, choicePoolOf(level), CHOICES - 1, Math.random, tiesOf())]);
 }
 
 function ask(abbreviation?: string): void {
@@ -125,12 +134,17 @@ function drawSky(): void {
   const view: View = { projection: "stereographic", ra: centre.rightAscension, dec: centre.declination, zoom: 1 };
   const stars = item.drawStars.filter((star) => toScreen(view, width, height, { rightAscension: star.rightAscension, declination: star.declination }) !== undefined);
   let reach = 1;
-  for (const star of stars) {
+  if (item.ask === "star") {
+    // a fixed field: the same angle from the middle of the chart for every question, whatever the stars' span (the held stars are one or two)
+    const probe = toScreen(view, width, height, { rightAscension: centre.rightAscension, declination: centre.declination + FIELD_RADIUS });
+    reach = probe === undefined ? 1 : Math.hypot(probe[0] - width / 2, probe[1] - height / 2);
+  }
+  for (const star of item.ask === "star" ? [] : stars) {
     const at = toScreen(view, width, height, { rightAscension: star.rightAscension, declination: star.declination })!;
     reach = Math.max(reach, Math.hypot(at[0] - width / 2, at[1] - height / 2));
   }
-  view.zoom = Math.max(0.5, Math.min(8, ((look === "annotated" ? 0.27 : 0.42) * Math.min(width, height)) / reach));
-  const layers = new Set<"lines" | "boundaries">(look === "plain" ? [] : look === "lines" ? ["lines"] : ["lines", "boundaries"]);
+  view.zoom = item.ask === "star" ? (FIELD_FILL * Math.min(width, height)) / reach : Math.max(0.5, Math.min(8, ((look === "annotated" ? 0.27 : 0.42) * Math.min(width, height)) / reach));
+  const layers = new Set<"lines" | "boundaries">(item.ask === "star" || look === "plain" ? [] : look === "lines" ? ["lines"] : ["lines", "boundaries"]);
   const drawn = chart({ ...view, width, height, magnitude: 5.5, layers, lang: langNow(), culture: cultureFor(cultureId) });
   const svg = $("qz-sky");
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
@@ -146,8 +160,9 @@ function drawSky(): void {
       labels += `<text x="${spot[0].toFixed(1)}" y="${spot[1].toFixed(1)}" text-anchor="middle" font-size="13" fill="#ffe49a" stroke="#0b1020" stroke-width="3" paint-order="stroke" font-family="system-ui, sans-serif" data-neighbour="${near.abbreviation}">${nameIn(near, langNow()).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</text>`;
     }
   }
-  svg.innerHTML = drawn.svg + labels;
-  svg.setAttribute("aria-label", w("sky"));
+  const marks = item.ask === "star" ? marksSvg(item.stars, otherMansions(current), (point) => toScreen(view, width, height, point), width, height, look !== "plain") : "";
+  svg.innerHTML = drawn.svg + labels + marks;
+  svg.setAttribute("aria-label", w(item.ask === "star" ? "star_sky" : "sky"));
 }
 
 /** The page of a figure: the constellation page, with the culture in its address for a figure of another sky. */
@@ -160,10 +175,11 @@ function valueButton(value: string): HTMLButtonElement {
 }
 
 function render(): void {
-  document.title = `${w("heading")} - Hoshi Stars`;
+  const starQuestion = current !== "" && items().find((item) => item.id === current)?.ask === "star";
+  document.title = `${w(starQuestion ? "star_heading" : "heading")} - Hoshi Stars`;
   $("qz-root").dataset["kid"] = String(kid);
   for (const el of Array.from(document.querySelectorAll<HTMLElement>("[data-qz]"))) {
-    const name = el.dataset["qz"]!;
+    const name = starQuestion && (el.dataset["qz"] === "heading" || el.dataset["qz"] === "lede") ? `star_${el.dataset["qz"]}` : el.dataset["qz"]!;
     el.dataset["say"] = kid && `qz_k_${name}` in ALL_WORDS.en ? `qz_k_${name}` : `qz_${name}`;
     el.textContent = w(name);
   }
@@ -233,7 +249,7 @@ function render(): void {
   }
   const cultureNote = $("qz-culturenote");
   cultureNote.hidden = cultureId === "western";
-  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: items().length, m: items().filter((item) => mansionIdsOf().has(item.id)).length });
+  cultureNote.textContent = cultureId === "western" ? "" : say(`qz_cnote_${cultureId}`, { n: items().filter((item) => item.ask === "figure").length, m: items().filter((item) => mansionIdsOf().has(item.id) && item.ask === "figure").length });
   const months = $<HTMLSelectElement>("qz-month");
   months.replaceChildren(Object.assign(document.createElement("option"), { value: "0", textContent: w("anymonth") }), ...Array.from({ length: 12 }, (_, i) => Object.assign(document.createElement("option"), { value: String(i + 1), textContent: monthName(i + 1) })));
   months.value = String(month);

@@ -9,6 +9,7 @@ import { constellations, starsIn } from "../src/constellations.ts";
 import { chinese } from "../src/cultures/chinese.ts";
 import { japanese } from "../src/cultures/japanese.ts";
 import { figureOf, figures } from "../src/lines.ts";
+import { middleOf, type Neighbour } from "./quiz-star.ts";
 import type { Star } from "../src/stars.ts";
 import { CULTURE_IDS, type CultureId } from "./cultures.ts";
 
@@ -28,6 +29,8 @@ export interface QuizItem {
   light: number;
   /** What makes two items alike: where a constellation was made, a Chinese mansion's quarter, or the kind of a Japanese figure. */
   group: string;
+  /** What the question is: `figure` (name this figure from its chart, the usual) or `star` (a mansion with only one or two stars held: which mansion holds the ringed star?). */
+  ask: "figure" | "star";
   /** For a Chinese figure that is not a mansion: the enclosure Wikidata says it is part of (`purple-forbidden`, `supreme-palace`, `heavenly-market`) or the mansion's id, where it says so. */
   part?: string;
   /** The name to choose, in the reader's language. */
@@ -67,6 +70,7 @@ export function itemsFor(id: CultureId): readonly QuizItem[] {
         drawStars: figure.length > 0 ? figure : starsIn(c.abbreviation).filter((star) => star.magnitude < 5.5),
         centre: centreOfConstellation(c.abbreviation)!,
         light: lightOf(stars),
+        ask: "figure" as const,
         group: constellationFacts(c.abbreviation).origin,
         label: (lang) => (lang === "ja" ? c.japanese : c.name),
       };
@@ -83,10 +87,28 @@ export function itemsFor(id: CultureId): readonly QuizItem[] {
         drawStars: f.stars,
         centre: centreOfConstellation(f.asterism.id, culture)!,
         light: lightOf(f.stars),
+        ask: "figure" as const,
         group: f.asterism.group ?? f.asterism.partOf ?? f.asterism.kind,
         ...(f.asterism.partOf === undefined ? {} : { part: f.asterism.partOf }),
         label: (lang: Lang) => cultureLabel(id, f.asterism, lang),
       }));
+  }
+  // the mansions that hold one or two of their stars (角, 氐, 虛, 室, 壁, 婁, 觜) come last, so the places of the others in the list (the question in an address) do not move; they are asked the other way round
+  if (id === "chinese") {
+    const small = figures(chinese).filter((f) => f.asterism.kind === "mansion" && f.stars.length >= 1 && f.stars.length < MIN_STARS);
+    items = [
+      ...items,
+      ...small.map((f) => ({
+        id: f.asterism.id,
+        stars: f.stars,
+        drawStars: f.stars,
+        centre: middleOf(f.stars),
+        light: lightOf(f.stars),
+        ask: "star" as const,
+        group: f.asterism.group ?? f.asterism.kind,
+        label: (lang: Lang) => cultureLabel(id, f.asterism, lang),
+      })),
+    ];
   }
   held.set(id, items);
   return items;
@@ -112,7 +134,7 @@ export interface FigureLevel {
   /** The id kept in the address (`level=purple-forbidden`, `level=officials-2`). */
   id: string;
   /** The enclosure for an enclosure level; `officials` for a tranche. */
-  kind: "purple-forbidden" | "heavenly-market" | "officials";
+  kind: "purple-forbidden" | "heavenly-market" | "officials" | "small-mansions";
   /** Which tranche, from 1, for the officials. */
   tranche: number;
   /** The ids of its figures, in the order of the data's own list for an enclosure and the brightest first for a tranche. */
@@ -133,6 +155,7 @@ export function chineseFigureLevels(): readonly FigureLevel[] {
   if (figureLevels !== undefined) return figureLevels;
   const mansions = mansionIdsOf();
   const officials = itemsFor("chinese").filter((item) => !mansions.has(item.id));
+  const small = itemsFor("chinese").filter((item) => item.ask === "star");
   const levels: FigureLevel[] = ENCLOSURE_LEVELS.map((kind) => ({ id: kind, kind, tranche: 0, ids: officials.filter((item) => item.part === kind).map((item) => item.id) }));
   const rest = officials.filter((item) => !(ENCLOSURE_LEVELS as readonly string[]).includes(item.part ?? "")).sort((a, b) => b.light - a.light || a.id.localeCompare(b.id));
   const tranches = Math.max(1, Math.ceil(rest.length / TRANCHE_SIZE));
@@ -140,14 +163,23 @@ export function chineseFigureLevels(): readonly FigureLevel[] {
     const ids = rest.slice(Math.floor((t * rest.length) / tranches), Math.floor(((t + 1) * rest.length) / tranches)).map((item) => item.id);
     levels.push({ id: `officials-${t + 1}`, kind: "officials", tranche: t + 1, ids });
   }
+  levels.unshift({ id: "small-mansions", kind: "small-mansions", tranche: 0, ids: small.map((item) => item.id) });
   figureLevels = levels;
   return levels;
 }
 
-/** The level ids a sky offers, in the order of its buttons: the bright 12, 30 and all for the Western and Japanese skies; for the Chinese sky the mansions' bright 12 and all (21), then the enclosures and the tranches of star officials. */
+/** The level ids a sky offers, in the order of its buttons: the bright 12, 30 and all for the Western and Japanese skies; for the Chinese sky the mansions' bright 12 and all (21), then the small mansions (asked the other way round), the enclosures and the tranches of star officials. */
 export function levelIdsFor(id: CultureId): readonly string[] {
   return id === "chinese" ? ["12", "88", ...chineseFigureLevels().map((level) => level.id)] : ["12", "30", "88"];
 }
 
 /** The figure level an id names in a sky, or `undefined` (for the bright N levels and for any other sky). */
 export const figureLevelOf = (id: CultureId, level: string): FigureLevel | undefined => (id === "chinese" ? chineseFigureLevels().find((one) => one.id === level) : undefined);
+
+let mansionFigures: ReadonlyArray<{ id: string; figure: Neighbour }> | undefined;
+
+/** The other mansions' stars and lines (all 28 but the one asked), for the faint marks round the question of a small mansion. */
+export function otherMansions(exceptId: string): readonly Neighbour[] {
+  mansionFigures ??= figures(chinese).filter((f) => f.asterism.kind === "mansion").map((f) => ({ id: f.asterism.id, figure: { stars: f.stars, segments: f.segments } }));
+  return mansionFigures.filter((m) => m.id !== exceptId).map((m) => m.figure);
+}
