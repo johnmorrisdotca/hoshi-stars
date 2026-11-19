@@ -98,7 +98,7 @@ for (const one of found) {
 That prints:
 
 ```text
-68 of 5080 bright stars are grade A; 1517 nearby stars are B or better
+68 of 5080 bright stars are grade A; 1518 nearby stars are B or better
 Procyon: 5.2, 5.2 to 5.3 light-years
 Ran: 8.0, 7.9 to 8.0 light-years
 Rigil Kentaurus: 9.5, 9.4 to 9.5 light-years, tied with a neighbour
@@ -145,7 +145,7 @@ That prints:
 bright: 5080 stars, A 68, B 452, C 4560
 nearby: 5566 stars, A 237, B 1281, C 4048
 gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years
-104 grade A stars to magnitude 9, the faintest gctp-2345
+105 grade A stars to magnitude 9, the faintest gctp-2345
 ```
 
 `catalogueStars(options)` gives the stars brightest first (the seven nearby stars with no magnitude last) and takes `layers` (`"bright"`, `nearbyLayer` and `faintLayer(stars)`; `["bright"]` where left out), `magnitude` and `minGrade`. The names `"nearby"` and `"faint"` are a `RangeError` that says which module to import, since those layers load on request. Each `CatalogueStar` has its `id`, `layer`, `name`, `designation`, `hd`, J2000 position, `magnitude`, `grade`, `distance` (what `starDistance` gives: the distance, its error and its range), `sameAs` and the tier's own record in `star`, for `starAccuracy` and everything else. `catalogueStar(id, { layers })` finds a star by its id among the layers asked for, `catalogueId(star)` gives a star's id, `catalogueCounts({ layers })` gives the counts of the table above, and `CATALOGUE_LAYERS` names the three layers.

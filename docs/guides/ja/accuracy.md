@@ -98,7 +98,7 @@ for (const one of found) {
 出力は次のとおりです。
 
 ```text
-68 of 5080 bright stars are grade A; 1517 nearby stars are B or better
+68 of 5080 bright stars are grade A; 1518 nearby stars are B or better
 Procyon: 5.2, 5.2 to 5.3 light-years
 Ran: 8.0, 7.9 to 8.0 light-years
 Rigil Kentaurus: 9.5, 9.4 to 9.5 light-years, tied with a neighbour
@@ -145,7 +145,7 @@ console.log(`${sure.length} grade A stars to magnitude 9, the faintest ${sure.at
 bright: 5080 stars, A 68, B 452, C 4560
 nearby: 5566 stars, A 237, B 1281, C 4048
 gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years
-104 grade A stars to magnitude 9, the faintest gctp-2345
+105 grade A stars to magnitude 9, the faintest gctp-2345
 ```
 
 `catalogueStars(options)` は星を明るい順に返します(明るさがない近くの星7個は最後)。`layers`(`"bright"`、`nearbyLayer`、`faintLayer(stars)`。指定しなければ `["bright"]`)、`magnitude`、`minGrade` を受け取ります。`"nearby"` や `"faint"` という名前を渡すと `RangeError` になり、どのモジュールを import すればよいかを教えます。この2つの層は、頼んだときに読み込むものだからです。`CatalogueStar` には、`id`・`layer`・`name`・`designation`・`hd`・J2000 の位置・`magnitude`・`grade`・`distance`(`starDistance` と同じ、距離とその誤差と範囲)・`sameAs` と、`star` にその層のもとの記録があります。`starAccuracy` などにはこれを渡します。`catalogueStar(id, { layers })` は頼んだ層の中から ID で星を探し、`catalogueId(star)` は星の ID を返し、`catalogueCounts({ layers })` は上の表の数を返します。`CATALOGUE_LAYERS` は3つの層の名前です。
