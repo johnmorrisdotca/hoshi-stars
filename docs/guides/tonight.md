@@ -44,6 +44,8 @@ Each star in `stars` (brightest first) has its `altitude`, `azimuth` (from north
 
 The pieces are exported too: `sunPosition(when)`, `sunAltitude(observer, when)`, `twilightOf(altitude)`, `airmass(altitude)` and `SKY_LIMITS`. The Sun is the Almanac's low-precision formula, good to 0.01 degree from 1950 to 2050.
 
+`moonGlare(observer, when)` is the Moon's glare in magnitudes that `visibleStars` uses when you pass no `moonPenalty`: 0 when the Moon is down, otherwise twice its lit fraction (our own estimate). `starsBelowHorizon({ observer, when, magnitude })` lists the stars just under the horizon, for drawing them dimmed outside a chart's circle; none of them can be seen.
+
 ## Known cases
 
 Polaris is up every night from the northern middle latitudes and never from the far south (from the equator it sits on the horizon, where the air takes it). Sirius is never up north of latitude 73, and it is not in the list in daylight at any latitude. Both are in the package's tests.

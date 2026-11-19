@@ -44,6 +44,8 @@ Polaris 50 degrees up, easy
 
 部品も公開しています。`sunPosition(when)`、`sunAltitude(observer, when)`、`twilightOf(altitude)`、`airmass(altitude)`、`SKY_LIMITS` です。太陽は天文年鑑の低精度の式で、1950〜2050年に0.01度の精度です。
 
+`moonGlare(observer, when)` は、`moonPenalty` を渡さないときに `visibleStars` が使う月のまぶしさ(等級)です。月が地平線の下なら 0、上なら照らされている割合の 2 倍です(こちらの見積もり)。`starsBelowHorizon({ observer, when, magnitude })` は地平線のすぐ下の星を返します。星図の円の外に薄く描くためのもので、どれも見えません。
+
 ## 確かめた例
 
 北極星は北半球の中緯度ではどの夜も見え、南の遠くからは見えません(赤道では地平線上にあり、大気で消えます)。シリウスは北緯73度より北では昇らず、昼間はどの緯度でもリストに入りません。どちらもパッケージのテストにあります。
