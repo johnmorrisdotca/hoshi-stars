@@ -32,6 +32,8 @@ What it keeps
     python3 -I scripts/make-culture-data.py --save FILE    # ... and keeps the answer in FILE
     --items-from FILE and --items-save FILE do the same for the second query (the asterism items).
 
+The "part of" and Japanese-name columns are then rewritten, offline, from data-sources/chinese-constellations-wikidata.jsonl by scripts/make-culture-parts.py: run that after this one.
+
 None of this runs in the test.
 """
 import json

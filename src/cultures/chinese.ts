@@ -17,7 +17,7 @@ function numbersOf(chains: string, numbered: string): Record<number, number> {
 /**
  * The traditional Chinese sky as a culture: about 240 asterisms, the 28 mansions first. Each lists the stars of it the Bright Star Catalogue holds, with each star's number in it (`numbers`: 角宿一 is 1); where the asterism has
  * more stars than we hold (fainter than magnitude 6.0, or not named with a catalogue number in Wikidata: the data cannot tell which) `missing` says
- * at least how many, and the figure draws only the stars we have. The English name and `partOf` (the enclosure or mansion) are Wikidata's, where it states them. The lines are our own joins of those stars, not the traditional drawing. Pass it to `constellations`, `constellation`, `starsIn`, `figures` or `figureOf`.
+ * at least how many, and the figure draws only the stars we have. The English name, `names.ja` (the Japanese label, as Wikidata gives it, on about 40 asterisms; it waits for a native reader) and `partOf` (the enclosure or mansion) are Wikidata's, where it has them. The lines are our own joins of those stars, not the traditional drawing. Pass it to `constellations`, `constellation`, `starsIn`, `figures` or `figureOf`.
  *
  * @example
  * ```ts
@@ -31,11 +31,11 @@ function numbersOf(chains: string, numbered: string): Record<number, number> {
  */
 export const chinese = defineCulture("chinese", { en: "Traditional Chinese (Three Enclosures, Twenty-Eight Mansions)", ja: "中国の伝統 (三垣二十八宿)" }, (): Asterism[] =>
   CHINESE_ROWS.split("\n").map((row): Asterism => {
-    const [id, hant, hans, pinyin, english, group, part, missing, chains, numbered] = row.split("|") as [string, string, string, string, string, string, string, string, string, string];
+    const [id, hant, hans, pinyin, english, group, part, missing, chains, numbered, ja] = row.split("|") as [string, string, string, string, string, string, string, string, string, string, string | undefined];
     return {
       id,
       name: hant,
-      names: { "zh-Hant": hant, "zh-Hans": hans, ...(english === "" ? {} : { en: english }) },
+      names: { "zh-Hant": hant, "zh-Hans": hans, ...(english === "" ? {} : { en: english }), ...(ja === undefined || ja === "" ? {} : { ja }) },
       readings: { zh: pinyin },
       aka: [],
       about: "",

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The Chinese sky's "part of" and Japanese labels are read again from a Wikidata dump** (MODULES-1219). `data-sources/chinese-constellations-wikidata.jsonl` holds the 342 Chinese-constellation items of the Wikidata dump of 2026-11-17 (CC0) with their labels and "part of" statements, and `scripts/make-culture-parts.py` (offline, labels only, no guessing: 217 of the 238 asterisms match an item) rewrites those two columns of `src/data/culture-chinese.ts`. The dump gave no enclosure the data did not have (Purple Forbidden 22, Supreme Palace 3, Heavenly Market 15 asterisms; the quiz's levels are unchanged, and the Supreme Palace still has too few for one). New: `names.ja` on 38 asterisms of the Chinese culture, Wikidata's Japanese label as it gives it (虚宿, 参宿, 右摂提; 32 are the same characters as the Traditional name), which the quiz shows on its Japanese page; they wait for a native reader. NOTICE.md names the dump.
+
 ## [0.56.0] - 2026-11-20
 
 ## [0.55.0] - 2026-11-20

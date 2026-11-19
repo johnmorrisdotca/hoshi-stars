@@ -46,7 +46,8 @@ const held = new Map<CultureId, readonly QuizItem[]>();
 /** The text of a name, for the reader's language: Japanese figures give their name in Japanese or English; Chinese mansions give the Traditional characters, with the English name or else the pinyin beside them for a reader of English. */
 function cultureLabel(id: CultureId, asterism: Asterism, lang: Lang): string {
   if (id === "chinese") {
-    if (lang === "ja") return asterism.name;
+    // a reader of Japanese gets the Japanese label Wikidata gives where it has one (虚宿, 参宿), else the Traditional characters
+    if (lang === "ja") return asterism.names["ja"] ?? asterism.name;
     const beside = asterism.names["en"] ?? asterism.readings.zh;
     return beside === undefined ? asterism.name : `${asterism.name} (${beside})`;
   }

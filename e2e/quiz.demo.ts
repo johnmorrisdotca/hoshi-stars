@@ -592,6 +592,24 @@ test("the small mansions: a ringed star, six names, and which mansion holds it; 
   expect(await page.getByTestId("qz-sky").locator("line").count()).toBeGreaterThan(3);
 });
 
+test("Wikidata's Japanese labels show on the Japanese page where there are any, and the characters of the data elsewhere; old addresses are as they were", async ({ page }) => {
+  const place = (id: string): number => itemsFor("chinese").findIndex((item) => item.id === id) + 1;
+  // 虛宿 is 虚宿 in Japanese (Wikidata's label); 軫宿 has the same characters in both; the English page keeps the Traditional name with the English name
+  await page.goto(`${PAGE}?culture=chinese&level=88&lang=ja&q=${place("zhen3-xiu4")}`);
+  await expect(page.getByTestId("qz-choices").locator('button[data-abbr="zhen3-xiu4"]')).toHaveText("軫宿");
+  await page.goto(`${PAGE}?culture=chinese&level=small-mansions&lang=ja&q=${place("xu1-xiu4")}`);
+  await expect(page.getByTestId("qz-choices").locator('button[data-abbr="xu1-xiu4"]')).toHaveText("虚宿");
+  await page.getByTestId("qz-choices").locator('button[data-abbr="xu1-xiu4"]').click();
+  await expect(page.getByTestId("qz-result")).toContainText("虚宿");
+  await page.goto(`${PAGE}?culture=chinese&level=small-mansions&q=${place("xu1-xiu4")}`);
+  await expect(page.getByTestId("qz-choices").locator('button[data-abbr="xu1-xiu4"]')).toHaveText("虛宿 (Emptiness)");
+  // an address of an earlier version: the 21 mansions at level 88 and the question number of the first mansion
+  await page.goto(`${PAGE}?culture=chinese&level=88&q=1`);
+  await expect(page.getByTestId("qz-levels").locator('button[aria-pressed="true"]')).toHaveText("All 21");
+  expect(await abbreviationsOf(page)).toContain(itemsFor("chinese")[0]!.id);
+  for (const name of await choices(page).allTextContents()) expect(name).toMatch(/^[\u4e00-\u9fff]+ \(.+\)$/);
+});
+
 test("the Chinese star officials in Japanese: the level titles in Japanese and the names in characters alone", async ({ page }) => {
   await page.goto(`${PAGE}?culture=chinese&level=purple-forbidden&lang=ja`);
   const pressed = page.getByTestId("qz-levels").locator('button[aria-pressed="true"]');

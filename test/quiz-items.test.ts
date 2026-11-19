@@ -36,7 +36,7 @@ test("the Chinese sky's mansions come first, in the data's order: the 21 with at
   assert.ok(first.every((item) => mansions.includes(item.id) && item.stars.length >= 3), "the first 21 are mansions, so a q= of an old address names the same one");
   for (const item of first) {
     const a = chinese.asterisms().find((x) => x.id === item.id)!;
-    assert.equal(item.label("ja"), a.name);
+    assert.equal(item.label("ja"), a.names.ja ?? a.name, "Wikidata's Japanese label where it has one, else the Traditional characters");
     assert.equal(item.label("en"), `${a.name} (${a.names.en ?? a.readings.zh})`);
   }
   assert.ok(all.find((item) => item.id === "kui2-xiu4"), "奎宿 has 14 stars");
@@ -134,7 +134,8 @@ test("the 7 small mansions are asked the other way round: which mansion holds th
   for (const item of small) {
     assert.ok(item.stars.length >= 1 && item.stars.length <= 2, `${item.id}: one or two stars held`);
     assert.ok(mansionIdsOf().has(item.id));
-    assert.equal(item.label("ja"), chinese.asterisms().find((a) => a.id === item.id)!.name, "the name in characters alone");
+    const asterism = chinese.asterisms().find((a) => a.id === item.id)!;
+    assert.equal(item.label("ja"), asterism.names.ja ?? asterism.name, "the name in characters alone: Wikidata's Japanese label where it has one");
   }
   assert.deepEqual([...chineseFigureLevels().find((level) => level.id === "small-mansions")!.ids].sort(), [...SMALL].sort());
   // the usual levels do not ask them, and an old address (`q=` up to the officials) is as it was
