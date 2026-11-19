@@ -125,6 +125,22 @@
       "minified": 809603,
       "gzip": 359951
     },
+    "./flight": {
+      "minified": 3921,
+      "gzip": 1612
+    },
+    "./flight/places": {
+      "minified": 854132,
+      "gzip": 391500
+    },
+    "./flight/element": {
+      "minified": 1687616,
+      "gzip": 619097
+    },
+    "./flight/define": {
+      "minified": 1687660,
+      "gzip": 619086
+    },
     "./constellation-3d": {
       "minified": 310747,
       "gzip": 131196
