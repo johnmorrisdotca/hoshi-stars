@@ -186,6 +186,14 @@ export function sunAltitude(observer: Observer, when: When): number {
 
 /**
  * A star below the horizon, for drawing it dimmed. It is not a star you can see.
+ *
+ * @example
+ * ```ts
+ * import { starsBelowHorizon, type DimStar } from "@johnmorrisdotca/hoshi-stars/tonight";
+ *
+ * const first: DimStar | undefined = starsBelowHorizon({ observer: { latitude: 49.28, longitude: -123.12 }, when: Date.UTC(2026, 10, 8, 10), magnitude: 2 })[0];
+ * console.log(first === undefined || first.altitude <= 0); // true
+ * ```
  */
 export interface DimStar {
   /** The catalogue star. */
@@ -201,6 +209,14 @@ export interface DimStar {
  * @param query - `observer`, `when`, `magnitude`, and an optional `floor`.
  * @returns The stars, brightest first.
  * @throws RangeError when `magnitude` or `floor` is not a finite number, or `floor` is not below 0.
+ *
+ * @example
+ * ```ts
+ * import { starsBelowHorizon } from "@johnmorrisdotca/hoshi-stars/tonight";
+ *
+ * const below = starsBelowHorizon({ observer: { latitude: 49.28, longitude: -123.12 }, when: Date.UTC(2026, 10, 8, 10), magnitude: 2 });
+ * console.log(below.length > 0, below.every((s) => s.altitude <= 0)); // true true
+ * ```
  */
 export function starsBelowHorizon(query: { observer: Observer; when: When; magnitude: number; floor?: number }): DimStar[] {
   const ms = moment(query.when);
@@ -218,7 +234,21 @@ export function starsBelowHorizon(query: { observer: Observer; when: When; magni
   return list;
 }
 
-/** The Moon's glare in magnitudes when the caller does not pass one. Position and phase are `moonHorizontal` and `moonPhase`: the Astronomical Almanac's low-precision lunar series (section D) and Meeus, Astronomical Algorithms, 2nd ed., chapter 48, equation 48.3. The curve is our own estimate: 0 when the Moon is down, otherwise twice the lit fraction of the disc. */
+/**
+ * The Moon's glare in magnitudes when the caller does not pass one. Position and phase are `moonHorizontal` and `moonPhase`: the Astronomical Almanac's low-precision lunar series (section D) and Meeus, Astronomical Algorithms, 2nd ed., chapter 48, equation 48.3. The curve is our own estimate: 0 when the Moon is down, otherwise twice the lit fraction of the disc.
+ *
+ * @param observer - The place: latitude and longitude in degrees.
+ * @param when - The moment: a Date, or milliseconds since 1970 (UTC).
+ * @returns The magnitudes the Moon takes off the faintest star you can see, from 0 (down) to 2 (full and up).
+ *
+ * @example
+ * ```ts
+ * import { moonGlare } from "@johnmorrisdotca/hoshi-stars/tonight";
+ *
+ * const glare = moonGlare({ latitude: 49.28, longitude: -123.12 }, Date.UTC(2026, 10, 8, 10));
+ * console.log(glare >= 0 && glare <= 2); // true
+ * ```
+ */
 export function moonGlare(observer: Observer, when: When): number {
   if (moonHorizontal(observer, when).altitude <= 0) return 0;
   return 2 * moonPhase(when).illuminated;
