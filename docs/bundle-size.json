@@ -172,6 +172,14 @@
     "./names/ngc-ic": {
       "minified": 720692,
       "gzip": 226357
+    },
+    "./provenance": {
+      "minified": 22167,
+      "gzip": 8818
+    },
+    "./provenance/ngc-ic": {
+      "minified": 166359,
+      "gzip": 40341
     }
   }
 }

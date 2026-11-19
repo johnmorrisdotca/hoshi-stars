@@ -254,6 +254,10 @@ console.log(horizontalFrom(deneb, mars, { latitude: 90, longitude: 0 }, new Date
 
 `@johnmorrisdotca/hoshi-stars/names` has one row for each bright star and Messier object, with its names in English and Japanese, its designations (Bayer spelt `α`, `alpha` and `Alp`, `HR`, `M`, `NGC`), an address-safe id and where to point; `findName`, `nameRowById` and `searchNames` look them up. The NGC and IC objects are the chunk `/names/ngc-ic`. [The guide](docs/guides/names.md) has the rows and the known gaps.
 
+## Where things come from
+
+`@johnmorrisdotca/hoshi-stars/provenance` says who found a Messier object and when, the day the IAU approved a star's name and the language it comes from, and where each catalogue comes from, every fact with the source it was read from; `objectDiscovery` and `starNameFacts` look them up. The NGC and IC objects are the chunk `/provenance/ngc-ic`. [The guide](docs/guides/provenance.md) has the fields and what Wikidata leaves blank.
+
 ## What you can see tonight
 
 `@johnmorrisdotca/hoshi-stars/tonight` lists the stars you can see from a place at a moment: above the horizon, with the Sun low enough, brighter than the site's limit once the air has dimmed them. The [Tonight page](https://johnmorrisdotca.github.io/hoshi-stars/tonight.html) is the call with a place picker. Pure: no DOM, and the moment is passed in.

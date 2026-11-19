@@ -230,6 +230,16 @@
       "ja": "メシエ天体ではない NGC・IC 天体の名前の一覧 (別のかたまり)",
       "platform": "neutral"
     },
+    "./provenance": {
+      "en": "Where things come from: who found each Messier object and when, the day the IAU approved a star's name and the language it comes from, and the catalogues' own origins, each fact with its source",
+      "ja": "出どころ (メシエ天体を誰がいつ見つけたか、IAU が星の名前を承認した日とその言語、各カタログの成り立ち。どの事実にも出典つき)",
+      "platform": "neutral"
+    },
+    "./provenance/ngc-ic": {
+      "en": "Who found each of the 11,898 Messier, NGC and IC objects and when, as Wikidata has it, in a chunk of its own",
+      "ja": "メシエ・NGC・IC 天体 11,898 個を誰がいつ見つけたか (Wikidata による。別のかたまり)",
+      "platform": "neutral"
+    },
     "./my-sky": {
       "en": "My sky: the sky as someone standing outside sees it, with the Moon's phase, rise and set, the planets and the camera, as pure maths (the element is /my-sky/element)",
       "ja": "空を見上げる (外に立った人に見える空。月の満ち欠け、月の出と月の入り、惑星、カメラを純粋な計算で。要素は /my-sky/element)",

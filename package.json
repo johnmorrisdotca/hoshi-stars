@@ -1,6 +1,6 @@
 {
   "name": "@johnmorrisdotca/hoshi-stars",
-  "version": "0.51.0",
+  "version": "0.52.0",
   "description": "Hoshi 星: stars you can see without a telescope, as data and as sky charts. 5,080 stars with names, distance and colour, the 88 constellations with lines and boundaries, the Messier objects and seven map projections. Typed; the data and the SVG chart need no other package.",
   "keywords": [
     "stars",
@@ -340,6 +340,16 @@
       "types": "./dist/names-ngc-ic.d.ts",
       "import": "./dist/names-ngc-ic.js",
       "default": "./dist/names-ngc-ic.js"
+    },
+    "./provenance": {
+      "types": "./dist/provenance.d.ts",
+      "import": "./dist/provenance.js",
+      "default": "./dist/provenance.js"
+    },
+    "./provenance/ngc-ic": {
+      "types": "./dist/provenance-ngc-ic.d.ts",
+      "import": "./dist/provenance-ngc-ic.js",
+      "default": "./dist/provenance-ngc-ic.js"
     },
     "./package.json": "./package.json"
   },
