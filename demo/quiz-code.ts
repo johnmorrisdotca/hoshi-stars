@@ -1,5 +1,6 @@
 // The text that puts the quiz in a page: it is a page that runs, not a drawing of numbers, so it goes in an iframe (`embed-quiz.html`). The address of the frame says what to ask; nothing about the answer is in it.
 import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
+import { askedLatitude } from "./quiz-sky.ts";
 
 declare const __HOSHI_VERSION__: string | undefined;
 
@@ -15,7 +16,8 @@ export interface QuizChoice {
   style: "plain" | "lines" | "annotated";
   level: string;
   kid: boolean;
-  hemisphere: "all" | "north" | "south";
+  /** The latitude asked, a whole number of degrees from -90 to 90 (north positive), or `null` for the whole sky. The reader's own position is never in it: only a latitude typed (or an old `hemisphere`). */
+  latitude: number | null;
   /** 1 to 12, or 0 for any month. */
   month: number;
   /** The sky culture: the Western 88, the Japanese sky, or the Chinese mansions. */
@@ -23,19 +25,19 @@ export interface QuizChoice {
   lang: "en" | "ja";
 }
 
-export const QUIZ_DEFAULTS: QuizChoice = { style: "plain", level: "12", kid: false, hemisphere: "all", month: 0, culture: "western", lang: "en" };
+export const QUIZ_DEFAULTS: QuizChoice = { style: "plain", level: "12", kid: false, latitude: null, month: 0, culture: "western", lang: "en" };
 
 /** The choice an address says, with every missing or bad part at its default. */
 export function quizChoiceOf(query: URLSearchParams): QuizChoice {
   const pick = <T extends string>(name: string, allowed: readonly T[], fallback: T): T => (allowed.includes(query.get(name) as T) ? (query.get(name) as T) : fallback);
-  const hemisphere = pick("hemisphere", ["all", "north", "south"] as const, "all");
+  const latitude = askedLatitude(query.get("lat"), query.get("hemisphere"));
   const month = Math.round(Number(query.get("month")) || 0);
   return {
     style: pick("style", ["plain", "lines", "annotated"] as const, "plain"),
     level: isLevel(query.get("level")) ? query.get("level")! : "12",
     kid: query.get("kid") === "1",
-    hemisphere,
-    month: hemisphere === "all" || month < 1 || month > 12 ? 0 : month,
+    latitude,
+    month: latitude === null || month < 1 || month > 12 ? 0 : month,
     culture: pick("culture", ["western", "japanese", "chinese"] as const, "western"),
     lang: query.get("lang") === "ja" ? "ja" : "en",
   };
@@ -47,8 +49,8 @@ export function quizQuery(choice: QuizChoice): string {
   if (choice.style !== "plain") query.set("style", choice.style);
   if (choice.level !== "12") query.set("level", choice.level);
   if (choice.kid) query.set("kid", "1");
-  if (choice.hemisphere !== "all") query.set("hemisphere", choice.hemisphere);
-  if (choice.hemisphere !== "all" && choice.month > 0) query.set("month", String(choice.month));
+  if (choice.latitude !== null) query.set("lat", String(choice.latitude));
+  if (choice.latitude !== null && choice.month > 0) query.set("month", String(choice.month));
   if (choice.culture !== "western") query.set("culture", choice.culture);
   if (choice.lang === "ja") query.set("lang", "ja");
   return query.toString();

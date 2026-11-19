@@ -1,5 +1,5 @@
 // The constellation quiz: a chart centred on one constellation with no name for it on the chart, and six names to choose from. The style (plain stars, stars and lines, annotated: the lines, the borders and the names of the neighbours) and the level (the bright 12, 30 or all 88) are kept in
-// the address (style, level, kid, hemisphere, month), and so is the question (q, the constellation's place in the list of the 88, never its name; a hand-written c=Ori is read too), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
+// the address (style, level, kid, lat, month), and so is the question (q, the constellation's place in the list of the 88, never its name; a hand-written c=Ori is read too), so a reload or a shared link asks the same one. The chart is the package's own SVG drawn once for each question and nothing moves by itself: nothing is drawn at rest.
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { centreOfConstellation, chart, toScreen, type View } from "../src/chart/chart.ts";
 import { neighbouringConstellations } from "../src/nearest.ts";
@@ -9,11 +9,11 @@ import { ALL_WORDS } from "../scripts/gallery-words.ts";
 import { CULTURE_IDS, cultureFor, figureLevelOf, itemNamed, itemsFor, levelIdsFor, mansionIdsOf, otherMansions, type CultureId, type QuizItem } from "./quiz-items.ts";
 import { FIELD_FILL, FIELD_RADIUS, marksSvg } from "./quiz-star.ts";
 import { distractors, nearestTies, shuffled, westernTies, type Ties } from "./quiz-pick.ts";
-import { HEMISPHERES, MIN_ALTITUDE, isSeenIn, type Hemisphere } from "./quiz-sky.ts";
+import { MAX_LATITUDE, MIN_ALTITUDE, askedLatitude, isSeenIn, latitudeOf } from "./quiz-sky.ts";
 import { monthName, say } from "./words.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
-/** The embed page (`embed-quiz.html`) is this same script with its controls hidden: the address chooses (style, level, kid, hemisphere, month, lang) and nothing is written back to it. */
+/** The embed page (`embed-quiz.html`) is this same script with its controls hidden: the address chooses (style, level, kid, lat, month, lang) and nothing is written back to it. */
 const embedded = document.body.dataset["embed"] === "quiz";
 if (embedded && new URLSearchParams(location.search).get("lang") === "ja") document.documentElement.lang = "ja";
 const real = createAddressState();
@@ -39,9 +39,10 @@ const items = (): readonly QuizItem[] => itemsFor(cultureId);
 const itemOf = (id: string): QuizItem => items().find((item) => item.id === id)!;
 /** The items brightest first: the light of their stars added up. */
 const rankedOf = (): QuizItem[] => [...items()].sort((a, b) => b.light - a.light || a.id.localeCompare(b.id));
-/** The hemisphere asked ("all" is the whole sky) and the month (0 is any), kept in the address as `hemisphere` and `month`. */
-type Where = Hemisphere | "all";
-const WHERE: readonly Where[] = ["all", ...HEMISPHERES];
+/** The latitude asked (`null` is the whole sky) and the month (0 is any). The latitude is kept in the address as `lat` (a whole number of degrees) when it was typed; the old `hemisphere=north` or `south` is read as 40 or -40. */
+let where: number | null = askedLatitude(address.get("lat"), address.get("hemisphere"));
+/** Whether the latitude came from "My location": then it is kept in memory only, never in the address (and so not in the embed code), the same as the Tonight and My sky pages. */
+let fromPlace = false;
 /** What a level asks of the sky: the items a reader in the hemisphere can see (in the month, or in any month), the brightest first, as many as the level says (`88` is all of them, whatever the sky has). */
 const pools = new Map<string, string[]>();
 function poolOf(level: Level): string[] {
@@ -49,7 +50,7 @@ function poolOf(level: Level): string[] {
   let found = pools.get(key);
   if (found === undefined) {
     const set = figureLevelOf(cultureId, level);
-    const seen = rankedOf().filter((item) => (set === undefined || set.ids.includes(item.id)) && (cultureId !== "chinese" || set !== undefined || (mansionIdsOf().has(item.id) && item.ask === "figure")) && (where === "all" || isSeenIn(item.stars, where, month)));
+    const seen = rankedOf().filter((item) => (set === undefined || set.ids.includes(item.id)) && (cultureId !== "chinese" || set !== undefined || (mansionIdsOf().has(item.id) && item.ask === "figure")) && (where === null || isSeenIn(item.stars, where, month)));
     found = (set !== undefined || level === "88" ? seen : seen.slice(0, Number(level))).map((item) => item.id);
     pools.set(key, found);
   }
@@ -58,7 +59,7 @@ function poolOf(level: Level): string[] {
 /** Where the six names of a question come from: the level's own figures, but for the small mansions all 28 mansions that the sky chosen shows (the question is which mansion, and any of them could hold the star). */
 function choicePoolOf(level: Level): string[] {
   if (figureLevelOf(cultureId, level)?.kind !== "small-mansions") return poolOf(level);
-  return rankedOf().filter((item) => mansionIdsOf().has(item.id) && (where === "all" || isSeenIn(item.stars, where, month))).map((item) => item.id);
+  return rankedOf().filter((item) => mansionIdsOf().has(item.id) && (where === null || isSeenIn(item.stars, where, month))).map((item) => item.id);
 }
 /** How many the whole of the sky asked has, for the label of the last level. */
 const totalOf = (): number => poolSize("88");
@@ -68,8 +69,7 @@ const tiesOf = (): Ties => (cultureId === "western" ? westernTies : figureLevelO
 
 let style: Style = pick(address.get("style"), STYLES, "plain");
 let level: Level = address.get("level") ?? "12";
-let where: Where = pick(address.get("hemisphere"), WHERE, "all");
-let month = where === "all" ? 0 : Math.max(0, Math.min(12, Math.round(Number(address.get("month")) || 0)));
+let month = where === null ? 0 : Math.max(0, Math.min(12, Math.round(Number(address.get("month")) || 0)));
 /** A level is offered while its sky has it: the 30 only where the sky asked has more than 30 (the Chinese mansions are 21: the level is then all of them), and a level of star officials only while the sky chosen (the hemisphere and month) leaves it six figures. */
 const levelOk = (value: Level): boolean => levelIdsFor(cultureId).includes(value) && (figureLevelOf(cultureId, value) === undefined ? value !== "30" || totalOf() > 30 : figureLevelOf(cultureId, value)!.kind === "small-mansions" ? poolSize(value) >= MIN_STAR_QUESTIONS && choicePoolOf(value).length >= MIN_FIGURES : poolSize(value) >= MIN_FIGURES);
 if (!levelOk(level)) level = "88";
@@ -203,15 +203,57 @@ function render(): void {
       ask();
     });
     const hemis = $("qz-hemis");
-    for (const value of WHERE) hemis.append(valueButton(value));
-    hemis.addEventListener("click", (event) => {
-      const value = (event.target as HTMLElement).closest("button")?.dataset["value"] as Where | undefined;
-      if (value === undefined || value === where) return;
-      where = value;
-      if (where === "all") month = 0;
-      address.set("hemisphere", where === "all" ? null : where);
+    hemis.append(valueButton("all"));
+    /** Takes a latitude: typed (kept in the address) or from the device (kept in memory only). */
+    const setLatitude = (latitude: number | null, place: boolean): void => {
+      where = latitude;
+      fromPlace = place && latitude !== null;
+      if (where === null) month = 0;
+      address.set("hemisphere", null);
+      address.set("lat", where === null || fromPlace ? null : String(where));
       address.set("month", month === 0 ? null : String(month));
       ask();
+    };
+    hemis.addEventListener("click", (event) => {
+      if ((event.target as HTMLElement).closest("button") === null || where === null) return;
+      $("qz-locnote").textContent = "";
+      setLatitude(null, false);
+    });
+    $<HTMLInputElement>("qz-lat").addEventListener("change", (event) => {
+      const field = event.target as HTMLInputElement;
+      const typed = field.value.trim() === "" ? null : latitudeOf(field.value);
+      if (field.value.trim() !== "" && typed === null) {
+        // not a latitude: the one before is kept
+        $("qz-locnote").textContent = say("qz_latbad", { max: MAX_LATITUDE });
+        field.value = where === null ? "" : String(where);
+        return;
+      }
+      $("qz-locnote").textContent = "";
+      setLatitude(typed, false);
+    });
+    $("qz-here").addEventListener("click", () => {
+      const note = $("qz-locnote");
+      if (!("geolocation" in navigator)) {
+        note.textContent = say("qz_locfail");
+        return;
+      }
+      note.textContent = say("qz_locating");
+      // asked for on a press and never on load; only the latitude, rounded to a whole degree, is used, and it is not written anywhere
+      navigator.geolocation.getCurrentPosition(
+        (here) => {
+          const latitude = latitudeOf(String(here.coords.latitude));
+          if (latitude === null) {
+            note.textContent = say("qz_locfail");
+            return;
+          }
+          note.textContent = say("qz_located", { lat: latitude });
+          setLatitude(latitude, true);
+        },
+        () => {
+          note.textContent = say("qz_locfail");
+        },
+        { maximumAge: 60_000, timeout: 10_000 },
+      );
     });
     $("qz-month").addEventListener("change", (event) => {
       month = Number((event.target as HTMLSelectElement).value);
@@ -240,9 +282,13 @@ function render(): void {
     });
   }
   for (const button of Array.from($("qz-hemis").querySelectorAll("button"))) {
-    button.textContent = w(`h${button.dataset["value"]}`);
-    button.setAttribute("aria-pressed", String(button.dataset["value"] === where));
+    button.textContent = w("hall");
+    button.setAttribute("aria-pressed", String(where === null));
   }
+  const latField = $<HTMLInputElement>("qz-lat");
+  if (document.activeElement !== latField) latField.value = where === null ? "" : String(where);
+  latField.setAttribute("aria-label", w("lat"));
+  $("qz-here").textContent = w("here");
   for (const button of Array.from($("qz-cultures").querySelectorAll("button"))) {
     button.textContent = w(`c_${button.dataset["value"]}`);
     button.setAttribute("aria-pressed", String(button.dataset["value"] === cultureId));
@@ -253,10 +299,10 @@ function render(): void {
   const months = $<HTMLSelectElement>("qz-month");
   months.replaceChildren(Object.assign(document.createElement("option"), { value: "0", textContent: w("anymonth") }), ...Array.from({ length: 12 }, (_, i) => Object.assign(document.createElement("option"), { value: String(i + 1), textContent: monthName(i + 1) })));
   months.value = String(month);
-  months.disabled = where === "all";
+  months.disabled = where === null;
   const skyNote = $("qz-skynote");
-  skyNote.hidden = where === "all";
-  skyNote.textContent = where === "all" ? "" : say("qz_skynote", { place: say(`qz_from_${where}`), when: say(month > 0 ? "qz_when_month" : "qz_when_year"), height: MIN_ALTITUDE });
+  skyNote.hidden = where === null;
+  skyNote.textContent = where === null ? "" : say("qz_skynote", { place: say(where === 0 ? "qz_from_0" : where > 0 ? "qz_from_n" : "qz_from_s", { lat: Math.abs(where) }), when: say(month > 0 ? "qz_when_month" : "qz_when_year"), height: MIN_ALTITUDE });
   const kidButton = $("qz-kid");
   kidButton.textContent = say("qz_kid");
   kidButton.setAttribute("aria-pressed", String(kid));
@@ -306,7 +352,7 @@ function render(): void {
   drawMissed();
   if (!answered) $("qz-result").textContent = "";
   // the page's "Put it in your page" code follows what is chosen (there is none to tell in the embed page)
-  document.dispatchEvent(new CustomEvent("qz-change", { detail: { style, level, kid, hemisphere: where, month, culture: cultureId, lang: langNow() } }));
+  document.dispatchEvent(new CustomEvent("qz-change", { detail: { style, level, kid, latitude: fromPlace ? null : where, month, culture: cultureId, lang: langNow() } }));
 }
 
 /** The ones missed so far, each with its picture and a link to its page, to look at again. */

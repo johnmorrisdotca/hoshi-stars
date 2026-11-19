@@ -17,6 +17,11 @@ async function nextAnswer(page: Page, not?: string): Promise<string> {
   await expect.poll(() => { const now = answerOf(page); return now !== undefined && now !== not; }, { message: "the address names a new question" }).toBe(true);
   return answerOf(page)!;
 }
+/** Types a latitude into the field and presses Enter, as a reader does. */
+const typeLatitude = async (page: Page, value: string): Promise<void> => {
+  await page.getByTestId("qz-lat").fill(value);
+  await page.getByTestId("qz-lat").press("Enter");
+};
 const choices = (page: Page) => page.getByTestId("qz-choices").locator("button");
 
 test("a question shows the chart with no names and six choices in a row, and exactly one is right", async ({ page }) => {
@@ -250,8 +255,8 @@ test("at all 88 the wrong names are the ones easy to mix up: most are Orion's ne
 const abbreviationsOf = (page: Page): Promise<string[]> => choices(page).evaluateAll((all) => all.map((b) => (b as HTMLElement).dataset["abbr"]!));
 const placeOf = (abbreviation: string): number => constellations().findIndex((c) => c.abbreviation === abbreviation) + 1;
 
-test("by hemisphere and month: only what a reader there can see that evening is asked, and the six names come from it too", async ({ page }) => {
-  const january = new Set(seenIn("north", 1));
+test("by latitude (here the old hemisphere addresses, 40 and -40) and month: only what a reader there can see that evening is asked, and the six names come from it too", async ({ page }) => {
+  const january = new Set(seenIn(40, 1));
   expect(january.has("Ori") && !january.has("Cru"), "Orion is up on a January evening in the north and the Southern Cross never is").toBe(true);
   // the Southern Cross is not in a northern sky, so a hand-written question for it is not asked
   await page.goto(`${PAGE}?q=${placeOf("Cru")}&level=88&hemisphere=north&month=1`);
@@ -268,7 +273,7 @@ test("by hemisphere and month: only what a reader there can see that evening is 
   await page.goto(`${PAGE}?q=${placeOf("Cru")}&level=88&hemisphere=south&month=5`);
   await expect(choices(page)).toHaveCount(6);
   expect(answerOf(page)).toBe("Cru");
-  const may = new Set(seenIn("south", 5));
+  const may = new Set(seenIn(-40, 5));
   for (const one of await abbreviationsOf(page)) expect(may.has(one)).toBe(true);
   // bright 12: the twelve brightest of that sky, so every name offered is one of 12
   await page.goto(`${PAGE}?hemisphere=north&month=1`);
@@ -282,33 +287,95 @@ test("by hemisphere and month: only what a reader there can see that evening is 
   for (const one of offered) expect(january.has(one)).toBe(true);
 });
 
-test("the sky buttons and the month are kept in the address, the month waits for a hemisphere, and the note says how it is worked out", async ({ page }) => {
+test("the latitude and the month are kept in the address, the month waits for a latitude, and the note says how it is worked out", async ({ page }) => {
   await page.goto(`${PAGE}?level=88`);
   await expect(page.getByTestId("qz-hemis").locator('button[aria-pressed="true"]')).toHaveText("Whole sky");
   await expect(page.getByTestId("qz-month")).toBeDisabled();
   await expect(page.getByTestId("qz-skynote")).toBeHidden();
-  await page.getByTestId("qz-hemis").getByRole("button", { name: "South" }).click();
-  await expect.poll(() => param(page, "hemisphere")).toBe("south");
+  await typeLatitude(page, "-40");
+  await expect.poll(() => param(page, "lat")).toBe("-40");
+  expect(param(page, "hemisphere")).toBeNull();
   await expect(page.getByTestId("qz-month")).toBeEnabled();
   await expect(page.getByTestId("qz-skynote")).toContainText("40 degrees south");
   await page.getByTestId("qz-month").selectOption("5");
   await expect.poll(() => param(page, "month")).toBe("5");
   await expect(page.getByTestId("qz-skynote")).toContainText("21:00 on the 15th");
   await page.reload();
-  await expect(page.getByTestId("qz-hemis").locator('button[aria-pressed="true"]')).toHaveText("South");
+  await expect(page.getByTestId("qz-lat")).toHaveValue("-40");
+  await expect(page.getByTestId("qz-hemis").locator('button[aria-pressed="true"]')).toHaveCount(0);
   await expect(page.getByTestId("qz-month")).toHaveValue("5");
   await page.getByTestId("qz-hemis").getByRole("button", { name: "Whole sky" }).click();
-  await expect.poll(() => param(page, "hemisphere")).toBeNull();
+  await expect.poll(() => param(page, "lat")).toBeNull();
   await expect.poll(() => param(page, "month")).toBeNull();
-  // any month in the north: the Southern Cross is never asked, and a page of the Japanese words has the month in Japanese
-  await page.goto(`${PAGE}?level=88&hemisphere=north&lang=ja`);
-  await expect(page.getByTestId("qz-hemis").locator('button[aria-pressed="true"]')).toHaveText("北半球");
-  await expect(page.getByTestId("qz-month").locator("option").nth(1)).toHaveText("1月");
-  for (let i = 0; i < 6; i += 1) {
+  await expect(page.getByTestId("qz-lat")).toHaveValue("");
+  // a decimal is rounded to a whole degree; a bad one keeps the one before and says so
+  await typeLatitude(page, "34.6");
+  await expect.poll(() => param(page, "lat")).toBe("35");
+  await typeLatitude(page, "95");
+  await expect(page.getByTestId("qz-locnote")).toContainText("not a latitude");
+  await expect(page.getByTestId("qz-lat")).toHaveValue("35");
+  expect(param(page, "lat")).toBe("35");
+  // typing a latitude changes what is asked: at the poles of the pools differ, at -35 the Southern Cross is in the pool and at 40 it never is
+  await page.goto(`${PAGE}?level=88&lat=-35&q=${placeOf("Cru")}`);
+  expect(answerOf(page)).toBe("Cru");
+  await typeLatitude(page, "40");
+  await expect.poll(() => param(page, "lat")).toBe("40");
+  await expect.poll(() => answerOf(page)).not.toBe("Cru");
+  for (let i = 0; i < 5; i += 1) {
     expect(await abbreviationsOf(page)).not.toContain("Cru");
     await choices(page).first().click();
     await page.getByTestId("qz-next").click();
   }
+  // an old address: hemisphere=north is 40, and the page says it in Japanese; lat wins when both are there
+  await page.goto(`${PAGE}?level=88&hemisphere=north&lang=ja`);
+  await expect(page.getByTestId("qz-lat")).toHaveValue("40");
+  await expect(page.getByTestId("qz-month").locator("option").nth(1)).toHaveText("1月");
+  await page.getByTestId("qz-month").selectOption("1");
+  await expect(page.getByTestId("qz-skynote")).toContainText("北緯40度");
+  await page.goto(`${PAGE}?level=88&hemisphere=north&lat=-20`);
+  await expect(page.getByTestId("qz-lat")).toHaveValue("-20");
+  await page.goto(`${PAGE}?level=88&hemisphere=south`);
+  await expect(page.getByTestId("qz-lat")).toHaveValue("-40");
+});
+
+test("My location asks only on a press, fills the latitude rounded to a whole degree, and the position is not in the address, the code or storage", async ({ page, context }) => {
+  await context.grantPermissions(["geolocation"]);
+  await context.setGeolocation({ latitude: -34.6037, longitude: 151.2093 });
+  await page.goto(`${PAGE}?level=88`);
+  await expect(page.getByTestId("qz-locnote")).toHaveText("");
+  await expect(page.getByTestId("qz-here")).toHaveText("My location");
+  await page.getByTestId("qz-here").click();
+  await expect(page.getByTestId("qz-lat")).toHaveValue("-35");
+  await expect(page.getByTestId("qz-locnote")).toContainText("-35 degrees");
+  await expect(page.getByTestId("qz-locnote")).toContainText("not in the address, not stored");
+  await expect(page.getByTestId("qz-skynote")).toContainText("35 degrees south");
+  await expect(page.getByTestId("qz-month")).toBeEnabled();
+  // nothing of the position: not in the address (not even the rounded latitude), not in the code, not in storage
+  const where = page.url();
+  expect(where).not.toMatch(/lat=|34\.6|151|hemisphere/);
+  const panel = page.getByTestId("embed-panel");
+  expect(await panel.textContent()).not.toMatch(/lat=|34\.6|151/);
+  expect(await page.evaluate(() => `${JSON.stringify({ ...localStorage })}${JSON.stringify({ ...sessionStorage })}`)).toBe("{}{}");
+  // what is asked follows the latitude: the Southern Cross can come up at -35
+  await page.getByTestId("qz-month").selectOption("5");
+  expect(new URL(page.url()).searchParams.get("month")).toBe("5");
+  // typing after it is a latitude the reader chose, and that one is kept in the address
+  await typeLatitude(page, "-30");
+  await expect.poll(() => param(page, "lat")).toBe("-30");
+});
+
+test("My location refused or failed: the page says so in English and in Japanese and keeps the latitude it had", async ({ page, context }) => {
+  await context.clearPermissions();
+  await page.goto(`${PAGE}?level=88&lat=52`);
+  await page.getByTestId("qz-here").click();
+  await expect(page.getByTestId("qz-locnote")).toContainText("was not shared");
+  await expect(page.getByTestId("qz-lat")).toHaveValue("52");
+  expect(param(page, "lat")).toBe("52");
+  await page.goto(`${PAGE}?level=88&lat=52&lang=ja`);
+  await expect(page.getByTestId("qz-here")).toHaveText("いまの場所");
+  await page.getByTestId("qz-here").click();
+  await expect(page.getByTestId("qz-locnote")).toContainText("共有されなかった");
+  await expect(page.getByTestId("qz-lat")).toHaveValue("52");
 });
 
 test("the sky choices and kid mode give nothing away: the address and the page do not name the answer", async ({ page }) => {
@@ -328,7 +395,7 @@ test("the embed page asks the quiz its address chooses, with no controls, in kid
   await expect(page.locator("#qz-root")).toHaveAttribute("data-kid", "true");
   await expect(page.getByTestId("frame-credit")).toBeVisible();
   // the controls of the page are not there: the address chooses
-  for (const id of ["qz-styles", "qz-levels", "qz-hemis", "qz-month", "qz-kid"]) await expect(page.locator(`#${id}`)).toBeHidden();
+  for (const id of ["qz-styles", "qz-levels", "qz-hemis", "qz-lat", "qz-here", "qz-locnote", "qz-month", "qz-kid"]) await expect(page.locator(`#${id}`)).toBeHidden();
   const sizes = await choices(page).evaluateAll((all) => all.map((b) => Math.round(b.getBoundingClientRect().height)));
   expect(Math.min(...sizes), "kid mode's big names").toBeGreaterThanOrEqual(72);
   const withLines = await page.getByTestId("qz-sky").locator("line, path").count();
@@ -355,10 +422,10 @@ test("the embed page asks the quiz its address chooses, with no controls, in kid
   expect(new URL(page.url()).search).toBe("?level=88&style=lines&kid=1");
 });
 
-test("the embed page takes the hemisphere and the month, and Japanese", async ({ page }) => {
-  await page.goto(`${EMBED}?hemisphere=south&month=5&level=88&lang=ja`);
+test("the embed page takes the latitude (and the old hemisphere) and the month, and Japanese", async ({ page }) => {
+  await page.goto(`${EMBED}?lat=-40&month=5&level=88&lang=ja`);
   await expect(choices(page)).toHaveCount(6);
-  const may = new Set(seenIn("south", 5));
+  const may = new Set(seenIn(-40, 5));
   for (const one of await abbreviationsOf(page)) expect(may.has(one), one).toBe(true);
   for (const name of await choices(page).allTextContents()) expect(name).toMatch(/座$/);
   await expect(page.getByTestId("qz-next")).toHaveText("次の問題");
@@ -387,11 +454,11 @@ test("the page's code to copy is the iframe, and follows kid mode, the style, th
   await expect(panel).toContainText("level=88");
   await page.getByTestId("qz-kid").click();
   await page.getByTestId("qz-styles").getByRole("button", { name: /Stars and lines|Stars and lines/ }).click();
-  await page.getByTestId("qz-hemis").getByRole("button", { name: "North" }).click();
+  await typeLatitude(page, "40");
   await page.getByTestId("qz-month").selectOption("1");
   await expect(panel).toContainText("kid=1");
   await expect(panel).toContainText("style=lines");
-  await expect(panel).toContainText("hemisphere=north");
+  await expect(panel).toContainText("lat=40");
   await expect(panel).toContainText("month=1");
   // the code never carries the question
   expect(await panel.textContent()).not.toMatch(/[?&;](q|c)=/);
