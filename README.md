@@ -704,9 +704,9 @@ console.log(stars({ minGrade: "A" }).length, stars().length);                 //
 | Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue, Yale parallaxes | public domain, informally, with credit; Yale parallaxes credited |
 | Nearby (`/nearby`) | 5,565 | 236 | 1,281 | 4,048 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
 | Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | UCAC4, APASS magnitudes | free of charge, cited (`NOTICE.md`) |
-| **All three, each star once** | **2,470,374** | **304** | **1,733** | **2,468,337** | | |
+| **All three, each star once** | **2,470,327** | **304** | **1,733** | **2,468,290** | | |
 
-A faint star has no parallax, so it is grade C; the 2,135 faint stars that are also nearby stars are counted once. The [guide](docs/guides/accuracy.md) has the typical errors, what each layer costs and how a star is counted once.
+A faint star has no parallax, so it is grade C; the 2,182 faint stars that are also nearby stars are counted once. The [guide](docs/guides/accuracy.md) has the typical errors, what each layer costs and how a star is counted once.
 
 ```js
 import { catalogueCounts, catalogueStar, catalogueStars } from "@johnmorrisdotca/hoshi-stars/catalogue";

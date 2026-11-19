@@ -10,17 +10,17 @@ const loaded = (): Map<string, string> => (nearbyOf ??= new Map(NEARBY_FAINT_ROW
 
 /**
  * How the nearby stars were matched in the faint tiles: `nearby` stars in all, `matched` (the tiles hold exactly one faint star that fits; it is the same star), `ambiguous` (several fit, or two nearby stars want one;
- * nothing is left out), `new` (the tiles hold none: most are fainter than 12), `noMagnitude` (no magnitude to match by), `matchedCoarse` (matched while on the Yale catalogue's coarse position) and
+ * settled by the nearest pair first), `ambiguousSettled` (the ambiguous ones that rule settled), `new` (the tiles hold none: most are fainter than 12), `noMagnitude` (no magnitude to match by), `matchedCoarse` (matched while on the Yale catalogue's coarse position) and
  * `ucac4Positions` (of those, the ones whose match was sure enough to take UCAC4's position: `positionSource` `"UCAC4"` of `/nearby`).
  *
  * @example
  * ```ts
  * import { NEARBY_IN_FAINT } from "@johnmorrisdotca/hoshi-stars/catalogue/faint";
  *
- * console.log(NEARBY_IN_FAINT.matched, NEARBY_IN_FAINT.ambiguous, NEARBY_IN_FAINT.new); // 2135 55 3368
+ * console.log(NEARBY_IN_FAINT.matched, NEARBY_IN_FAINT.ambiguous, NEARBY_IN_FAINT.ambiguousSettled, NEARBY_IN_FAINT.new); // 2135 55 47 3368
  * ```
  */
-export const NEARBY_IN_FAINT: Readonly<{ nearby: number; matched: number; ambiguous: number; new: number; noMagnitude: number; matchedCoarse: number; ucac4Positions: number }> = Object.freeze({ ...NEARBY_FAINT_COUNTS });
+export const NEARBY_IN_FAINT: Readonly<{ nearby: number; matched: number; ambiguous: number; ambiguousSettled: number; new: number; noMagnitude: number; matchedCoarse: number; ucac4Positions: number }> = Object.freeze({ ...NEARBY_FAINT_COUNTS });
 
 /**
  * The id of the nearby star a faint star is, or `undefined` where it is none of them. The faint star must be one the tiles decode (from `faintSky`, `decodeFaintTile` or the data door's UCAC4 source).

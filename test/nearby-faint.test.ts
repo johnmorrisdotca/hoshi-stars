@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { test } from "node:test";
 import { starGrade } from "../src/accuracy.ts";
+import { nearbyIdOfFaint } from "../src/catalogue-faint.ts";
 import { NEARBY_ROWS } from "../src/data/nearby.ts";
 import { NEARBY_FAINT_COUNTS, NEARBY_FAINT_ROWS } from "../src/data/nearby-faint.ts";
 import { NEARBY_UCAC4_ROWS } from "../src/data/nearby-ucac4.ts";
@@ -26,8 +27,9 @@ test("the counts add up to the nearby table", () => {
   const c = NEARBY_FAINT_COUNTS;
   assert.equal(c.nearby, nearbyStars().length);
   assert.equal(c.matched + c.ambiguous + c.new + c.noMagnitude, c.nearby);
-  assert.deepEqual([c.matched, c.ambiguous, c.new, c.noMagnitude, c.matchedCoarse, c.ucac4Positions], [2135, 55, 3368, 7, 270, 133]);
-  assert.equal(rows.length, c.matched);
+  assert.deepEqual([c.matched, c.ambiguous, c.ambiguousSettled, c.new, c.noMagnitude, c.matchedCoarse, c.ucac4Positions], [2135, 55, 47, 3368, 7, 270, 133]);
+  assert.equal(rows.length, c.matched + c.ambiguousSettled);
+  assert.equal(rows.filter((r) => r[3] === "n").length, c.ambiguousSettled);
   assert.equal(new Set(rows.map((r) => r[0])).size, rows.length);
   assert.equal(new Set(rows.map((r) => r[1])).size, rows.length, "no faint star is two nearby stars");
 });
@@ -74,4 +76,28 @@ test("a UCAC4 position: a coarse star's, near its matched faint star, inside twi
 
 test("a faint star has no parallax, so its grade is C", () => {
   assert.equal(starGrade({ rightAscension: 83.8, declination: -5.4, magnitude: 11.2, colourIndex: 0.7 }), "C");
+});
+
+test("an ambiguous star is settled by the nearest pair first: no fitting faint star nearer to it is free", () => {
+  const owner = new Map(rows.map((r) => [r[1]!, { gctp: r[0]!, separation: Number(r[2]), settled: r[3] === "n" }]));
+  const settled = rows.filter((r) => r[3] === "n");
+  for (const [gctp, key, separation] of settled) {
+    const own = raw.get(gctp!)!;
+    const star = nearbyStarByName(`GCTP ${gctp}`)!;
+    const window = Math.min(60, Math.max(2, 3 * own.errorArcsec));
+    const field = { rightAscension: own.rightAscension, declination: own.declination, radius: window / 3600 };
+    const [low, high] = star.magnitudeKind === "blue" ? [-3, 1.5] : [-1.5, 1.5];
+    const fits = faintStarsIn(tilesOf(field), field).stars.filter((f) => f.magnitude - star.magnitude! >= low && f.magnitude - star.magnitude! <= high);
+    assert.ok(fits.length >= 1, gctp);
+    for (const f of fits) {
+      const d = arcsec(own, f);
+      if (`${f.rightAscension.toFixed(6)},${f.declination.toFixed(6)}` === key || d >= Number(separation) - 0.01) continue;
+      // a nearer faint star that fits belongs to another nearby star, which took it by a clear match or by a pair no farther apart
+      const other = owner.get(`${f.rightAscension.toFixed(6)},${f.declination.toFixed(6)}`);
+      assert.ok(other !== undefined && other.gctp !== gctp, `${gctp}: a free faint star ${d.toFixed(2)} arc-seconds away`);
+      assert.ok(!other.settled || other.separation <= d + 1e-6, `${gctp}: a faint star ${d.toFixed(2)} arc-seconds away went to a farther pair`);
+    }
+    const [ra, dec] = key!.split(",").map(Number);
+    assert.equal(nearbyIdOfFaint({ rightAscension: ra!, declination: dec! }), `gctp-${gctp}`);
+  }
 });
