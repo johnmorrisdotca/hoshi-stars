@@ -40,7 +40,7 @@ A record with the `layer` the star is from (`bright` or `nearby`), its `grade`, 
 
 Each field has:
 
-- `source`: the catalogue the value is from: `BSC` (the Yale Bright Star Catalogue), `GCTP` (the Yale General Catalogue of Trigonometric Stellar Parallaxes), `2MASS` (the Two Micron All Sky Survey), `dynamical` (the Bright Star Catalogue's parallax from the orbit of a binary) or `literature` (a distance typed from a published paper). `undefined` where the star has no such value.
+- `source`: the catalogue the value is from: `BSC` (the Yale Bright Star Catalogue), `GCTP` (the Yale General Catalogue of Trigonometric Stellar Parallaxes), `2MASS` (the Two Micron All Sky Survey), `UCAC4` (the fourth US Naval Observatory CCD Astrograph Catalog), `dynamical` (the Bright Star Catalogue's parallax from the orbit of a binary) or `literature` (a distance typed from a published paper). `undefined` where the star has no such value.
 - `error`: the standard error, in the field's `unit` (`arcsec`, `mag`, `mas` or `mas/yr`), **only where the source states one** (the parallax of a star from the Yale parallax catalogue; the position of a nearby star, which the package works out from 2MASS's own error and the star's motion). Otherwise `undefined`. An error is never guessed.
 - `resolution`: the size of the last digit the source prints. It is a floor on the error and not an estimate of it: the Bright Star Catalogue prints a position to 0.1 second of time and 1 arc-second (1.5 arc-seconds at the equator) and states no error, so a bright star's position has a resolution and no error.
 - `note`: one plain sentence where there is something to be careful about (a distance typed from a paper, a magnitude that is a photographic blue and not a V).
@@ -66,9 +66,9 @@ By tier and grade. The typical error is the median of the errors the sources sta
 | Tier | Stars | Grade A | Grade B | Grade C | Typical error | Source of the numbers | Licence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Bright (the main import) | 5,080 | 68 | 452 | 4,560 | parallax 9.7 mas (the 2,329 with a stated error); position printed to 1.5 arc-seconds, no error stated | Yale Bright Star Catalogue and, for some of them, Yale parallaxes | Yale Bright Star Catalogue: public domain, informally, with credit; Yale parallaxes: no licence stated, used with credit and removed on request (`NOTICE.md`) |
-| Nearby (`/nearby`) | 5,565 | 235 | 1,282 | 4,048 | parallax 10.6 mas; position 0.1 arc-seconds (4,352 from 2MASS) | Yale General Catalogue of Trigonometric Stellar Parallaxes; 2MASS positions | Yale parallaxes: as above; 2MASS: a US government work, credited (`NOTICE.md`) |
+| Nearby (`/nearby`) | 5,565 | 236 | 1,281 | 4,048 | parallax 10.6 mas; position 0.1 arc-seconds (4,352 from 2MASS, 133 from UCAC4) | Yale General Catalogue of Trigonometric Stellar Parallaxes; 2MASS and UCAC4 positions | Yale parallaxes: as above; 2MASS: a US government work, credited (`NOTICE.md`) |
 | Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | no parallax; the tiles keep no error for a position | UCAC4, with APASS magnitudes | UCAC4: free of charge, cited; APASS: credited (`NOTICE.md`) |
-| **Bright and nearby (`/catalogue`)** | **10,645** | **303** | **1,734** | **8,608** | | | |
+| **Bright and nearby (`/catalogue`)** | **10,645** | **304** | **1,733** | **8,608** | | | |
 
 A faint star has no parallax, so by the rule it is grade C; the faint tiles are not part of `/catalogue` (below).
 
@@ -127,7 +127,7 @@ That prints:
 
 ```text
 bright: 5080 stars, A 68, B 452, C 4560
-nearby: 5565 stars, A 235, B 1282, C 4048
+nearby: 5565 stars, A 236, B 1281, C 4048
 gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years
 104 grade A stars to magnitude 9, the faintest gctp-2345
 ```

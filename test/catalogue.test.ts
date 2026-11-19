@@ -91,9 +91,9 @@ test("the options: layers, magnitude and minGrade, and what a bad one throws", (
   assert.equal(catalogueStars({ layers: [] }).length, 0);
   assert.equal(catalogueStars({ magnitude: 2 }).length, stars({ magnitude: 2 }).length + nearbyStars({ magnitude: 2 }).length);
   const sure = catalogueStars({ minGrade: "A" });
-  assert.equal(sure.length, 68 + 235);
+  assert.equal(sure.length, 68 + 236);
   assert.ok(sure.every((one) => one.grade === "A"));
-  assert.equal(catalogueStars({ minGrade: "B" }).length, 68 + 452 + 235 + 1282);
+  assert.equal(catalogueStars({ minGrade: "B" }).length, 68 + 452 + 236 + 1281);
   assert.throws(() => catalogueStars({ layers: "bright" as never }), TypeError);
   assert.throws(() => catalogueStars({ layers: ["faint" as never] }), /layers must hold only "bright" and "nearby", got faint/);
   assert.throws(() => catalogueStars({ minGrade: "D" as never }), /minGrade must be "A", "B" or "C", got D/);
@@ -103,6 +103,6 @@ test("the options: layers, magnitude and minGrade, and what a bad one throws", (
 test("catalogueCounts: the headline counts by tier and grade", () => {
   assert.deepEqual(catalogueCounts(), [
     { layer: "bright", stars: 5080, grades: { A: 68, B: 452, C: 4560 } },
-    { layer: "nearby", stars: 5565, grades: { A: 235, B: 1282, C: 4048 } },
+    { layer: "nearby", stars: 5565, grades: { A: 236, B: 1281, C: 4048 } },
   ]);
 });

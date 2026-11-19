@@ -568,7 +568,7 @@ await step("min-grade", () => {
 
 await step("catalogue", () => {
   const out = execFileSync(process.execPath, [join(examples("node"), "catalogue.mjs")], { cwd: usage, encoding: "utf8" }).trim();
-  const expected = ["bright: 5080 stars, A 68, B 452, C 4560", "nearby: 5565 stars, A 235, B 1282, C 4048", "gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years", "104 grade A stars to magnitude 9, the faintest gctp-2345"].join("\n");
+  const expected = ["bright: 5080 stars, A 68, B 452, C 4560", "nearby: 5565 stars, A 236, B 1281, C 4048", "gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years", "104 grade A stars to magnitude 9, the faintest gctp-2345"].join("\n");
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 

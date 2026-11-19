@@ -10,7 +10,7 @@ const RADIANS = Math.PI / 180;
 const all = nearbyStars();
 // The counts the build printed (scripts/make-nearby-data.py): a change in the data changes these on purpose.
 const GRADES = { under: 329, fair: 1188, rough: 3552, none: 496 };
-const FLAGS = { coarse: 1213, excluded: 496, ambiguous: 1029 };
+const FLAGS = { coarse: 1080, ucac4: 133, excluded: 496, ambiguous: 1029 };
 
 function haversine(a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number {
   const h = Math.sin(((b.declination - a.declination) * RADIANS) / 2) ** 2 + Math.cos(a.declination * RADIANS) * Math.cos(b.declination * RADIANS) * Math.sin(((b.rightAscension - a.rightAscension) * RADIANS) / 2) ** 2;
@@ -80,7 +80,8 @@ test("the grades of distance: under 5%, 5 to 20% and over 20%, and the stars wit
   assert.equal(all.filter((s) => s.flags.excludedFromSpace).length, FLAGS.excluded);
   assert.equal(all.filter((s) => s.flags.coarsePosition).length, FLAGS.coarse);
   assert.equal(all.filter((s) => s.flags.ambiguousMatch).length, FLAGS.ambiguous);
-  assert.equal(all.filter((s) => s.positionSource === "2MASS").length, all.length - FLAGS.coarse);
+  assert.equal(all.filter((s) => s.positionSource === "2MASS").length, all.length - FLAGS.coarse - FLAGS.ucac4);
+  assert.equal(all.filter((s) => s.positionSource === "UCAC4").length, FLAGS.ucac4);
   assert.ok(nearbyStars({ magnitude: 10 }).every((s) => s.magnitude! <= 10));
   assert.throws(() => nearbyStars({ magnitude: "x" as never }), TypeError);
   assert.throws(() => nearbyStars({ withDistance: 1 as never }), TypeError);
@@ -92,8 +93,10 @@ test("every star keeps its units: distances sorted, errors positive, coordinates
   for (const s of all) {
     assert.ok(s.rightAscension >= 0 && s.rightAscension < 360 && s.declination >= -90 && s.declination <= 90, s.gctp);
     assert.ok(s.positionErrorArcsec > 0, s.gctp);
-    assert.equal(s.twoMass === undefined, s.positionSource === "GCTP");
-    assert.equal(s.twoMass === undefined, s.gctpOffsetArcsec === undefined);
+    assert.equal(s.twoMass === undefined, s.positionSource !== "2MASS");
+    assert.equal(s.ucac4 === undefined, s.positionSource !== "UCAC4");
+    assert.equal(s.gctpOffsetArcsec === undefined, s.positionSource === "GCTP");
+    assert.equal(s.flags.coarsePosition, s.positionSource === "GCTP");
     if (s.lightYears !== undefined) assert.ok(Math.abs(s.lightYears * s.parallaxMas - 3261.563777) < 1e-6);
   }
 });
@@ -157,14 +160,14 @@ test("a 2MASS position lies on the track of the Yale catalogue's own row: its po
     checked++;
   }
   assert.ok(checked >= 10, `only ${checked} of the sample have a 2MASS position`);
-  // The whole table: where the 2MASS position is, it is near the catalogue's track, and most within a few arc-seconds.
+  // The whole table: where the 2MASS or UCAC4 position is, it is near the catalogue's track, and most within a few arc-seconds.
   const offsets = all.filter((s) => s.gctpOffsetArcsec !== undefined).map((s) => s.gctpOffsetArcsec!).sort((a, b) => a - b);
   assert.ok(offsets.length === all.length - FLAGS.coarse);
   assert.ok(offsets[Math.floor(offsets.length / 2)]! < 5, `median ${offsets[Math.floor(offsets.length / 2)]}`);
   assert.ok(offsets[offsets.length - 1]! <= 400);
 });
 
-test("the Yale position stays for a star with no unique 2MASS source, flagged coarse with a larger error", () => {
+test("the Yale position stays for a star with no unique 2MASS or UCAC4 source, flagged coarse with a larger error", () => {
   const coarse = all.filter((s) => s.flags.coarsePosition);
   assert.ok(coarse.length > 0);
   const median = (list: NearbyStar[]): number => list.map((s) => s.positionErrorArcsec).sort((a, b) => a - b)[Math.floor(list.length / 2)]!;

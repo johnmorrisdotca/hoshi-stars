@@ -4,24 +4,25 @@
 // An error is only ever one the source states or one the package works out from the source's own figures. Where there is none the field says so (`error` is `undefined`) and gives the resolution: the size of the last printed digit,
 // which is a floor on the error and not an estimate of it.
 import { distanceQuality, QUALITY_LIMITS, type DistanceQuality } from "./distance-quality.ts";
+import type { FaintStar } from "./faint-core.ts";
 import type { NearbyStar } from "./nearby.ts";
 import type { Star } from "./stars.ts";
 
 export type { DistanceQuality };
 
 /**
- * Where a value is from: `BSC` the Yale Bright Star Catalogue, `GCTP` the Yale General Catalogue of Trigonometric Stellar Parallaxes, `2MASS` the Two Micron All Sky Survey, `dynamical` the Bright Star Catalogue's parallax from the orbit of a binary,
+ * Where a value is from: `BSC` the Yale Bright Star Catalogue, `GCTP` the Yale General Catalogue of Trigonometric Stellar Parallaxes, `2MASS` the Two Micron All Sky Survey, `UCAC4` the fourth USNO CCD Astrograph Catalog, `dynamical` the Bright Star Catalogue's parallax from the orbit of a binary,
  * `literature` a distance typed from a published paper (Betelgeuse, Rigel, Polaris).
  *
  * @example
  * ```ts
  * import { type AccuracySource } from "@johnmorrisdotca/hoshi-stars/accuracy";
  *
- * const sources: AccuracySource[] = ["BSC", "GCTP", "2MASS", "dynamical", "literature"];
+ * const sources: AccuracySource[] = ["BSC", "GCTP", "2MASS", "UCAC4", "dynamical", "literature"];
  * console.log(sources.length);
  * ```
  */
-export type AccuracySource = "BSC" | "GCTP" | "2MASS" | "dynamical" | "literature";
+export type AccuracySource = "BSC" | "GCTP" | "2MASS" | "UCAC4" | "dynamical" | "literature";
 
 /**
  * The grade of a star: `A` a distance known to under 5% and a modern position, `B` a distance known to 20% or better (or one known to under 5% with a coarse position), `C` anything else: a position and a rough or missing distance.
@@ -142,7 +143,12 @@ function raStepArcsec(declination: number): number {
   return 1.5 * Math.cos((declination * Math.PI) / 180);
 }
 
-const PARALLAX_STEP: Readonly<Record<AccuracySource, number>> = { GCTP: 0.1, BSC: 1, dynamical: 1, literature: 0.01, "2MASS": 0.1 };
+const PARALLAX_STEP: Readonly<Record<AccuracySource, number>> = { GCTP: 0.1, BSC: 1, dynamical: 1, literature: 0.01, "2MASS": 0.1, UCAC4: 0.1 };
+const POSITION_NOTE: Readonly<Record<NearbyStar["positionSource"], string>> = {
+  "2MASS": "A 2MASS position; the error is 2MASS's own plus the star's motion over the gap to 2000, as the package works it out.",
+  UCAC4: "A UCAC4 position, found by matching the star in the faint tiles; the error is UCAC4's own carried to 2000 by the error of its proper motion, as the package works it out.",
+  GCTP: "The Yale catalogue's own position carried from 1900 to 2000: good to arc-seconds at best.",
+};
 
 function brightParallaxNote(star: Star): string | undefined {
   if (star.parallaxNote !== undefined) return star.parallaxNote;
@@ -177,9 +183,9 @@ function nearbyAccuracy(star: NearbyStar): Omit<StarAccuracy, "layer" | "grade" 
     position: {
       source: star.positionSource,
       error: star.positionErrorArcsec,
-      resolution: 0.01,
+      resolution: star.positionSource === "UCAC4" ? 0.00036 : 0.01,
       unit: "arcsec",
-      note: star.positionSource === "2MASS" ? "A 2MASS position; the error is 2MASS's own plus the star's motion over the gap to 2000, as the package works it out." : "The Yale catalogue's own position carried from 1900 to 2000: good to arc-seconds at best.",
+      note: POSITION_NOTE[star.positionSource],
     },
     magnitude: star.magnitude === undefined ? { source: undefined, error: undefined, resolution: undefined, unit: "mag", note: "The catalogue gives this star no magnitude." } : { source: "GCTP", error: undefined, resolution: 0.01, unit: "mag", note: nearbyMagnitudeNote(star) },
     colour: { source: undefined, error: undefined, resolution: undefined, unit: "mag", note: "The nearby tier holds no colour index." },
@@ -195,7 +201,7 @@ const gradeOf = (quality: DistanceQuality, modernPosition: boolean): StarGrade =
 /**
  * A star's grade alone, worked out without building the whole record: the same answer as `starAccuracy(star).grade`, cheap enough to filter thousands of stars with.
  *
- * @param star - A bright star or a nearby star.
+ * @param star - A bright star, a nearby star, or a faint star (`/faint`), which has no parallax and is always `"C"`.
  * @returns `"A"`, `"B"` or `"C"` by `GRADE_RULES`.
  *
  * @example
@@ -206,7 +212,8 @@ const gradeOf = (quality: DistanceQuality, modernPosition: boolean): StarGrade =
  * console.log(starGrade(starByName("Sirius")!));
  * ```
  */
-export function starGrade(star: Star | NearbyStar): StarGrade {
+export function starGrade(star: Star | NearbyStar | FaintStar): StarGrade {
+  if (!("parallaxMas" in star)) return "C";
   if ("hr" in star) return gradeOf(distanceQuality(star), isModern(Math.max(raStepArcsec(star.declination), 1)));
   return gradeOf(distanceQuality({ parallaxMas: star.parallaxMas, parallaxErrorMas: star.parallaxErrorMas, parallaxSource: "GCTP" }), isModern(star.positionErrorArcsec));
 }

@@ -543,7 +543,7 @@ const close = nearest({ x: 0, y: 0, z: 0 }, { by: "space", among: [...stars(), .
 console.log(`${(close[0]!.thing as { name?: string }).name} ${close[0]!.distance.toFixed(2)}`); // Proxima Centauri 4.24
 ```
 
-A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,352 positions are from 2MASS; the other 1,213 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+A distance is good (error under 5%) for 329 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,352 positions are from 2MASS and 133 from UCAC4 (found in the faint tiles); the other 1,080 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 ## The sky from another star
 
@@ -702,9 +702,9 @@ console.log(stars({ minGrade: "A" }).length, stars().length);                 //
 | Tier | Stars | Grade A | Grade B | Grade C | Source | Licence |
 | --- | --- | --- | --- | --- | --- | --- |
 | Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue, Yale parallaxes | public domain, informally, with credit; Yale parallaxes credited |
-| Nearby (`/nearby`) | 5,565 | 235 | 1,282 | 4,048 | Yale parallaxes, 2MASS positions | credited (`NOTICE.md`) |
+| Nearby (`/nearby`) | 5,565 | 236 | 1,281 | 4,048 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
 | Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | UCAC4, APASS magnitudes | free of charge, cited (`NOTICE.md`) |
-| **Bright and nearby (`/catalogue`)** | **10,645** | **303** | **1,734** | **8,608** | | |
+| **Bright and nearby (`/catalogue`)** | **10,645** | **304** | **1,733** | **8,608** | | |
 
 A faint star has no parallax, so it is grade C. The [guide](docs/guides/accuracy.md) has the typical errors and how a star is counted once.
 
