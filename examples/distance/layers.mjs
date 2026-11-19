@@ -18,10 +18,10 @@ for (let step = 0; step < 6; step += 1) {
 const rigel = layersByDistance(everything, { limit: 700 }).things.find((thing) => thing.name === "Rigel");
 console.log(rigel.uncertain, Math.round(rigel.low), Math.round(rigel.high));
 
-// 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance
-// 50: 898 things; bands 9 666 0 0 0 0; 223 uncertain; 3083 with no distance
-// 100: 4130 things; bands 9 666 870 0 0 0; 2585 uncertain; 3083 with no distance
-// 500: 7499 things; bands 9 666 870 329 0 0; 5625 uncertain; 3083 with no distance
-// 1000: 7569 things; bands 9 666 870 329 10 0; 5685 uncertain; 3083 with no distance
-// Infinity: 7673 things; bands 9 666 870 329 10 37; 5752 uncertain; 3083 with no distance
+// 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3084 with no distance
+// 50: 899 things; bands 9 667 0 0 0 0; 223 uncertain; 3084 with no distance
+// 100: 4140 things; bands 9 667 877 0 0 0; 2587 uncertain; 3084 with no distance
+// 500: 7525 things; bands 9 667 877 330 0 0; 5642 uncertain; 3084 with no distance
+// 1000: 7595 things; bands 9 667 877 330 10 0; 5702 uncertain; 3084 with no distance
+// Infinity: 7699 things; bands 9 667 877 330 10 37; 5769 uncertain; 3084 with no distance
 // true 593 1483

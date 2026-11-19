@@ -58,14 +58,14 @@ Distances have errors, and the further a star is, the worse. Betelgeuse's distan
 
 ## With the nearby stars
 
-The 5,566 stars of `/nearby` can be moved too, from their own import so the plain one stays small. `skyFromWithNearby` takes the same arguments, adds Proxima Centauri, Barnard's Star and the red dwarfs to the stars it moves, and finds a nearby star's name as a viewpoint.
+The 5,593 stars of `/nearby` can be moved too, from their own import so the plain one stays small. `skyFromWithNearby` takes the same arguments, adds Proxima Centauri, Barnard's Star and the red dwarfs to the stars it moves, and finds a nearby star's name as a viewpoint.
 
 ```js
 import { skyFromWithNearby } from "@johnmorrisdotca/hoshi-stars/sky-from/nearby";
 
 const sky = skyFromWithNearby("Proxima Centauri", { magnitude: 0 });
 console.log(sky.map((star) => star.name ?? star.designation)); // [ 'Rigil Kentaurus', 'Toliman', 'Sirius', 'Canopus', 'Arcturus' ]
-console.log(sky.length, sky.skipped); // 5 3018
+console.log(sky.length, sky.skipped); // 5 3019
 ```
 
 A nearby star with no V magnitude cannot be given a brightness, so it is counted in `skipped` with the stars that have no distance. The nearby table is about 240 kB gzipped; `/sky-from` itself imports only the bright-star table.

@@ -43,7 +43,7 @@ export const CATALOGUE_LAYERS: readonly CatalogueLayer[] = Object.freeze(["brigh
  * ```
  */
 export interface CatalogueStar {
-  /** The id that stays the same: `hr-` and the HR number for a bright star (`hr-2491`, Sirius), `gctp-` and the catalogue number for a nearby star (`gctp-3278`, Proxima Centauri), the same ids `/distance`, `/names` and `/sky-from` use.
+  /** The id that stays the same: `hr-` and the HR number for a bright star (`hr-2491`, Sirius), `gctp-` and the catalogue number for a nearby star (`gctp-3278`, Proxima Centauri; `gctp-5077b` for a companion listed under a bright star's number), the same ids `/distance`, `/names` and `/sky-from` use.
    * A faint star's is `faint-` and its position as the tile gives it, to a millionth of a degree (`faint-154.901115_19.869993`, the faint copy of AD Leonis): it holds while the tiles are not rebuilt. */
   id: string;
   /** The tier the star is from. */
@@ -79,7 +79,7 @@ export interface CatalogueStar {
  *
  * const { nearbyLayer } = await import("@johnmorrisdotca/hoshi-stars/catalogue/nearby");
  * const nearby: CatalogueSource = nearbyLayer;
- * console.log(catalogueStars({ layers: ["bright", nearby] }).length); // 10646
+ * console.log(catalogueStars({ layers: ["bright", nearby] }).length); // 10673
  * ```
  */
 export interface CatalogueSource {

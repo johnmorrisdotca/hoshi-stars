@@ -38,12 +38,12 @@ test("the default is the bright stars alone, brightest first", () => {
 test("with the nearby layer, every star of both tiers once, brightest first", () => {
   const all = catalogueStars({ layers: both });
   assert.equal(all.length, stars().length + nearbyStars().length);
-  assert.equal(all.length, 10646);
+  assert.equal(all.length, 10673);
   assert.equal(new Set(all.map((one) => one.id)).size, all.length);
   const magnitudes = all.map((one) => one.magnitude ?? Number.POSITIVE_INFINITY);
   assert.ok(magnitudes.every((m, i) => i === 0 || magnitudes[i - 1]! <= m));
   assert.equal(all.filter((one) => one.magnitude === undefined).length, 7);
-  assert.equal(nearbyLayer.stars().length, 5566);
+  assert.equal(nearbyLayer.stars().length, 5593);
   assert.strictEqual(nearbyLayer.stars(), nearbyLayer.stars());
 });
 
@@ -86,15 +86,35 @@ test("61 Cygni B (HR 8086, V 6.03) is in the nearby tier, once, with its system'
   assert.equal(starByName("61 Cyg")!.hr, 8085);
   assert.ok(stars().every((star) => star.hr !== 8086 && star.hd !== 201092), "fainter than the bright tier's 6.0");
   const found = catalogueStars({ layers: both }).filter((one) => one.hd === 201092);
-  assert.deepEqual(found.map((one) => [one.id, one.layer, one.magnitude]), [["gctp-5077", "nearby", 6.03]]);
-  assert.equal(catalogueStars({ layers: both }).filter((one) => one.id === "gctp-5077").length, 1);
+  assert.deepEqual(found.map((one) => [one.id, one.layer, one.magnitude]), [["gctp-5077b", "nearby", 6.03]]);
+  assert.equal(catalogueStars({ layers: both }).filter((one) => one.id === "gctp-5077b").length, 1);
+  assert.equal(nearbyStarByName("61 Cyg B")!.id, "gctp-5077b");
   const a = catalogueStar("hr-8085")!;
-  const b = catalogueStar("gctp-5077", { layers: both })!;
+  const b = catalogueStar("gctp-5077b", { layers: both })!;
   assert.equal(b.distance!.lightYears, a.distance!.lightYears);
   assert.equal(b.grade, "A");
   // the faint tiles hold no star of its position and brightness, so no copy of it is left to count
   const near = faintStarsOf({ rightAscension: b.rightAscension, declination: b.declination, radius: 0.01 });
   assert.equal(near.filter((star) => star.magnitude < 8).length, 0);
+});
+
+test("every companion of scripts/gctp-companions.tsv is a nearby star of its own with its system's parallax", () => {
+  const table = readFileSync(new URL("../scripts/gctp-companions.tsv", import.meta.url), "utf8").split("\n").filter((line) => line !== "" && !line.startsWith("#")).map((line) => line.split("\t"));
+  assert.equal(table.length, 28);
+  const all = catalogueStars({ layers: both });
+  for (const [gctp, component, hr, hd, primaryHr, parallaxMas] of table) {
+    const id = `gctp-${gctp}${component!.toLowerCase()}`;
+    const star = nearbyStars().find((one) => one.id === id);
+    assert.ok(star !== undefined, id);
+    assert.equal(star.gctp, `${gctp}${component!.toLowerCase()}`);
+    assert.equal(star.hd, Number(hd), id);
+    assert.equal(star.parallaxMas, Number(parallaxMas), id);
+    assert.ok(stars().every((one) => one.hr !== Number(hr) && one.hd !== Number(hd)), `${id}: HR ${hr} is not a bright star`);
+    const primary = stars().find((one) => one.hr === Number(primaryHr))!;
+    if (primary.parallaxSource === "GCTP") assert.equal(primary.parallaxMas, star.parallaxMas, id);
+    assert.equal(all.filter((one) => one.id === id || one.hd === Number(hd)).length, 1, id);
+  }
+  assert.equal(new Set(table.map(([gctp, component]) => `${gctp}${component}`)).size, table.length);
 });
 
 test("each record carries the tier's values, its grade and its distance", () => {
@@ -138,7 +158,7 @@ test("the faint layer: grade C, an id from its position, and a nearby star count
   assert.equal(all.filter((one) => one.id === ad.id || one.id === same[0]!.id).length, 1);
   assert.equal(catalogueStars({ layers: ["bright", layer] }).filter((one) => one.layer === "faint").length, faint.length);
   const counts = catalogueCounts({ layers: ["bright", nearbyLayer, layer] });
-  assert.deepEqual(counts.map((count) => [count.layer, count.stars]), [["bright", 5080], ["nearby", 5566], ["faint", faint.length - 1]]);
+  assert.deepEqual(counts.map((count) => [count.layer, count.stars]), [["bright", 5080], ["nearby", 5593], ["faint", faint.length - 1]]);
   assert.deepEqual(counts[2]!.grades, { A: 0, B: 0, C: faint.length - 1 });
   assert.equal(catalogueStars({ layers: [layer], minGrade: "B" }).length, 0);
   assert.equal(NEARBY_IN_FAINT.matched, 2135);
@@ -147,13 +167,13 @@ test("the faint layer: grade C, an id from its position, and a nearby star count
 
 test("the options: layers, magnitude and minGrade, and what a bad one throws", () => {
   assert.equal(catalogueStars({ layers: ["bright"] }).length, 5080);
-  assert.equal(catalogueStars({ layers: [nearbyLayer] }).length, 5566);
+  assert.equal(catalogueStars({ layers: [nearbyLayer] }).length, 5593);
   assert.equal(catalogueStars({ layers: [] }).length, 0);
   assert.equal(catalogueStars({ layers: both, magnitude: 2 }).length, stars({ magnitude: 2 }).length + nearbyStars({ magnitude: 2 }).length);
   const sure = catalogueStars({ layers: both, minGrade: "A" });
-  assert.equal(sure.length, 68 + 237);
+  assert.equal(sure.length, 68 + 239);
   assert.ok(sure.every((one) => one.grade === "A"));
-  assert.equal(catalogueStars({ layers: both, minGrade: "B" }).length, 68 + 452 + 237 + 1281);
+  assert.equal(catalogueStars({ layers: both, minGrade: "B" }).length, 68 + 452 + 239 + 1288);
   assert.throws(() => catalogueStars({ layers: "bright" as never }), TypeError);
   assert.throws(() => catalogueStars({ layers: ["nearby" as never] }), /the nearby layer loads on request: pass nearbyLayer from @johnmorrisdotca\/hoshi-stars\/catalogue\/nearby/);
   assert.throws(() => catalogueStars({ layers: ["faint" as never] }), /pass faintLayer\(stars\) from @johnmorrisdotca\/hoshi-stars\/catalogue\/faint/);
@@ -167,6 +187,6 @@ test("catalogueCounts: the headline counts by tier and grade", () => {
   assert.deepEqual(catalogueCounts(), [{ layer: "bright", stars: 5080, grades: { A: 68, B: 452, C: 4560 } }]);
   assert.deepEqual(catalogueCounts({ layers: both }), [
     { layer: "bright", stars: 5080, grades: { A: 68, B: 452, C: 4560 } },
-    { layer: "nearby", stars: 5566, grades: { A: 237, B: 1281, C: 4048 } },
+    { layer: "nearby", stars: 5593, grades: { A: 239, B: 1288, C: 4066 } },
   ]);
 });

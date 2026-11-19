@@ -17,7 +17,7 @@ const loaded = (): Map<string, string> => (nearbyOf ??= new Map(NEARBY_FAINT_ROW
  * ```ts
  * import { NEARBY_IN_FAINT } from "@johnmorrisdotca/hoshi-stars/catalogue/faint";
  *
- * console.log(NEARBY_IN_FAINT.matched, NEARBY_IN_FAINT.ambiguous, NEARBY_IN_FAINT.ambiguousSettled, NEARBY_IN_FAINT.new); // 2135 55 47 3369
+ * console.log(NEARBY_IN_FAINT.matched, NEARBY_IN_FAINT.ambiguous, NEARBY_IN_FAINT.ambiguousSettled, NEARBY_IN_FAINT.new); // 2135 55 47 3396
  * ```
  */
 export const NEARBY_IN_FAINT: Readonly<{ nearby: number; matched: number; ambiguous: number; ambiguousSettled: number; new: number; noMagnitude: number; matchedCoarse: number; ucac4Positions: number }> = Object.freeze({ ...NEARBY_FAINT_COUNTS });

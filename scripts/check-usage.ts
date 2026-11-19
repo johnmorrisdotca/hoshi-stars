@@ -187,8 +187,8 @@ await step("sky-labels-iframe", async () => {
 
 await step("distance-node", () => {
   const out = execFileSync(process.execPath, [join(examples("distance"), "layers.mjs")], { cwd: usage, encoding: "utf8" }).trim().split("\n");
-  if (out.length !== 7 || out[0] !== "10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance") throw new Error(`the nearest layer is not the 9 stars within 10 light-years: ${out.join(" | ")}`);
-  if (!/^Infinity: 7673 things/.test(out[5]!) || out[6] !== "true 593 1483") throw new Error(`unexpected output: ${out.join(" | ")}`);
+  if (out.length !== 7 || out[0] !== "10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3084 with no distance") throw new Error(`the nearest layer is not the 9 stars within 10 light-years: ${out.join(" | ")}`);
+  if (!/^Infinity: 7699 things/.test(out[5]!) || out[6] !== "true 593 1483") throw new Error(`unexpected output: ${out.join(" | ")}`);
 });
 
 await step("distance-iframe", async () => {
@@ -641,13 +641,13 @@ await step("accuracy", () => {
 
 await step("min-grade", () => {
   const out = execFileSync(process.execPath, [join(examples("node"), "min-grade.mjs")], { cwd: usage, encoding: "utf8" }).trim();
-  const expected = ["68 of 5080 bright stars are grade A; 1518 nearby stars are B or better", "Procyon: 5.2, 5.2 to 5.3 light-years", "Ran: 8.0, 7.9 to 8.0 light-years", "Rigil Kentaurus: 9.5, 9.4 to 9.5 light-years, tied with a neighbour", "Toliman: 9.5, 9.4 to 9.5 light-years, tied with a neighbour"].join("\n");
+  const expected = ["68 of 5080 bright stars are grade A; 1527 nearby stars are B or better", "Procyon: 5.2, 5.2 to 5.3 light-years", "Ran: 8.0, 7.9 to 8.0 light-years", "Rigil Kentaurus: 9.5, 9.4 to 9.5 light-years, tied with a neighbour", "Toliman: 9.5, 9.4 to 9.5 light-years, tied with a neighbour"].join("\n");
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 
 await step("catalogue", () => {
   const out = execFileSync(process.execPath, [join(examples("node"), "catalogue.mjs")], { cwd: usage, encoding: "utf8" }).trim();
-  const expected = ["5080 bright stars load with /catalogue", "bright: 5080 stars, A 68, B 452, C 4560", "nearby: 5566 stars, A 237, B 1281, C 4048", "gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years", "105 grade A stars to magnitude 9, the faintest gctp-2345"].join("\n");
+  const expected = ["5080 bright stars load with /catalogue", "bright: 5080 stars, A 68, B 452, C 4560", "nearby: 5593 stars, A 239, B 1288, C 4066", "gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years", "107 grade A stars to magnitude 9, the faintest gctp-2345"].join("\n");
   if (out !== expected) throw new Error(`unexpected output: ${out}`);
 });
 

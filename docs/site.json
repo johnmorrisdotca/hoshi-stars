@@ -211,8 +211,8 @@
       "platform": "neutral"
     },
     "./catalogue/nearby": {
-      "en": "The nearby layer of the catalogue: the Yale parallax catalogue's 5,566 stars, to hand to /catalogue",
-      "ja": "カタログの近くの星の層 (イェール視差カタログの5,566個。/catalogue に渡します)",
+      "en": "The nearby layer of the catalogue: the Yale parallax catalogue's 5,593 stars, to hand to /catalogue",
+      "ja": "カタログの近くの星の層 (イェール視差カタログの5,593個。/catalogue に渡します)",
       "platform": "neutral"
     },
     "./catalogue/faint": {

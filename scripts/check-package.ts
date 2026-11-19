@@ -144,7 +144,7 @@ const catalogue = await import(${JSON.stringify(pkg.name + "/catalogue")});
 const catalogueNearby = await import(${JSON.stringify(pkg.name + "/catalogue/nearby")});
 const catalogueFaint = await import(${JSON.stringify(pkg.name + "/catalogue/faint")});
 assert.equal(catalogue.catalogueStars().length, 5080);
-assert.equal(catalogue.catalogueStars({ layers: ["bright", catalogueNearby.nearbyLayer] }).length, 10646);
+assert.equal(catalogue.catalogueStars({ layers: ["bright", catalogueNearby.nearbyLayer] }).length, 10673);
 assert.equal(catalogue.catalogueStar("gctp-3278", { layers: [catalogueNearby.nearbyLayer] }).name, "Proxima Centauri");
 assert.equal(catalogueFaint.NEARBY_IN_FAINT.matched, 2135);
 const hosts = await import(${JSON.stringify(pkg.name + "/exoplanet-hosts")});

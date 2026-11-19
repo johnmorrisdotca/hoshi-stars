@@ -147,5 +147,5 @@ test("the counts by grade that the guide prints", () => {
   };
   console.log("COUNTS bright", JSON.stringify(count(stars())), "nearby", JSON.stringify(count(nearbyStars())));
   assert.equal(Object.values(count(stars())).reduce((a, b) => a + b, 0), 5080);
-  assert.equal(Object.values(count(nearbyStars())).reduce((a, b) => a + b, 0), 5566);
+  assert.equal(Object.values(count(nearbyStars())).reduce((a, b) => a + b, 0), 5593);
 });

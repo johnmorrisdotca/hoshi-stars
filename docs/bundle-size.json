@@ -110,8 +110,8 @@
       "gzip": 159725
     },
     "./nearby": {
-      "minified": 517767,
-      "gzip": 243557
+      "minified": 520448,
+      "gzip": 244988
     },
     "./faint": {
       "minified": 13542,
@@ -134,24 +134,24 @@
       "gzip": 146689
     },
     "./sky-from/nearby": {
-      "minified": 849525,
-      "gzip": 389839
+      "minified": 852206,
+      "gzip": 391089
     },
     "./flight": {
       "minified": 3921,
       "gzip": 1612
     },
     "./flight/places": {
-      "minified": 860763,
-      "gzip": 394918
+      "minified": 863444,
+      "gzip": 396182
     },
     "./flight/element": {
-      "minified": 1694243,
-      "gzip": 622249
+      "minified": 1696924,
+      "gzip": 623533
     },
     "./flight/define": {
-      "minified": 1694287,
-      "gzip": 622253
+      "minified": 1696968,
+      "gzip": 623539
     },
     "./constellation-3d": {
       "minified": 344042,
@@ -186,12 +186,12 @@
       "gzip": 147157
     },
     "./catalogue/nearby": {
-      "minified": 518662,
-      "gzip": 244275
+      "minified": 521343,
+      "gzip": 245700
     },
     "./catalogue/faint": {
       "minified": 71566,
-      "gzip": 35276
+      "gzip": 35277
     },
     "./exoplanet-hosts": {
       "minified": 39291,

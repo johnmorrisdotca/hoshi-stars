@@ -1,0 +1,35 @@
+# Bright Star Catalogue stars fainter than the bright tier's 6.0 that the Yale parallax catalogue (GCTP, I/238A picat.dat) lists as a component under the number of a system whose brighter member
+# is a bright star. The build matches that number to the bright star by its HD number, which would drop the whole system; make-nearby-data.py keeps each row here as a nearby star of its own, `gctp-`
+# and the number and the component's letter in lower case (`gctp-5077b`), with its own record's position, motion, V and spectral type. The GCTP gives a system one parallax, on the bright member's record,
+# and the companion's record has none: each takes the system's parallax and its error (the columns below, in milliarcseconds). That is an assumption: the two are taken to be at one distance.
+# The script checks every column against picat.dat and the Bright Star Catalogue (HEASARC bsc5p, HR and HD), and stops when a row does not match or a system drops a star this table does not list.
+# The note is the star's name in the Bright Star Catalogue or the GCTP's name column, and what is odd about the row.
+# gctp	component	hr	hd	primary_hr	parallax_mas	parallax_error_mas	note
+251	B	362	7345	361	23.3	9.5	ζ Psc B
+863	B	1211	24554	1212	3.4	8.9	32 Eri B
+1261	C	1851	36485	1852	9.7	6.9	δ Ori C
+1293	E	1932	37479	1931	4.3	11.9	σ Ori E
+1316	B	1982	38392	1983	126.2	5.1	γ Lep B
+1482	B	2299	44770	2298	26.4	6.5	ε Mon B
+1662	B	2668	53706	2667	54.1	7.5	HR 2667's companion
+1724	B	2783	57102	2784	10.5	7.8	19 Lyn B
+1941	B	3209	68256	3208	41.7	2.5	ζ1 Cnc B; the GCTP's own HR column gives 3210 for this HD and its name column ζ2 Cnc: the match is by HD
+1941	C	3210	68255	3208	41.7	2.5	ζ2 Cnc; the GCTP's own HR column gives 3209 for this HD and its name column ζ1 Cnc: the match is by HD
+2048	B	3396	72946	3395	49.7	5.4	Σ 1245 B
+2091	B	3474	74738	3475	20.2	5.0	ι Cnc B
+2902	B	4791	109510	4792	4.0	6.4	24 Com B
+3235	B	5328	124674	5329	14.5	8.2	κ1 Boo
+3266	B	5385	126128	5386	11.4	5.1	Σ 1835 BC
+3480	B	5728	137108	5727	59.8	5.8	η CrB B (V 6.08 in the Bright Star Catalogue, 5.89 in the GCTP)
+3483	B	5734	137392	5733	29.0	4.3	μ2 Boo
+3657	B	6009	145000	6008	2.0	6.0	κ Her B
+3671	C	6026	145501	6027	22.8	9.6	ν Sco C
+3689	B	6064	146362	6063	47.3	3.3	σ CrB B
+3788	B	6194	150379	6195	-1.0	7.3	36 Her; the system's parallax is below 0, so it has no distance (flag x)
+4095	B	6694	163756	6693	8.8	9.3	HR 6693's companion
+4176	B	6809	166865	6810	26.0	5.7	40 Dra
+4326	B	7052	173583	7051	17.4	3.6	ε1 Lyr B
+4634	B	7504	186427	7503	46.6	1.2	16 Cyg B
+4698	B	7594	188294	7593	7.7	10.6	57 Aql B
+4845	B	7775	193452	7776	7.1	5.7	β2 Cap
+5077	B	8086	201092	8085	286.9	1.1	61 Cyg B

@@ -2,12 +2,12 @@
 title: 近くの星
 section: how-to
 order: 7
-description: 距離と誤差がわかっている星を、さらに5,566個。プロキシマ・ケンタウリ、バーナード星、ウォルフ359などです。明るい星の表を小さいままにするため、別のimportになっています。
+description: 距離と誤差がわかっている星を、さらに5,593個。プロキシマ・ケンタウリ、バーナード星、ウォルフ359などです。明るい星の表を小さいままにするため、別のimportになっています。
 ---
 
 [English](../nearby-stars.md)
 
-明るい星5,080個には、太陽に本当に近い星のほとんどが入っていません。いちばん近い星は、暗い赤色矮星(せきしょくわいせい)だからです。`@johnmorrisdotca/hoshi-stars/nearby`は、イェール大学の「三角視差(さんかくしさ)星表 第4版」(van Altena、Lee、Hoffleit、1995年)にあって、明るい星の表にない**5,566個**の星を足します。1つの星は、どちらか一方の表にだけあります。この表は圧縮して約240 kBで、ほかのどこからもimportされません。明るい星のimportの大きさは、これまでと同じです。
+明るい星5,080個には、太陽に本当に近い星のほとんどが入っていません。いちばん近い星は、暗い赤色矮星(せきしょくわいせい)だからです。`@johnmorrisdotca/hoshi-stars/nearby`は、イェール大学の「三角視差(さんかくしさ)星表 第4版」(van Altena、Lee、Hoffleit、1995年)にあって、明るい星の表にない**5,593個**の星を足します。1つの星は、どちらか一方の表にだけあります。この表は圧縮して約240 kBで、ほかのどこからもimportされません。明るい星のimportの大きさは、これまでと同じです。
 
 ## 星を調べる
 
@@ -19,7 +19,7 @@ import { nearbyStarByName, nearbyStars } from "@johnmorrisdotca/hoshi-stars/near
 const proxima = nearbyStarByName("Proxima Centauri");
 console.log(`${proxima.lightYears.toFixed(2)} ${proxima.lightYearsError.toFixed(2)}`); // 4.24 0.03
 console.log(`${proxima.positionSource} ${proxima.twoMass}`); // 2MASS 2MASS J14294291-6240465
-console.log(nearbyStars().length); // 5566
+console.log(nearbyStars().length); // 5593
 ```
 
 `NearbyStar`には、変わらない`id`、名前(`name`、`designation`、`aliases`、`gctp`、`hd`、`gliese`、`twoMass`)、J2000の位置とその出どころ(`positionSource`)と誤差(`positionErrorArcsec`)、視差とその誤差、光年とパーセクの距離とその誤差、固有運動とその出どころ、V等級とその種類と出どころ、スペクトル型とその中の光度階級(`luminosityClass`。プロキシマ・ケンタウリは`V`)、`flags`が入っています。`nearbyStars`のオプションは、`magnitude`(いちばん暗いV等級)、`maxRelativeError`、`withDistance`です。
@@ -58,7 +58,7 @@ import { nearbyStars } from "@johnmorrisdotca/hoshi-stars/nearby";
 const good = nearbyStars({ maxRelativeError: 0.05 });
 const fair = nearbyStars({ maxRelativeError: 0.2 });
 const all = nearbyStars({ withDistance: true });
-console.log(`${good.length} ${fair.length - good.length} ${all.length - fair.length}`); // 330 1188 3552
+console.log(`${good.length} ${fair.length - good.length} ${all.length - fair.length}`); // 332 1195 3569
 ```
 
 距離の誤差(`lightYearsError`、`parsecsError`)は、距離に相対誤差をかけた値です。1次近似なので、誤差が小さいうちは正しく、20%をこえると目安にすぎません。これらは1996年より前の地上での測定です。多くの星は、新しい宇宙からの測定のほうが良いのですが、そのデータはMITライセンスのまま渡せないので使っていません([データとライセンス](data-and-licences.md)を見てください)。
@@ -67,11 +67,11 @@ console.log(`${good.length} ${fair.length - good.length} ${all.length - fair.len
 
 イェール星表の位置は1900年のもの(FK4系、B1900)で、1秒(時間)や1分(角度)までしかないものも多くあります。星表の固有運動で、J2000まで進めてあります。そのうえで、ビルドのときに2MASS(1997年から2001年の、米国政府が資金を出した全天サーベイ)から、合うものを1つさがしました。星表の位置と運動から予想した場所の近くにあり、J等級が星のV等級と色に合うものです。
 
-- **`positionSource: "2MASS"`**: 位置は2MASSのもの(イェールの運動で2000年まで動かしたもの)で、誤差は1秒角より小さいものから数秒角までです。`twoMass`にその名前があります。4,353個。
+- **`positionSource: "2MASS"`**: 位置は2MASSのもの(イェールの運動で2000年まで動かしたもの)で、誤差は1秒角より小さいものから数秒角までです。`twoMass`にその名前があります。4,371個。
 - **`positionSource: "UCAC4"`**: 合う2MASSの天体は1つにしぼれませんでしたが、暗い星のタイル(UCAC4、[暗い星](faint-stars.md))にその星が十分たしかにあったので、位置はUCAC4のものです。誤差はUCAC4自身のものを2000年まで進めたもので、0.01秒角ほどです。`ucac4`にその名前があります(`UCAC4 344-007300`)。133個。ルールは、暗い星がイェールの位置の誤差の2倍以内にあり、明るさが合い、同じくらいの明るさの関係ない星がその範囲に入る見込みが20回に1回より小さいことです(`scripts/make-nearby-faint.ts`)。
-- **`positionSource: "GCTP"`と`flags.coarsePosition`**: 2MASSでもUCAC4でも1つにしぼれなかったので、イェールの位置のままです。誤差(`positionErrorArcsec`)は、よくて数秒角です。運動が大きく、位置の年代がわからない星では、1分角以上になることもあります。1,080個。
-- **`flags.ambiguousMatch`**: 30秒角以内に明るい星がある、合う2MASSの天体が複数ある、または6.1等より明るいのに明るい星の表にない、のどれかです。使う前に確かめてください。1,030個。
-- **`flags.excludedFromSpace`**: 視差が0以下です。496個。
+- **`positionSource: "GCTP"`と`flags.coarsePosition`**: 2MASSでもUCAC4でも1つにしぼれなかったので、イェールの位置のままです。誤差(`positionErrorArcsec`)は、よくて数秒角です。運動が大きく、位置の年代がわからない星では、1分角以上になることもあります。1,089個。
+- **`flags.ambiguousMatch`**: 30秒角以内に明るい星がある、合う2MASSの天体が複数ある、または6.1等より明るいのに明るい星の表にない、のどれかです。使う前に確かめてください。1,051個。
+- **`flags.excludedFromSpace`**: 視差が0以下です。497個。
 
 `gctpOffsetArcsec`は、2MASSの天体が、イェールの位置と運動がのっている線から何秒角はなれているかを示します。半分は1秒角以内、10個のうち9個は22秒角以内です。
 

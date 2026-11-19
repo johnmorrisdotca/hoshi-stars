@@ -530,7 +530,7 @@ For a page that cannot run script, use the embed page in an iframe; the demo's "
 
 ## Nearby stars
 
-`@johnmorrisdotca/hoshi-stars/nearby` adds the 5,566 stars of the Yale parallax catalogue that the bright stars leave out, among them Proxima Centauri, Barnard's Star and Wolf 359, each with its distance and the error of it. It is its own import (about 240 kB gzipped), so the bright-star import does not grow.
+`@johnmorrisdotca/hoshi-stars/nearby` adds the 5,593 stars of the Yale parallax catalogue that the bright stars leave out, among them Proxima Centauri, Barnard's Star and Wolf 359, each with its distance and the error of it. It is its own import (about 240 kB gzipped), so the bright-star import does not grow.
 
 ```ts
 import { stars } from "@johnmorrisdotca/hoshi-stars";
@@ -543,7 +543,7 @@ const close = nearest({ x: 0, y: 0, z: 0 }, { by: "space", among: [...stars(), .
 console.log(`${(close[0]!.thing as { name?: string }).name} ${close[0]!.distance.toFixed(2)}`); // Proxima Centauri 4.24
 ```
 
-A distance is good (error under 5%) for 330 of the stars, fair (5% to 20%) for 1,188 and rough (over 20%) for 3,552; 496 have a parallax of 0 or less and no distance. 4,353 positions are from 2MASS and 133 from UCAC4 (found in the faint tiles); the other 1,080 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
+A distance is good (error under 5%) for 332 of the stars, fair (5% to 20%) for 1,195 and rough (over 20%) for 3,569; 497 have a parallax of 0 or less and no distance. 4,371 positions are from 2MASS and 133 from UCAC4 (found in the faint tiles); the other 1,089 are the Yale catalogue's own and flagged coarse. The [guide](https://johnmorrisdotca.github.io/hoshi-stars/docs/) has the details.
 
 ## The sky from another star
 
@@ -700,12 +700,12 @@ for (let step = 0; step < 6; step += 1) {
 const rigel = layersByDistance(everything, { limit: 700 }).things.find((thing) => thing.name === "Rigel");
 console.log(rigel.uncertain, Math.round(rigel.low), Math.round(rigel.high));
 
-// 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3083 with no distance
-// 50: 898 things; bands 9 666 0 0 0 0; 223 uncertain; 3083 with no distance
-// 100: 4130 things; bands 9 666 870 0 0 0; 2585 uncertain; 3083 with no distance
-// 500: 7499 things; bands 9 666 870 329 0 0; 5625 uncertain; 3083 with no distance
-// 1000: 7569 things; bands 9 666 870 329 10 0; 5685 uncertain; 3083 with no distance
-// Infinity: 7673 things; bands 9 666 870 329 10 37; 5752 uncertain; 3083 with no distance
+// 10: 9 things; bands 9 0 0 0 0 0; 0 uncertain; 3084 with no distance
+// 50: 899 things; bands 9 667 0 0 0 0; 223 uncertain; 3084 with no distance
+// 100: 4140 things; bands 9 667 877 0 0 0; 2587 uncertain; 3084 with no distance
+// 500: 7525 things; bands 9 667 877 330 0 0; 5642 uncertain; 3084 with no distance
+// 1000: 7595 things; bands 9 667 877 330 10 0; 5702 uncertain; 3084 with no distance
+// Infinity: 7699 things; bands 9 667 877 330 10 37; 5769 uncertain; 3084 with no distance
 // true 593 1483
 ```
 
@@ -736,14 +736,14 @@ console.log(starAccuracy(starByName("Rigel")!).grade);                       // 
 console.log(stars({ minGrade: "A" }).length, stars().length);                 // 68 5080
 ```
 
-`@johnmorrisdotca/hoshi-stars/catalogue` joins the tiers into one list, each star once, under an id that stays the same (`hr-2491` for Sirius, `gctp-3278` for Proxima Centauri), with its grade and its distance's range. It loads only the bright stars (147 kB gzipped); the nearby stars (`nearbyLayer` from `/catalogue/nearby`, 244 kB more) and the faint stars a page loaded (`faintLayer(stars)` from `/catalogue/faint`, 35 kB more) are layers handed in through `layers`. The headline counts, by tier and grade:
+`@johnmorrisdotca/hoshi-stars/catalogue` joins the tiers into one list, each star once, under an id that stays the same (`hr-2491` for Sirius, `gctp-3278` for Proxima Centauri), with its grade and its distance's range. It loads only the bright stars (147 kB gzipped); the nearby stars (`nearbyLayer` from `/catalogue/nearby`, 246 kB more) and the faint stars a page loaded (`faintLayer(stars)` from `/catalogue/faint`, 35 kB more) are layers handed in through `layers`. The headline counts, by tier and grade:
 
 | Tier | Stars | Grade A | Grade B | Grade C | Source | Licence |
 | --- | --- | --- | --- | --- | --- | --- |
 | Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue, Yale parallaxes | public domain, informally, with credit; Yale parallaxes credited |
-| Nearby (`/nearby`) | 5,566 | 237 | 1,281 | 4,048 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
+| Nearby (`/nearby`) | 5,593 | 239 | 1,288 | 4,066 | Yale parallaxes, 2MASS and UCAC4 positions | credited (`NOTICE.md`) |
 | Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | UCAC4, APASS magnitudes | free of charge, cited (`NOTICE.md`) |
-| **All three, each star once** | **2,470,328** | **305** | **1,733** | **2,468,290** | | |
+| **All three, each star once** | **2,470,355** | **307** | **1,740** | **2,468,308** | | |
 
 A faint star has no parallax, so it is grade C; the 2,182 faint stars that are also nearby stars are counted once. The [guide](docs/guides/accuracy.md) has the typical errors, what each layer costs and how a star is counted once.
 

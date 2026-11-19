@@ -66,7 +66,7 @@ export interface NearbyFlags {
  * ```
  */
 export interface NearbyStar {
-  /** A key that stays the same: `gctp-` and the catalogue number (`gctp-3278`). */
+  /** A key that stays the same: `gctp-` and the catalogue number (`gctp-3278`), with the component's letter for a companion the catalogue lists under its bright member's number (`gctp-5077b`, 61 Cygni B). */
   id: string;
   /** The common name for the few dozen well-known ones (`Proxima Centauri`), else `undefined`. */
   name: string | undefined;
@@ -74,7 +74,7 @@ export interface NearbyStar {
   designation: string | undefined;
   /** The catalogue's other names for it: Luyten, Giclas, Ross, variable-star and Durchmusterung names (`G 158-027`, `CD-68 2378`). */
   aliases: readonly string[];
-  /** The Yale catalogue number, as a text: `3278` for Proxima, `1810.10` for a component. */
+  /** The Yale catalogue number, as a text: `3278` for Proxima, `1810.10` for a component, `5077b` for a companion listed under its bright member's number (it takes that system's parallax). */
   gctp: string;
   /** The Henry Draper number, or `undefined`. */
   hd: number | undefined;

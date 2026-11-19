@@ -2,12 +2,12 @@
 title: Nearby stars
 section: how-to
 order: 7
-description: 5,566 more stars with a measured distance and its error, among them Proxima Centauri, Barnard's Star and Wolf 359, as their own import so the bright-star table stays small.
+description: 5,593 more stars with a measured distance and its error, among them Proxima Centauri, Barnard's Star and Wolf 359, as their own import so the bright-star table stays small.
 ---
 
 [日本語](ja/nearby-stars.md)
 
-The 5,080 bright stars leave out most of the stars that are really close to the Sun, because the nearest ones are faint red dwarfs. `@johnmorrisdotca/hoshi-stars/nearby` adds the **5,566 stars** of the Yale General Catalogue of Trigonometric Stellar Parallaxes (van Altena, Lee and Hoffleit 1995) that the bright table does not hold. A star is in one list or the other, never both. The table is about 240 kB gzipped and nothing else imports it, so the bright-star import stays the size it was.
+The 5,080 bright stars leave out most of the stars that are really close to the Sun, because the nearest ones are faint red dwarfs. `@johnmorrisdotca/hoshi-stars/nearby` adds the **5,593 stars** of the Yale General Catalogue of Trigonometric Stellar Parallaxes (van Altena, Lee and Hoffleit 1995) that the bright table does not hold. A star is in one list or the other, never both. The table is about 240 kB gzipped and nothing else imports it, so the bright-star import stays the size it was.
 
 ## Look a star up
 
@@ -19,7 +19,7 @@ import { nearbyStarByName, nearbyStars } from "@johnmorrisdotca/hoshi-stars/near
 const proxima = nearbyStarByName("Proxima Centauri");
 console.log(`${proxima.lightYears.toFixed(2)} ${proxima.lightYearsError.toFixed(2)}`); // 4.24 0.03
 console.log(`${proxima.positionSource} ${proxima.twoMass}`); // 2MASS 2MASS J14294291-6240465
-console.log(nearbyStars().length); // 5566
+console.log(nearbyStars().length); // 5593
 ```
 
 Each `NearbyStar` carries a stable `id`, the names it has (`name`, `designation`, `aliases`, `gctp`, `hd`, `gliese`, `twoMass`), its J2000 position with where it comes from (`positionSource`) and its error (`positionErrorArcsec`), the parallax with its error, the distance in light-years and in parsecs with their errors, the proper motion and its source, the V magnitude with its kind and source, the spectral type and the luminosity class in it (`luminosityClass`: `V` for Proxima Centauri) and `flags`. The options of `nearbyStars` are `magnitude` (the faintest V), `maxRelativeError` and `withDistance`.
@@ -58,7 +58,7 @@ import { nearbyStars } from "@johnmorrisdotca/hoshi-stars/nearby";
 const good = nearbyStars({ maxRelativeError: 0.05 });
 const fair = nearbyStars({ maxRelativeError: 0.2 });
 const all = nearbyStars({ withDistance: true });
-console.log(`${good.length} ${fair.length - good.length} ${all.length - fair.length}`); // 330 1188 3552
+console.log(`${good.length} ${fair.length - good.length} ${all.length - fair.length}`); // 332 1195 3569
 ```
 
 A distance error (`lightYearsError`, `parsecsError`) is the distance times the relative error: a first-order figure, honest while the error is small and only a rough guide when it is over 20%. These are ground-based measurements from before 1996; newer space measurements are better for many of these stars, but their data cannot be passed on under an MIT licence (see [Data and licences](data-and-licences.md)).
@@ -67,16 +67,16 @@ A distance error (`lightYearsError`, `parsecsError`) is the distance times the r
 
 The Yale catalogue gives positions for 1900 (the FK4 system, B1900), many of them to a whole second of time or an arc-minute. They are carried to J2000 with the catalogue's own proper motion. For each star the build then looked in the 2MASS survey (a US government-funded sky survey of 1997 to 2001) for the one source that fits: near where the catalogue's star and its motion put it, with a J magnitude that agrees with the star's V and colour.
 
-- **`positionSource: "2MASS"`**: the position is 2MASS's (carried to 2000 with the Yale motion), with an error of a fraction of an arc-second to a few; `twoMass` names the source. 4,353 stars.
+- **`positionSource: "2MASS"`**: the position is 2MASS's (carried to 2000 with the Yale motion), with an error of a fraction of an arc-second to a few; `twoMass` names the source. 4,371 stars.
 - **`positionSource: "UCAC4"`**: no single 2MASS source fits, but the faint tiles (UCAC4, [Faint stars](faint-stars.md)) hold the star surely enough, so the position is UCAC4's, with UCAC4's own error carried to 2000 (a few hundredths of an arc-second); `ucac4` names the star (`UCAC4 344-007300`). 133 stars. The rule: the faint star lies within twice the Yale position's error, its magnitude fits, and an unrelated star that bright would lie in the window less than 1 time in 20 (`scripts/make-nearby-faint.ts`).
-- **`positionSource: "GCTP"`** and `flags.coarsePosition`: neither 2MASS nor UCAC4 gives a single sure source, so the Yale position stays. Its error (`positionErrorArcsec`) is arc-seconds at best, and for a high-motion star whose epoch is not known it can be an arc-minute or more. 1,080 stars.
-- **`flags.ambiguousMatch`**: a bright star lies within 30 arc-seconds, or several 2MASS sources fit equally well, or the star is brighter than magnitude 6.1 and yet not among the bright stars. Check it before you rely on it. 1,030 stars.
-- **`flags.excludedFromSpace`**: the parallax is 0 or less. 496 stars.
+- **`positionSource: "GCTP"`** and `flags.coarsePosition`: neither 2MASS nor UCAC4 gives a single sure source, so the Yale position stays. Its error (`positionErrorArcsec`) is arc-seconds at best, and for a high-motion star whose epoch is not known it can be an arc-minute or more. 1,089 stars.
+- **`flags.ambiguousMatch`**: a bright star lies within 30 arc-seconds, or several 2MASS sources fit equally well, or the star is brighter than magnitude 6.1 and yet not among the bright stars. Check it before you rely on it. 1,051 stars.
+- **`flags.excludedFromSpace`**: the parallax is 0 or less. 497 stars.
 
 `gctpOffsetArcsec` says how far the 2MASS source is from the line the Yale position and motion lay along; half are within 1 arc-second and nine in ten within 22.
 
 ## Types
 
-`NearbyStar` is the star, `NearbyFlags` its flags, `NearbyPositionSource` is `"2MASS"` or `"GCTP"` and `NearbyMagnitudeKind` is `"photoelectric"`, `"visual"` or `"blue"`. The catalogue gives the 5,566 stars' magnitudes to two decimals only where they are photoelectric V magnitudes; the others are rougher, and `magnitudeKind` says which.
+`NearbyStar` is the star, `NearbyFlags` its flags, `NearbyPositionSource` is `"2MASS"` or `"GCTP"` and `NearbyMagnitudeKind` is `"photoelectric"`, `"visual"` or `"blue"`. The catalogue gives the 5,593 stars' magnitudes to two decimals only where they are photoelectric V magnitudes; the others are rougher, and `magnitudeKind` says which.
 
 The credits and the licence footing of both catalogues are in [NOTICE.md](https://github.com/johnmorrisdotca/hoshi-stars/blob/main/NOTICE.md): the Yale catalogue states no licence and is used with credit and removed on request; 2MASS asks for an acknowledgement, which is given there.

@@ -58,14 +58,14 @@ console.log(sky.skipped > 2500);
 
 ## 近くの星も入れる
 
-`/nearby`の5,566個も動かせます。小さいままにするため、別のimportです。`skyFromWithNearby`は同じ引数を取り、プロキシマ・ケンタウリ、バーナード星、赤色矮星(せきしょくわいせい)を動かす星に足し、近くの星の名前も見る場所として見つけます。
+`/nearby`の5,593個も動かせます。小さいままにするため、別のimportです。`skyFromWithNearby`は同じ引数を取り、プロキシマ・ケンタウリ、バーナード星、赤色矮星(せきしょくわいせい)を動かす星に足し、近くの星の名前も見る場所として見つけます。
 
 ```js
 import { skyFromWithNearby } from "@johnmorrisdotca/hoshi-stars/sky-from/nearby";
 
 const sky = skyFromWithNearby("Proxima Centauri", { magnitude: 0 });
 console.log(sky.map((star) => star.name ?? star.designation)); // [ 'Rigil Kentaurus', 'Toliman', 'Sirius', 'Canopus', 'Arcturus' ]
-console.log(sky.length, sky.skipped); // 5 3018
+console.log(sky.length, sky.skipped); // 5 3019
 ```
 
 V等級のない近くの星は明るさを決められないので、距離のない星といっしょに`skipped`に数えます。近くの星の表は圧縮して約240 kBです。`/sky-from`だけなら、明るい星の表しか読み込みません。

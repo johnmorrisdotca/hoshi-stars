@@ -12,7 +12,7 @@ Sources
 
 Cross-match with the bright stars: by HD number first; a GCTP star with no HD, or an HD the Bright Star Catalogue does not hold, by position (within 15 arc-seconds after proper motion) and visual
 magnitude (within 1.0). Whatever is left is new. A catalogue number is a system: its parallax is on one record, and a match by the HD of a bright component takes the whole system out. A fainter component of such a system
-that the Bright Star Catalogue holds (COMPANIONS) is kept as a new star of its own, with the system's parallax. Each new star gets a 2MASS position when exactly one 2MASS source lies in a window that allows for the catalogue's position resolution and its
+that the Bright Star Catalogue holds (scripts/gctp-companions.tsv) is kept as a new star of its own, `gctp-` and the number and its component letter (`gctp-5077b`), with the system's parallax. Each new star gets a 2MASS position when exactly one 2MASS source lies in a window that allows for the catalogue's position resolution and its
 proper motion, and whose J magnitude agrees with what the star's V and B-V imply; otherwise it keeps the GCTP position and is flagged coarse.
 
     python3 -I scripts/make-nearby-data.py            # fetches into .cache/nearby (git-ignored), queries IRSA in batches (needs the network and astropy)
@@ -57,9 +57,8 @@ ARCSEC = DEGREE / 3600
 POSITION_MATCH_ARCSEC = 15.0
 MAGNITUDE_MATCH = 1.0
 NEAR_BRIGHT_ARCSEC = 30.0  # a bright star this close that was not matched makes the new star "ambiguous"
-# The HD numbers of Bright Star Catalogue stars fainter than the bright tier's 6.0 whose GCTP number a bright component's HD number matches, so that the match drops them with their system: 201092 is 61 Cygni B (HR 8086,
-# V 6.03) beside 61 Cygni A (HR 8085). Each is a new star with its own record's position and motion and the system's parallax.
-COMPANIONS = {201092}
+# Bright Star Catalogue stars fainter than the bright tier's 6.0 whose GCTP number a bright component's HD number matches, so that the match would drop them with their system: the table's header says the rest.
+COMPANIONS = ROOT / "scripts" / "gctp-companions.tsv"
 ANGLE_ERROR = 0.0087  # the position angle of the motion is given to a whole degree: half a degree is 0.0087 of the distance moved
 PROPER_MOTION_ERROR = 0.03  # of the catalogue's motion, over 100 years: its quality is not stated
 MAGNITUDE_TOLERANCE = 1.5  # J against what V and B-V imply
@@ -354,20 +353,49 @@ def bright_stars():
     return found
 
 
+def bsc_designation(text: str):
+    """The Bright Star Catalogue's ten-character name (HEASARC's `alt_name`: `86Zet Psc`, `16Zet1Cnc`, `61    Cyg`) as `ζ Psc`, `ζ1 Cnc`, `61 Cyg`, or None."""
+    name = text.strip().rjust(10)
+    flamsteed, bayer, constellation = name[0:3].strip(), name[3:7].strip(), name[7:10].strip()
+    parts = re.fullmatch(r"([A-Za-z]+)\s*([0-9]*)", bayer)
+    if parts and parts.group(1).upper() in GREEK:
+        return f"{GREEK[parts.group(1).upper()]}{parts.group(2)} {constellation}"
+    return f"{flamsteed} {constellation}" if flamsteed and constellation else None
+
+
 def bright_hd_numbers(offline):
-    """HD number to HR number over the whole Bright Star Catalogue (HEASARC's table), to find the GCTP stars that are among the bright stars (or fainter ones of the same catalogue)."""
+    """HD number to HR number over the whole Bright Star Catalogue (HEASARC's table), to find the GCTP stars that are among the bright stars (or fainter ones of the same catalogue); and each HR number's designation."""
     raw = download(BSC_URL, "heasarc_bsc5p.tdat.gz", offline)
     text = (gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw)
     if sha256(text) != BSC_SHA256:
         raise SystemExit(f"heasarc_bsc5p.tdat is not the file this script was written for (SHA-256 {sha256(text)})")
     lines = text.decode("latin-1").splitlines()
     columns = next(line for line in lines if line.startswith("line[1]")).split("=", 1)[1].split()
-    found = {}
+    found, designations = {}, {}
     for line in lines[lines.index("<DATA>") + 1 : lines.index("<END>")]:
         r = dict(zip(columns, line.split("|")))
         if r["hd"].strip() and r["hr"].strip():
             found[int(r["hd"])] = int(r["hr"])
-    return found
+            designations[int(r["hr"])] = bsc_designation(r["alt_name"])
+    return found, designations
+
+
+def companions(rows, records_of, hd_to_hr):
+    """The rows of scripts/gctp-companions.tsv, by HD number, each checked against picat.dat and the Bright Star Catalogue."""
+    table = {}
+    for line in COMPANIONS.read_text(encoding="utf-8").splitlines():
+        if line.startswith("#") or not line.strip():
+            continue
+        number, comp, hr, hd, primary, parallax, error, _note = line.split("\t")
+        num = number if "." in number else number + ".00"
+        record = next((i for i in records_of.get(num, []) if hd_of(rows[i]["hd"]) == int(hd)), None)
+        lead = next((i for i in records_of.get(num, []) if rows[i]["pi"] is not None and rows[i]["rah"] is not None), None)
+        if record is None or lead is None or rows[record]["comp"] != comp or hd_to_hr.get(int(hd)) != int(hr) or hd_to_hr.get(hd_of(rows[lead]["hd"])) != int(primary):
+            raise SystemExit(f"gctp-companions.tsv: {line!r} does not match picat.dat and the Bright Star Catalogue")
+        if f"{rows[lead]['pi'] * 1000:.1f}" != parallax or f"{rows[lead]['epi'] / 10:.1f}" != error:
+            raise SystemExit(f"gctp-companions.tsv: {line!r}: the system's parallax is {rows[lead]['pi'] * 1000:.1f} ± {rows[lead]['epi'] / 10:.1f} mas")
+        table[int(hd)] = (num, comp, int(primary))
+    return table
 
 
 def main() -> None:
@@ -383,7 +411,7 @@ def main() -> None:
     rows = gctp_rows(raw)
     bright = bright_stars()
     bright_hr = {b["hr"] for b in bright}
-    hd_to_hr = bright_hd_numbers(offline)
+    hd_to_hr, bsc_designations = bright_hd_numbers(offline)
     bright_hd = {hd for hd, hr in hd_to_hr.items() if hr in bright_hr}
     problems = [b["hr"] for b in bright if b["hr"] not in hd_to_hr.values()]
     if problems:
@@ -396,6 +424,7 @@ def main() -> None:
         records_of.setdefault(r["num"], []).append(index)
         if r["pi"] is not None and r["rah"] is not None:
             groups.setdefault(r["num"], []).append(index)
+    companion_of = companions(rows, records_of, hd_to_hr)
     positions = to_j2000(rows)
     ra1900, dec1900, mu_ra, mu_dec = positions
     east, north = tangents(ra1900, dec1900)
@@ -417,12 +446,12 @@ def main() -> None:
             hr = next(hd_to_hr[hd] for hd in hds if hd in bright_hd)
             where = separation(at2000[lead], bright_vectors[[b["hr"] for b in bright].index(hr)])
             counts["matchedAmbiguous"] += int(where > NEAR_BRIGHT_ARCSEC)
-            for hd in sorted(COMPANIONS):
-                record = next((i for i in records_of[num] if hd_of(rows[i]["hd"]) == hd), None)
-                if record is None:
+            for record in records_of[num]:
+                hd = hd_of(rows[record]["hd"])
+                if hd is None or hd in bright_hd or hd not in hd_to_hr:
                     continue
-                if hd in bright_hd or hd not in hd_to_hr:
-                    raise SystemExit(f"HD {hd} is in COMPANIONS but is not a Bright Star Catalogue star fainter than the bright tier's")
+                if companion_of.get(hd, (None,))[0] != num:
+                    raise SystemExit(f"GCTP {num} drops HR {hd_to_hr[hd]} (HD {hd}) with its bright member: add it to scripts/gctp-companions.tsv")
                 new.append((num, [record], lead))
                 counts["companions"] += 1
             continue
@@ -435,6 +464,8 @@ def main() -> None:
                 counts["matchedAmbiguous"] += 1
                 continue
         new.append((num, members, None))
+    if counts["companions"] != len(companion_of):
+        raise SystemExit(f"scripts/gctp-companions.tsv lists {len(companion_of)} stars and the build kept {counts['companions']}")
     counts["new"] = len(new)
     if limit is not None:
         new = new[:limit]
@@ -464,7 +495,7 @@ def main() -> None:
         centre_ra, centre_dec = radec(middle)
         near_bright = bool(apart.min() <= NEAR_BRIGHT_ARCSEC)
         stars.append(dict(
-            num=num, members=members, lead=lead, row=row, plx_row=row if owner is None else rows[owner], ra=float(ra_now), dec=float(dec_now), sortRa=float(ra2000[lead]), sortDec=float(dec2000[lead]), vector=at2000[lead], vector1900=vector1900[lead], east=east[lead], north=north[lead],
+            num=num, suffix="" if owner is None else row["comp"].lower(), members=members, lead=lead, row=row, plx_row=row if owner is None else rows[owner], ra=float(ra_now), dec=float(dec_now), sortRa=float(ra2000[lead]), sortDec=float(dec2000[lead]), vector=at2000[lead], vector1900=vector1900[lead], east=east[lead], north=north[lead],
             muEast=float(mu_ra[lead]), muNorth=float(mu_dec[lead]), window=window, radius=(EPOCH_SPAN + EPOCH_AFTER) / 2 * speed + window, centre=middle, centreRa=float(centre_ra), centreDec=float(centre_dec), error=error, pm=pm, vmag=min(vs) if vs else None,
             expected=expectations, ambiguous=near_bright or (min(vs) <= 6.1 if vs else False), bright_close=near_bright,
         ))
@@ -509,7 +540,7 @@ def main() -> None:
 
     lines = []
     excluded = 0
-    for s in sorted(stars, key=lambda s: (-(s["plx_row"]["pi"]), s["num"])):
+    for s in sorted(stars, key=lambda s: (-(s["plx_row"]["pi"]), s["num"], s["suffix"])):
         r = s["row"]
         plx = round(s["plx_row"]["pi"] * 10000)  # parallax in tenths of a milliarcsecond
         if plx <= 0:
@@ -518,6 +549,11 @@ def main() -> None:
         for i in s["members"]:
             designation = designation or (sexagesimal_name(rows[i]["name"]) or "")
         hd = next(iter(sorted({hd_of(rows[i]["hd"]) for i in s["members"]} - {None})), "")
+        if s["suffix"]:
+            # a companion: the Bright Star Catalogue's designation, else the GCTP's, with the component's letter where the bright member has the same one (`ζ Psc B`, `61 Cyg B`)
+            designation = bsc_designations.get(hd_to_hr[hd]) or designation
+            if designation and designation == bsc_designations.get(companion_of[hd][2]):
+                designation += f" {r['comp']}"
         aliases = []
         for i in s["members"]:
             for alias in aliases_of(rows[i], designation):
@@ -529,7 +565,7 @@ def main() -> None:
         pm = "" if r["pm"] is None or r["pa"] is None else f"{round(s['muEast'])},{round(s['muNorth'])}"
         flags = ("c" if s["coarse"] else "") + ("x" if plx <= 0 else "") + ("a" if s["ambiguous"] else "")
         spectral = next((rows[i]["mk"] for i in s["members"] if rows[i]["mk"]), "")
-        number_text = s["num"][:-3] if s["num"].endswith(".00") else s["num"]
+        number_text = (s["num"][:-3] if s["num"].endswith(".00") else s["num"]) + s["suffix"]
         lines.append("|".join(str(x) for x in [
             number_text, hd, name, designation, ";".join(aliases), gliese, s["twomass"], round(s["finalRa"] * 360000), round(s["finalDec"] * 360000), round(s["finalError"] * 10),
             plx, "" if s["plx_row"]["epi"] is None else round(s["plx_row"]["epi"]), pm, v, code if v else "", spectral, flags, s["offset"],
@@ -544,7 +580,7 @@ def main() -> None:
     text = f"""// GENERATED by scripts/make-nearby-data.py. Do not edit by hand.
 // The stars with a measured parallax in the Yale General Catalogue of Trigonometric Stellar Parallaxes (van Altena, Lee and Hoffleit 1995, 4th edition; VizieR I/238A) that the 5,080 bright stars do not hold.
 // {summary}.
-// One row a star, nearest first: GCTP number | HD number | common name | Bayer letter or Flamsteed number and constellation | other names, ";" apart | Gliese-Jahreiss number | 2MASS designation (after "2MASS J") |
+// One row a star, nearest first: GCTP number (and the component's letter for a companion kept under its bright member's number: 5077b) | HD number | common name | Bayer letter or Flamsteed number and constellation | other names, ";" apart | Gliese-Jahreiss number | 2MASS designation (after "2MASS J") |
 // J2000 right ascension and declination in hundredths of an arc-second | position error in tenths of an arc-second | parallax in tenths of a milliarcsecond | its error in the same unit |
 // proper motion in right ascension (times cos Dec) and declination, milliarcseconds a year, J2000 axes, from the GCTP | V magnitude times 100 | its kind (v photoelectric V, l visual or other and rougher,
 // b photographic blue) | spectral type | flags (c: the position is the GCTP's, not 2MASS's; x: parallax 0 or less, no distance; a: the match to the bright stars or to 2MASS is not clear) |
