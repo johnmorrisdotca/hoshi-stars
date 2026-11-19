@@ -153,6 +153,10 @@
       "minified": 4347,
       "gzip": 1513
     },
+    "./catalogue": {
+      "minified": 842250,
+      "gzip": 386235
+    },
     "./exoplanet-hosts": {
       "minified": 39291,
       "gzip": 8628

@@ -61,10 +61,16 @@ Proxima Centauri: grade A, position from 2MASS (+-0.1 arcsec)
 
 ## 数
 
-| 層 | 星の数 | 等級 A | 等級 B | 等級 C | 数値の出典 | ライセンス |
-| --- | --- | --- | --- | --- | --- | --- |
-| 明るい星(メインのimport) | 5,080 | 68 | 452 | 4,560 | イェール輝星カタログと、一部の星はイェール視差 | イェール輝星カタログ: 非公式にパブリックドメイン、出典の明記つき。イェール視差: ライセンスの記載なし、出典を明記して使い、要請があれば除きます(`NOTICE.md`) |
-| 近くの星(`/nearby`) | 5,565 | 235 | 1,282 | 4,048 | イェール三角視差総合カタログと 2MASS の位置 | イェール視差: 上と同じ。2MASS: 米国政府の著作物、出典を明記(`NOTICE.md`) |
+層ごと、等級ごとの数です。「ふつうの誤差」は、出典が示している誤差の中央値です(誤差がある星だけで数えます)。どの出典も示していない数値は書きません。
+
+| 層 | 星の数 | 等級 A | 等級 B | 等級 C | ふつうの誤差 | 数値の出典 | ライセンス |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 明るい星(メインのimport) | 5,080 | 68 | 452 | 4,560 | 視差 9.7ミリ秒角(誤差が示されている2,329個)。位置は1.5秒角きざみで、誤差は示されていません | イェール輝星カタログと、一部の星はイェール視差 | イェール輝星カタログ: 非公式にパブリックドメイン、出典の明記つき。イェール視差: ライセンスの記載なし、出典を明記して使い、要請があれば除きます(`NOTICE.md`) |
+| 近くの星(`/nearby`) | 5,565 | 235 | 1,282 | 4,048 | 視差 10.6ミリ秒角。位置 0.1秒角(4,352個は 2MASS の位置) | イェール三角視差総合カタログと 2MASS の位置 | イェール視差: 上と同じ。2MASS: 米国政府の著作物、出典を明記(`NOTICE.md`) |
+| 暗い星(`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | 視差なし。タイルには位置の誤差を入れていません | UCAC4 と APASS の明るさ | UCAC4: 無料、論文を引用。APASS: 出典を明記(`NOTICE.md`) |
+| **明るい星と近くの星(`/catalogue`)** | **10,645** | **303** | **1,734** | **8,608** | | | |
+
+暗い星には視差がないので、ルールどおり等級 C です。暗い星のタイルは `/catalogue` には入っていません(下を見てください)。
 
 明るい星の大半が等級 C なのは、輝星カタログに視差がある星が少なく、その視差にも誤差が示されていないからです。誤差が示されていない距離を、示されているかのように格付けすることはしません。新しいカタログがあれば多くが上がりますが、ここで使えるものは MIT ライセンスで再配布できません(`NOTICE.md` の「Deliberately not used」)。
 
@@ -100,10 +106,46 @@ Toliman: 9.5, 9.4 to 9.5 light-years, tied with a neighbour
 
 星雲・星団などの深宇宙天体には等級がありません。`nearest("M31", { kind: "deep-sky", minGrade: "A" })` は `RangeError` になり、`among` に混ぜた場合は `minGrade` を指定すると深宇宙天体は除かれます。
 
+## ひとつのカタログ: 層をまとめる
+
+`@johnmorrisdotca/hoshi-stars/catalogue` は、明るい星と近くの星をひとつの一覧にします。どの星も1回だけで、変わらない ID がつきます。明るい星は `hr-` と輝星カタログの番号(`hr-2491` はシリウス)、近くの星は `gctp-` とイェール視差カタログの番号(`gctp-3278` はプロキシマ・ケンタウリ)です。`/distance`・`/names`・`/sky-from` がすでに使っている ID と同じです。2つの表を両方読み込む(gzip で約386 kB)ので、片方の層だけでよいページは、その層だけを import してください。
+
+```js
+import { catalogueCounts, catalogueStar, catalogueStars } from "@johnmorrisdotca/hoshi-stars/catalogue";
+
+for (const count of catalogueCounts()) console.log(`${count.layer}: ${count.stars} stars, A ${count.grades.A}, B ${count.grades.B}, C ${count.grades.C}`);
+
+const proxima = catalogueStar("gctp-3278");
+const [near, far] = proxima.distance.lightYearsRange;
+console.log(`${proxima.id} ${proxima.name}: ${proxima.layer} tier, grade ${proxima.grade}, ${near.toFixed(2)} to ${far.toFixed(2)} light-years`);
+
+const sure = catalogueStars({ minGrade: "A", magnitude: 9 });
+console.log(`${sure.length} grade A stars to magnitude 9, the faintest ${sure.at(-1).name ?? sure.at(-1).id}`);
+```
+
+出力は次のとおりです。
+
+```text
+bright: 5080 stars, A 68, B 452, C 4560
+nearby: 5565 stars, A 235, B 1282, C 4048
+gctp-3278 Proxima Centauri: nearby tier, grade A, 4.20 to 4.27 light-years
+104 grade A stars to magnitude 9, the faintest gctp-2345
+```
+
+`catalogueStars(options)` は星を明るい順に返します(明るさがない近くの星7個は最後)。`layers`(`["bright"]`・`["nearby"]`・両方。`CATALOGUE_LAYERS`)、`magnitude`、`minGrade` を受け取ります。`CatalogueStar` には、`id`・`layer`・`name`・`designation`・`hd`・J2000 の位置・`magnitude`・`grade`・`distance`(`starDistance` と同じ、距離とその誤差と範囲)と、`star` にその層のもとの記録があります。`starAccuracy` などにはこれを渡します。`catalogueStar(id)` は ID から星を探し、`catalogueId(star)` は星の ID を返し、`catalogueCounts()` は上の表の数を返します。
+
+同じ星を1回だけ数えるしくみ。2つの層は、どの星も両方に入らないように作られています。
+
+- **イェール視差と明るい星**(`scripts/make-star-data.py`): HD 番号が同じで、V 等級の差が1.0以内の明るい星に、その視差をつけます。2,329個が一致し、2,325個はその視差を使い、4個は論文の距離を使います。
+- **近くの星の層**(`scripts/make-nearby-data.py`): イェール視差カタログから明るい星を除いた残りです。まず HD 番号で、HD 番号がなければ位置(固有運動で動かしたあと15秒角以内)と V 等級(1.0以内)で除きます。新しい星は5,565個で、そのうち1,029個に `flags.ambiguousMatch` がついています(30秒角以内に明るい星がある、合う 2MASS の天体がいくつかある、または6.1等より明るいのに明るい星の中にない)。テストで、HD 番号が両方の層にないこと、フラグのない近くの星が明るい星から15秒角以内・1等以内にないことを確かめています。
+- **同じ元期と座標系。** どちらの層も J2000、元期2000年です。明るい星は輝星カタログの位置、近くの星は固有運動で2000年に移した 2MASS の位置か、1900年から移したイェールの位置です。
+- **連星。** イェールカタログは連星系にひとつの視差を示すので、ペアの明るい2つの星は同じ視差を持ちます(リギル・ケンタウルスとトリマンは同じ距離です)。明るい星の層に入るには暗く、イェールカタログが別の星として示していない伴星は、どちらの層にも入りません。はくちょう座61番星B(HR 8086、V 6.03)がその例です。
+- **暗い星のタイル**は、明るい星をすでに除いています(20秒角以内・1.5等以内の45個。[暗い星](faint-stars.md))。近くの星はまだ除いていないので、`/catalogue` には入れていません。
+
 ## データファイルでは
 
 `pnpm export:data` の `stars` と `nearby-stars` の表に、`grade` と `distanceQuality` の列があります。`stars` には `positionSource` と `positionResolutionArcsec` もあります(`nearby-stars` には、もともと `positionSource`・`positionErrorArcsec`・`relativeError` があります)。
 
 ## これから
 
-等級は、いま2つの層のすべての星についていて、`minGrade` で絞り込めます。これからのものは、チャートで星を選んだときの等級と誤差の表示、そして層を統合して、同じ星を1つとして数え、項目ごとに最良の値をとる層です。
+等級は明るい星と近くの星のすべてについていて、`minGrade` で絞り込め、チャートで星を選ぶと表示され、`/catalogue` はそれらの星を1回ずつ数えます。これからのものは、近くの星を暗い星のタイルと照らし合わせて、両方にある星を1回だけ描いて数え、値ごとに一番よい出典をとることです。

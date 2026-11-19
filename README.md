@@ -697,6 +697,30 @@ console.log(starAccuracy(starByName("Rigel")!).grade);                       // 
 console.log(stars({ minGrade: "A" }).length, stars().length);                 // 68 5080
 ```
 
+`@johnmorrisdotca/hoshi-stars/catalogue` joins the bright and the nearby stars into one list, each star once, under an id that stays the same (`hr-2491` for Sirius, `gctp-3278` for Proxima Centauri), with its grade and its distance's range. The headline counts, by tier and grade:
+
+| Tier | Stars | Grade A | Grade B | Grade C | Source | Licence |
+| --- | --- | --- | --- | --- | --- | --- |
+| Bright (the main import) | 5,080 | 68 | 452 | 4,560 | Yale Bright Star Catalogue, Yale parallaxes | public domain, informally, with credit; Yale parallaxes credited |
+| Nearby (`/nearby`) | 5,565 | 235 | 1,282 | 4,048 | Yale parallaxes, 2MASS positions | credited (`NOTICE.md`) |
+| Faint (`/faint`) | 2,461,864 | 0 | 0 | 2,461,864 | UCAC4, APASS magnitudes | free of charge, cited (`NOTICE.md`) |
+| **Bright and nearby (`/catalogue`)** | **10,645** | **303** | **1,734** | **8,608** | | |
+
+A faint star has no parallax, so it is grade C. The [guide](docs/guides/accuracy.md) has the typical errors and how a star is counted once.
+
+```js
+import { catalogueCounts, catalogueStar, catalogueStars } from "@johnmorrisdotca/hoshi-stars/catalogue";
+
+for (const count of catalogueCounts()) console.log(`${count.layer}: ${count.stars} stars, A ${count.grades.A}, B ${count.grades.B}, C ${count.grades.C}`);
+
+const proxima = catalogueStar("gctp-3278");
+const [near, far] = proxima.distance.lightYearsRange;
+console.log(`${proxima.id} ${proxima.name}: ${proxima.layer} tier, grade ${proxima.grade}, ${near.toFixed(2)} to ${far.toFixed(2)} light-years`);
+
+const sure = catalogueStars({ minGrade: "A", magnitude: 9 });
+console.log(`${sure.length} grade A stars to magnitude 9, the faintest ${sure.at(-1).name ?? sure.at(-1).id}`);
+```
+
 ## Outside data
 
 The package draws; you bring the data. `@johnmorrisdotca/hoshi-stars/door` takes outside stars (and deep-sky objects) as a **source**: a small object that carries its own licence and credit, so the page can always say whose data is on the screen. Without a source the package draws exactly what it did before, from its own Yale and UCAC4 data. A source of yours may be non-commercial or share-alike; the credit line says so beside the licence, and the package never bundles one.

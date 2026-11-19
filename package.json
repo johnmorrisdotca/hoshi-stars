@@ -294,6 +294,11 @@
       "import": "./dist/accuracy.js",
       "default": "./dist/accuracy.js"
     },
+    "./catalogue": {
+      "types": "./dist/catalogue.d.ts",
+      "import": "./dist/catalogue.js",
+      "default": "./dist/catalogue.js"
+    },
     "./exoplanet-hosts": {
       "types": "./dist/exoplanet-hosts.d.ts",
       "import": "./dist/exoplanet-hosts.js",

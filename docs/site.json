@@ -185,6 +185,11 @@
       "ja": "星ごとの値の確かさ (位置・明るさ・色・視差・固有運動の出典と誤差、A・B・Cの等級)",
       "platform": "neutral"
     },
+    "./catalogue": {
+      "en": "The bright and the nearby stars as one catalogue: each star once, under an id that stays the same, with its grade and its distance's range, and the counts by tier and grade",
+      "ja": "明るい星と近くの星をひとつのカタログに (どの星も1回だけ、変わらない ID、等級と距離の範囲つき。層と等級ごとの数も)",
+      "platform": "neutral"
+    },
     "./exoplanet-hosts": {
       "en": "The host stars of confirmed exoplanets worth a visit: place, distance, and each planet's name and orbital period",
       "ja": "確認された系外惑星をもつ、訪ねてみたい星 (位置・距離、惑星ごとの名前と公転周期)",
