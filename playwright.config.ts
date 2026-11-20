@@ -22,7 +22,8 @@ export default defineConfig({
   globalSetup: "@johnmorrisdotca/kazoku-ui/testing/global-setup",
   timeout: 60_000,
   reporter: "list",
-  use: { baseURL: `http://127.0.0.1:${port}`, reducedMotion: "reduce", locale: "en-US" },
+  // A failing test keeps its trace in test-results (there are no retries, so a trace on retry would never be made): a flake that does not come back alone comes with its evidence (MODULES-1733).
+  use: { baseURL: `http://127.0.0.1:${port}`, reducedMotion: "reduce", locale: "en-US", trace: "retain-on-failure" },
   webServer: { command: "node scripts/dev.ts", env: { PORT: String(port) }, url: `http://127.0.0.1:${port}/hoshi-stars/`, reuseExistingServer: false },
   projects: [
     { name: "chromium-desk", use: { ...devices["Desktop Chrome"], ...desk, ...software } },
