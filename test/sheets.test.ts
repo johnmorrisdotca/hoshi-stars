@@ -294,3 +294,32 @@ test("the turned wheel matches the real sky: for Toronto and for Sydney on a Jan
     }
   }
 });
+
+/** The named stars of the guide's evening line (`Brightest up then: Sirius -1.5, ...`): how many, from the magnitudes after the names; -1 when the sheet has no such line. */
+function eveningStars(svg: string): number {
+  const texts = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]!);
+  const at = texts.findIndex((t) => t.startsWith("Brightest up then") || t.startsWith("そのとき"));
+  if (at < 0) return -1;
+  let joined = "";
+  for (let i = at; i < texts.length && !texts[i]!.startsWith("Never seen") && !texts[i]!.startsWith("ここからは"); i += 1) joined += `${texts[i]} `;
+  return (joined.match(/-?\d\.\d/g) ?? []).length;
+}
+const lowestBaseline = (svg: string): number => Math.max(...[...svg.matchAll(/<text[^>]* y="([\d.]+)"/g)].map((m) => Number(m[1])));
+
+test("the guide names the six brightest stars of the evening when there is room, fewer when the page is short, and none when it is shorter still; nothing runs off the page", () => {
+  const at = (heightMm: number, lang: "en" | "ja" = "en") => regionGuideSvg(-34, 7, { widthMm: 184.6, heightMm, lang, type: "kid" });
+  assert.equal(eveningStars(at(200)), 6);
+  const short = at(140);
+  assert.ok(eveningStars(short) >= 1 && eveningStars(short) < 6, `fewer on a short page, got ${eveningStars(short)}`);
+  assert.equal(eveningStars(at(122)), -1, "no line at all when even one name does not fit");
+  // the last line is above the bottom edge at each height: the four sizes of the guide (the biggest type on a short letter page was the one that ran off)
+  for (const height of [200, 160, 140, 132, 122]) assert.ok(lowestBaseline(at(height)) < height, `${height} mm: the last line is inside the page`);
+  assert.ok(eveningStars(at(140, "ja")) < 6, "the Japanese sheet falls back too");
+  // the list falls back one count at a time and never grows as the page gets shorter
+  let before = 7;
+  for (let height = 200; height >= 110; height -= 2) {
+    const now = eveningStars(at(height));
+    assert.ok(now <= before, `${height} mm: ${now} names after ${before}`);
+    before = now < 0 ? 0 : now;
+  }
+});

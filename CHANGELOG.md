@@ -2,9 +2,15 @@
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-11-20
+
 - **The Chinese sky's "part of" and Japanese labels are read again from a Wikidata dump** (MODULES-1219). `data-sources/chinese-constellations-wikidata.jsonl` holds the 342 Chinese-constellation items of the Wikidata dump of 2026-11-17 (CC0) with their labels and "part of" statements, and `scripts/make-culture-parts.py` (offline, labels only, no guessing: 217 of the 238 asterisms match an item) rewrites those two columns of `src/data/culture-chinese.ts`. The dump gave no enclosure the data did not have (Purple Forbidden 22, Supreme Palace 3, Heavenly Market 15 asterisms; the quiz's levels are unchanged, and the Supreme Palace still has too few for one). New: `names.ja` on 38 asterisms of the Chinese culture, Wikidata's Japanese label as it gives it (虚宿, 参宿, 右摂提; 32 are the same characters as the Traditional name), with two corrections after a Japanese review (庫樓 is 庫楼, 文昌星 is 文昌, kept by `JA_LABEL_FIXES` in the script), which the quiz shows on its Japanese page; they wait for a native reader. NOTICE.md names the dump.
 
+- **The constellation guide sheet no longer runs a line off a short page** (MODULES-1737). 0.56.0 added a line naming the six brightest stars of the evening to the "constellations for where you live" sheet; at 34 degrees south in July on a letter page in the big type, the layout had no tier small enough and the last line (the constellations never seen from there) ran 10 mm off the bottom. When the smallest figures and the fewest rows still do not fit, the evening line now names fewer stars (4, 2, 1) and then none, as the other lists of the sheet are capped; nothing else changes, and every page that fitted is as it was. No new words.
+
 ## [0.56.0] - 2026-11-20
+
+- **Tonight works out the Moon, dims the stars below the horizon, and the place guide names the evening's brightest stars** (MODULES-1211). New in `/tonight`: `moonGlare(observer, when)`, the Moon's glare from its phase and height when a page does not pass one in (the curve is our own estimate, not a published one), and `starsBelowHorizon({ observer, when, magnitude, floor })`, the bright stars under the horizon at a time, as `DimStar` rows. The Tonight demo page has one control that dims the stars below the horizon. The "constellations for where you live" guide sheet gains a line naming the six brightest stars up on the month's evening, English and Japanese (this entry was missing from the 0.56.0 release and is added in 0.57.0).
 
 ## [0.55.0] - 2026-11-20
 
