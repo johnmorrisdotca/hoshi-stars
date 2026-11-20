@@ -14,7 +14,8 @@ The match of a row to a file item uses nothing but the labels, never a guess:
 - more than one item, or a name that another row has too (the old lists have two 五諸侯, two 柱, two 天田), matches nothing: the row is left as it is.
 The part of statement is kept when it names exactly one of the Three Enclosures (Purple Forbidden Q1145852, Supreme Palace Q1145944, Heavenly Market Q1145862) or one mansion (an item matched
 to one of the 28 mansion rows); a statement that names a Western constellation is a different fact and is not used. A mansion's own part (its Symbol) is in the `group` column and stays.
-Two Japanese labels are corrected in JA_LABEL_FIXES (庫樓 to 庫楼, 文昌星 to 文昌, with the reasons); --check and a run stop if the dump no longer holds the label a fix replaces.
+Then every asterism that has no Japanese label gets its Traditional name with the characters of JA_CHARACTERS (thirteen, each with a standard Japanese form) written in that form, so that a Japanese page
+shows one form (MODULES-1739); the characters that are the same (婁 畢 觜 軫 張 氐) and the doubtful ones (JA_CHARACTER_QUESTIONS) are left. Two Japanese labels are corrected in JA_LABEL_FIXES (庫樓 to 庫楼, 文昌星 to 文昌, with the reasons); --check and a run stop if the dump no longer holds the label a fix replaces.
 A row with no matching item keeps the part of it had. The Japanese label (`ja`) is kept where the item has one, as Wikidata gives it; a label ending in a bracketed note (`北極 (星座)`) is a
 page title and not a name and is left out.
 
@@ -39,6 +40,18 @@ JA_LABEL_FIXES = {
     "ku4-lou2": {"was": "庫樓", "ja": "庫楼", "why": "楼 is the Japanese form of 樓, as 虚, 参, 摂 and 塁 are of the labels Wikidata already gives in Japanese forms"},
     "wen2-chang1": {"was": "文昌星", "ja": "文昌", "why": "every other name is bare; the 星 is Wikidata's label for the god and stands out among the choices"},
 }
+# Traditional characters that have a standard Japanese form, written in that form in the name of an asterism that Wikidata has no Japanese label for (MODULES-1739): on the Japanese page one
+# screen otherwise mixes forms (右摂提 from Wikidata beside 左攝提), and a child can pick the answer by its script. This is a hoshi correction for the Japanese page, not Wikidata's, and it is
+# reviewed: the list is the maintainer's, checked by a reader of Japanese; the dump's own Japanese labels (虚 参 摂 塁 将, in 虚宿 参宿 右摂提 塁壁陣 天大将軍) agree with the pairs they show. A character is
+# added here only when the reviewer says its Japanese form is standard; the doubtful ones are not in it (see JA_CHARACTER_QUESTIONS). A name with a Wikidata label (or a JA_LABEL_FIXES one) keeps
+# that label and is not converted. Names are not given a 星 or a 座 and the mansions keep 宿; no reading is added.
+JA_CHARACTERS = {
+    "虛": "虚", "參": "参", "攝": "摂", "壘": "塁", "將": "将", "樓": "楼", "臺": "台", "廚": "厨", "內": "内", "傳": "伝", "從": "従", "祿": "禄", "龜": "亀",
+}
+# Characters of the names that are the same in Japanese on purpose, and must never be in the table: 婁 畢 觜 軫 張 氐 (the Japanese forms are the same as the Traditional) and 漸.
+JA_CHARACTERS_KEPT = "婁畢觜軫張氐漸"
+# Characters of the names that may have a different Japanese form and are not decided here: for the reviewer, never converted.
+JA_CHARACTER_QUESTIONS = "礪廄"
 NOTE = re.compile(r"\s*[(（][^)）]*[)）]\s*$")
 
 HEADER = (
@@ -77,6 +90,11 @@ def match(rows, items):
     return found
 
 
+def japanese_form(name):
+    """The name with each character of JA_CHARACTERS written in its Japanese form."""
+    return "".join(JA_CHARACTERS.get(c, c) for c in name)
+
+
 def build():
     text = DATA.read_text(encoding="utf-8")
     body = re.search(r"CHINESE_ROWS = `(.*?)`;", text, re.S).group(1)
@@ -87,6 +105,15 @@ def build():
         item = found.get(fixed)
         if item is None or item["labels"].get("ja") != fix["was"]:
             raise SystemExit(f"JA_LABEL_FIXES: {fixed} no longer has the dump label {fix['was']!r}")
+    names = [r[1] for r in rows]
+    for kept in JA_CHARACTERS_KEPT + JA_CHARACTER_QUESTIONS:
+        if kept in JA_CHARACTERS:
+            raise SystemExit(f"JA_CHARACTERS: {kept} is a kept or doubtful character and must not be converted")
+    for old, new in JA_CHARACTERS.items():
+        if not any(old in n for n in names):
+            raise SystemExit(f"JA_CHARACTERS: {old} is in no asterism's name")
+        if new in JA_CHARACTERS:
+            raise SystemExit(f"JA_CHARACTERS: {new} is both a Japanese form and a form to convert")
     mansion_of = {found[r[0]]["id"]: r[0] for r in rows if r[5] != "" and r[0] in found}
     out, stats = [], {"matched": len(found), "part_set": 0, "part_changed": 0, "ja": 0}
     for row in rows:
@@ -102,6 +129,9 @@ def build():
         if item is not None and "ja" in item["labels"] and not NOTE.search(item["labels"]["ja"]):
             ja = JA_LABEL_FIXES.get(row[0], {}).get("ja", item["labels"]["ja"])
             stats["ja"] += 1
+        if ja == "" and japanese_form(row[1]) != row[1]:
+            ja = japanese_form(row[1])
+            stats["ja_table"] = stats.get("ja_table", 0) + 1
         row = row[:6] + [part] + row[7:]
         out.append("|".join(row + ([ja] if ja else [])))
     return HEADER + "/** The asterism rows, one per line. */\n" + "export const CHINESE_ROWS = `" + "\n".join(out) + "`;\n", stats
