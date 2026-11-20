@@ -94,12 +94,30 @@ test("the Japanese labels: Wikidata's, where it has one, as it gives it", () => 
   assert.equal(chinese.find("參宿")?.names.ja, "参宿");
   assert.equal(chinese.find("右攝提")?.names.ja, "右摂提");
   assert.equal(chinese.find("壘壁陣")?.names.ja, "塁壁陣");
-  assert.equal(withJa.filter((a) => a.names.ja !== a.name).length, 6, "虚宿 参宿 右摂提 塁壁陣 天大将軍 文昌星");
+  assert.equal(withJa.filter((a) => a.names.ja !== a.name).length, 6, "虚宿 参宿 右摂提 塁壁陣 天大将軍 庫楼 (文昌 is the same characters again)");
   assert.equal(withJa.filter((a) => a.names.ja === a.name).length, 32, "the same characters as the Traditional name");
   // every one is the label of the item it matched, and no one without an item or a label has one
-  for (const a of asterisms) assert.equal(a.names.ja, matched.get(a.id)?.labels["ja"] === undefined || NOTE.test(matched.get(a.id)!.labels["ja"]!) ? undefined : matched.get(a.id)!.labels["ja"], a.id);
+  const fixed: Record<string, string> = { "ku4-lou2": "庫楼", "wen2-chang1": "文昌" };
+  for (const a of asterisms) assert.equal(a.names.ja, fixed[a.id] ?? (matched.get(a.id)?.labels["ja"] === undefined || NOTE.test(matched.get(a.id)!.labels["ja"]!) ? undefined : matched.get(a.id)!.labels["ja"]), a.id);
   // 北極's Japanese label is a page title with a bracketed note (北極 (星座)), not a name: it is left out
   assert.equal(matched.get("bei3-ji2")?.labels["ja"], "北極 (星座)");
   assert.equal(chinese.find("北極")?.names.ja, undefined);
   assert.ok(withJa.every((a) => !/[()（）]/.test(a.names.ja!)));
+});
+
+test("two Japanese labels are corrected after a review, and the map of corrections in the script names rows that exist with the dump's label", () => {
+  // the dump says 庫樓 and 文昌星; the data says 庫楼 (楼 is the Japanese form of 樓) and 文昌 (every other name is bare)
+  assert.equal(matched.get("ku4-lou2")?.labels["ja"], "庫樓");
+  assert.equal(matched.get("wen2-chang1")?.labels["ja"], "文昌星");
+  assert.equal(chinese.find("庫樓")?.names.ja, "庫楼");
+  assert.equal(chinese.find("文昌")?.names.ja, "文昌");
+  // the map is in the script: every id is a row, and its `was` is what the dump holds (the script also stops when it is not)
+  const script = readFileSync(new URL("../scripts/make-culture-parts.py", import.meta.url), "utf8");
+  const fixes = [...script.matchAll(/"([a-z0-9-]+)": \{"was": "([^"]+)", "ja": "([^"]+)"/g)];
+  assert.equal(fixes.length, 2);
+  for (const [, id, was, ja] of fixes) {
+    assert.ok(asterisms.some((a) => a.id === id), `${id} is a row`);
+    assert.equal(matched.get(id!)?.labels["ja"], was, `${id}: the dump's label is the one the fix replaces`);
+    assert.equal(chinese.find(id!)?.names.ja, ja);
+  }
 });
