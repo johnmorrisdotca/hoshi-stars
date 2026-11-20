@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Three more Japanese forms on the Chinese sky's Japanese page** (MODULES-1739), after a review of the five left open: 鱉 is written 鼈 and 廁 厠 (in `JA_CHARACTERS`: 鱉 is drawn badly, and 廁, a JIS level 3 character, may be blank on older Android phones), and 螣蛇 is written 騰蛇 (the new `JA_NAME_FORMS` in `scripts/make-culture-parts.py`: 螣 is rare and may not be drawn, and 騰蛇 is the form a Japanese reader knows). 礪 (礪石) and 瀆 (四瀆) stay, being the standard print forms. 22 names now have a Japanese form of their own (60 Japanese names in all), and no character is left open.
+
 ## [0.58.0] - 2026-11-20
 
 - **The Japanese page writes one form of each character in the Chinese sky's names** (MODULES-1739). Only 38 asterisms had a Japanese name (Wikidata's), so one Japanese screen put 右摂提 beside 左攝提 and a child could pick the answer by its script. `scripts/make-culture-parts.py` now writes, for every asterism with no Wikidata label, the Traditional name with the 17 characters that have a standard Japanese form in that form (`JA_CHARACTERS`: 虛 參 攝 壘 將 樓 臺 廚 內 傳 從 祿 龜 舍 德 國 廄 as 虚 参 摂 塁 将 楼 台 厨 内 伝 従 禄 亀 舎 徳 国 厩), into `names.ja` of 18 more asterisms (參旗 as 参旗, 天廚 as 天厨, 三臺 as 三台, 傳舍 as 伝舎, 陰德 as 陰徳, 狗國 as 狗国, 天廄 as 天厩 …). 婁 畢 觜 軫 張 氐 漸 淵 鉤 穀 勢 陣 軍 and the rare 龠 爟 溷 潢 are not changed, and five still in doubt (礪, 鱉, 廁, 瀆, and 螣 of 螣蛇) wait for a native reader. Bare names, mansions keep 宿, no readings. The table is a reviewed hoshi correction, named in NOTICE.md; `--check` fails if it has a dead or doubtful entry.

@@ -47,13 +47,19 @@ JA_LABEL_FIXES = {
 # that label and is not converted. Names are not given a 星 or a 座 and the mansions keep 宿; no reading is added.
 JA_CHARACTERS = {
     "虛": "虚", "參": "参", "攝": "摂", "壘": "塁", "將": "将", "樓": "楼", "臺": "台", "廚": "厨", "內": "内", "傳": "伝", "從": "従", "祿": "禄", "龜": "亀",
-    "舍": "舎", "德": "徳", "國": "国", "廄": "厩",
+    "舍": "舎", "德": "徳", "國": "国", "廄": "厩", "鱉": "鼈", "廁": "厠",
+}
+# A name written with another character on the Japanese page, after the review of 2026-11-20 (the asterism's id: the Traditional name the data has, `was`, and the name kept, `ja`): 螣 is a rare
+# character that may not be drawn by a reader's fonts, and 騰蛇 is the form a Japanese reader knows. The script stops if the row no longer has that name.
+JA_NAME_FORMS = {
+    "teng2-she2": {"was": "螣蛇", "ja": "騰蛇", "why": "螣 is rare and may not be drawn; 騰蛇 is the form a Japanese reader knows"},
 }
 # Characters of the names that are the same in Japanese on purpose, and must never be in the table: 婁 畢 觜 軫 張 氐 (the Japanese forms are the same as the Traditional), 漸 淵 鉤 穀 勢 陣 軍,
-# and the rare 龠 爟 溷 潢 (the reviewer's word, 2026-11-20).
-JA_CHARACTERS_KEPT = "婁畢觜軫張氐漸淵鉤穀勢陣軍龠爟溷潢"
-# Characters of the names that may have a different Japanese form and are not decided here: they wait for a native reader (礪 or 砺, 鱉 or 鼈, 廁 or 厠, 瀆 or 涜, and 螣蛇 or 騰蛇), never converted.
-JA_CHARACTER_QUESTIONS = "礪鱉廁瀆螣"
+# the rare 龠 爟 溷 潢, and 礪 (礪石) and 瀆 (四瀆), the standard print forms, which are drawn everywhere (the reviewer's word, 2026-11-20).
+JA_CHARACTERS_KEPT = "婁畢觜軫張氐漸淵鉤穀勢陣軍龠爟溷潢礪瀆"
+# Characters of the names that may have a different Japanese form and are not decided yet: never converted. None is open since the review of 2026-11-20 (鱉 is written 鼈 and 廁 厠, both in
+# the table: 鱉 is drawn badly and 廁, JIS level 3, may be blank on older phones; 礪 and 瀆 are kept; 螣蛇 is written 騰蛇 by JA_NAME_FORMS).
+JA_CHARACTER_QUESTIONS = ""
 NOTE = re.compile(r"\s*[(（][^)）]*[)）]\s*$")
 
 HEADER = (
@@ -108,6 +114,9 @@ def build():
         if item is None or item["labels"].get("ja") != fix["was"]:
             raise SystemExit(f"JA_LABEL_FIXES: {fixed} no longer has the dump label {fix['was']!r}")
     names = [r[1] for r in rows]
+    for renamed, form in JA_NAME_FORMS.items():
+        if not any(r[0] == renamed and r[1] == form["was"] for r in rows):
+            raise SystemExit(f"JA_NAME_FORMS: {renamed} no longer has the name {form['was']!r}")
     for kept in JA_CHARACTERS_KEPT + JA_CHARACTER_QUESTIONS:
         if kept in JA_CHARACTERS:
             raise SystemExit(f"JA_CHARACTERS: {kept} is a kept or doubtful character and must not be converted")
@@ -131,6 +140,9 @@ def build():
         if item is not None and "ja" in item["labels"] and not NOTE.search(item["labels"]["ja"]):
             ja = JA_LABEL_FIXES.get(row[0], {}).get("ja", item["labels"]["ja"])
             stats["ja"] += 1
+        if ja == "" and row[0] in JA_NAME_FORMS:
+            ja = JA_NAME_FORMS[row[0]]["ja"]
+            stats["ja_named"] = stats.get("ja_named", 0) + 1
         if ja == "" and japanese_form(row[1]) != row[1]:
             ja = japanese_form(row[1])
             stats["ja_table"] = stats.get("ja_table", 0) + 1

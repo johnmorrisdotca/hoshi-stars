@@ -17,7 +17,7 @@ function numbersOf(chains: string, numbered: string): Record<number, number> {
 /**
  * The traditional Chinese sky as a culture: about 240 asterisms, the 28 mansions first. Each lists the stars of it the Bright Star Catalogue holds, with each star's number in it (`numbers`: 角宿一 is 1); where the asterism has
  * more stars than we hold (fainter than magnitude 6.0, or not named with a catalogue number in Wikidata: the data cannot tell which) `missing` says
- * at least how many, and the figure draws only the stars we have. The English name, `names.ja` (the Japanese label: Wikidata's on 38 asterisms, and on 18 more the Traditional name with the characters that have a standard Japanese form written in it, 參旗 as 参旗; a name with nothing to change has none; it waits for a native reader) and `partOf` (the enclosure or mansion) are Wikidata's, where it has them. The lines are our own joins of those stars, not the traditional drawing. Pass it to `constellations`, `constellation`, `starsIn`, `figures` or `figureOf`.
+ * at least how many, and the figure draws only the stars we have. The English name, `names.ja` (the Japanese label: Wikidata's on 38 asterisms, and on 22 more the Traditional name with the characters that have a standard Japanese form written in it, 參旗 as 参旗, or 騰蛇 for 螣蛇; a name with nothing to change has none; it waits for a native reader) and `partOf` (the enclosure or mansion) are Wikidata's, where it has them. The lines are our own joins of those stars, not the traditional drawing. Pass it to `constellations`, `constellation`, `starsIn`, `figures` or `figureOf`.
  *
  * @example
  * ```ts
