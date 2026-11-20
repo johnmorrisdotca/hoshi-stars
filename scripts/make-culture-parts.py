@@ -14,7 +14,7 @@ The match of a row to a file item uses nothing but the labels, never a guess:
 - more than one item, or a name that another row has too (the old lists have two 五諸侯, two 柱, two 天田), matches nothing: the row is left as it is.
 The part of statement is kept when it names exactly one of the Three Enclosures (Purple Forbidden Q1145852, Supreme Palace Q1145944, Heavenly Market Q1145862) or one mansion (an item matched
 to one of the 28 mansion rows); a statement that names a Western constellation is a different fact and is not used. A mansion's own part (its Symbol) is in the `group` column and stays.
-Then every asterism that has no Japanese label gets its Traditional name with the characters of JA_CHARACTERS (thirteen, each with a standard Japanese form) written in that form, so that a Japanese page
+Then every asterism that has no Japanese label gets its Traditional name with the characters of JA_CHARACTERS (each with a standard Japanese form) written in that form, so that a Japanese page
 shows one form (MODULES-1739); the characters that are the same (婁 畢 觜 軫 張 氐) and the doubtful ones (JA_CHARACTER_QUESTIONS) are left. Two Japanese labels are corrected in JA_LABEL_FIXES (庫樓 to 庫楼, 文昌星 to 文昌, with the reasons); --check and a run stop if the dump no longer holds the label a fix replaces.
 A row with no matching item keeps the part of it had. The Japanese label (`ja`) is kept where the item has one, as Wikidata gives it; a label ending in a bracketed note (`北極 (星座)`) is a
 page title and not a name and is left out.
@@ -47,11 +47,13 @@ JA_LABEL_FIXES = {
 # that label and is not converted. Names are not given a 星 or a 座 and the mansions keep 宿; no reading is added.
 JA_CHARACTERS = {
     "虛": "虚", "參": "参", "攝": "摂", "壘": "塁", "將": "将", "樓": "楼", "臺": "台", "廚": "厨", "內": "内", "傳": "伝", "從": "従", "祿": "禄", "龜": "亀",
+    "舍": "舎", "德": "徳", "國": "国", "廄": "厩",
 }
-# Characters of the names that are the same in Japanese on purpose, and must never be in the table: 婁 畢 觜 軫 張 氐 (the Japanese forms are the same as the Traditional) and 漸.
-JA_CHARACTERS_KEPT = "婁畢觜軫張氐漸"
-# Characters of the names that may have a different Japanese form and are not decided here: for the reviewer, never converted.
-JA_CHARACTER_QUESTIONS = "礪廄"
+# Characters of the names that are the same in Japanese on purpose, and must never be in the table: 婁 畢 觜 軫 張 氐 (the Japanese forms are the same as the Traditional), 漸 淵 鉤 穀 勢 陣 軍,
+# and the rare 龠 爟 溷 潢 (the reviewer's word, 2026-11-20).
+JA_CHARACTERS_KEPT = "婁畢觜軫張氐漸淵鉤穀勢陣軍龠爟溷潢"
+# Characters of the names that may have a different Japanese form and are not decided here: they wait for a native reader (礪 or 砺, 鱉 or 鼈, 廁 or 厠, 瀆 or 涜, and 螣蛇 or 騰蛇), never converted.
+JA_CHARACTER_QUESTIONS = "礪鱉廁瀆螣"
 NOTE = re.compile(r"\s*[(（][^)）]*[)）]\s*$")
 
 HEADER = (

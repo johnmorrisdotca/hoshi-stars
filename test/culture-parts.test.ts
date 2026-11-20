@@ -106,7 +106,7 @@ test("the Japanese labels: Wikidata's, where it has one, as it gives it", () => 
   assert.equal(matched.get("bei3-ji2")?.labels["ja"], "北極 (星座)");
   assert.equal(chinese.find("北極")?.names.ja, undefined);
   assert.ok(withJa.every((a) => !/[()（）]/.test(a.names.ja!)));
-  assert.equal(asterisms.filter((a) => a.names.ja !== undefined).length, 53, "38 of Wikidata and 15 in Japanese forms");
+  assert.equal(asterisms.filter((a) => a.names.ja !== undefined).length, 56, "38 of Wikidata and 18 in Japanese forms");
 });
 
 test("two Japanese labels are corrected after a review, and the map of corrections in the script names rows that exist with the dump's label", () => {
@@ -127,17 +127,17 @@ test("two Japanese labels are corrected after a review, and the map of correctio
 });
 
 // The Japanese page shows one form of each character (MODULES-1739): the Traditional name where the data has no Japanese label would put 左攝提 beside Wikidata's 右摂提 and a child could pick the answer by its script.
-const TABLE: Record<string, string> = { 虛: "虚", 參: "参", 攝: "摂", 壘: "塁", 將: "将", 樓: "楼", 臺: "台", 廚: "厨", 內: "内", 傳: "伝", 從: "従", 祿: "禄", 龜: "亀" };
-const KEPT = "婁畢觜軫張氐漸";
+const TABLE: Record<string, string> = { 虛: "虚", 參: "参", 攝: "摂", 壘: "塁", 將: "将", 樓: "楼", 臺: "台", 廚: "厨", 內: "内", 傳: "伝", 從: "従", 祿: "禄", 龜: "亀", 舍: "舎", 德: "徳", 國: "国", 廄: "厩" };
+const KEPT = "婁畢觜軫張氐漸淵鉤穀勢陣軍龠爟溷潢";
 const japanesePage = (a: (typeof asterisms)[number]): string => a.names.ja ?? a.name;
 
-test("the table of Japanese forms is the reviewed one: the script holds exactly these 13 pairs, and the characters that are the same in Japanese or still a question are not in it", () => {
+test("the table of Japanese forms is the reviewed one: the script holds exactly these 17 pairs, and the characters that are the same in Japanese or still a question are not in it", () => {
   const script = readFileSync(new URL("../scripts/make-culture-parts.py", import.meta.url), "utf8");
   const block = /JA_CHARACTERS = \{([^}]*)\}/.exec(script)![1]!;
   const pairs = Object.fromEntries([...block.matchAll(/"(.)": "(.)"/gu)].map((m) => [m[1]!, m[2]!]));
   assert.deepEqual(pairs, TABLE);
   for (const c of KEPT) assert.ok(!(c in TABLE) && !Object.values(TABLE).includes(c) || c === "", `${c} is not converted`);
-  for (const c of "礪廄") assert.ok(!(c in TABLE), `${c} is a question for the reviewer, not converted`);
+  for (const c of "礪鱉廁瀆螣") assert.ok(!(c in TABLE), `${c} is a question for the reviewer, not converted`);
   assert.ok(Object.keys(TABLE).every((c) => !Object.values(TABLE).includes(c)), "no form is both converted and a result");
   // every converted character is in the name of some asterism, so the table has no dead entry
   for (const c of Object.keys(TABLE)) assert.ok(asterisms.some((a) => a.name.includes(c)), c);
@@ -163,10 +163,10 @@ test("every asterism's name on the Japanese page has no character the table woul
   assert.ok(asterisms.filter((a) => a.kind === "mansion").every((a) => japanesePage(a).endsWith("宿")));
 });
 
-test("the 15 names the table converts, Traditional then Japanese", () => {
+test("the 18 names the table converts, Traditional then Japanese", () => {
   const wikidata = (a: (typeof asterisms)[number]): boolean => matched.get(a.id)?.labels["ja"] !== undefined;
   assert.deepEqual(
     asterisms.filter((a) => a.names.ja !== undefined && !wikidata(a)).map((a) => `${a.name}>${a.names.ja}`).sort(),
-    ["三臺>三台", "司祿>司禄", "外廚>外厨", "天壘城>天塁城", "天廚>天厨", "傳舍>伝舍", "內平>内平", "內廚>内厨", "內階>内階", "參旗>参旗", "市樓>市楼", "從官>従官", "漸臺>漸台", "左攝提>左摂提", "龜>亀"].sort(),
+    ["三臺>三台", "司祿>司禄", "外廚>外厨", "天壘城>天塁城", "天廚>天厨", "傳舍>伝舎", "內平>内平", "內廚>内厨", "內階>内階", "參旗>参旗", "市樓>市楼", "從官>従官", "漸臺>漸台", "左攝提>左摂提", "龜>亀", "天廄>天厩", "狗國>狗国", "陰德>陰徳"].sort(),
   );
 });
