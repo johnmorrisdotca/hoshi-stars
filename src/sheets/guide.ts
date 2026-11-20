@@ -68,13 +68,18 @@ const SAY = {
   },
 } as const;
 
+/** How many named stars the evening line has when there is room: the six brightest. When the sheet is out of room for the rest it has fewer (`FEWER_STARS`), then none. */
+const EVENING_STARS = 6;
+/** The counts the evening line falls back to when even the smallest figures and the fewest rows do not fit the page, as the lists of the other two parts are capped. */
+const FEWER_STARS: readonly number[] = [4, 2, 1, 0];
+
 /** The brightest named stars above the horizon at about 21:00 by the Sun on the 15th, name and magnitude, brightest first. */
-function brightestEvening(latitude: number, month: number, lang: Lang): string {
+function brightestEvening(latitude: number, month: number, lang: Lang, count = EVENING_STARS): string {
   const lst = (sunRightAscension(month, 15) + 135) % 360;
   const up = stars()
     .filter((star) => star.name !== undefined && altitudeAt(latitude, star.declination, star.rightAscension, lst) > 0)
     .sort((a, b) => a.magnitude - b.magnitude || a.hr - b.hr)
-    .slice(0, 6);
+    .slice(0, count);
   const sep = lang === "ja" ? "、" : ", ";
   return up.map((star) => `${lang === "ja" ? (star.nameJa ?? star.name!) : star.name!} ${star.magnitude.toFixed(1)}`).join(sep);
 }
@@ -110,10 +115,10 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
   const head = t.nameMm * 0.75;
   const neverWords = never6.map((e) => (lang === "ja" ? e.constellation.japanese : e.constellation.name)).join(lang === "ja" ? "、" : ", ");
   const neverLines = wrap(neverWords === "" ? "-" : neverWords, options.widthMm - 2.4, t.bodyMm);
-  const starLines = wrap(say.stars(brightestEvening(latitude, month, lang)), options.widthMm - 2.4, t.bodyMm);
   const whyEntry = [...always, ...best][0];
   const why = whyEntry === undefined ? undefined : whyFamous(whyEntry.constellation.abbreviation, lang);
-  const lay = (shrink: number, withWhy: boolean, bestRows: number): { parts: string[]; end: number } => {
+  const lay = (shrink: number, withWhy: boolean, bestRows: number, names = EVENING_STARS): { parts: string[]; end: number } => {
+    const starLines = names === 0 ? [] : wrap(say.stars(brightestEvening(latitude, month, lang, names)), options.widthMm - 2.4, t.bodyMm);
     const size = (cell - 3) * shrink;
     const rowHeight = size + t.bodyMm * 2.7;
     const parts: string[] = [];
@@ -137,7 +142,7 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
       y += t.bodyMm * 1.5;
     } else grid(best, Math.min(bestRows, Math.ceil(best.length / columns)));
     starLines.forEach((line, i) => parts.push(text(1.2, y + t.bodyMm + i * t.bodyMm * 1.3, t.bodyMm, line, i === 0 ? ' data-stars=""' : "")));
-    y += starLines.length * t.bodyMm * 1.3 + 2;
+    y += starLines.length === 0 ? 0 : starLines.length * t.bodyMm * 1.3 + 2;
     heading(say.never);
     neverLines.forEach((line, i) => parts.push(text(1.2, y + t.bodyMm + i * t.bodyMm * 1.3, t.bodyMm, line)));
     y += neverLines.length * t.bodyMm * 1.3 + 3;
@@ -148,7 +153,7 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
     }
     return { parts, end: y };
   };
-  // as much as fits: two rows of the evening's best and the note, then fewer, then smaller figures
+  // as much as fits: two rows of the evening's best and the note, then fewer, then smaller figures, then fewer named stars
   let made = lay(0.5, false, 1);
   search: for (const shrink of [1, 0.9, 0.8, 0.7, 0.6, 0.5]) {
     for (const [withWhy, rows] of [[true, 2], [false, 2], [true, 1], [false, 1]] as const) {
@@ -157,6 +162,13 @@ export function regionGuideSvg(latitude: number, month: number, options: { width
         made = one;
         break search;
       }
+    }
+  }
+  // still too tall (a short page, the biggest type, a long list of stars never seen): the evening's stars are named fewer, down to none, before anything runs off the page
+  if (made.end > options.heightMm) {
+    for (const names of FEWER_STARS) {
+      made = lay(0.5, false, 1, names);
+      if (made.end <= options.heightMm) break;
     }
   }
   const parts = made.parts;

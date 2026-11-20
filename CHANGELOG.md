@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The constellation guide sheet no longer runs a line off a short page** (MODULES-1737). 0.56.0 added a line naming the six brightest stars of the evening to the "constellations for where you live" sheet; at 34 degrees south in July on a letter page in the big type, the layout had no tier small enough and the last line (the constellations never seen from there) ran 10 mm off the bottom. When the smallest figures and the fewest rows still do not fit, the evening line now names fewer stars (4, 2, 1) and then none, as the other lists of the sheet are capped; nothing else changes, and every page that fitted is as it was. No new words.
+
 ## [0.56.0] - 2026-11-20
 
 ## [0.55.0] - 2026-11-20
