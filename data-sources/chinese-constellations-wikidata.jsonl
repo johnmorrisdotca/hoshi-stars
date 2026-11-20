@@ -120,6 +120,7 @@
 {"id":"Q17061964","labels":{"zh":"马尾","ja":"馬尾"},"p31":["Q1074076"],"p361":[]}
 {"id":"Q17066791","labels":{"zh":"西咸"},"p31":["Q1074076"],"p361":[]}
 {"id":"Q24841222","labels":{"zh":"蛇腹"},"p31":["Q1074076"],"p361":[]}
+{"id":"Q9285","role":"p361-target","labels":{"en":"Coma Berenices","zh":"后发座"}}
 {"id":"Q8906","role":"p361-target","labels":{"en":"Ophiuchus","zh":"蛇夫座"}}
 {"id":"Q8910","role":"p361-target","labels":{"en":"Serpens","zh":"巨蛇座"}}
 {"id":"Q10452","role":"p361-target","labels":{"en":"Canes Venatici","zh":"猎犬座"}}
