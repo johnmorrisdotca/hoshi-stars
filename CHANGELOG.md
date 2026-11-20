@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.58.1] - 2026-11-20
+
 - **Three more Japanese forms on the Chinese sky's Japanese page** (MODULES-1739), after a review of the five left open: 鱉 is written 鼈 and 廁 厠 (in `JA_CHARACTERS`: 鱉 is drawn badly, and 廁, a JIS level 3 character, may be blank on older Android phones), and 螣蛇 is written 騰蛇 (the new `JA_NAME_FORMS` in `scripts/make-culture-parts.py`: 螣 is rare and may not be drawn, and 騰蛇 is the form a Japanese reader knows). 礪 (礪石) and 瀆 (四瀆) stay, being the standard print forms. 22 names now have a Japanese form of their own (60 Japanese names in all), and no character is left open.
 
 ## [0.58.0] - 2026-11-20
