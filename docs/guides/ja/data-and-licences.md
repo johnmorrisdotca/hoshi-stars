@@ -25,6 +25,10 @@ description: データの出どころ、MITのパッケージが再配布でき�
 
 イェール恒星三角視差総合カタログ（CDS I/238A）、Romanの境界表（VI/42）、明るい銀河の第3参照カタログ（RC3、VII/155）は、ストラスブール天文データセンター（CDS）のカタログサービスVizieR経由で読みました。CDSは2026年11月12日に、VizieRの再配布条件はカタログごとに決まっていること、原典の作成者の条件が優先されること、ソフトウェアを含むあらゆる再利用でサービスと原典の著者の両方を引用しなければならないことを伝えてきました。3つのReadMeのどれにもライセンスの記載はなく（RC3のReadMeはカタログと著者への謝辞を求めています）、使っている値は事実なので、両方のクレジットを付けて使います。このパッケージは、VizieRカタログアクセスツール（CDS、ストラスブール、フランス、https://doi.org/10.26093/cds/vizier）のデータを利用しています。VizieRサービスを最初に紹介した論文は、F. Ochsenbein, P. Bauer and J. Marcout (2000), "The VizieR database of astronomical catalogues", Astronomy and Astrophysics Supplement Series 143, 23（https://doi.org/10.1051/aas:2000169）です。SIMBADやAladinのHiPSタイルのデータは使っていません（どちらも、同じ条件での再配布を求めるODbLです）。全文は`NOTICE.md`にあります。
 
+## NEDの値と、まとめて外すスイッチ
+
+NASA/IPAC NEDから来ている値は3種類あります。メシエ・NGC・IC天体545個の位置、銀河2,698個の形、超大質量ブラックホール217個の場所（ブラックホールがある銀河の位置）です。データを作る3つのスクリプト（`scripts/make-deep-sky-data.py`、`scripts/make-deep-sky-shapes.py`、`scripts/make-black-hole-data.py`）には同じスイッチ `--no-ned` があり、付けるとNEDの値が1つもないデータができます。代わりに使うのは、位置はWikidata、形はRC3だけ、ブラックホールの場所は銀河のWikidataの位置です。今のデータには使っていません。付けると変わるのは次のとおりです。545個の位置のうち35個は1度以上ずれます（Wikidataの値のほうが間違っています）。銀河2,698個は形がなくなり、点線の記号で描きます。ブラックホールのある銀河がNGC・IC・メシエ天体ではない47個は場所がなくなり、除きます（301個が254個になります）。数と出どころは `NOTICE.md` にあります。
+
 ## わざと入れていないもの
 
 - **ESAのHipparcos、Tycho、Gaia**はCC BY-NC 3.0 IGOで、非営利のみです。MITのパッケージは再配布できません。

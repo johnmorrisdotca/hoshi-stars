@@ -106,3 +106,27 @@ test("no script holds an address of NED's /srs/ or /cgi-bin/ pages, and the blac
   assert.match(/def ned_lookup\(name: str\):\n(.*)\n/.exec(blackHoles)![1]!, /raise SystemExit\(f"\{REFUSE_NED\}/);
   assert.match(blackHoles, /REFUSE_NED = \("make-black-hole-data\.py does not ask NASA\/IPAC NED's web pages \(MODULES-839\)/);
 });
+
+test("one switch, --no-ned, is in the three data builds, and NOTICE.md says which values are NED's and that it removes them", () => {
+  for (const file of ["scripts/make-deep-sky-data.py", "scripts/make-deep-sky-shapes.py", "scripts/make-black-hole-data.py"]) assert.match(readFileSync(file, "utf8"), /"--no-ned" (not )?in /, `${file} has no --no-ned`);
+  const notice = readFileSync("NOTICE.md", "utf8");
+  const section = /## Values taken from NASA\/IPAC NED[^\n]*\n([\s\S]*?)\n## /.exec(notice)![1]!;
+  for (const word of ["--no-ned", "545", "2,698", "217", "scripts/make-black-hole-data.py"]) assert.ok(section.includes(word), `NOTICE.md's NED section does not mention ${word}`);
+});
+
+test("the black-hole build without NED takes a host's place from Wikidata's position: the one kept beside NED's where NED replaced it, and none where the deep-sky rows hold no such object", () => {
+  const program = [
+    "import importlib.util, json",
+    "spec = importlib.util.spec_from_file_location('bh', 'scripts/make-black-hole-data.py')",
+    "m = importlib.util.module_from_spec(spec)",
+    "spec.loader.exec_module(m)",
+    "p = m.wikidata_places()",
+    "print(json.dumps({k: p.get(k) for k in ['M8', 'NGC 224', 'M31', 'Mrk 335']}))",
+  ].join("\n");
+  const run = spawnSync("python3", ["-I", "-c", program], { encoding: "utf8", timeout: 30_000 });
+  assert.equal(run.status, 0, run.stderr);
+  const places = JSON.parse(run.stdout) as Record<string, { ra: number; dec: number } | null>;
+  assert.deepEqual(places["M8"], { ra: 270.9042, dec: -24.3867 }, "M8's position is Wikidata's, not NED's 270.9219, -24.3802");
+  assert.deepEqual(places["NGC 224"], places["M31"], "a Messier object's NGC number gives the same place");
+  assert.equal(places["Mrk 335"], null, "no place that is not NED's for a host that is neither Messier, NGC nor IC");
+});

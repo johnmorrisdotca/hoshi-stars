@@ -8,13 +8,15 @@ Sources (the sentence relied on and the date read are in NOTICE.md)
 - Supermassive black holes: the table of black hole masses in van den Bosch (2016, ApJ 831, 134), read from the paper's LaTeX source on arXiv (arXiv:1606.01246), with the
   galaxy's place from NASA/IPAC NED (the nucleus's position, a fact; NED asks for an acknowledgement, which NOTICE.md gives). Rows that are only upper limits are left out.
   NED's places were looked up on 2026-11-09 at its /srs/ObjectLookup, which NED's robots.txt asks scripts not to use, so they are read only from the cache (ned.json) saved then:
-  a host missing from it stops the build, and NED is never asked.
+  a host missing from it stops the build, and NED is never asked. With --no-ned the build reads no NED answer: a host's place is then Wikidata's (CC0), the position src/data/messier.ts
+  and ngc-ic.ts hold for that NGC, IC or Messier object (Wikidata's own, not the NED one scripts/deep-sky-ned-positions.tsv replaced it with), and a host those files do not hold has no place, so it is left out.
 - The few systems typed here (HAND_STELLAR, HAND_QUIET, HAND_SUPERMASSIVE) are facts from the discovery papers named in each row; their places are Wikidata's (CC0),
   checked against the papers or against BlackCAT.
 
     python3 -I scripts/make-black-hole-data.py                    # reads what is in the cache (the caches below) and fetches what is missing
     python3 -I scripts/make-black-hole-data.py --save DIR         # ... and keeps every answer in DIR
     python3 -I scripts/make-black-hole-data.py --from DIR         # reads answers saved earlier, never the network
+    python3 -I scripts/make-black-hole-data.py --no-ned           # no NED value at all: each host's place is Wikidata's, as src/data/messier.ts and ngc-ic.ts hold it; a host they do not hold is left out
 
 None of this runs in the test.
 """
@@ -469,6 +471,25 @@ def ned_lookup(name: str):
     raise SystemExit(f"{REFUSE_NED} No saved answer for {name}.")
 
 
+def wikidata_places() -> dict[str, dict]:
+    """Wikidata's place of each Messier, NGC and IC object (`M31`, `NGC 224`, `IC 342`) from the deep-sky rows, where an object whose position scripts/deep-sky-ned-positions.tsv replaced with NED's gets
+    the Wikidata position that file keeps beside it."""
+    wikidata = {}
+    for line in (ROOT / "scripts" / "deep-sky-ned-positions.tsv").read_text(encoding="utf-8").splitlines():
+        fields = line.split("\t")
+        wikidata[fields[0]] = (float(fields[3]), float(fields[4]))
+    places = {}
+    for name in ("messier", "ngc-ic"):
+        rows = re.search(r"= `(.*?)`", (ROOT / "src" / "data" / f"{name}.ts").read_text(encoding="utf-8"), re.S).group(1).split("\n")
+        for row in rows:
+            p = row.split("|")
+            key = f"M{p[0]}" if p[0] else (f"NGC {p[1].split(',')[0]}" if p[1] else f"IC {p[2].split(',')[0]}")
+            ra, dec = wikidata.get(key, (int(p[4]) / 10000, int(p[5]) / 10000))
+            for designation in ([f"M{p[0]}"] if p[0] else []) + [f"NGC {n}" for n in p[1].split(",") if n] + [f"IC {n}" for n in p[2].split(",") if n]:
+                places.setdefault(designation, {"ra": ra, "dec": dec})
+    return places
+
+
 def host_name(name: str) -> str:
     """`NGC0224` -> `NGC 224`; `Mrk0050` -> `Mrk 50`; `3C120` -> `3C 120`; `CygnusA` -> `Cygnus A`."""
     n = re.sub(r"\{\\tiny (.*)\}", r"\1", name)
@@ -523,6 +544,8 @@ def main() -> None:
     args = sys.argv[1:]
     cache = Path(args[args.index("--from") + 1]) if "--from" in args else (Path(args[args.index("--save") + 1]) if "--save" in args else Path("/tmp/hoshi-black-hole-cache"))
     offline = "--from" in args
+    no_ned = "--no-ned" in args
+    position_ref = R("Wikidata", "https://www.wikidata.org", "Wikidata (CC0 1.0)") if no_ned else R("NED", "https://ned.ipac.caltech.edu", "NASA/IPAC Extragalactic Database")
     cache.mkdir(parents=True, exist_ok=True)
     (cache / "blackcat").mkdir(exist_ok=True)
     (cache / "vdb16").mkdir(exist_ok=True)
@@ -566,10 +589,13 @@ def main() -> None:
 
     # NED places for the host galaxies
     ned_path = cache / "ned.json"
-    ned = json.loads(ned_path.read_text()) if ned_path.exists() else {}
+    ned = {} if no_ned else (json.loads(ned_path.read_text()) if ned_path.exists() else {})
     wanted_hosts = sorted({re.sub(r"\{\\tiny (.*)\}", r"\1", r["name"]) for r in vdb_rows} | {"M87"})
+    if no_ned:
+        places = wikidata_places()
+        ned = {host: places[host_name(host)] for host in wanted_hosts if host not in NED_DROP and host_name(host) in places}
     for host in wanted_hosts:
-        if host in ned or host in NED_DROP:
+        if no_ned or host in ned or host in NED_DROP:
             continue
         if offline:
             raise SystemExit(f"missing NED answer for {host}")
@@ -623,7 +649,7 @@ def main() -> None:
     for host, s in by_host.items():
         keys = [R(k, bibliography[k][0] or k, bibliography[k][1]) for k in s["paper"]]
         paper = R("vandenBosch2016", "2016ApJ...831..134V", "van den Bosch 2016, ApJ 831, 134")
-        s["refs"] = {"position": R("NED", "https://ned.ipac.caltech.edu", "NASA/IPAC Extragalactic Database"), "mass": "+".join(keys), "distance": paper, "found": keys[0]}
+        s["refs"] = {"position": position_ref, "mass": "+".join(keys), "distance": paper, "found": keys[0]}
         names = [s["host"]]
         m = messier.get(s["host"])
         s["others"] = ([m[1]] if m and m[1] else []) + ([s["host"]] if m else [])
@@ -634,6 +660,8 @@ def main() -> None:
         if "ned" in h:
             where = ned.get(h["ned"])
             h["ra"], h["dec"] = where["ra"], where["dec"]
+            if no_ned:
+                h["refs"]["position"] = position_ref
     # Sgr A* and M87* are typed above from the papers that measured them; the table's row for M87 (NGC 4486) is dropped (NED_DROP) and the Milky Way's row too.
 
     everything = systems + HAND + HAND_SUPERMASSIVE + supermassive
