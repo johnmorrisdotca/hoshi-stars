@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.59.0] - 2026-11-21
+
 - **The HEASARC tables are downloaded by the route HEASARC documents** (MODULES-1010). https://heasarc.gsfc.nasa.gov/robots.txt disallows `/FTP/` to robots, and the data scripts (`make-star-data.py`, `make-rotation-data.py`, `make-nearby-data.py`, `make-deep-sky-data.py`, `make-deep-sky-shapes.py`, `make-gap-sao.py`, `make-milky-way-data.py`) fetched the `heasarc_*.tdat.gz` tables from there. They now read them through `scripts/heasarc.py` (one constant, `HEASARC_TABLES`) by anonymous FTP over TLS, which HEASARC's command-line downloads page names as the replacement for its anonymous FTP. The files are the same (same sizes and modification times; the SAO and Yale checksums match), and rebuilding `src/data/stars.ts` and `src/data/rotation.ts` changes nothing. NOTICE.md has the decision and HEASARC's sentence. No shipped data changed.
 
 - **One switch, `--no-ned`, builds the data with no NED value** (MODULES-1022). `scripts/make-deep-sky-data.py` (the 545 positions) and `scripts/make-deep-sky-shapes.py` (the 2,698 shapes) already had it; `scripts/make-black-hole-data.py` now has it too (the places of 217 supermassive black holes): a host's place is then Wikidata's position of its NGC, IC or Messier object (170 of the 217, a median 0.006 arc-minute from NED's, none over 0.75), and the 47 hosts that are none of those are left out, so 301 black holes become 254. Without the flag the black-hole build writes the same file as before. NOTICE.md says which values are NED's, what the switch changes and the counts; the data guide says it in English and Japanese. No shipped data changed.
