@@ -25,6 +25,7 @@ Needs only Python 3 and its standard library. It does not run in the test.
 import argparse
 import base64
 import gzip
+import importlib.util
 import math
 import struct
 import sys
@@ -32,7 +33,11 @@ import tempfile
 import urllib.request
 from pathlib import Path
 
-SAO_URL = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_sao.tdat.gz"
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location("heasarc", Path(__file__).resolve().parent / "heasarc.py")
+H = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(H)
+
 SKYVIEW = "https://skyview.gsfc.nasa.gov/cgi-bin/images?Survey={survey}&Position=0,0&Coordinates=Galactic&Projection=Car&Size=360,100&Pixels={w},{h}&Sampler=Clip&Return=FITS"
 IRAS_URL = SKYVIEW.format(survey="IRAS+100", w=1440, h=400)
 DIRBE_URL = SKYVIEW.format(survey="COBE+DIRBE%2FZSMA", w=720, h=200)
@@ -79,6 +84,13 @@ def fetch(url: str, dest: Path) -> Path:
         request = urllib.request.Request(url, headers={"User-Agent": "hoshi-stars-data/1 (+https://github.com/johnmorrisdotca/hoshi-stars)"})
         with urllib.request.urlopen(request, timeout=900) as r:
             dest.write_bytes(r.read())
+    return dest
+
+
+def fetch_sao(dest: Path) -> Path:
+    if not dest.exists():
+        print("fetching heasarc_sao.tdat.gz", file=sys.stderr)
+        dest.write_bytes(H.fetch_table("sao"))
     return dest
 
 
@@ -377,7 +389,7 @@ def main() -> None:
     parser.add_argument("--preview", type=Path)
     args = parser.parse_args()
     args.cache.mkdir(parents=True, exist_ok=True)
-    stars = read_sao(fetch(SAO_URL, args.cache / "heasarc_sao.tdat.gz"))
+    stars = read_sao(fetch_sao(args.cache / "heasarc_sao.tdat.gz"))
     print(f"{len(stars)} SAO stars with a magnitude", file=sys.stderr)
     ratio = star_ratio(stars)
     iras = read_fits(fetch(IRAS_URL, args.cache / "iras100.fits"), 1440, 400)

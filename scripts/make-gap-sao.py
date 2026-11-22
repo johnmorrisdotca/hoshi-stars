@@ -4,7 +4,7 @@ and scripts/compare-gap.py compares them. NOTICE.md says which of them ships.
 
 Source (read 2026-11-09; NOTICE.md quotes the sentences relied on)
 - The Smithsonian Astrophysical Observatory Star Catalog (SAO Staff 1966), the Astronomical Data Center's J2000 version (VizieR I/131A), as NASA's HEASARC serves it: table `sao`,
-  https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/sao.html, file https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_sao.tdat.gz (258,944 stars). The same footing as the Yale Bright Star Catalogue (a NASA-served catalogue, used with credit).
+  https://heasarc.gsfc.nasa.gov/W3Browse/star-catalog/sao.html, file heasarc_sao.tdat.gz, fetched by scripts/heasarc.py over anonymous FTPS (258,944 stars). The same footing as the Yale Bright Star Catalogue (a NASA-served catalogue, used with credit).
 - It measured its own stars: its positions and proper motions come from the AGK2, the Yale, Cape and Melbourne zone catalogues and the Boss General Catalogue, all of them ground-based, from before ESA's satellite flew. It holds no Hipparcos, Tycho or Gaia value.
 - The J2000 positions are Clayton A. Smith's (U.S. Naval Observatory) on the FK5 at equinox and epoch J2000.0, with proper motions on the FK5 (`proper_motion_ra_fk5` in seconds of time a year, `proper_motion_dec_fk5` in arc-seconds a year);
   no further proper motion is applied (scripts/compare-gap.py checks this against 2MASS). The magnitude is the catalogue's visual magnitude, from Durchmusterung, Harvard and other sources, good to about 0.3.
@@ -27,7 +27,6 @@ import math
 import re
 import sys
 import time
-import urllib.request
 from collections import Counter
 from pathlib import Path
 
@@ -41,11 +40,13 @@ def load_common():
 
 
 G = load_common()
+spec = importlib.util.spec_from_file_location("heasarc", Path(__file__).resolve().parent / "heasarc.py")
+H = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(H)
 
 DEFAULT_RAW = G.BACKUPS / "2026-11-09-sao-raw"
 DEFAULT_UCAC4 = G.BACKUPS / "2026-11-09-ucac4-raw"
 DEFAULT_OUT = G.BACKUPS / "2026-11-09-gap-tiles" / "sao"
-URL = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_sao.tdat.gz"
 FILE = "heasarc_sao.tdat.gz"
 PROFILE_TABLES = G.ROOT / "src" / "data" / "profile-tables.ts"
 
@@ -61,9 +62,7 @@ def download(raw: Path):
     raw.mkdir(parents=True, exist_ok=True)
     path = raw / FILE
     if not path.exists():
-        req = urllib.request.Request(URL, headers={"User-Agent": G.USER_AGENT})
-        with urllib.request.urlopen(req, timeout=600) as r:
-            path.write_bytes(r.read())
+        path.write_bytes(H.fetch_table("sao"))
     print(f"{path}: {path.stat().st_size} bytes, SHA-256 {hashlib.sha256(path.read_bytes()).hexdigest()}")
 
 

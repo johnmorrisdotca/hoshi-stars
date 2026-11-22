@@ -26,6 +26,7 @@ What it keeps
 None of this runs in the test.
 """
 import gzip
+import importlib.util
 import json
 import math
 import re
@@ -38,8 +39,12 @@ import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location("heasarc", Path(__file__).resolve().parent / "heasarc.py")
+H = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(H)
+
 ENDPOINT = "https://query.wikidata.org/sparql"
-HEASARC = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_messier.tdat.gz"
 USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/hoshi-stars)"
 ROOT = Path(__file__).resolve().parent.parent
 OUT_MESSIER = ROOT / "src" / "data" / "messier.ts"
@@ -157,9 +162,7 @@ def heasarc_messier(saved: Path | None, keep: Path | None):
     if saved is not None:
         raw = (saved / "messier.tdat.gz").read_bytes()
     else:
-        request = urllib.request.Request(HEASARC, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(request, timeout=120) as response:
-            raw = response.read()
+        raw = H.fetch_table("messier")
         if keep is not None:
             keep.mkdir(parents=True, exist_ok=True)
             (keep / "messier.tdat.gz").write_bytes(raw)

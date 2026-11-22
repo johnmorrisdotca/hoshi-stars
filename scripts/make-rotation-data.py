@@ -5,18 +5,22 @@ Source: the same catalogue and file as scripts/make-star-data.py (Hoffleit and W
 serves it), its columns `rotvel` (km/s), `rotvel_comm` ("<" or "=<": an upper limit) and `rotvel_uncert` (":" uncertain). v sin i is the equator's speed
 times the sine of the angle between the spin axis and the line of sight: the true speed is that or more, and the axis's tilt is not known from it.
 
-    python3 -I scripts/make-rotation-data.py                 # fetches HEASARC's heasarc_bsc5p.tdat.gz (needs the network)
+    python3 -I scripts/make-rotation-data.py                 # fetches HEASARC's heasarc_bsc5p.tdat.gz by scripts/heasarc.py (anonymous FTPS; needs the network)
     python3 -I scripts/make-rotation-data.py --from FILE     # reads that file saved earlier, gzipped or not
 
 It does not run in the test.
 """
 import gzip
+import importlib.util
 import sys
-import urllib.request
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location("heasarc", Path(__file__).resolve().parent / "heasarc.py")
+H = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(H)
+
 LIMIT = 6.0
-SOURCE = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_bsc5p.tdat.gz"
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "src" / "data" / "rotation.ts"
 
@@ -40,8 +44,7 @@ def main() -> None:
     if "--from" in sys.argv:
         text = unpack(Path(sys.argv[sys.argv.index("--from") + 1]).read_bytes())
     else:
-        with urllib.request.urlopen(SOURCE, timeout=120) as response:
-            text = unpack(response.read())
+        text = unpack(H.fetch_table("bsc5p"))
     table = (ROOT / "src" / "data" / "stars.ts").read_text(encoding="utf-8").split("STAR_ROWS = `", 1)[1].split("`", 1)[0]
     ours = {int(row.split("|", 1)[0]) for row in table.splitlines()}
     rows = []

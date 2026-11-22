@@ -13,7 +13,7 @@ NOT the Hipparcos or Tycho catalogues (including the new reduction, van Leeuwen 
 The common names are our own list, keyed by the catalogue's Bayer designation; each is checked here against the catalogue (the star must exist and
 be as bright as the name implies). Names follow the IAU Working Group on Star Names (its Catalog of Star Names, IAU-CSN, last updated 2022-04-04).
 
-    python3 -I scripts/make-star-data.py                 # fetches HEASARC's heasarc_bsc5p.tdat.gz and the Yale parallax catalogue (needs the network)
+    python3 -I scripts/make-star-data.py                 # fetches HEASARC's heasarc_bsc5p.tdat.gz (scripts/heasarc.py: anonymous FTPS) and the Yale parallax catalogue (needs the network)
     python3 -I scripts/make-star-data.py --from FILE --gctp FILE  # reads those files saved earlier (the first gzipped or not; picat.dat as is)
     node scripts/set-star-constellations.ts              # then fills the constellation of the stars the catalogue names none for, from the boundaries
 
@@ -21,13 +21,18 @@ Neither runs in the test.
 """
 import gzip
 import hashlib
+import importlib.util
 import re
 import sys
 import urllib.request
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location("heasarc", Path(__file__).resolve().parent / "heasarc.py")
+H = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(H)
+
 LIMIT = 6.0
-SOURCE = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_bsc5p.tdat.gz"
 GCTP_SOURCE = "https://vizier.cfa.harvard.edu/ftp/cats/I/238A/picat.dat"
 GCTP_SHA256 = "3b483e9ddf76e2fa9860adf2d25aae79ee257de428284c3351e5e81e402727a6"
 OUT = Path(__file__).resolve().parent.parent / "src" / "data" / "stars.ts"
@@ -156,8 +161,7 @@ def unpack(raw: bytes) -> str:
 
 
 def fetch() -> str:
-    with urllib.request.urlopen(SOURCE, timeout=120) as response:
-        return unpack(response.read())
+    return unpack(H.fetch_table("bsc5p"))
 
 
 def records(text: str):

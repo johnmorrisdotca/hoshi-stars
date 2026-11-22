@@ -23,6 +23,7 @@ The cache holds the downloads and every IRSA answer, so a second run is offline.
 import csv
 import gzip
 import hashlib
+import importlib.util
 import io
 import math
 import re
@@ -38,13 +39,17 @@ from astropy import units as u
 from astropy.coordinates import FK4, FK5, SkyCoord
 from astropy.time import Time
 
+sys.dont_write_bytecode = True
+spec = importlib.util.spec_from_file_location("heasarc", Path(__file__).resolve().parent / "heasarc.py")
+H = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(H)
+
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / ".cache" / "nearby"
 OUT = ROOT / "src" / "data" / "nearby.ts"
 
 GCTP_URL = "https://vizier.cfa.harvard.edu/ftp/cats/I/238A/picat.dat"
 GCTP_SHA256 = "3b483e9ddf76e2fa9860adf2d25aae79ee257de428284c3351e5e81e402727a6"
-BSC_URL = "https://heasarc.gsfc.nasa.gov/FTP/heasarc/dbase/tdat_files/heasarc_bsc5p.tdat.gz"
 BSC_SHA256 = "e2b2f8e9d615426f9478f88061235976143d49d8b25c6c15df3f3661c7095b53"  # of the unpacked table
 TAP_URL = "https://irsa.ipac.caltech.edu/TAP/sync"
 
@@ -110,16 +115,19 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def download(url: str, name: str, offline: bool) -> bytes:
+def download(url: str | None, name: str, offline: bool) -> bytes:
     path = CACHE / name
     if path.exists():
         return path.read_bytes()
     if offline:
         raise SystemExit(f"--offline: {path} is not in the cache")
     CACHE.mkdir(parents=True, exist_ok=True)
-    request = urllib.request.Request(url, headers={"User-Agent": "hoshi-stars make-nearby-data (data build, one run)"})
-    with urllib.request.urlopen(request, timeout=180) as response:
-        data = response.read()
+    if url is None:
+        data = H.fetch_table(name.removeprefix("heasarc_").removesuffix(".tdat.gz"))
+    else:
+        request = urllib.request.Request(url, headers={"User-Agent": "hoshi-stars make-nearby-data (data build, one run)"})
+        with urllib.request.urlopen(request, timeout=180) as response:
+            data = response.read()
     path.write_bytes(data)
     return data
 
@@ -365,7 +373,7 @@ def bsc_designation(text: str):
 
 def bright_hd_numbers(offline):
     """HD number to HR number over the whole Bright Star Catalogue (HEASARC's table), to find the GCTP stars that are among the bright stars (or fainter ones of the same catalogue); and each HR number's designation."""
-    raw = download(BSC_URL, "heasarc_bsc5p.tdat.gz", offline)
+    raw = download(None, "heasarc_bsc5p.tdat.gz", offline)
     text = (gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw)
     if sha256(text) != BSC_SHA256:
         raise SystemExit(f"heasarc_bsc5p.tdat is not the file this script was written for (SHA-256 {sha256(text)})")

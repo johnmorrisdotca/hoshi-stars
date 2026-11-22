@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The HEASARC tables are downloaded by the route HEASARC documents** (MODULES-1010). https://heasarc.gsfc.nasa.gov/robots.txt disallows `/FTP/` to robots, and the data scripts (`make-star-data.py`, `make-rotation-data.py`, `make-nearby-data.py`, `make-deep-sky-data.py`, `make-deep-sky-shapes.py`, `make-gap-sao.py`, `make-milky-way-data.py`) fetched the `heasarc_*.tdat.gz` tables from there. They now read them through `scripts/heasarc.py` (one constant, `HEASARC_TABLES`) by anonymous FTP over TLS, which HEASARC's command-line downloads page names as the replacement for its anonymous FTP. The files are the same (same sizes and modification times; the SAO and Yale checksums match), and rebuilding `src/data/stars.ts` and `src/data/rotation.ts` changes nothing. NOTICE.md has the decision and HEASARC's sentence. No shipped data changed.
+
 ## [0.58.1] - 2026-11-20
 
 - **Three more Japanese forms on the Chinese sky's Japanese page** (MODULES-1739), after a review of the five left open: 鱉 is written 鼈 and 廁 厠 (in `JA_CHARACTERS`: 鱉 is drawn badly, and 廁, a JIS level 3 character, may be blank on older Android phones), and 螣蛇 is written 騰蛇 (the new `JA_NAME_FORMS` in `scripts/make-culture-parts.py`: 螣 is rare and may not be drawn, and 騰蛇 is the form a Japanese reader knows). 礪 (礪石) and 瀆 (四瀆) stay, being the standard print forms. 22 names now have a Japanese form of their own (60 Japanese names in all), and no character is left open.
