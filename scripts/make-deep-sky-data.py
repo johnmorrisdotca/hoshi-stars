@@ -21,7 +21,7 @@ What it keeps
     python3 -I scripts/make-deep-sky-data.py                      # runs the queries (needs the network)
     python3 -I scripts/make-deep-sky-data.py --save DIR           # ... and keeps each answer in DIR
     python3 -I scripts/make-deep-sky-data.py --from DIR           # reads answers saved earlier
-    python3 -I scripts/make-deep-sky-data.py --no-ned             # leaves out scripts/deep-sky-ned-positions.tsv, to compare Wikidata's own positions with NED's
+    python3 -I scripts/make-deep-sky-data.py --no-ned             # no NED value: leaves out scripts/deep-sky-ned-positions.tsv, so every position is Wikidata's (the same switch as make-deep-sky-shapes.py and make-black-hole-data.py)
 
 None of this runs in the test.
 """

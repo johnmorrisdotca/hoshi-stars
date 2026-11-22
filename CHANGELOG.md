@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **One switch, `--no-ned`, builds the data with no NED value** (MODULES-1022). `scripts/make-deep-sky-data.py` (the 545 positions) and `scripts/make-deep-sky-shapes.py` (the 2,698 shapes) already had it; `scripts/make-black-hole-data.py` now has it too (the places of 217 supermassive black holes): a host's place is then Wikidata's position of its NGC, IC or Messier object (170 of the 217, a median 0.006 arc-minute from NED's, none over 0.75), and the 47 hosts that are none of those are left out, so 301 black holes become 254. Without the flag the black-hole build writes the same file as before. NOTICE.md says which values are NED's, what the switch changes and the counts; the data guide says it in English and Japanese. No shipped data changed.
+
 ## [0.58.1] - 2026-11-20
 
 - **Three more Japanese forms on the Chinese sky's Japanese page** (MODULES-1739), after a review of the five left open: 鱉 is written 鼈 and 廁 厠 (in `JA_CHARACTERS`: 鱉 is drawn badly, and 廁, a JIS level 3 character, may be blank on older Android phones), and 螣蛇 is written 騰蛇 (the new `JA_NAME_FORMS` in `scripts/make-culture-parts.py`: 螣 is rare and may not be drawn, and 騰蛇 is the form a Japanese reader knows). 礪 (礪石) and 瀆 (四瀆) stay, being the standard print forms. 22 names now have a Japanese form of their own (60 Japanese names in all), and no character is left open.

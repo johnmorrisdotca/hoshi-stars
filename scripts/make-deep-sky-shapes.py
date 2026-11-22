@@ -8,7 +8,8 @@ records each and the day it was read:
   NED lists (ESO-LV, UGC, ESO-Uppsala), and where there is none, the 2MASS K_s "total" diameter. Never a row that NED took from RC3 (so the NED-only build below holds no RC3 number), never an
   X-ray extent, never a guess. Those answers were fetched one page per galaxy from NED's /cgi-bin/, which NED's robots.txt asks scripts not to use, and NED's terms for passing the numbers on
   are being confirmed (NOTICE.md). So this script never asks NED: it reads NED's answers only from a folder saved earlier (`--from`), and refuses to run otherwise. It is ONE FLAG too:
-  `--no-ned` builds the shapes without NED (RC3's, and the dotted symbol where RC3 has none).
+  `--no-ned` builds the shapes without NED (RC3's, and the dotted symbol where RC3 has none): the same switch as make-deep-sky-data.py (positions) and make-black-hole-data.py (places),
+  so that every NED value can be left out of a build.
 - RC3, the Third Reference Catalogue of Bright Galaxies (de Vaucouleurs et al. 1991; HEASARC table `rc3`): for a galaxy, the major diameter at the B-band 25 mag/arcsec^2 isophote (D25),
   the axis ratio (R25) and the position angle. RC3 states no licence and its use is under confirmation (NOTICE.md), so it is ONE FLAG: `--no-rc3` builds the shapes from NED alone.
 
