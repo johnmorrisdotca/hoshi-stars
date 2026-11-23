@@ -48,7 +48,7 @@ const WORDS = {
     any: "any",
     ly: "ly",
     mag: "mag",
-    count: "{n} of {total} stars match",
+    count: "{n} of {total} stars match.",
     unknown: "{n} have no known distance and are hidden while the distance is set.",
     reset: "Show all stars",
   },
@@ -62,7 +62,7 @@ const WORDS = {
     any: "すべて",
     ly: "光年",
     mag: "等",
-    count: "{total}個の星のうち{n}個が条件に合っています",
+    count: "{total}個の星のうち{n}個が条件に合っています。",
     unknown: "{n}個は距離がわからないので、距離をしぼっている間は出しません。",
     reset: "すべての星を出す",
   },
@@ -137,7 +137,7 @@ export function starFilterWords(filter: StarFilter, lang: "en" | "ja"): { neares
  * import { starFilterSummary } from "@johnmorrisdotca/hoshi-stars/star-filter/bar";
  *
  * console.log(starFilterSummary({ distanceMax: 100 }, { shown: 300, total: 5080, noDistance: 2755 }, "en").count);
- * // 300 of 5,080 stars match
+ * // 300 of 5,080 stars match.
  * ```
  */
 export function starFilterSummary(filter: StarFilter, count: StarFilterCount | undefined, lang: "en" | "ja"): { count: string; unknown: string } {
