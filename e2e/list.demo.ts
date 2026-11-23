@@ -1,6 +1,7 @@
 // The list of the IAU's 88 with filters that combine, a count and Clear all. On a desk each filter is a chip that opens a menu; on a phone one Filters button opens a sheet. Every test that
 // chooses something goes through whichever one the page shows, so the same test plays on both.
 import { expect, test, type Page } from "@playwright/test";
+import { expectParam, watchConsole } from "./address-warnings.ts";
 
 const LIST = "/hoshi-stars/constellation-list.html";
 const PHONE_WIDTH = 720;
@@ -51,6 +52,7 @@ test("the table holds the IAU's 88 and says so, with their pictures, and Clear a
 });
 
 test("choices in one filter add up, filters narrow each other, and the count and the address follow", async ({ page }) => {
+  const said = watchConsole(page);
   await page.goto(LIST);
   await choose(page, "hemi", "Northern sky");
   await expect(count(page)).toHaveText("29 of 88 shown");
@@ -62,9 +64,9 @@ test("choices in one filter add up, filters narrow each other, and the count and
   await choose(page, "shower", "Has some");
   await expect(count(page)).toHaveText("4 of 88 shown");
   await expect(rows(page).locator(".ls-name")).toHaveText(["Boötes", "Draco", "Gemini", "Perseus"]);
-  await expect.poll(() => param(page, "hemi")).toBe("north");
-  await expect.poll(() => param(page, "easy")).toBe("easy");
-  await expect.poll(() => param(page, "shower")).toBe("yes");
+  await expectParam(page, "hemi", "north", said);
+  await expectParam(page, "easy", "easy", said);
+  await expectParam(page, "shower", "yes", said);
   expect(await chosen(page, "easy")).toEqual(["Easy"]);
 });
 

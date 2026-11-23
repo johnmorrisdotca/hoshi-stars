@@ -1,5 +1,6 @@
 // Sky cultures: the Sky culture choice is kept in the address (culture=chinese), picking one redraws the figures and names that culture uses, picking a figure shows its card, and the Japanese and Chinese labels fit.
 import { expect, test, type Page } from "@playwright/test";
+import { expectParam, watchConsole } from "./address-warnings.ts";
 
 const HOME = "/hoshi-stars/";
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
@@ -79,10 +80,11 @@ test("a figure with stars not in our data says so on its card, and draws only th
 });
 
 test("a pick that is not in the new culture is dropped when the culture changes", async ({ page }) => {
+  const said = watchConsole(page);
   await open(page, "?culture=japanese&pick=C:subaru");
   await expect(page.getByTestId("picked")).toContainText("すばる");
   await choice(page, "Chinese").click();
-  await expect.poll(() => param(page, "pick")).toBeNull();
+  await expectParam(page, "pick", null, said);
   await expect(page.getByTestId("picked")).toContainText("Tap the chart");
 });
 
