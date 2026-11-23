@@ -168,6 +168,8 @@ test("the gallery of the Japanese sky holds 106 figures, finds them by kana and 
   await page.getByTestId("gallery-search").fill("しちせい");
   await expect(tiles).toHaveCount(1);
   await page.getByTestId("gallery-search").fill("Orion's belt");
+  // one tile before and one after: wait for the tile that is Orion's Belt, or the click lands on the one the last search left
+  await expect(tiles.first()).toHaveAttribute("data-abbr", "mitsuboshi");
   await expect(tiles).toHaveCount(1);
   await tiles.first().click();
   await expect.poll(() => param(page, "pick")).toBe("C:mitsuboshi");
