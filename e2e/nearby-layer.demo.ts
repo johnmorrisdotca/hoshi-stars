@@ -21,7 +21,8 @@ test("the layer is off to begin with, its button turns it on, and the address ke
   await expect.poll(() => param(page, "layers")).toContain("nearby");
   await button(page).click();
   await expect(rings(page)).toHaveCount(0);
-  await expect.poll(() => param(page, "layers")).not.toContain("nearby");
+  // back to the default layers, which the address leaves out
+  await expect.poll(() => param(page, "layers")).toBeNull();
 });
 
 test("an address with the layer opens with it, and a wide view draws none", async ({ page }) => {
