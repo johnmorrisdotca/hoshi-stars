@@ -7,6 +7,9 @@ import "@johnmorrisdotca/kazoku-ui/wide-layout/define";
 import "@johnmorrisdotca/kazoku-ui/embed-panel/define";
 import type { EmbedChangeDetail, EmbedPanelElement } from "@johnmorrisdotca/kazoku-ui/embed-panel/element";
 import { WORDS } from "../scripts/page-words.ts";
+import { brightCount } from "../src/star-filter-bright.ts";
+import { starFilterSummary, starFilterWords } from "../src/star-filter-bar.ts";
+import { distanceOfStep, distanceStep, DISTANCE_STOPS, magnitudeOfStep, magnitudeStep, normaliseStarFilter, starFilterActive, starFilterFromText, starFilterToText, starPasses, type StarFilter } from "../src/star-filter.ts";
 import { starByHr, starColour, starDistance, starDistanceLightYears, stars, type Star } from "../src/index.ts";
 import type { SeenSky, SeenStar } from "../src/sky-from.ts";
 import { constellation, starsIn, type Constellation } from "../src/constellations.ts";
@@ -107,6 +110,8 @@ const projector: SkyProjector = (ra, dec, o) => {
 };
 /** The sky out to this many light-years (Infinity for all), or undefined for the sky as it was. */
 let limit: number | undefined;
+/** The distance range and the faintest magnitude kept (`dmin`, `dmax` and `mlim` in the address); no limit when empty. */
+let filter: StarFilter = {};
 /** Draw the stars of grade C dimmer (`uncertainty=on` in the address). */
 let showUncertainty = false;
 /** Show the fixed sample of the Moon and the bright planets (`bodies=sample` in the address). */
@@ -130,6 +135,7 @@ function read(): void {
     zoom: asked > 0 ? Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, asked)) : defaultZoom(projection, width, height),
   };
   magnitude = Math.max(2, Math.min(6, Number(address.get("mag")) || DEFAULT_MAGNITUDE));
+  filter = starFilterFromText(address.get("dmin"), address.get("dmax"), address.get("mlim"));
   const named = address.get("layers");
   layers = layersOf(named === "none" ? "" : named);
   picked = address.get("pick");
@@ -212,7 +218,7 @@ function draw(): void {
   const keepClear = clear();
   overlay.update(projector, { width, height }, keepClear);
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
-  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), showUncertainty, bodies: showBodies ? SAMPLE_BODIES : undefined, culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, filter, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), showUncertainty, bodies: showBodies ? SAMPLE_BODIES : undefined, culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
   chosenPictures = new Set(out.wanted);
   // names were kept clear of the line as it was: when it changes, draw once more so that they keep clear of it as it is now
   if (showPictureCredits($("picture-credits"), out.pictures, lang() === "ja")) schedule();
@@ -342,6 +348,7 @@ function pressed(): void {
   slider.value = String(magnitude);
   $("magnitude-out").textContent = magnitude.toFixed(1);
   distancePanel();
+  filterPanel();
   $("shown").textContent = limit !== undefined && sky === undefined && layersFor(limit) !== undefined ? say("distShown").replace("{n}", layersFor(limit)!.things.length.toLocaleString(lang())).replace("{limit}", limit === Infinity ? say("distAllWords") : say("distLimitText").replace("{n}", limit.toLocaleString(lang()))) : `${(sky === undefined ? stars({ magnitude }).length : sky.filter((star) => star.magnitude <= magnitude).length).toLocaleString(lang())} ${say("sampleCount")}`;
   fromChoices();
 }
@@ -359,6 +366,41 @@ function setNames(count: number | undefined, magnitude?: number): void {
   address.setMany({ [STAR_NAMES_ATTRIBUTES.count]: count === undefined ? null : String(count), [STAR_NAMES_ATTRIBUTES.magnitude]: magnitude === undefined ? null : String(magnitude) });
   everything();
 }
+/** The two filter bars: their positions and spoken values from the filter, and how many stars match. The distance view's bands have their own limit, so the bars wait while it is on. */
+function filterPanel(): void {
+  const on = limit === undefined || sky !== undefined;
+  $("filters").hidden = !on;
+  const spoken = starFilterWords(filter, lang());
+  $<HTMLInputElement>("flt-min").value = String(distanceStep(filter.distanceMin, "min"));
+  $<HTMLInputElement>("flt-max").value = String(distanceStep(filter.distanceMax, "max"));
+  $<HTMLInputElement>("flt-mag").value = String(magnitudeStep(filter.magnitudeLimit));
+  for (const [id, text] of [["flt-min", spoken.nearest], ["flt-max", spoken.farthest], ["flt-mag", spoken.brightness]] as const) {
+    $(`${id}-out`).textContent = text;
+    $(id).setAttribute("aria-valuetext", text);
+  }
+  $("flt-reset").hidden = !starFilterActive(filter);
+  const count = sky === undefined ? brightCount(filter) : { shown: sky.filter((star) => starPasses(filter, star.magnitude, star.lightYears)).length, total: sky.length, noDistance: 0 };
+  const said = starFilterSummary(filter, count, lang());
+  $("flt-note").textContent = [said.count, said.unknown].filter((part) => part !== "").join(" ");
+}
+function setFilter(next: StarFilter): void {
+  filter = normaliseStarFilter(next);
+  const text = starFilterToText(filter);
+  address.setMany({ dmin: text.distanceMin, dmax: text.distanceMax, mlim: text.magnitudeLimit });
+  everything();
+}
+const bar = (id: string): number => Number($<HTMLInputElement>(id).value);
+$("flt-min").addEventListener("input", () => {
+  if (bar("flt-min") >= bar("flt-max")) $<HTMLInputElement>("flt-max").value = String(Math.min(DISTANCE_STOPS.length - 1, bar("flt-min") + 1));
+  setFilter({ ...filter, distanceMin: distanceOfStep(bar("flt-min"), "min"), distanceMax: distanceOfStep(bar("flt-max"), "max") });
+});
+$("flt-max").addEventListener("input", () => {
+  if (bar("flt-max") <= bar("flt-min")) $<HTMLInputElement>("flt-min").value = String(Math.max(0, bar("flt-max") - 1));
+  setFilter({ ...filter, distanceMin: distanceOfStep(bar("flt-min"), "min"), distanceMax: distanceOfStep(bar("flt-max"), "max") });
+});
+$("flt-mag").addEventListener("input", () => setFilter({ ...filter, magnitudeLimit: magnitudeOfStep(bar("flt-mag")) }));
+$("flt-reset").addEventListener("click", () => setFilter({}));
+
 /** The distance row: which limit is chosen, the slider and its readout, the legend and the note about what is left out. */
 function distancePanel(): void {
   const on = limit !== undefined && sky === undefined;
@@ -1164,7 +1206,7 @@ function galaxiesPanel(): void {
 
 // ----- the code to copy -----
 const panel = $<EmbedPanelElement>("embed-panel");
-const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(starNames === undefined || sky !== undefined ? {} : { starNames }), ...(lineStrength === undefined || sky !== undefined ? {} : { lineStrength }), ...(labelLook === "display" || starNames === undefined ? {} : { labelLook }), ...(limit === undefined || sky !== undefined ? {} : { limit }), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null || picked.startsWith("B:") ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
+const choice = (size = width): Choice => ({ ...view, zoom: (view.zoom * fitScale(view.projection, width, height) * size) / width / fitScale(view.projection, size, heightFor(size)), ra: Math.round(view.ra * 100) / 100, dec: Math.round(view.dec * 100) / 100, magnitude, layers, lang: lang(), ...(!starFilterActive(filter) || (limit !== undefined && sky === undefined) ? {} : { filter }), ...(starNames === undefined || sky !== undefined ? {} : { starNames }), ...(lineStrength === undefined || sky !== undefined ? {} : { lineStrength }), ...(labelLook === "display" || starNames === undefined ? {} : { labelLook }), ...(limit === undefined || sky !== undefined ? {} : { limit }), ...(from === undefined ? {} : { from: fromText(from) }), ...(cultureText(culture) === null ? {} : { cultureId: culture.id }), ...(pickedConstellation() === undefined ? {} : { highlight: pickedConstellation() }), ...(picked === null || picked.startsWith("B:") ? {} : { nearTo: picked, ...(by === "space" ? { nearBy: by } : {}) }) });
 panel.kinds = ["module", "html", "react", "vue", "angular", "svelte", "iframe"];
 /** The picked star as a choice for the star's code, or `undefined` where no star with a catalogue number is picked (the Sun, a constellation, nothing). */
 function starChoiceNow(): StarChoice | undefined {

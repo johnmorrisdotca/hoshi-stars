@@ -66,6 +66,13 @@
               <div class="fam-row"><label class="fam-label" for="from" data-say="viewFrom"></label><select id="from" class="fam-field" data-testid="from"></select></div>
               <p class="fam-fine" id="from-note" data-testid="from-note" aria-live="polite" hidden></p>
               <div class="fam-row"><label class="fam-label" for="magnitude" data-say="magnitude"></label><input id="magnitude" class="fam-range" data-testid="magnitude" type="range" min="2" max="6" step="0.5" value="5" /><output id="magnitude-out" class="fam-chip" for="magnitude"></output><span class="fam-fine" id="shown" data-testid="shown"></span></div>
+              <div id="filters" data-testid="filters" role="group" data-say-label="fltDistance">
+                <div class="fam-row"><span class="fam-label" data-say="fltDistance"></span></div>
+                <div class="fam-row"><label class="fam-label" for="flt-min" data-say="fltNearest"></label><input id="flt-min" class="fam-range" data-testid="flt-min" type="range" min="0" max="9" step="1" value="0" /><output id="flt-min-out" class="fam-chip" for="flt-min" data-testid="flt-min-out"></output></div>
+                <div class="fam-row"><label class="fam-label" for="flt-max" data-say="fltFarthest"></label><input id="flt-max" class="fam-range" data-testid="flt-max" type="range" min="1" max="10" step="1" value="10" /><output id="flt-max-out" class="fam-chip" for="flt-max" data-testid="flt-max-out"></output></div>
+                <div class="fam-row"><label class="fam-label" for="flt-mag" data-say="fltBrightness"></label><input id="flt-mag" class="fam-range" data-testid="flt-mag" type="range" min="0" max="12" step="1" value="12" /><output id="flt-mag-out" class="fam-chip" for="flt-mag" data-testid="flt-mag-out"></output></div>
+                <div class="fam-row"><span class="fam-fine" id="flt-note" data-testid="flt-note" role="status" aria-live="polite"></span><button type="button" class="fam-button" id="flt-reset" data-testid="flt-reset" data-say="fltReset" hidden></button></div>
+              </div>
               <p class="fam-fine faint-note" id="faint-note" data-testid="faint-note" aria-live="polite"></p>
               <div class="fam-row" id="readings-row" hidden><button type="button" class="fam-button" id="readings" data-testid="readings"></button></div>
             </div>

@@ -50,6 +50,8 @@ A drag looks around, and a pinch, or Ctrl (Command) and the wheel, narrows and w
 | `ra`, `dec` | The direction it opens facing, in degrees on the equatorial axes (J2000). Left out, it faces the place it is at, or the Sun from a point. |
 | `fov` | The view's height in degrees at Fit, 10 to 120 (60). A pinch narrows it up to eight times from there. |
 | `sun-stop` | How far from the Sun's middle it stops, in astronomical units (six of the Sun's radii, about 0.028, where the Sun is a ball). It opens there, a flight home stops there, and a change moves it there if it is at the Sun. |
+| `distance-min`, `distance-max`, `magnitude-limit` | Keep only the stars at least, at most and no fainter than these: light-years from where the camera is now and the apparent magnitude seen from there. The sky is filtered once for a place. See the sky chart guide, "Filter by distance and brightness". |
+| `filter-bar` | Shows the distance and brightness bars over the view (folded on a narrow box; `filter-bar="open"` keeps them open). A bar writes the three attributes and sends `hoshi-filter`. |
 
 | Property or method | What it is |
 |---|---|

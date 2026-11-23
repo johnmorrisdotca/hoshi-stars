@@ -27,10 +27,12 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
   const layered = choice.limit !== undefined && choice.from === undefined;
   const hr = choice.from === undefined ? undefined : Number(choice.from.slice(2));
   const culture = choice.cultureId === "japanese" || choice.cultureId === "chinese" ? choice.cultureId : undefined;
+  const filtered = choice.filter !== undefined && !layered;
   const imports: Import[] = [
-    hr === undefined ? { names: layered ? "stars" : "starColour, stars", sub: "" } : { names: "blackBodyColour, starByHr, starTemperatureK", sub: "" },
+    hr === undefined ? { names: layered ? "stars" : filtered ? "starColour, starDistance, stars" : "starColour, stars", sub: "" } : { names: "blackBodyColour, starByHr, starTemperatureK", sub: "" },
     ...(layered ? [{ names: "layersByDistance, starInput", sub: "/distance" }] : []),
     ...(hr === undefined ? [] : [{ names: "skyFrom", sub: "/sky-from" }]),
+    ...(filtered ? [{ names: "starPasses", sub: "/star-filter" }] : []),
     ...(withLines ? [{ names: "figures", sub: "/lines" }] : []),
     ...(withLines && culture !== undefined ? [{ names: culture, sub: `/cultures/${culture}` }] : []),
     { names: "project", sub: "/projection" },
@@ -39,6 +41,7 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
   const lines = [
     `function skyChart() {`,
     ...(hr === undefined ? [] : [`  const sky = skyFrom(starByHr(${hr}), { magnitude: ${choice.magnitude} });`, `  const seen = new Map(sky.map((star) => [star.id, star]));`]),
+    ...(filtered ? [`  const filter = ${JSON.stringify(choice.filter)};`] : []),
     `  const view = { centre: { rightAscension: ${choice.ra.toFixed(2)}, declination: ${choice.dec.toFixed(2)} }, scale: ${scale} };`,
     `  const place = (point) => {`,
     `    const at = project("${choice.projection}", point, view);`,
@@ -70,12 +73,14 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
       : hr === undefined
       ? [
           `  for (const star of stars({ magnitude: ${choice.magnitude} })) {`,
+          ...(filtered ? [`    if (!starPasses(filter, star.magnitude, starDistance(star)?.lightYears)) continue;`] : []),
           `    const at = place(star);`,
           `    if (at) svg += \`<circle cx="\${at[0].toFixed(1)}" cy="\${at[1].toFixed(1)}" r="\${(Math.max(0.7, (${choice.magnitude} - star.magnitude) * 0.55 + 1.1) * ${growOf(choice.zoom)}).toFixed(1)}" fill="\${starColour(star)}"/>\`;`,
           `  }`,
         ]
       : [
           `  for (const star of sky) {`,
+          ...(filtered ? [`    if (!starPasses(filter, star.magnitude, star.lightYears)) continue;`] : []),
           `    const at = place(star);`,
           `    const colour = star.colourIndex === undefined ? "#ffffff" : blackBodyColour(starTemperatureK(star.colourIndex));`,
           `    if (at) svg += \`<circle cx="\${at[0].toFixed(1)}" cy="\${at[1].toFixed(1)}" r="\${(Math.max(0.7, (${choice.magnitude} - Math.max(star.magnitude, -2)) * 0.55 + 1.1) * ${growOf(choice.zoom)}).toFixed(1)}" fill="\${colour}"/>\`;`,

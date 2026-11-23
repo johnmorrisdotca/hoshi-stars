@@ -110,6 +110,39 @@ console.log("orion-uncertain.svg", svg.includes('data-uncertain="C"'), grade, li
 </html>
 ```
 
+## Filter by distance and brightness
+
+Two filters keep only the stars you want: a **distance** range in light-years and a **brightness** limit, the faintest apparent magnitude kept (smaller is brighter; the eye reaches about 6). They work on every sky the package draws: `<hoshi-chart>`, `<hoshi-my-sky>` and `<hoshi-flight>` (where the distance and the magnitude are the ones seen from the camera), and `chartSvg` as options. Only star dots and star names are filtered; the constellation lines and the names of the figures stay.
+
+```js
+import { chartSvg } from "@johnmorrisdotca/hoshi-stars/chart";
+import { starFilterFromText, starPasses } from "@johnmorrisdotca/hoshi-stars/star-filter";
+
+// Orion with only the stars within 100 light-years that are no fainter than magnitude 4.5: the lines of the figures stay.
+const all = chartSvg({ width: 640, height: 400, constellation: "Ori" });
+const near = chartSvg({ width: 640, height: 400, constellation: "Ori", distanceMax: 100, magnitudeLimit: 4.5 });
+const dots = (svg) => (svg.match(/<circle/g) ?? []).length;
+console.log(dots(near) < dots(all), near.includes("<path"));
+
+// The same limits as the text of the attributes, and the rule for one star: with a distance limit set, a star with no known distance is hidden.
+const filter = starFilterFromText("20", "any", "4.5");
+console.log(JSON.stringify(filter), starPasses(filter, 3, 40), starPasses(filter, 3, undefined));
+// true true
+// {"distanceMin":20,"magnitudeLimit":4.5} true false
+```
+
+| Attribute | Property | Meaning |
+| --- | --- | --- |
+| `distance-min` | `distanceMin` | Only stars at least this far, in light-years. Left out (property: 0) for no limit. |
+| `distance-max` | `distanceMax` | Only stars no farther than this, in light-years. Left out (property: `Infinity`) for no limit. |
+| `magnitude-limit` | `magnitudeLimit` | Hide stars fainter than this, however far you zoom in. `magnitude` is the faintest at the opening zoom and deepens as you zoom; this is a hard limit on top of it. |
+| `filter-bar` | | Shows the two bars over the sky: a distance range (nearest and farthest) and a brightness limit, as real range inputs with labels, in English and Japanese. On a box narrower than 520 pixels they start folded; `filter-bar="open"` keeps them open. |
+
+- **Stars with no known distance.** About half of the bright stars have no measured distance. They are shown while the distance is not narrowed, and **hidden as soon as `distance-min` or `distance-max` is set**, because a range cannot say that a star of unknown distance is inside it. The bars say how many stars that is. A magnitude limit alone never hides them.
+- **Short numbers for an address.** The attributes are plain numbers (`distance-max="100"`, `magnitude-limit="4.5"`), rounded to 3 figures; `any`, `off` or nothing is no limit. `starFilterToText` and `starFilterFromText` from `@johnmorrisdotca/hoshi-stars/star-filter` write and read them for a site that keeps the filter in its address.
+- **The event.** A bar writes the attributes and the element sends `hoshi-filter` with `{ distanceMin, distanceMax, magnitudeLimit, final }`: `final` is false while the hand is on a bar and true when it lets go (write your address then, as the demo does with `dmin`, `dmax` and `mlim`). The bar's own value is read aloud (for example "100 ly", "4.5 mag") and the line under it says how many stars match.
+- **Cost.** The filter is applied to the data, not star by star at each frame: the stars it keeps are worked out once for a filter (the flight: once for a place and a filter), and a redraw only looks them up. A page that does not use it loads none of it.
+
 ## As one SVG string
 
 ```js

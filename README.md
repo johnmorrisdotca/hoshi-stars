@@ -709,6 +709,14 @@ console.log(rigel.uncertain, Math.round(rigel.low), Math.round(rigel.high));
 // true 593 1483
 ```
 
+## Filter the stars by distance and brightness
+
+Every sky the package draws (`<hoshi-chart>`, `<hoshi-my-sky>`, `<hoshi-flight>` and `chartSvg`) can keep only the stars inside a distance range in light-years (`distance-min`, `distance-max`) and no fainter than an apparent magnitude (`magnitude-limit`); `filter-bar` shows the two bars. A star with no known distance is hidden while a distance is set; the constellation lines and names stay. The values are short numbers, so a site can keep them in its address; the element sends `hoshi-filter` as a bar moves. See the sky chart guide.
+
+```html
+<hoshi-chart constellation="Ori" distance-max="100" magnitude-limit="4.5" filter-bar></hoshi-chart>
+```
+
 ## Near stars and their planets
 
 `@johnmorrisdotca/hoshi-stars/near-stars` is the 73 star systems within 20 light-years (Alpha Centauri with Proxima, Barnard's Star, Wolf 359, Sirius and the rest), each with its name in English and Japanese where known, its place (J2000), its distance with the error, its companions and the source of every value. `@johnmorrisdotca/hoshi-stars/exoplanet-hosts` is 80 host stars of confirmed planets (the ones within 50 light-years, the IAU-named ones beyond and TRAPPIST-1) with each planet's name and orbital period. The planets are the NASA Exoplanet Archive's; the stars' places and distances are the Yale tables' and 2MASS's, never the Archive's Gaia and Hipparcos values. A page that shows the planets shows `EXOPLANET_ARCHIVE_ACKNOWLEDGEMENT`. The limits are `NEAR_STAR_LIMIT_LY` (20) and `EXOPLANET_HOST_LIMIT_LY` (50). [The guide](docs/guides/near-stars.md) has the fields and the rules.

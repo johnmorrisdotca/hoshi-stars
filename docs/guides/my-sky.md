@@ -30,12 +30,30 @@ It fills its box, so give it a height. With no `time` it is live: it follows the
 | `info="none"` | Hides the panel of the Moon and the planets. |
 | `constellation-lines` | A strength from 0 to 1, or `off`. The default is a quiet 0.32 in a dark sky. |
 | `star-names` | How many star names, or `off`. The default fits the size. |
+| `distance-min`, `distance-max`, `magnitude-limit` | Keep only the stars at least, at most and no fainter than these: light-years from the Earth and an apparent magnitude. A star with no known distance is hidden while a distance is set; the constellation lines stay. See the sky chart guide, "Filter by distance and brightness". |
+| `filter-bar` | Shows the distance and brightness bars over the sky (folded on a narrow box; `filter-bar="open"` keeps them open). A bar writes the three attributes and sends `hoshi-filter`. |
 | `daylight="show"` | Draw the stars even when the Sun is up. |
 | `target` | Turn to something and ring it: see [See it in my sky](#see-it-in-my-sky). |
 
 The properties are `latitude`, `longitude`, `time` (a `Date`, or `null` for live), `heading`, `pitch`, `fov`, `setView({ heading, pitch, fov })`, `target` and `marks` (the next section) and the read-only `sky` (`MySkyReport`: the same report as `skyReport` below, with the `target`). The element sends `hoshi-sky-view` (`MySkyViewDetail`: `heading`, `pitch`, `fov`, `final`) as the view turns, and `hoshi-sky-pick` (`MySkyPick`: `kind` `sun`, `moon`, `planet`, `figure` or `none`, and `id`) when a tap lands on something. The class is `HoshiMySkyElement`, its tag `MY_SKY_TAG` (`hoshi-my-sky`) and `defineMySky()` defines it; `@johnmorrisdotca/hoshi-stars/my-sky/define` does that when imported and `/my-sky/element` only exports the class.
 
 A drag, two fingers (pinch), Ctrl and the wheel, the arrow keys (Shift for a bigger step), + and - and Home are the family's view controls, `@johnmorrisdotca/kazoku-ui`. The sky is drawn with the stereographic projection, which keeps shapes true to a view 130 degrees across, so the horizon is a curve. The Moon and the planets are drawn larger than their true size, as every picture of the sky draws them. Stars are hidden as the Sun rises (a star is seen only when it is brighter than a limit that falls from 6 in the dark to -3 in daylight) and dimmed by the air near the horizon.
+
+## Fonts and parts
+
+The canvas names of `<hoshi-my-sky>` (the stars, the constellations, the Moon and planets, the target and your marks) read the page's CSS custom properties, as the sky-labels names and the chart do: `--hoshi-label-font` (a font family list), and `--hoshi-label-size` and `--hoshi-label-weight` for the star and constellation names. The other canvas text, the compass letters, reads `--hoshi-sky-font`, and so do the filter bars. Left out, each is the package's own font (Hiragino Sans, Noto Sans JP, then the system's), unchanged. They are read at each draw, so a change shows at the next turn of the view or the next tick.
+
+```css
+hoshi-my-sky { --hoshi-label-font: "Georgia", serif; --hoshi-label-size: 13px; --hoshi-sky-font: system-ui; }
+```
+
+The Moon card and the filter bars can be styled with `::part()`: `panel`, `title` (the card's heading, 14px and 600 by default), `rows` (its lines) and `toggle` (the fold button: 32px high, 8px radius, a blue border) on `<hoshi-my-sky>`; `filters`, `filters-title`, `filters-toggle`, `filters-group`, `filters-legend`, `filters-label`, `filters-range`, `filters-count` and `filters-reset` on the filter bars of the three elements.
+
+```css
+hoshi-my-sky::part(title) { font-size: 16px; }
+hoshi-my-sky::part(toggle) { border-radius: 999px; border-color: currentColor; }
+hoshi-chart::part(filters) { background: #101a3a; }
+```
 
 ## The maths under it
 

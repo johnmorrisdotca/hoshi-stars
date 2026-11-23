@@ -391,6 +391,11 @@ await step("chart-uncertainty-node", () => {
   if (out !== "orion-uncertain.svg true B 480-640 1.5") throw new Error(`unexpected output: ${out}`);
 });
 
+await step("chart-filter-node", () => {
+  const out = execFileSync(process.execPath, [join(examples("chart"), "filter.mjs")], { cwd: usage, encoding: "utf8" }).trim();
+  if (out !== 'true true\n{"distanceMin":20,"magnitudeLimit":4.5} true false') throw new Error(`unexpected output: ${out}`);
+});
+
 await step("chart-uncertainty-cdn", async () => {
   await opened(browser, async (page) => {
     await page.route("https://cdn.jsdelivr.net/**", async (route) => {
@@ -743,6 +748,7 @@ const FILES: Record<string, string[]> = {
   "chart/cdn.html": ["README.md", "docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/uncertainty.mjs": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "chart/uncertainty.html": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
+  "chart/filter.mjs": ["docs/guides/sky-chart.md", "docs/guides/ja/sky-chart.md"],
   "markers/node.mjs": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
   "markers/cdn.html": ["docs/guides/sky-chart-markers.md", "docs/guides/ja/sky-chart-markers.md"],
   "bodies/node.mjs": ["docs/guides/sky-chart-bodies.md", "docs/guides/ja/sky-chart-bodies.md"],

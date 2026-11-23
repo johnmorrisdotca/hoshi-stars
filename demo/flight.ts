@@ -5,6 +5,7 @@
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import "../src/flight-define.ts";
 import { setThreeLoader, type FlightChange, type FlightStatus, type HoshiFlightElement } from "../src/flight-element.ts";
+import type { StarFilterDetail } from "../src/star-filter-bar.ts";
 import { flightPlaceById, flightPlaces, type FlightPlace } from "../src/flight-places.ts";
 import { starByHr } from "../src/stars.ts";
 import { distanceText, fill, FLIGHT_WORDS, lightTimeText, speedText, type FlightLang, type FlightWords } from "./flight-text.ts";
@@ -52,6 +53,16 @@ const flight = document.createElement("hoshi-flight") as HoshiFlightElement;
 flight.dataset.testid = "fl-stage";
 flight.setAttribute("lang", lang);
 flight.setAttribute("at", address.get("at") ?? "sun");
+// the star filters: the bars are the element's own, and what they set is kept in the address as short numbers (`dmin`, `dmax` in light-years from the camera, `mlim` a magnitude)
+for (const [key, attribute] of [["dmin", "distance-min"], ["dmax", "distance-max"], ["mlim", "magnitude-limit"]] as const) {
+  const asked = address.get(key);
+  if (asked !== null) flight.setAttribute(attribute, asked);
+}
+flight.setAttribute("filter-bar", "open");
+flight.addEventListener("hoshi-filter", (event) => {
+  const { distanceMin, distanceMax, magnitudeLimit, final } = (event as CustomEvent<StarFilterDetail>).detail;
+  if (final) address.setMany({ dmin: distanceMin === undefined ? null : String(distanceMin), dmax: distanceMax === undefined ? null : String(distanceMax), mlim: magnitudeLimit === undefined ? null : String(magnitudeLimit) });
+});
 flight.addEventListener("hoshi-flight", (event) => show((event as CustomEvent<FlightChange>).detail));
 $("fl-art").append(flight);
 show(flight.status);

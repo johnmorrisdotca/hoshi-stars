@@ -30,12 +30,30 @@ description: "外に立った人に見える空を表示する <hoshi-my-sky> �
 | `info="none"` | 月と惑星の欄を隠します。 |
 | `constellation-lines` | 0から1の強さ、または `off`。暗い空での初期値は控えめな0.32です。 |
 | `star-names` | 星の名前の数、または `off`。初期値は表示の大きさに合わせて決まります。 |
+| `distance-min`、`distance-max`、`magnitude-limit` | それぞれ、この光年より遠い、この光年より近い、この等級より暗くない星だけを残します（地球からの光年と、見かけの等級）。距離を決めている間は、距離がわからない星は出ません。星座の線は残ります。スカイチャートのガイドの「距離と明るさでしぼりこむ」を見てください。 |
+| `filter-bar` | 空の上に、距離と明るさのバーを出します（幅が狭いと折りたたまれ、`filter-bar="open"`なら開いたままです）。バーを動かすと3つの属性が書きかわり、`hoshi-filter`が送られます。 |
 | `daylight="show"` | 太陽が出ていても星を描きます。 |
 | `target` | 指定した対象に向きを合わせ、丸で囲みます。[自分の空で見る](#自分の空で見る)を参照してください。 |
 
 プロパティは、`latitude`、`longitude`、`time`(`Date`、リアルタイムなら `null`)、`heading`、`pitch`、`fov`、`setView({ heading, pitch, fov })`、`target` と `marks`(次の節)、そして読み取り専用の `sky`(`MySkyReport`: 下の `skyReport` と同じ内容に `target` を加えたもの)です。要素は、向きが変わるたびに `hoshi-sky-view`(`MySkyViewDetail`: `heading`、`pitch`、`fov`、`final`)を、何かをタップしたときに `hoshi-sky-pick`(`MySkyPick`: `kind` は `sun`、`moon`、`planet`、`figure`、`none` のどれか、と `id`)を送ります。クラスは `HoshiMySkyElement`、タグは `MY_SKY_TAG`(`hoshi-my-sky`)で、`defineMySky()` が定義します。`@johnmorrisdotca/hoshi-stars/my-sky/define` はimportすると定義し、`/my-sky/element` はクラスをexportするだけです。
 
 ドラッグ、2本指(ピンチ)、Ctrlとホイール、矢印キー(Shiftで大きく動く)、+ と -、Home は、シリーズ共通の表示操作で、`@johnmorrisdotca/kazoku-ui` が担います。空は、形を保ったまま視野130度まで広げられるステレオ投影で描くので、地平線は曲線になります。月と惑星は、どんな空の図とも同じように、実際より大きく描きます。太陽が昇るにつれて星は隠れます(見える星の限界等級は、暗いときの6等から昼間の-3等まで下がり、それより明るい星だけが見えます)。地平線の近くは大気で暗くなります。
+
+## フォントとパーツ
+
+`<hoshi-my-sky>`のキャンバスの名前（星、星座、月と惑星、ターゲット、自分で付けた印）は、sky-labelsの名前やチャートと同じように、ページのCSSカスタムプロパティを読みます。`--hoshi-label-font`（フォントファミリーの並び）と、星と星座の名前の`--hoshi-label-size`と`--hoshi-label-weight`です。ほかのキャンバスの文字（東西南北の字）と、しぼりこみのバーは、`--hoshi-sky-font`を読みます。書かなければ、どれもパッケージのフォント（Hiragino Sans、Noto Sans JP、そのあとはシステムのもの）のままで、変わりません。描くたびに読むので、変えたあとは、次に空を動かしたとき、または次の更新で反映されます。
+
+```css
+hoshi-my-sky { --hoshi-label-font: "Georgia", serif; --hoshi-label-size: 13px; --hoshi-sky-font: system-ui; }
+```
+
+月のカードとしぼりこみのバーは、`::part()`で見た目を変えられます。`<hoshi-my-sky>`では`panel`、`title`（カードの見出し。初期値は14px・太さ600）、`rows`（カードの行）、`toggle`（折りたたみボタン。高さ32px、角の丸み8px、青い枠線）です。3つの要素のしぼりこみバーでは、`filters`、`filters-title`、`filters-toggle`、`filters-group`、`filters-legend`、`filters-label`、`filters-range`、`filters-count`、`filters-reset`です。
+
+```css
+hoshi-my-sky::part(title) { font-size: 16px; }
+hoshi-my-sky::part(toggle) { border-radius: 999px; border-color: currentColor; }
+hoshi-chart::part(filters) { background: #101a3a; }
+```
 
 ## 裏側の計算
 

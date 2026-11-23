@@ -3,7 +3,7 @@
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
 import { constellation } from "../src/constellations.ts";
 import "../src/my-sky/define.ts";
-import type { HoshiMySkyElement, MySkyMarkDetail } from "../src/my-sky/element.ts";
+import type { HoshiMySkyElement, MySkyMarkDetail, StarFilterDetail } from "../src/my-sky/element.ts";
 import { mySkyWords } from "../src/my-sky/words.ts";
 import { starByName } from "../src/stars.ts";
 import { WORDS } from "../scripts/page-words.ts";
@@ -39,6 +39,16 @@ const SAMPLE_MARKS = (): Array<{ id: string; azimuth: number; altitude: number; 
 ];
 
 const sky = $<HoshiMySkyElement>("#sky");
+// the star filters: the bars are the element's own, and what they set is kept in the address as short numbers (`dmin`, `dmax` in light-years, `mlim` a magnitude)
+for (const [key, attribute] of [["dmin", "distance-min"], ["dmax", "distance-max"], ["mlim", "magnitude-limit"]] as const) {
+  const asked = address.get(key);
+  if (asked !== null) sky.setAttribute(attribute, asked);
+}
+sky.setAttribute("filter-bar", "open");
+sky.addEventListener("hoshi-filter", (event) => {
+  const { distanceMin, distanceMax, magnitudeLimit, final } = (event as CustomEvent<StarFilterDetail>).detail;
+  if (final) address.setMany({ dmin: distanceMin === undefined ? null : String(distanceMin), dmax: distanceMax === undefined ? null : String(distanceMax), mlim: magnitudeLimit === undefined ? null : String(magnitudeLimit) });
+});
 const latInput = $<HTMLInputElement>("#lat");
 const lonInput = $<HTMLInputElement>("#lon");
 const momentInput = $<HTMLInputElement>("#moment");

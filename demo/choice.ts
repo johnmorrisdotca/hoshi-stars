@@ -6,6 +6,7 @@ import { PROJECTIONS, type Projection } from "../src/projection.ts";
 import { lookIdOf, type LookId } from "./sky-overlay.ts";
 import { CONSTELLATION_LINES_ATTRIBUTE, lineStrengthFromAttribute, STAR_NAMES_ATTRIBUTES, starNamesFromAttributes, type StarNamesSettings } from "../src/sky-labels.ts";
 import { limitFromText, limitText } from "../src/distance.ts";
+import { starFilterActive, starFilterFromText, starFilterToText, type StarFilter } from "../src/star-filter.ts";
 
 export const DEFAULT_LAYERS: readonly Layer[] = ["milky", "lines", "names", "pictures", "faint", "grid"];
 export const DEFAULT_MAGNITUDE = 5;
@@ -31,6 +32,8 @@ export interface Choice extends View {
   labelLook?: LookId | undefined;
   /** Show the fixed sample of the Moon and the bright planets (`bodies=sample`), a list for one stated moment, not live. */
   bodiesSample?: boolean | undefined;
+  /** Keep only the stars inside a distance range (light-years) and no fainter than a magnitude (`dmin`, `dmax` and `mlim` in the address); every star when left out. */
+  filter?: StarFilter | undefined;
   /** The sky out to this distance, in light-years (`Infinity` for all the things that have one); left out for the sky as it was, with no layers. */
   limit?: number | undefined;
 }
@@ -63,6 +66,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
   const starNames = starNamesFromAttributes(query.get(STAR_NAMES_ATTRIBUTES.count), query.get(STAR_NAMES_ATTRIBUTES.magnitude));
   const lineStrength = lineStrengthFromAttribute(query.get(CONSTELLATION_LINES_ATTRIBUTE));
   const limit = limitFromText(query.get("dist"));
+  const filter = starFilterFromText(query.get("dmin"), query.get("dmax"), query.get("mlim"));
   return {
     projection,
     ra: ((number(query.get("ra"), DEFAULT_VIEW.ra, -1e6, 1e6) % 360) + 360) % 360,
@@ -80,6 +84,7 @@ export function choiceOf(query: URLSearchParams, width = 480, height = 360): Cho
     ...(lineStrength === undefined ? {} : { lineStrength }),
     ...(lookIdOf(query.get("label-look")) === "display" ? {} : { labelLook: lookIdOf(query.get("label-look")) }),
     ...(limit === undefined ? {} : { limit }),
+    ...(starFilterActive(filter) ? { filter } : {}),
     ...(query.get("bodies") === "sample" ? { bodiesSample: true } : {}),
   };
 }
@@ -98,6 +103,10 @@ export function frameQuery(choice: Choice): string {
   if (choice.lineStrength !== undefined) q.set("constellation-lines", String(choice.lineStrength));
   if (choice.labelLook !== undefined) q.set("label-look", choice.labelLook);
   if (choice.limit !== undefined) q.set("dist", limitText(choice.limit));
+  if (choice.filter !== undefined) {
+    const text = starFilterToText(choice.filter);
+    for (const [key, value] of [["dmin", text.distanceMin], ["dmax", text.distanceMax], ["mlim", text.magnitudeLimit]] as const) if (value !== null) q.set(key, value);
+  }
   if (choice.bodiesSample === true) q.set("bodies", "sample");
   return q.toString();
 }
