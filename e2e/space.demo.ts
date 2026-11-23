@@ -4,6 +4,7 @@ import { constellationIn3D, DISTANCE_QUALITIES } from "../src/constellation-3d.t
 import { constellations } from "../src/constellations.ts";
 import { drainGpu } from "@johnmorrisdotca/kazoku-ui/testing";
 import { expect, test, type Page } from "@playwright/test";
+import { expectParam, watchConsole } from "./address-warnings.ts";
 
 const PAGE = "/hoshi-stars/constellation-3d.html";
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
@@ -128,10 +129,11 @@ for (const abbreviation of ["Ori", "UMa", "Hya", "Cru"]) {
 }
 
 test("the picker chooses another constellation: the heading, the table, the counts and the address follow", async ({ page }) => {
+  const said = watchConsole(page);
   await open(page);
   await page.getByTestId("picker-strip").locator("button").filter({ hasText: "Ursa Major" }).first().click();
   await expect(page.getByTestId("sp-heading")).toContainText("Ursa Major");
-  await expect.poll(() => param(page, "c")).toBe("UMa");
+  await expectParam(page, "c", "UMa", said);
   const figure = constellationIn3D("UMa");
   await expect(page.getByTestId("sp-table").locator("tbody tr")).toHaveCount(figure.stars.length);
   await expect(page.getByTestId("sp-key").locator('[data-quality="fair"]')).toContainText(String(figure.counts.fair));
@@ -144,7 +146,7 @@ test("a constellation page opens it in 3D", async ({ page }) => {
   await page.getByRole("link", { name: "See it in 3D" }).click();
   await expect(live(page)).toBeVisible({ timeout: 60_000 });
   await expect(page.getByTestId("sp-heading")).toContainText("Crux");
-  expect(param(page, "c")).toBe("Cru");
+  await expect.poll(() => param(page, "c")).toBe("Cru");
 });
 
 test("seen from another star the Earth is a star called Sun, and the note says how far", async ({ page }) => {
