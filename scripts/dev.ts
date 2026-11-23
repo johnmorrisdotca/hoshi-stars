@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 const root = join(fileURLToPath(import.meta.url), "..", "..", "site");
 const base = "/hoshi-stars/";
 const port = Number(process.env.PORT ?? 8250);
-if (!Number.isInteger(port) || port < 8250 || port > 8274) throw new Error("Port must be in 8250 to 8274");
+if (!Number.isInteger(port) || !((port >= 8250 && port <= 8274) || (port >= 8300 && port <= 8309))) throw new Error("Port must be in 8250 to 8274 or 8300 to 8309");
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
