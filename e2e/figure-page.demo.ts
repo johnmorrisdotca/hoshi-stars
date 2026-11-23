@@ -134,12 +134,12 @@ test("the sky is chosen on the page and kept in the address, through a reload an
   await expect(choice.locator("a[aria-current='page']")).toHaveText("Western");
   await choice.getByRole("link", { name: "Japanese" }).click();
   await expect.poll(() => param(page, "culture")).toBe("japanese");
-  expect(param(page, "c")).toBe("Ori");
+  await expect.poll(() => param(page, "c")).toBe("Ori");
   await expect(page.getByTestId("cp-name")).toHaveText("オリオン座");
   await expect(choice.locator("a[aria-current='page']")).toHaveText("Japanese");
   await choice.getByRole("link", { name: "Chinese" }).click();
   await expect.poll(() => param(page, "culture")).toBe("chinese");
-  expect(param(page, "c")).toBe("shen1-xiu4");
+  await expect.poll(() => param(page, "c")).toBe("shen1-xiu4");
   await expect(page.getByTestId("cp-name")).toHaveText("參宿");
   await page.reload();
   await expect(page.getByTestId("cp-name")).toHaveText("參宿");
@@ -160,8 +160,8 @@ test("an address that names the wrong sky for a figure is made right and keeps t
   await open(page, "c=Ori&culture=chinese&lang=ja");
   await expect(page.getByTestId("cp-name")).toHaveText("參宿");
   await expect.poll(() => param(page, "c")).toBe("shen1-xiu4");
-  expect(param(page, "culture")).toBe("chinese");
-  expect(param(page, "lang")).toBe("ja");
+  await expect.poll(() => param(page, "culture")).toBe("chinese");
+  await expect.poll(() => param(page, "lang")).toBe("ja");
   await open(page, "c=subaru");
   await expect(page.getByTestId("cp-name")).toHaveText("昴");
   await expect.poll(() => param(page, "culture")).toBe("japanese");

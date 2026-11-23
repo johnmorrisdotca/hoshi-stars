@@ -314,7 +314,7 @@ test("the latitude and the month are kept in the address, the month waits for a 
   await typeLatitude(page, "95");
   await expect(page.getByTestId("qz-locnote")).toContainText("not a latitude");
   await expect(page.getByTestId("qz-lat")).toHaveValue("35");
-  expect(param(page, "lat")).toBe("35");
+  await expect.poll(() => param(page, "lat")).toBe("35");
   // typing a latitude changes what is asked: at the poles of the pools differ, at -35 the Southern Cross is in the pool and at 40 it never is
   await page.goto(`${PAGE}?level=88&lat=-35&q=${placeOf("Cru")}`);
   expect(answerOf(page)).toBe("Cru");
@@ -370,7 +370,7 @@ test("My location refused or failed: the page says so in English and in Japanese
   await page.getByTestId("qz-here").click();
   await expect(page.getByTestId("qz-locnote")).toContainText("was not shared");
   await expect(page.getByTestId("qz-lat")).toHaveValue("52");
-  expect(param(page, "lat")).toBe("52");
+  await expect.poll(() => param(page, "lat")).toBe("52");
   await page.goto(`${PAGE}?level=88&lat=52&lang=ja`);
   await expect(page.getByTestId("qz-here")).toHaveText("いまの場所");
   await page.getByTestId("qz-here").click();

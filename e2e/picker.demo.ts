@@ -24,8 +24,8 @@ test("a tap on a tile flies the map there and picks the constellation", async ({
   await tiles(page).filter({ hasText: "Cygnus" }).click();
   await expect.poll(() => param(page, "pick")).toBe("C:Cyg");
   await expect.poll(() => Math.abs(Number(param(page, "ra")) - before) > 60).toBe(true);
-  expect(Number(param(page, "dec"))).toBeGreaterThan(30);
-  expect(Number(param(page, "zoom"))).toBeGreaterThan(1.5);
+  await expect.poll(() => Number(param(page, "dec"))).toBeGreaterThan(30);
+  await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(1.5);
   await expect(page.getByTestId("picked").locator("h3")).toHaveText("Cygnus");
   await expect(page.getByTestId("picker-strip").locator("button[aria-pressed='true']")).toHaveAttribute("data-abbr", "Cyg");
 });
@@ -49,7 +49,7 @@ test("the address ?go= opens the map on a constellation and takes itself out of 
   await open(page, "?go=Cru");
   await expect.poll(() => param(page, "pick")).toBe("C:Cru");
   await expect.poll(() => param(page, "go")).toBeNull();
-  expect(Number(param(page, "dec"))).toBeLessThan(-40);
+  await expect.poll(() => Number(param(page, "dec"))).toBeLessThan(-40);
 });
 
 test("the pictures follow the theme and the language", async ({ page }) => {

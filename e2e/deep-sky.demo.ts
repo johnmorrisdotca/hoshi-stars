@@ -390,7 +390,7 @@ test("a picture drawn with nothing picked has its credit on the chart, with its 
   await expect(page.getByTestId("picture-credits")).toBeVisible({ timeout: 20_000 });
   await page.getByTestId("picture-credits").click({ position: { x: 4, y: 4 } });
   await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
-  expect(param(page, "pick")).toBe("D:M42");
+  await expect.poll(() => param(page, "pick")).toBe("D:M42");
   // zoomed out until no picture is drawn (M42's field is then under 90 pixels across), the line is gone
   for (let i = 0; i < 7; i += 1) await page.getByTestId("zoom-out").click();
   await expect(page.locator("#chart image[data-pic]")).toHaveCount(0);

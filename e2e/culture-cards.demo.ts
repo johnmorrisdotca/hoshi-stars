@@ -46,13 +46,13 @@ test("a card opens its figure on the map with the culture kept in the address, a
   await open(page, "?culture=chinese");
   await strip(page).filter({ hasText: "北斗" }).click();
   await expect.poll(() => param(page, "pick")).toBe("C:bei3-dou3");
-  expect(param(page, "culture")).toBe("chinese");
+  await expect.poll(() => param(page, "culture")).toBe("chinese");
   await expect(page.getByTestId("picked").locator("h3")).toContainText("北斗");
   await expect(page.getByTestId("picker-strip").locator("button[aria-pressed='true']")).toHaveAttribute("data-abbr", "bei3-dou3");
   await cultureButton(page, "Japanese").click();
   await strip(page).filter({ hasText: "昴" }).click();
   await expect.poll(() => param(page, "pick")).toBe("C:subaru");
-  expect(param(page, "culture")).toBe("japanese");
+  await expect.poll(() => param(page, "culture")).toBe("japanese");
 });
 
 // Clicking all 344 cards took three minutes on WebKit (the run of 0.22.0 ended with "C:guan4-suo3" read where "C:che1-fu3" was clicked, the test's own time out), so a fixed sample is clicked: the first, the last and every 25th card of each sky.
@@ -154,7 +154,7 @@ test("the gallery: three culture buttons kept in the address, a title that says 
   await expect.poll(() => param(page, "q")).toBe("beidou");
   await tiles.first().click();
   await expect.poll(() => param(page, "pick")).toBe("C:bei3-dou3");
-  expect(param(page, "culture")).toBe("chinese");
+  await expect.poll(() => param(page, "culture")).toBe("chinese");
   expect(param(page, "go")).toBeNull();
   await expect(page.getByTestId("picked").locator("h3")).toContainText("北斗");
 });
@@ -171,7 +171,7 @@ test("the gallery of the Japanese sky holds 106 figures, finds them by kana and 
   await expect(tiles).toHaveCount(1);
   await tiles.first().click();
   await expect.poll(() => param(page, "pick")).toBe("C:mitsuboshi");
-  expect(param(page, "culture")).toBe("japanese");
+  await expect.poll(() => param(page, "culture")).toBe("japanese");
   await page.goto(`${HOME}constellations.html?culture=japanese&q=ursa+major`);
   await expect(tiles).toHaveCount(1);
   await page.getByTestId("cultures").getByRole("button", { name: "Western", exact: true }).click();
@@ -207,7 +207,7 @@ test("the list: three culture buttons, a table of the culture's figures with a s
   await expect(page.getByTestId("list-heading")).toHaveText("The Japanese sky: a table of its figures");
   await rows.filter({ hasText: "鼓星" }).getByRole("link", { name: /Map/ }).click();
   await expect.poll(() => param(page, "pick")).toBe("C:tsuzumi-boshi");
-  expect(param(page, "culture")).toBe("japanese");
+  await expect.poll(() => param(page, "culture")).toBe("japanese");
 });
 
 test("nothing overflows at 390 wide: the strip, the gallery and the list in every culture", async ({ page }) => {
@@ -301,6 +301,6 @@ test("an address that picks a figure and gives no place opens on the figure: lit
     await open(page, `?${query}`);
     await expect.poll(() => litOn(page), { message: query }).toEqual({ lines, rings, inView: true });
     // the address keeps the pick, and the place is the figure's, written once the view is
-    expect(param(page, "pick")).toBe(decodeURIComponent(query.split("pick=")[1]!));
+    await expect.poll(() => param(page, "pick")).toBe(decodeURIComponent(query.split("pick=")[1]!));
   }
 });
