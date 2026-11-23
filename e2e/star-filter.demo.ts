@@ -34,7 +34,7 @@ test("the nearest bar cannot pass the farthest, and a shell shows only the stars
   await near.press("End");
   await expect(page.getByTestId("flt-max-out")).not.toHaveText("500 ly");
   expect(Number(await near.inputValue())).toBeLessThan(Number(await page.getByTestId("flt-max").inputValue()));
-  expect(await stars(page)).not.toBe(shell);
+  await expect.poll(() => stars(page)).not.toBe(shell);
 });
 
 test("the brightness bar hides fainter stars from the keyboard, and the constellation lines stay", async ({ page }) => {
