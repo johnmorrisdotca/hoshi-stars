@@ -22,7 +22,6 @@ async function record(page: Page): Promise<void> {
   });
 }
 const fonts = (page: Page) => page.evaluate(() => (window as unknown as { fonts: string[] }).fonts);
-const clear = (page: Page) => page.evaluate(() => ((window as unknown as { fonts: string[] }).fonts.length = 0));
 
 test("a page's label font reaches the names on the canvas, and its sky font the compass letters", async ({ page }) => {
   await record(page);
