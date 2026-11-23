@@ -41,6 +41,7 @@ import { mountPicker } from "./picker.ts";
 import { mountReadings, writeReadings } from "./readings.ts";
 import { lookNow, onLook } from "./thumbs.ts";
 import { faintFor } from "./faint.ts";
+import { nearbyFor } from "./nearby-layer.ts";
 import { BAND_COLOURS, layersFor, loadDistances, renderLegend, UNCERTAIN_COLOUR } from "./distance-layers.ts";
 import { DISTANCE_LIMITS, limitAtSlider, limitFromText, limitText, sliderOfLimit, stepLimit } from "../src/distance.ts";
 import { figure, profileNotes, profileRows, profileTop, SUN_INPUT, type ProfileView } from "./profile-panel.ts";
@@ -218,7 +219,8 @@ function draw(): void {
   const keepClear = clear();
   overlay.update(projector, { width, height }, keepClear);
   const layered = limit === undefined || sky !== undefined ? undefined : layersFor(limit);
-  const out = chart({ ...view, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, filter, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), showUncertainty, bodies: showBodies ? SAMPLE_BODIES : undefined, culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  const nearby = sky === undefined ? nearbyFor(layers, schedule) : undefined;
+  const out = chart({ ...view, nearby, overlay: overlay.on ? { lines: overlay.lines, names: layered === undefined ? overlay.names : undefined } : undefined, ...(layered === undefined ? {} : { distance: { layers: layered, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR } }), width, height, magnitude, filter, layers, lang: lang(), keepClear, highlight: hover ?? pickedConstellation(), showUncertainty, bodies: showBodies ? SAMPLE_BODIES : undefined, culture, near: nearKeys, picked: picked !== null && picked.slice(0, 1) !== "C" && picked.slice(0, 1) !== "B" ? picked.slice(2) : undefined, pickedHole: picked?.startsWith("B:") ? picked.slice(2) : undefined, sky, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
   chosenPictures = new Set(out.wanted);
   // names were kept clear of the line as it was: when it changes, draw once more so that they keep clear of it as it is now
   if (showPictureCredits($("picture-credits"), out.pictures, lang() === "ja")) schedule();
