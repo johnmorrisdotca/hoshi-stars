@@ -39,9 +39,9 @@ test("a page's label font reaches the names on the canvas, and its sky font the 
     el.style.setProperty("--hoshi-label-size", "15px");
     el.style.setProperty("--hoshi-label-weight", "700");
     el.style.setProperty("--hoshi-sky-font", "Courier, monospace");
+    (window as unknown as { fonts: string[] }).fonts.length = 0;
     (el as unknown as { setView(change: { heading: number }): void }).setView({ heading: 200 });
   });
-  await clear(page);
   await expect.poll(async () => (await fonts(page)).some((font) => font.includes("Georgia"))).toBe(true);
   const after = await fonts(page);
   expect(after).toContain("700 15px Georgia, serif");

@@ -66,12 +66,13 @@ test("an address with the filters opens with them, in Japanese words too", async
   expect(await noSideways(page)).toBe(true);
 });
 
-test("the bars take the chart's embed code and frame with them", async ({ page }) => {
+test("the filter goes into the chart's embed code", async ({ page }) => {
   await page.goto(`${HOME}?dmax=100&mlim=5`);
   await expect(page.locator("#chart circle").first()).toBeVisible();
   const frame = await page.locator("kazoku-embed-panel").evaluate((el) => (el as unknown as { shadowRoot: ShadowRoot | null }).shadowRoot?.textContent ?? el.textContent ?? "");
-  expect(frame).toContain("dmax=100");
-  expect(frame).toContain("mlim=5");
+  expect(frame).toContain("starPasses");
+  expect(frame).toContain('"distanceMax":100');
+  expect(frame).toContain('"magnitudeLimit":5');
 });
 
 const CHART = "/hoshi-stars/markers.html";
@@ -113,7 +114,7 @@ test("a press on the chart's bars does not move the chart", async ({ page }) => 
   const bar = await barOf(page).locator('[data-bar="mag"]').boundingBox();
   await page.mouse.move(bar!.x + 4, bar!.y + bar!.height / 2);
   await page.mouse.down();
-  await page.mouse.move(bar!.x + bar!.width - 4, bar!.y + bar!.height / 2 + 30, { steps: 6 });
+  await page.mouse.move(bar!.x + bar!.width * 0.4, bar!.y + bar!.height / 2 + 30, { steps: 6 });
   await page.mouse.up();
   expect(await view()).toBe(before);
   await expect(chartFilter(page)).toHaveAttribute("magnitude-limit", /.+/);
