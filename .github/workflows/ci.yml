@@ -39,8 +39,8 @@ jobs:
       - name: The package as npm packs it installs and imports
         run: pnpm test:package
   demo:
-    # One job a Playwright project: the four are the same tests at a desk's and a phone's width in Chromium and in WebKit.
-    name: demo (${{ matrix.project }})
+    # One job a Playwright project and half of its tests: the four projects are the same tests at a desk's and a phone's width in Chromium and in WebKit, and each is cut in two so no job nears its 15 minutes.
+    name: demo (${{ matrix.project }} ${{ matrix.shard }})
     runs-on: ubuntu-latest
     # In the Playwright image at the lockfile's version, which has the browsers' system libraries: no apt mirror (down on 2026-11-11).
     container:
@@ -52,6 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         project: [chromium-desk, chromium-phone, webkit-desk, webkit-phone]
+        shard: ["1/2", "2/2"]
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -63,8 +64,8 @@ jobs:
       - uses: ./.github/actions/playwright
         with:
           browsers: ${{ startsWith(matrix.project, 'webkit') && 'webkit' || 'chromium' }}
-      - name: The demo, played in one browser at one width (pnpm test:demo plays all four)
-        run: pnpm test:demo:one --project=${{ matrix.project }}
+      - name: The demo, played in one browser at one width, half of the tests (pnpm test:demo plays all four, whole)
+        run: pnpm test:demo:one --project=${{ matrix.project }} --shard=${{ matrix.shard }}
         timeout-minutes: 15
   usage:
     runs-on: ubuntu-latest
