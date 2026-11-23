@@ -18,6 +18,7 @@ import { attachHands } from "../src/chart/hands.ts";
 import { viewpointOf, skyOf } from "./from.ts";
 import { nearbyOf } from "./nearby.ts";
 import { faintFor } from "./faint.ts";
+import { nearbyFor } from "./nearby-layer.ts";
 import { createDeepFetcher, TIER_ZOOM } from "./deep.ts";
 import { frameCredit } from "./frame-credit.ts";
 import { showPictureCredits } from "./picture-credits.ts";
@@ -97,7 +98,7 @@ function draw(): void {
   if (seen === undefined) overlay.update(projector, room, keepClear);
   const layers = choice.limit === undefined || seen !== undefined ? undefined : layersFor(choice.limit);
   if (choice.limit !== undefined) renderLegend(legend, layers, ja ? "ja" : "en");
-  const drawn = chart({ ...choice, ...view, overlay: seen === undefined ? { lines: overlay.lines, names: layers === undefined ? overlay.names : undefined } : undefined, distance: layers === undefined ? undefined : { layers, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR }, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, bodies: choice.bodiesSample === true ? SAMPLE_BODIES : undefined, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
+  const drawn = chart({ ...choice, ...view, nearby: seen === undefined ? nearbyFor(choice.layers, schedule) : undefined, overlay: seen === undefined ? { lines: overlay.lines, names: layers === undefined ? overlay.names : undefined } : undefined, distance: layers === undefined ? undefined : { layers, colours: BAND_COLOURS, uncertain: UNCERTAIN_COLOUR }, culture: cultureOf(choice.cultureId), width, height, keepClear, highlight, near: nearKeys, picked: target, sky: seen, bodies: choice.bodiesSample === true ? SAMPLE_BODIES : undefined, faint, catalogue: fetcher.catalogue(), shapeOf: fetcher.shapeOf(), readyPictures: fetcher.ready, pictureBase: "./", previousPictures: chosenPictures });
   chosenPictures = new Set(drawn.wanted);
   // a picture already on the page keeps its element across a redraw, so it is never blank for a frame
   const kept = new Map<string, Element>();

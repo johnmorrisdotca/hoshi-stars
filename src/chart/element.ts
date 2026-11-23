@@ -4,7 +4,7 @@
 import type { Culture } from "../culture.ts";
 import type { Projection } from "../projection.ts";
 import { western } from "../cultures/western.ts";
-import { chart, constellationUnder, defaultZoom, figureById, figureUnder, type Hit, type View } from "./chart.ts";
+import { chart, constellationUnder, defaultZoom, figureById, figureUnder, type Hit, type NearbyMark, type View } from "./chart.ts";
 import { pickAccuracy } from "./uncertainty.ts";
 import { starByHr } from "../index.ts";
 import { attachHands, type Hands } from "./hands.ts";
@@ -30,7 +30,7 @@ import type { ChartMarkerDetail, ChartPick, ChartViewDetail } from "./element-ty
  */
 export const CHART_TAG = "hoshi-chart";
 
-export type { View };
+export type { NearbyMark, View };
 export type { ChartMarkerDetail, ChartPick, ChartViewDetail };
 
 

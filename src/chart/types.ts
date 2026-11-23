@@ -11,9 +11,32 @@ import type { FaintDraw } from "./faint-layer.ts";
 import type { Box } from "./labels.ts";
 import type { MarkerRange, SkyMarker } from "./markers.ts";
 
-export const LAYERS = ["milky", "lines", "boundaries", "mansions", "names", "deep", "pictures", "holes", "faint", "ecliptic", "grid"] as const;
+export const LAYERS = ["milky", "lines", "boundaries", "mansions", "names", "deep", "pictures", "holes", "faint", "nearby", "ecliptic", "grid"] as const;
 export type Layer = (typeof LAYERS)[number];
 export type Language = "en" | "ja";
+
+/**
+ * A nearby star as the chart draws it (`nearby` option): a ring with its dot, named when it has a name. `NearbyStar` from `/nearby` is one; so is anything with a place and, if you like, a magnitude.
+ *
+ * @example
+ * ```ts
+ * import type { NearbyMark } from "@johnmorrisdotca/hoshi-stars/chart/element";
+ *
+ * const proxima: NearbyMark = { id: "gctp-3278", name: "Proxima Centauri", rightAscension: 217.43, declination: -62.68, magnitude: 11.1 };
+ * console.log(proxima.name);
+ * ```
+ */
+export interface NearbyMark {
+  id: string;
+  name?: string | undefined;
+  designation?: string | undefined;
+  rightAscension: number;
+  declination: number;
+  /** Visual magnitude, or left out where the star has none (it is then a ring alone). */
+  magnitude?: number | undefined;
+  /** The faint tiles hold this star too (`NEARBY_IN_FAINT`): while the faint layer draws it, only the ring is added, so no star is drawn twice. */
+  inFaint?: boolean | undefined;
+}
 
 /**
  * Where the chart looks: the projection, the point in the middle (degrees) and the zoom, in the chart's own unit: 1 fits the projection's whole sky in the smaller side, more is closer.
@@ -58,6 +81,8 @@ export interface ChartOptions extends View {
   keepClear?: readonly Box[] | undefined;
   /** The faint stars of UCAC4 in the field (`faintFor`), drawn when the `faint` layer is on and the zoom reaches them. */
   faint?: FaintDraw | undefined;
+  /** The nearby stars (`/nearby`, from the Yale parallax catalogue) for the `nearby` layer: each a ring in the nearby colour, with its dot where the faint layer does not draw it, from `NEARBY_FROM_ZOOM`. Nothing is drawn when left out. */
+  nearby?: readonly NearbyMark[] | undefined;
   /** The deep-sky objects drawn: the Messier objects when left out; a page that has fetched the NGC and IC objects passes them all, with `shapeOf` from `deep-sky/ngc-ic-shape`. */
   catalogue?: readonly DeepSkyObject[] | undefined;
   /** The size, axis ratio and angle of an object: the Messier objects' when left out. */

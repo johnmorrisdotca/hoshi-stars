@@ -21,13 +21,16 @@ import { drawBodies } from "./bodies-draw.ts";
 import { centreOfConstellation, centroidOf, centroidsSeen, figureById, figuresOf, figuresOfCulture, labelOf, reachOfConstellation } from "./figures.ts";
 import { milkyWay } from "./milky-layer.ts";
 import { crossesSeam, nearEnough, pathOf, placer } from "./place.ts";
-import { LAYERS, type ChartOptions, type Hit, type Language, type Layer, type View } from "./types.ts";
+import { LAYERS, type ChartOptions, type Hit, type Language, type Layer, type NearbyMark, type View } from "./types.ts";
 import { DEFAULT_VIEW, defaultZoom, dragged, escapeXml, fitScale, fromScreen, onPicture, pictureZoomCap, round, toScreen, zoomedAbout, ZOOM_MAX, ZOOM_MIN } from "./view-math.ts";
+
+/** The `nearby` layer starts at this zoom: a closer view holds a few dozen of the 5,593 nearby stars, and each is worth its ring. */
+export const NEARBY_FROM_ZOOM = 4;
 
 export { FAINT_DOT_CAP, faintDepthOf, FAINT_FROM, FAINT_JUMP_ZOOM, FAINT_PAST_GAP, type FaintDraw } from "./faint-layer.ts";
 export { centreOfConstellation, figureById, figuresOf, labelOf, reachOfConstellation };
 export { nearEnough };
-export { LAYERS, type ChartOptions, type Hit, type Language, type Layer, type View };
+export { LAYERS, type ChartOptions, type Hit, type Language, type Layer, type NearbyMark, type View };
 
 export { DEFAULT_VIEW, defaultZoom, dragged, fitScale, fromScreen, onPicture, pictureZoomCap, toScreen, zoomedAbout, ZOOM_MAX, ZOOM_MIN };
 
@@ -139,6 +142,8 @@ export interface Chart {
   markerHits: MarkerHit[];
   /** The faint stars drawn: how many, and the magnitude they are complete to here. `undefined` where none were asked for. */
   faint?: { drawn: number; depth: number };
+  /** The nearby stars drawn (rings in view); `undefined` where the layer is off, has no data or the view is not close enough. */
+  nearby?: { drawn: number };
   /** The deep-sky pictures the view needs and has not been given: the page fetches them and draws again. */
   wanted: string[];
   /** The deep-sky pictures drawn with some of them on the chart (`DeepSkyPicture.id`): the page shows their credits beside the chart (`pictureCredits`). */
@@ -307,6 +312,23 @@ function drawChart(o: ChartOptions): Chart {
     if (isNear && key !== o.picked) starLabels.push({ rank: 900, ...besideMarker(text ?? designation, 11, at[0], at[1], r + 6, COLOURS.near, 1) });
     else if (layers.has("names") && o.overlay?.names === undefined && text !== undefined && magnitude <= namedLimit) starLabels.push({ rank: key === o.picked ? -1 : 1000 + magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, COLOURS.star, 0.85) });
   };
+  let nearbyDrawn: Chart["nearby"];
+  if (o.sky === undefined && o.distance === undefined && layers.has("nearby") && o.nearby !== undefined && o.zoom >= NEARBY_FROM_ZOOM) {
+    let drawn = 0;
+    for (const star of o.nearby) {
+      const at = place(star);
+      if (at === undefined || !inside(at, 6)) continue;
+      const magnitude = star.magnitude;
+      // a star the faint layer draws keeps that dot; one it does not (layer off, too faint for its depth, or not in its tiles) gets its own
+      const drawnByFaint = star.inFaint === true && faintDrawn !== undefined && magnitude !== undefined && magnitude <= faintDrawn.depth;
+      const r = magnitude === undefined ? 1 : Math.max(0.7, (o.magnitude - Math.max(magnitude, -2)) * 0.55 + 1.1) * grow * 0.8;
+      if (magnitude !== undefined && !drawnByFaint) dots += `<circle data-nearby="${escapeXml(star.id)}" cx="${round(at[0])}" cy="${round(at[1])}" r="${round(Math.max(1.1, r))}" fill="${COLOURS.near}"/>`;
+      ring += `<circle data-nearby-ring="${escapeXml(star.id)}" cx="${round(at[0])}" cy="${round(at[1])}" r="${round(Math.max(1.1, r) + 4)}" fill="none" stroke="${COLOURS.near}" stroke-width="1.1" stroke-opacity=".8"/>`;
+      if (layers.has("names") && star.name !== undefined) starLabels.push({ rank: 1500, ...besideMarker(star.name, 11, at[0], at[1], r + 7, COLOURS.near, 0.95) });
+      drawn += 1;
+    }
+    nearbyDrawn = { drawn };
+  }
   if (o.sky === undefined && o.distance !== undefined) {
     const { colours, uncertain } = o.distance;
     const nameLimit = 2.4 + Math.log2(o.zoom) * 1.1;
@@ -396,7 +418,7 @@ function drawChart(o: ChartOptions): Chart {
   if (o.overlay?.names !== undefined) body += starNamesSvg(o.overlay.names);
   if (o.overlay?.lines !== undefined) body += figureNameSvg(o.overlay.lines);
 
-  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, markerHits: marked?.hits ?? [], wanted: deep.wanted, pictures: deep.pictures, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }) };
+  return { svg: `<g font-family="system-ui, sans-serif">${body}</g>`, hits, markerHits: marked?.hits ?? [], wanted: deep.wanted, pictures: deep.pictures, ...(faintDrawn === undefined ? {} : { faint: faintDrawn }), ...(nearbyDrawn === undefined ? {} : { nearby: nearbyDrawn }) };
 }
 
 /** The key a seen star has on the chart and in a pick: the HR number as text, or `sun`. */
