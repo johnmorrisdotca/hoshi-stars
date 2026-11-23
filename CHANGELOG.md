@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.60.1] - 2026-11-23
+
+- **The Milky Way dust maps stay on SkyView's allowed route** (MODULES-1760). `scripts/make-milky-way-data.py` asks `https://skyview.gsfc.nasa.gov/cgi-bin/images`, which SkyView's batch page gives as the request. SkyView's robots.txt, read 2026-11-23, allows `/cgi-bin/` for a normal client and disallows `/current/cgi/` except `titlepage.pl`. The script was already on the allowed path, so it stays. No data changed.
+
 ## [0.60.0] - 2026-11-23
 
 - **The My sky canvas reads the page's label fonts, and the Moon card and the filter bars have parts** (MODULES-1793). The names `<hoshi-my-sky>` draws on its canvas (stars, constellations, the Moon and planets, the target, your marks) now read `--hoshi-label-font`, and `--hoshi-label-size` and `--hoshi-label-weight` for the star and constellation names, as sky-labels and the chart do; the compass letters read the new `--hoshi-sky-font`, and so do the filter bars. Each is read at each draw; left out, the font is the package's own, as before. New parts: `title`, `rows` and `toggle` on the Moon card, and `filters`, `filters-title`, `filters-toggle`, `filters-group`, `filters-legend`, `filters-label`, `filters-range`, `filters-count` and `filters-reset` on the filter bars. Documented in the My sky guide; tested by `e2e/my-sky-fonts.demo.ts`.

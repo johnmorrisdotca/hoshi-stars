@@ -180,3 +180,9 @@ test("milkyWayTexture paints the whole sky, twice as wide as high, in the frame 
   assert.throws(() => milkyWayTexture({ ramp: [MILKY_WAY_NIGHT_RAMP[0]!, MILKY_WAY_NIGHT_RAMP[0]!, MILKY_WAY_NIGHT_RAMP[5]!] }), RangeError);
   assert.ok(Object.isFrozen(MILKY_WAY_NIGHT_RAMP) && Object.isFrozen(MILKY_WAY_NIGHT_RAMP[0]));
 });
+
+test("the dust maps are asked for on the SkyView route its robots.txt allows", () => {
+  const script = readFileSync(new URL("../scripts/make-milky-way-data.py", import.meta.url), "utf8");
+  assert.match(script, /https:\/\/skyview\.gsfc\.nasa\.gov\/cgi-bin\/images\?/);
+  assert.doesNotMatch(script, /skyview\.gsfc\.nasa\.gov\/current\/cgi\//);
+});
