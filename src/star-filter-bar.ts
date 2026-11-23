@@ -235,6 +235,7 @@ let counter = 0;
  * ```ts no-run
  * import { mountFilterBar } from "@johnmorrisdotca/hoshi-stars/star-filter/bar";
  *
+ * const host = document.querySelector("hoshi-chart") as HTMLElement;
  * const bar = mountFilterBar(host, host.shadowRoot!, { lang: () => "en", count: () => undefined });
  * bar.destroy();
  * ```
