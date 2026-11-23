@@ -114,7 +114,7 @@ test("one switch, --no-ned, is in the three data builds, and NOTICE.md says whic
   for (const word of ["--no-ned", "545", "2,698", "217", "scripts/make-black-hole-data.py"]) assert.ok(section.includes(word), `NOTICE.md's NED section does not mention ${word}`);
 });
 
-test("the black-hole build without NED takes a host's place from Wikidata's position: the one kept beside NED's where NED replaced it, and none where the deep-sky rows hold no such object", () => {
+test("the deep-sky Wikidata table keeps Wikidata's own position, and holds no place for a host that is neither Messier, NGC nor IC", () => {
   const program = [
     "import importlib.util, json",
     "spec = importlib.util.spec_from_file_location('bh', 'scripts/make-black-hole-data.py')",

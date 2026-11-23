@@ -9,14 +9,15 @@ Sources (the sentence relied on and the date read are in NOTICE.md)
   galaxy's place from NASA/IPAC NED (the nucleus's position, a fact; NED asks for an acknowledgement, which NOTICE.md gives). Rows that are only upper limits are left out.
   NED's places were looked up on 2026-11-09 at its /srs/ObjectLookup, which NED's robots.txt asks scripts not to use, so they are read only from the cache (ned.json) saved then:
   a host missing from it stops the build, and NED is never asked. With --no-ned the build reads no NED answer: a host's place is then Wikidata's (CC0), the position src/data/messier.ts
-  and ngc-ic.ts hold for that NGC, IC or Messier object (Wikidata's own, not the NED one scripts/deep-sky-ned-positions.tsv replaced it with), and a host those files do not hold has no place, so it is left out.
+  and ngc-ic.ts hold for that NGC, IC or Messier object (Wikidata's own, not the NED one scripts/deep-sky-ned-positions.tsv replaced it with). A host those files do not hold takes the
+  coordinates of its own Wikidata item from scripts/black-hole-host-places.json when that item has them, and is left out when it does not.
 - The few systems typed here (HAND_STELLAR, HAND_QUIET, HAND_SUPERMASSIVE) are facts from the discovery papers named in each row; their places are Wikidata's (CC0),
   checked against the papers or against BlackCAT.
 
     python3 -I scripts/make-black-hole-data.py                    # reads what is in the cache (the caches below) and fetches what is missing
     python3 -I scripts/make-black-hole-data.py --save DIR         # ... and keeps every answer in DIR
     python3 -I scripts/make-black-hole-data.py --from DIR         # reads answers saved earlier, never the network
-    python3 -I scripts/make-black-hole-data.py --no-ned           # no NED value at all: each host's place is Wikidata's, as src/data/messier.ts and ngc-ic.ts hold it; a host they do not hold is left out
+    python3 -I scripts/make-black-hole-data.py --no-ned           # no NED value at all: each host's place is Wikidata's, from the NGC/IC/Messier tables or from scripts/black-hole-host-places.json; a host with neither is left out
 
 None of this runs in the test.
 """
@@ -594,6 +595,21 @@ def main() -> None:
     if no_ned:
         places = wikidata_places()
         ned = {host: places[host_name(host)] for host in wanted_hosts if host not in NED_DROP and host_name(host) in places}
+        for host in wanted_hosts:
+            if host in NED_DROP or host in ned:
+                continue
+            for candidate in ned_names(host):
+                if candidate in places:
+                    ned[host] = places[candidate]
+                    break
+        # Hosts that are not an NGC, IC or Messier object: the host's own Wikidata item, where it has a right ascension and a declination (MODULES-1759).
+        extra = json.loads((ROOT / "scripts" / "black-hole-host-places.json").read_text(encoding="utf-8"))["hosts"]
+        for host in wanted_hosts:
+            if host in NED_DROP or host in ned:
+                continue
+            rec = extra.get(host_name(host))
+            if rec:
+                ned[host] = {"ra": rec["ra"], "dec": rec["dec"]}
     for host in wanted_hosts:
         if no_ned or host in ned or host in NED_DROP:
             continue

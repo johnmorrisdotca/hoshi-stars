@@ -190,6 +190,27 @@ test("sources carry a link a reader can follow: NASA ADS for a bibcode, arXiv fo
   assert.equal(named("Cygnus X-1").sources.position[0]!.link, "https://www.wikidata.org/wiki/Q332674");
 });
 
+test("the no-NED build places hosts from a CC0 Wikidata file and names the sixteen it still leaves out", () => {
+  const file = JSON.parse(readFileSync(new URL("../scripts/black-hole-host-places.json", import.meta.url), "utf8")) as {
+    read: string;
+    licence: string;
+    hosts: Record<string, { q: string; ra: number; dec: number }>;
+  };
+  assert.equal(file.licence, "CC0 1.0");
+  assert.equal(file.read, "2026-11-23");
+  assert.equal(Object.keys(file.hosts).length, 35);
+  for (const [name, rec] of Object.entries(file.hosts)) {
+    assert.ok(Number.isFinite(rec.ra) && rec.ra >= 0 && rec.ra < 360, name);
+    assert.ok(Number.isFinite(rec.dec) && rec.dec >= -90 && rec.dec <= 90, name);
+    assert.match(rec.q, /^Q\d+$/);
+  }
+  const script = readFileSync(new URL("../scripts/make-black-hole-data.py", import.meta.url), "utf8");
+  const load = script.indexOf('json.loads((ROOT / "scripts" / "black-hole-host-places.json")');
+  assert.ok(load > script.indexOf("if no_ned:"));
+  const notice = readFileSync(new URL("../NOTICE.md", import.meta.url), "utf8");
+  for (const name of ["Arp 151", "PG 1226+023", "Zw 229-015", "285 black holes"]) assert.ok(notice.includes(name), name);
+});
+
 test("the data file is the size the docs say: under 25 kB gzipped", () => {
   const gzipped = gzipSync(readFileSync(new URL("../src/data/black-holes.ts", import.meta.url))).length;
   assert.ok(gzipped < 25_000, `${gzipped} bytes gzipped`);

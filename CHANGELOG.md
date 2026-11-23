@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A Wikidata place for 31 of the 47 black-hole hosts the no-NED build used to drop** (MODULES-1759). `scripts/make-black-hole-data.py --no-ned` now reads `scripts/black-hole-host-places.json`: the right ascension and declination of the host's own Wikidata item (P6257, P6258), queried on 2026-11-23, CC0 1.0. 30 of the 47 take that place. NGC 6240 S takes the Wikidata position the package already holds for NGC 6240. The table then holds 285 black holes (supermassive 202). 16 hosts still have no Wikidata coordinates and stay out: Arp 151, ESO 558-009, Fairall 9, J0437+2456, Mrk 6, Mrk 79, Mrk 142, Mrk 202, Mrk 290, Mrk 817, Mrk 1029, PG 1226+023, PG 1229+204, PG 1426+015, SBS 1116+583A and Zw 229-015. HyperLEDA is share-alike and is not used. SIMBAD's terms page did not answer, so SIMBAD is not used. The shipped table is unchanged.
+
 ## [0.60.0] - 2026-11-23
 
 - **The My sky canvas reads the page's label fonts, and the Moon card and the filter bars have parts** (MODULES-1793). The names `<hoshi-my-sky>` draws on its canvas (stars, constellations, the Moon and planets, the target, your marks) now read `--hoshi-label-font`, and `--hoshi-label-size` and `--hoshi-label-weight` for the star and constellation names, as sky-labels and the chart do; the compass letters read the new `--hoshi-sky-font`, and so do the filter bars. Each is read at each draw; left out, the font is the package's own, as before. New parts: `title`, `rows` and `toggle` on the Moon card, and `filters`, `filters-title`, `filters-toggle`, `filters-group`, `filters-legend`, `filters-label`, `filters-range`, `filters-count` and `filters-reset` on the filter bars. Documented in the My sky guide; tested by `e2e/my-sky-fonts.demo.ts`.
