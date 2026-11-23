@@ -82,7 +82,7 @@ test("a click on a constellation opens it on the sky map", async ({ page, isMobi
   else await page.mouse.click(at.x, at.y);
   await expect.poll(() => new URL(page.url()).pathname).toBe("/hoshi-stars/");
   await expect.poll(() => param(page, "pick")).toBe("C:Cyg");
-  expect(Number(param(page, "dec"))).toBeGreaterThan(30);
+  await expect.poll(() => Number(param(page, "dec"))).toBeGreaterThan(30);
 });
 
 test("the keyboard reaches each constellation: Tab lights it, Enter opens it", async ({ page }) => {

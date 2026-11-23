@@ -34,8 +34,8 @@ test("a drag turns the sky and the address remembers where it looks", async ({ p
   await page.mouse.up();
   await expect.poll(() => param(page, "ra")).not.toBeNull();
   // Dragging right brings in what was to the east (a larger right ascension), dragging down what was to the north.
-  expect(Number(param(page, "ra"))).toBeGreaterThan(84);
-  expect(Number(param(page, "dec"))).toBeGreaterThan(0);
+  await expect.poll(() => Number(param(page, "ra"))).toBeGreaterThan(84);
+  await expect.poll(() => Number(param(page, "dec"))).toBeGreaterThan(0);
 });
 
 test("Ctrl and the wheel and the zoom buttons zoom, within limits", async ({ page, isMobile }) => {
@@ -87,7 +87,7 @@ test("a search finds a star, a constellation in Japanese and a Messier object, a
   await expect(page.getByTestId("picked")).toContainText("Sirius");
   await expect(page.getByTestId("picked")).toContainText("-1.46");
   await expect.poll(() => Math.round(Number(param(page, "ra")))).toBe(101);
-  expect(Number(param(page, "zoom"))).toBeGreaterThan(3);
+  await expect.poll(() => Number(param(page, "zoom"))).toBeGreaterThan(3);
 
   await page.getByTestId("search").fill("おおいぬ座");
   await page.getByTestId("search").press("Enter");
