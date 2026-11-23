@@ -250,6 +250,21 @@
       "import": "./dist/door.js",
       "default": "./dist/door.js"
     },
+    "./star-filter": {
+      "types": "./dist/star-filter.d.ts",
+      "import": "./dist/star-filter.js",
+      "default": "./dist/star-filter.js"
+    },
+    "./star-filter/bright": {
+      "types": "./dist/star-filter-bright.d.ts",
+      "import": "./dist/star-filter-bright.js",
+      "default": "./dist/star-filter-bright.js"
+    },
+    "./star-filter/bar": {
+      "types": "./dist/star-filter-bar.d.ts",
+      "import": "./dist/star-filter-bar.js",
+      "default": "./dist/star-filter-bar.js"
+    },
     "./sky-from": {
       "types": "./dist/sky-from.d.ts",
       "import": "./dist/sky-from.js",

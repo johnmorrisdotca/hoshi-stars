@@ -120,6 +120,8 @@ export interface StarNamesSettings {
   count?: number;
   /** Only stars at least this bright (a magnitude: Sirius is -1.46, so 1.5 names the 22 brightest stars). Left out for no limit by magnitude. */
   magnitude?: number;
+  /** Which stars may be named and may keep a name clear of their dot: a star it says no to is neither named nor counted. Left out for every star. */
+  include?: (star: Star) => boolean;
   /** The language of the names; `en` by default. */
   lang?: NameLanguage;
   /** Which stars' dots a name must not cover: every star brighter than this magnitude, 3 by default (about 170 stars). Lower it for a page that draws only the brightest. */
@@ -426,7 +428,7 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
         designations = list.map((star) => (style.designation === "none" ? "" : star.designation ?? ""));
       }
       if (dots === undefined) {
-        dots = stars().filter((star) => star.magnitude <= (current.dotMagnitude ?? 3));
+        dots = stars().filter((star) => star.magnitude <= (current.dotMagnitude ?? 3) && (current.include === undefined || current.include(star)));
         dotX = new Float32Array(dots.length);
         dotY = new Float32Array(dots.length);
       }
@@ -442,6 +444,7 @@ export function createStarNames(settings: StarNamesSettings = {}): StarNames {
       for (let i = 0; i < list.length && labels.length < limit; i += 1) {
         const star = list[i]!;
         if (star.magnitude > faintest) break;
+        if (current.include !== undefined && !current.include(star)) continue;
         if (!project(star.rightAscension, star.declination, spot)) continue;
         if (!(spot.x >= 0 && spot.x <= view.width && spot.y >= 0 && spot.y <= view.height)) continue;
         if (covered !== undefined && covered(spot.x, spot.y)) continue;

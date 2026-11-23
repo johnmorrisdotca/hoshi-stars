@@ -160,6 +160,21 @@
       "ja": "距離で見る空 (10・50・100・500・1,000光年より近い星や銀河を層に分けて、距離の帯ごとに色分けします。距離がはっきりしないものは別にし、推測で置くことはしません)",
       "platform": "neutral"
     },
+    "./star-filter": {
+      "en": "Two filters for any sky: a distance range in light-years and a faintest magnitude, the rule for a star with no known distance, and the steps the bars use, short numbers fit for an address",
+      "ja": "どの空にも使える2つのしぼりこみ (光年の距離の範囲と、いちばん暗い等級。距離がわからない星の扱い。バーの刻みと、アドレスに書ける短い数)",
+      "platform": "neutral"
+    },
+    "./star-filter/bright": {
+      "en": "The filter applied to the bright stars once, as a mask over the table, and how many it keeps",
+      "ja": "しぼりこみを明るい星の表にいちど当てた結果 (表と同じ並びのマスク)と、残る数",
+      "platform": "neutral"
+    },
+    "./star-filter/bar": {
+      "en": "The filter bars of the sky elements: real range inputs in English and Japanese, the hoshi-filter event, and the attributes they write",
+      "ja": "星空の要素のしぼりこみバー (英語と日本語のレンジ入力、hoshi-filter イベント、書き込む属性)",
+      "platform": "browser"
+    },
     "./sky-from": {
       "en": "The sky seen from another star: positions, distances and brightness from there, with the Sun among the stars",
       "ja": "ほかの星から見た空 (そこから見た位置・距離・明るさ。太陽も星のひとつ)",
