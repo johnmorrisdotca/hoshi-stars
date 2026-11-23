@@ -6,6 +6,7 @@ import type { DistanceLayers } from "../distance.ts";
 import type { Projection } from "../projection.ts";
 import type { FigureLines, StarNames } from "../sky-labels.ts";
 import type { SeenSky } from "../sky-from.ts";
+import type { StarFilter } from "../star-filter.ts";
 import type { SkyBody } from "./bodies.ts";
 import type { FaintDraw } from "./faint-layer.ts";
 import type { Box } from "./labels.ts";
@@ -54,6 +55,8 @@ export interface ChartOptions extends View {
   near?: readonly string[] | undefined;
   /** The sky seen from another star (`skyFrom`): the stars are drawn where it puts them, with its magnitudes, and the lines join them there. A star it leaves out (no distance) is not drawn, nor a line to it. The boundaries are the Earth's and are not drawn. */
   sky?: SeenSky | undefined;
+  /** Keep only the stars inside a distance range and no fainter than a magnitude (`StarFilter`). The lines and names of the figures stay; only star dots and star names are filtered. Seen from another star (`sky`) the distance is from there. Not applied to the distance layers (`distance`). Everything is drawn when left out. */
+  filter?: StarFilter | undefined;
   /** Rectangles in chart pixels that no name may cover, such as the page's own buttons laid over the chart. */
   keepClear?: readonly Box[] | undefined;
   /** The faint stars of UCAC4 in the field (`faintFor`), drawn when the `faint` layer is on and the zoom reaches them. */

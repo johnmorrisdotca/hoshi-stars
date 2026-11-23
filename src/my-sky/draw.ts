@@ -4,6 +4,8 @@
 import { constellation } from "../constellations.ts";
 import type { FigureLines, SkyProjector, StarNames } from "../sky-labels.ts";
 import { starColour, stars as catalogue } from "../stars.ts";
+import { brightShown } from "../star-filter-bright.ts";
+import { starFilterKey, type StarFilter } from "../star-filter.ts";
 import { paintBackground } from "./background.ts";
 import { drawMoonDisc, drawMoonGlow, drawPlanet, drawSun, halo, planetRadius, ring } from "./bodies-draw.ts";
 import type { Direction, LocalFrame } from "./frame.ts";
@@ -82,6 +84,10 @@ export interface Scene {
   names: StarNames;
   /** Show the stars (and lines) in daylight too, as if the Sun were not up. */
   daylight: boolean;
+  /** Only the stars this keeps are drawn and named (a distance range and a faintest magnitude); the figures' lines stay. Every star when left out. */
+  filter?: StarFilter;
+  /** The fonts of the canvas text. `label` is the family of every name (stars, constellations, the Moon and planets, the target, your marks) and `labelSize` and `labelWeight` are the star names' and constellation names' when the page set them; `sky` is the family of the other text (the compass letters). The package's own font when left out. */
+  fonts?: { label?: string | undefined; labelSize?: number | undefined; labelWeight?: string | undefined; sky?: string | undefined };
   /** The body a tap picked, to ring. */
   picked: string | undefined;
   /** What a page asked the sky to turn to, to ring and name. */
@@ -140,6 +146,10 @@ function paintBackdrop(ctx: CanvasRenderingContext2D, scene: Scene, axesSun: Dir
 export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBody[] {
   const { camera, report, lang } = scene;
   const { width, height } = camera;
+  const labelFont = scene.fonts?.label ?? FONT;
+  const skyFont = scene.fonts?.sky ?? FONT;
+  const nameSize = scene.fonts?.labelSize ?? 11;
+  const nameWeight = scene.fonts?.labelWeight === undefined ? "" : `${scene.fonts.labelWeight} `;
   const axes = cameraAxes(camera.heading, camera.pitch);
   const words = mySkyWords(lang);
   const sunDirection = directionOf(report.sun.altitude, report.sun.azimuth);
@@ -214,9 +224,11 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
 
   // the stars
   const { stars } = scene;
+  const kept = scene.filter === undefined ? undefined : brightShown(scene.filter);
   for (let i = 0; i < stars.count; i++) {
     const up = stars.up[i]!;
     if (up <= 0) continue;
+    if (kept !== undefined && kept.mask[i] === 0) continue;
     const magnitude = stars.magnitude[i]!;
     const altitude = Math.asin(up) / RAD;
     // the air near the horizon dims a star by up to two magnitudes
@@ -247,9 +259,10 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
   // the names of the brightest stars
   ctx.textBaseline = "alphabetic";
   if (limit >= 1 && scene.names.settings.count !== 0) {
-    remember(scene.names, `${lang} ${Math.min(limit - 0.5, 3).toFixed(2)} ${scene.names.settings.count}`, () => scene.names.set({ ...scene.names.settings, lang, magnitude: Math.min(limit - 0.5, 3) }));
+    const include = kept === undefined ? undefined : (star: { hr: number }): boolean => kept.has(star.hr);
+    remember(scene.names, `${lang} ${Math.min(limit - 0.5, 3).toFixed(2)} ${scene.names.settings.count} ${scene.filter === undefined ? "" : starFilterKey(scene.filter)} ${labelFont} ${nameSize} ${nameWeight}`, () => scene.names.set({ ...scene.names.settings, lang, magnitude: Math.min(limit - 0.5, 3), style: { ...scene.names.settings.style, font: labelFont, size: nameSize }, ...(include === undefined ? { include: undefined } : { include }) }));
     scene.names.update(project, view, covered);
-    ctx.font = `${scene.names.style.size}px ${scene.names.style.font}`;
+    ctx.font = `${nameWeight}${scene.names.style.size}px ${scene.names.style.font}`;
     for (const label of scene.names.labels) {
       ctx.textAlign = label.anchor === "start" ? "left" : label.anchor === "end" ? "right" : "center";
       if (label.ring > 0) {
@@ -266,7 +279,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
 
   // the names of the constellations in view, widest first, none over another name
   if (scene.lines !== null && strength > 0) {
-    ctx.font = `italic 11px ${FONT}`;
+    ctx.font = `italic ${nameWeight}${nameSize}px ${labelFont}`;
     ctx.textAlign = "center";
     const wide = scene.lines.figures.filter((f) => f.end > f.start).sort((a, b) => b.right - b.left - (a.right - a.left));
     for (const figure of wide) {
@@ -286,14 +299,14 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
     ctx.globalAlpha = 1;
   }
   if (scene.lines !== null && scene.lines.name !== undefined) {
-    ctx.font = `600 13px ${FONT}`;
+    ctx.font = `600 13px ${labelFont}`;
     ctx.textAlign = "center";
     halo(ctx, scene.lines.name.text, scene.lines.name.x, scene.lines.name.y, "#ffffff");
   }
 
   const drawn: DrawnBody[] = [];
   const ppd = viewScale(camera) * RAD;
-  ctx.font = `12px ${FONT}`;
+  ctx.font = `12px ${labelFont}`;
   // the planets above the horizon, then their names, each clear of the other planets and of the names already written
   const here: Array<{ id: (typeof report.planets)[number]["id"]; x: number; y: number; radius: number }> = [];
   const taken: Box[] = [];
@@ -350,10 +363,10 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
 
   // what the page asked for: the ring round the target and its name, then the page's own marks over everything of the sky
   if (scene.target !== undefined) {
-    const ringed = drawTarget(ctx, camera, axes, scene.frame, scene.target);
+    const ringed = drawTarget(ctx, camera, axes, scene.frame, scene.target, labelFont);
     if (ringed !== undefined) drawn.push(ringed);
   }
-  if (scene.marks !== undefined) drawn.push(...drawMarks(ctx, camera, axes, scene.marks));
+  if (scene.marks !== undefined) drawn.push(...drawMarks(ctx, camera, axes, scene.marks, labelFont));
 
   // the compass letters on the ground just under the horizon
   ctx.textAlign = "center";
@@ -362,7 +375,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
     const main = i % 2 === 0;
     if (!place(directionOf(main ? -4.5 : -3.5, i * 45))) return;
     if (spot.x < 8 || spot.x > width - 8 || spot.y < 8 || spot.y > height - 8) return;
-    ctx.font = `${main ? 700 : 500} ${main ? 17 : 12}px ${FONT}`;
+    ctx.font = `${main ? 700 : 500} ${main ? 17 : 12}px ${skyFont}`;
     ctx.fillStyle = main ? "rgba(235, 242, 255, 0.95)" : "rgba(200, 214, 245, 0.7)";
     ctx.fillText(words.compass[point], spot.x, spot.y);
   });

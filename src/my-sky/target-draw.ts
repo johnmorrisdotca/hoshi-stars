@@ -53,7 +53,7 @@ function writeBeside(ctx: CanvasRenderingContext2D, text: string, x: number, y: 
  * console.log(ring);
  * ```
  */
-export function drawTarget(ctx: CanvasRenderingContext2D, camera: SkyCamera, axes: CameraAxes, frame: LocalFrame, target: SceneTarget): DrawnBody | undefined {
+export function drawTarget(ctx: CanvasRenderingContext2D, camera: SkyCamera, axes: CameraAxes, frame: LocalFrame, target: SceneTarget, font: string = FONT): DrawnBody | undefined {
   const { width, height } = camera;
   const spot = { x: 0, y: 0 };
   const on = (x: number, y: number): boolean => x > -30 && x < width + 30 && y > -30 && y < height + 30;
@@ -89,7 +89,7 @@ export function drawTarget(ctx: CanvasRenderingContext2D, camera: SkyCamera, axe
   }
   const at = directionOf(target.altitude, target.azimuth);
   if (projectDirection(camera, axes, at, spot) && on(spot.x, spot.y)) {
-    ctx.font = `600 13px ${FONT}`;
+    ctx.font = `600 13px ${font}`;
     if (target.lines === undefined) {
       const r = 20;
       ctx.lineWidth = 2;
@@ -126,7 +126,7 @@ export function drawTarget(ctx: CanvasRenderingContext2D, camera: SkyCamera, axe
       ctx.closePath();
       ctx.stroke();
       ctx.fill();
-      ctx.font = `600 13px ${FONT}`;
+      ctx.font = `600 13px ${font}`;
       ctx.textBaseline = "alphabetic";
       ctx.textAlign = "center";
       const half = ctx.measureText(target.belowLabel).width / 2;
@@ -154,11 +154,11 @@ export function drawTarget(ctx: CanvasRenderingContext2D, camera: SkyCamera, axe
  * console.log(hits.length);
  * ```
  */
-export function drawMarks(ctx: CanvasRenderingContext2D, camera: SkyCamera, axes: CameraAxes, marks: readonly SkyMark[]): DrawnBody[] {
+export function drawMarks(ctx: CanvasRenderingContext2D, camera: SkyCamera, axes: CameraAxes, marks: readonly SkyMark[], font: string = FONT): DrawnBody[] {
   const hits: DrawnBody[] = [];
   if (marks.length === 0) return hits;
   const spot = { x: 0, y: 0 };
-  ctx.font = `12px ${FONT}`;
+  ctx.font = `12px ${font}`;
   ctx.textBaseline = "alphabetic";
   for (const mark of marks) {
     if (!projectDirection(camera, axes, directionOf(mark.altitude, mark.azimuth), spot)) continue;

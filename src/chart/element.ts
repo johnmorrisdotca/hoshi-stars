@@ -14,6 +14,9 @@ import { normaliseBodies, type SkyBody } from "./bodies.ts";
 import { CHART_LAYERS, chartInput, DEFAULT_CHART_LAYERS, DEFAULT_CHART_MAGNITUDE, type ChartLayer } from "./svg.ts";
 import { CHART_ZOOM_LIMIT, CHART_ZOOM_MAX, CHART_ZOOM_MIN, constellationOf, CULTURES, number, PROJECTIONS, TAB_STOPS } from "./element-config.ts";
 import { STYLE } from "./element-style.ts";
+import { brightCount } from "../star-filter-bright.ts";
+import { filterOf, FILTER_BAR_STYLE, mountFilterBar, setFilterOf, type FilterBar, type StarFilterDetail } from "../star-filter-bar.ts";
+import { STAR_FILTER_ATTRIBUTES } from "../star-filter.ts";
 import type { ChartMarkerDetail, ChartPick, ChartViewDetail } from "./element-types.ts";
 
 /**
@@ -31,7 +34,7 @@ import type { ChartMarkerDetail, ChartPick, ChartViewDetail } from "./element-ty
 export const CHART_TAG = "hoshi-chart";
 
 export type { View };
-export type { ChartMarkerDetail, ChartPick, ChartViewDetail };
+export type { ChartMarkerDetail, ChartPick, ChartViewDetail, StarFilterDetail };
 
 
 // On a server (a framework's render, or Node) there is no HTMLElement: the class still loads, as a stand-in nothing defines, so importing the chart never throws there.
@@ -45,6 +48,10 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * (no hands, a still picture). A drag moves the sky, two fingers or Ctrl and the wheel zoom, the arrows look round, + and - zoom. It sends `hoshi-view` as the view changes and `hoshi-pick` when a tap
  * lands on something (or on nothing); `picked` and `constellation` set after a tap win again.
  *
+ * Star filters: `distance-min` and `distance-max` (light-years; a star with no known distance is hidden while either is set) and `magnitude-limit` (hide stars fainter than it, however far you zoom in) keep only the star dots and star names
+ * that fit; the lines and names of the figures stay. `filter-bar` shows two bars for them (distance range, brightness) over the chart, with real range inputs in English and Japanese. A bar writes the attributes and sends
+ * `hoshi-filter` (`StarFilterDetail`: the three limits and `final` once the hand lets go). The properties `distanceMin`, `distanceMax` and `magnitudeLimit` set the attributes.
+ *
  * The zoom is the chart's own, not the family's "1 is Fit": 1 fits the projection's whole sky (or hemisphere) in the smaller side, and more is closer. Left out, `zoom` is the projection's opening
  * zoom for the element's size (about 90 degrees of sky across, 60 under 600 pixels wide: 3.86 for a 640 by 400 stereographic chart), which is where Home and 0 go. `zoom-min` and `zoom-max` bound it
  * in the same unit, 0.1 and 500 by default, `zoom-max` up to 8000.
@@ -56,7 +63,7 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * ```
  */
 export class HoshiChartElement extends Base {
-  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls", "markers", "bodies", "time-from", "time-to", "time-fade", "tracks", "show-uncertainty"];
+  static observedAttributes = ["projection", "ra", "dec", "zoom", "zoom-min", "zoom-max", "magnitude", "layers", "constellation", "culture", "picked", "lang", "controls", "markers", "bodies", "time-from", "time-to", "time-fade", "tracks", "show-uncertainty", "distance-min", "distance-max", "magnitude-limit", "filter-bar"];
 
   #svg: SVGSVGElement | undefined;
   #hands: Hands | undefined;
@@ -79,11 +86,12 @@ export class HoshiChartElement extends Base {
   #bodies: readonly SkyBody[] = [];
   #range: MarkerRange | undefined;
   #tracks: boolean | readonly string[] = false;
+  #bar: FilterBar | undefined;
 
   connectedCallback(): void {
     const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
     if (this.#svg === undefined) {
-      root.innerHTML = `<style>${STYLE}</style><svg xmlns="http://www.w3.org/2000/svg" part="chart" role="img"></svg>`;
+      root.innerHTML = `<style>${STYLE}${FILTER_BAR_STYLE}</style><svg xmlns="http://www.w3.org/2000/svg" part="chart" role="img"></svg>`;
       this.#svg = root.querySelector("svg")!;
     }
     if (!this.hasAttribute("tabindex") && this.getAttribute("controls") !== "none") this.tabIndex = 0;
@@ -109,10 +117,14 @@ export class HoshiChartElement extends Base {
     }
     // a lang set or changed above the element (the page's <html lang>, a section's) is watched: the names follow it
     this.#langWatch = new MutationObserver(() => {
-      if (this.#lang() !== this.#langNow) this.#schedule();
+      if (this.#lang() !== this.#langNow) {
+        this.#schedule();
+        this.#bar?.sync();
+      }
     });
     this.#langWatch.observe(this.ownerDocument.documentElement, { attributes: true, attributeFilter: ["lang"], subtree: true });
     void this.#loadCulture();
+    this.#syncBar();
     this.#measure();
     // back on a page after being moved: the hands were let go on leaving, and the drawing may be behind
     if (this.#hands === undefined) this.#bindHands();
@@ -133,12 +145,15 @@ export class HoshiChartElement extends Base {
     this.#langWatch = undefined;
     this.#hands?.destroy();
     this.#hands = undefined;
+    this.#bar?.destroy();
+    this.#bar = undefined;
   }
 
   attributeChangedCallback(name: string): void {
     if (name === "bodies") this.#readBodiesAttribute();
     if (name === "markers" || name === "time-from" || name === "time-to" || name === "time-fade" || name === "tracks") this.#readMarkerAttributes(name);
     if (this.#svg === undefined) return;
+    if (name === "filter-bar" || name === "lang" || name === STAR_FILTER_ATTRIBUTES.distanceMin || name === STAR_FILTER_ATTRIBUTES.distanceMax || name === STAR_FILTER_ATTRIBUTES.magnitudeLimit) this.#syncBar();
     if (name === "culture") {
       void this.#loadCulture();
       return;
@@ -152,6 +167,45 @@ export class HoshiChartElement extends Base {
       this.#hands?.sync();
     }
     this.#schedule();
+  }
+
+  /** The nearest star drawn, in light-years; 0 for no limit. Setting it sets the attribute `distance-min`. A star with no known distance is hidden while the distance is limited. */
+  get distanceMin(): number {
+    return filterOf(this).distanceMin ?? 0;
+  }
+
+  set distanceMin(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), distanceMin: value ?? undefined });
+  }
+
+  /** The farthest star drawn, in light-years; `Infinity` for no limit. Setting it sets the attribute `distance-max`. */
+  get distanceMax(): number {
+    return filterOf(this).distanceMax ?? Number.POSITIVE_INFINITY;
+  }
+
+  set distanceMax(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), distanceMax: value ?? undefined });
+  }
+
+  /** The faintest star drawn, an apparent magnitude; `Infinity` for no limit. Setting it sets the attribute `magnitude-limit`. Only the star dots and star names are filtered; the lines and names of the figures stay. */
+  get magnitudeLimit(): number {
+    return filterOf(this).magnitudeLimit ?? Number.POSITIVE_INFINITY;
+  }
+
+  set magnitudeLimit(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), magnitudeLimit: value ?? undefined });
+  }
+
+  #syncBar(): void {
+    const root = this.shadowRoot;
+    if (root === null) return;
+    if (!this.hasAttribute(STAR_FILTER_ATTRIBUTES.bar) || this.getAttribute(STAR_FILTER_ATTRIBUTES.bar) === "false") {
+      this.#bar?.destroy();
+      this.#bar = undefined;
+      return;
+    }
+    this.#bar ??= mountFilterBar(this, root, { lang: () => this.#lang(), count: () => brightCount(filterOf(this)) });
+    this.#bar.sync();
   }
 
   /**
@@ -363,7 +417,7 @@ export class HoshiChartElement extends Base {
     if (svg === undefined || view === undefined || width === 0 || height === 0) return;
     const lang = this.#lang();
     this.#langNow = lang;
-    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined, showUncertainty: this.showUncertainty, markers: this.#markers, bodies: this.#bodies, timeRange: this.#range, tracks: this.#tracks });
+    const input = chartInput({ ...view, width, height, magnitude: number(this.getAttribute("magnitude"), DEFAULT_CHART_MAGNITUDE), layers: this.#layers(), lang, culture: this.#culture, constellation: this.#highlight ?? this.getAttribute("constellation") ?? undefined, picked: this.#picked ?? this.getAttribute("picked") ?? undefined, showUncertainty: this.showUncertainty, ...filterOf(this), markers: this.#markers, bodies: this.#bodies, timeRange: this.#range, tracks: this.#tracks });
     const out = chart(input);
     this.#hits = out.hits;
     this.#markerHits = out.markerHits;

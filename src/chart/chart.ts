@@ -11,6 +11,8 @@ import type { CultureFigure } from "../lines.ts";
 import type { Culture } from "../culture.ts";
 import { western } from "../cultures/western.ts";
 import { faintMarks } from "./faint-layer.ts";
+import { brightShown } from "../star-filter-bright.ts";
+import { distanceNarrowed, starFilterActive, starPasses } from "../star-filter.ts";
 import { dimsForUncertainty, UNCERTAIN_OPACITY } from "./uncertainty.ts";
 import type { SkyPoint } from "../projection.ts";
 import { placeLabels, textSize, withMeasure, type Box } from "./labels.ts";
@@ -284,8 +286,11 @@ function drawChart(o: ChartOptions): Chart {
     for (const h of bodied.hits) hits.push({ x: h.x, y: h.y, kind: "body", key: h.id, reach: Math.max(22, h.r + 14) });
   }
   let faintDrawn: Chart["faint"];
-  if (o.sky === undefined && o.distance === undefined && layers.has("faint") && o.faint !== undefined) {
-    const marks = faintMarks(o.faint, place, inside, grow);
+  const filter = o.filter === undefined || !starFilterActive(o.filter) ? undefined : o.filter;
+  // the faint stars have no distance: a narrowed distance leaves them out, and a magnitude limit cuts the list where it ends
+  const faintStars = o.faint === undefined || filter === undefined ? o.faint : distanceNarrowed(filter) ? undefined : filter.magnitudeLimit === undefined ? o.faint : { ...o.faint, stars: o.faint.stars.filter((star) => star.magnitude <= filter.magnitudeLimit!) };
+  if (o.sky === undefined && o.distance === undefined && layers.has("faint") && faintStars !== undefined) {
+    const marks = faintMarks(faintStars, place, inside, grow);
     body += marks.svg;
     faintDrawn = { drawn: marks.drawn, depth: marks.depth };
   }
@@ -293,7 +298,7 @@ function drawChart(o: ChartOptions): Chart {
   let dots = "";
   let ring = "";
   const starLabels: Label[] = [];
-  const depth = depthOf(o.magnitude, o.zoom);
+  const depth = filter?.magnitudeLimit === undefined ? depthOf(o.magnitude, o.zoom) : Math.min(depthOf(o.magnitude, o.zoom), filter.magnitudeLimit);
   const plot = (key: string, point: SkyPoint, magnitude: number, colour: () => string, text: string | undefined, designation: string, dim = false): void => {
     const isNear = near.has(`S:${key}`);
     const at = place(point);
@@ -330,10 +335,11 @@ function drawChart(o: ChartOptions): Chart {
       if (layers.has("names") && text !== undefined && !thing.uncertain && (thing.kind === "star" ? magnitude <= nameLimit : thing.band <= 1 || o.zoom >= 3)) starLabels.push({ rank: 1000 + thing.band * 40 + magnitude, ...besideMarker(text, 11, at[0], at[1], r + 3, colour, 0.95) });
     }
   } else if (o.sky === undefined) {
-    const drawn = stars({ magnitude: depth });
+    const kept = filter === undefined ? undefined : brightShown(filter);
+    const drawn = stars({ magnitude: depth }).filter((star) => kept === undefined || kept.has(star.hr));
     for (const key of near) {
       const extra = key.startsWith("S:") ? starByHr(Number(key.slice(2))) : undefined;
-      if (extra !== undefined && extra.magnitude > depth) drawn.push(extra);
+      if (extra !== undefined && extra.magnitude > depth && (kept === undefined || kept.has(extra.hr))) drawn.push(extra);
     }
     // a star farther from the middle than the chart's corner cannot land on it: it is passed by without being placed (the stars drawn are the same)
     const reachable = nearEnough(view, width, height);
@@ -341,6 +347,7 @@ function drawChart(o: ChartOptions): Chart {
   } else {
     for (const star of o.sky) {
       if (star.magnitude > depth && !near.has(`S:${keyOfSeen(star.id)}`)) continue;
+      if (filter !== undefined && !starPasses(filter, star.magnitude, star.lightYears)) continue;
       const sun = star.id === "sun";
       plot(keyOfSeen(star.id), star, star.magnitude, () => (star.colourIndex === undefined ? "#ffffff" : blackBodyColour(starTemperatureK(star.colourIndex))), sun ? (lang === "ja" ? "太陽" : "Sun") : lang === "ja" ? (star.star !== undefined && "nameJa" in star.star ? star.star.nameJa : undefined) ?? star.name : star.name, star.designation ?? `HR ${keyOfSeen(star.id)}`);
     }

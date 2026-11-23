@@ -5,6 +5,7 @@ import type { Projection } from "../projection.ts";
 import { chart, defaultZoom, type Hit, type Language, type Layer } from "./chart.ts";
 import type { MarkerRange, SkyMarker } from "./markers.ts";
 import type { SkyBody } from "./bodies.ts";
+import { normaliseStarFilter } from "../star-filter.ts";
 
 /**
  * The layers a published chart draws: the Milky Way, the figures' lines, the constellation boundaries, the names, the deep-sky objects, the black holes, the ecliptic (the Sun's yearly path, dashed) and the grid.
@@ -86,6 +87,12 @@ export interface ChartSvgOptions {
   bodies?: readonly SkyBody[] | undefined;
   /** Draw the stars of grade C (a rough or missing distance, `/accuracy`) dimmer. Off when left out. */
   showUncertainty?: boolean | undefined;
+  /** Keep only stars at least this far away, in light-years. A star with no known distance is hidden while a distance limit is set. No limit when left out. */
+  distanceMin?: number | undefined;
+  /** Keep only stars no farther than this, in light-years (`distanceMax: 100` draws the stars within 100 light-years). The lines and names of the figures stay. No limit when left out. */
+  distanceMax?: number | undefined;
+  /** Hide stars fainter than this apparent magnitude, however far you zoom in (`magnitude` is the faintest at the opening zoom and deepens as you zoom; this is a hard limit). No limit when left out. */
+  magnitudeLimit?: number | undefined;
   /** The SVG's accessible name: "Star chart" (星図 in Japanese) when left out. */
   label?: string | undefined;
   /**
@@ -113,6 +120,7 @@ export function chartInput(o: ChartSvgOptions): Parameters<typeof chart>[0] {
     highlight: o.constellation,
     picked: o.picked,
     showUncertainty: o.showUncertainty,
+    filter: normaliseStarFilter({ distanceMin: o.distanceMin, distanceMax: o.distanceMax, magnitudeLimit: o.magnitudeLimit }),
     markers: o.markers,
     bodies: o.bodies,
     timeRange: o.timeRange,

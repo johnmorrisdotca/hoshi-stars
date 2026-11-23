@@ -14,6 +14,9 @@ import { glideView, riseAndSet, targetInSky, viewOfGroup, viewOfObject, type Ris
 import { clampView, openingHeading, type SkyCamera } from "./view.ts";
 import { compassPoint, mySkyWords, say, type MySkyLanguage } from "./words.ts";
 import { FONT, STYLE } from "./style.ts";
+import { brightCount } from "../star-filter-bright.ts";
+import { filterOf, FILTER_BAR_STYLE, mountFilterBar, setFilterOf, type FilterBar, type StarFilterDetail } from "../star-filter-bar.ts";
+import { STAR_FILTER_ATTRIBUTES } from "../star-filter.ts";
 import type { MySkyMarkDetail, MySkyPick, MySkyReport, MySkyTargetDetail, MySkyTargetReport, MySkyViewDetail } from "./types.ts";
 
 /**
@@ -31,7 +34,7 @@ import type { MySkyMarkDetail, MySkyPick, MySkyReport, MySkyTargetDetail, MySkyT
  */
 export const MY_SKY_TAG = "hoshi-my-sky";
 
-export type { MySkyMarkDetail, MySkyPick, MySkyReport, MySkyTargetDetail, MySkyTargetReport, MySkyViewDetail };
+export type { MySkyMarkDetail, MySkyPick, MySkyReport, MySkyTargetDetail, MySkyTargetReport, MySkyViewDetail, StarFilterDetail };
 
 /** The field of view the sky opens at, in degrees across the smaller side. */
 const OPENING_FOV = 90;
@@ -62,6 +65,10 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * `timezone` (an IANA name such as `America/Vancouver` for the rise and set times; the reader's own by default), `info="none"` (hide the panel of the Moon and the planets), `constellation-lines` (a strength 0 to 1, or `off`; the default is a quiet 0.32),
  * `star-names` (how many names, or `off`; the default fits the size) and `daylight="show"` (draw the stars even when the Sun is up, as a chart).
  *
+ * Star filters: `distance-min` and `distance-max` (light-years from the Earth; a star with no known distance is hidden while either is set) and `magnitude-limit` (hide stars fainter than it) keep only the star dots and star names that fit; the constellation
+ * lines stay. `filter-bar` shows two bars for them (distance range, brightness) over the sky (folded on a narrow box; `filter-bar="open"` keeps them open). A bar writes the attributes and sends `hoshi-filter` (`StarFilterDetail`, with `final`).
+ * The properties `distanceMin`, `distanceMax` and `magnitudeLimit` set the attributes.
+ *
  * Properties: `latitude`, `longitude`, `time` (a `Date` or `null` for live), `heading`, `pitch`, `fov`, the read-only `sky` (the Sun, the Moon and the planets as `SkyReport`) and `setView`. It sends `hoshi-sky-view` as the view turns and `hoshi-sky-pick` when a tap lands
  * on the Sun, the Moon, a planet or a constellation. Nothing moves by itself: a live sky redraws every ten seconds (a minute for a reader who prefers reduced motion) while the page is showing, and a fixed `time` never.
  *
@@ -72,7 +79,7 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * ```
  */
 export class HoshiMySkyElement extends Base {
-  static observedAttributes = ["latitude", "longitude", "time", "lang", "heading", "pitch", "fov", "timezone", "info", "constellation-lines", "star-names", "daylight", "target"];
+  static observedAttributes = ["latitude", "longitude", "time", "lang", "heading", "pitch", "fov", "timezone", "info", "constellation-lines", "star-names", "daylight", "target", "distance-min", "distance-max", "magnitude-limit", "filter-bar"];
 
   #canvas: HTMLCanvasElement | undefined;
   #ctx: CanvasRenderingContext2D | null = null;
@@ -130,11 +137,12 @@ export class HoshiMySkyElement extends Base {
   #cardKey = "";
   #marks: SkyMark[] = [];
   #markKey = "";
+  #bar: FilterBar | undefined;
 
   connectedCallback(): void {
     const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
     if (this.#canvas === undefined) {
-      root.innerHTML = `<style>${STYLE}</style><canvas class="sky" part="sky" role="img"></canvas><div class="panel" part="panel"><div class="head"><canvas class="icon" width="72" height="72" aria-hidden="true"></canvas><span class="title"></span><button class="toggle" type="button" aria-expanded="true"></button></div><ul class="rows"></ul><p class="note" hidden></p></div><div class="target" part="target" role="status" hidden></div><ul class="marklist"></ul><div class="facing" part="facing" role="status"></div><div class="message" hidden></div>`;
+      root.innerHTML = `<style>${STYLE}${FILTER_BAR_STYLE}</style><canvas class="sky" part="sky" role="img"></canvas><div class="panel" part="panel"><div class="head"><canvas class="icon" width="72" height="72" aria-hidden="true"></canvas><span class="title" part="title"></span><button class="toggle" type="button" part="toggle" aria-expanded="true"></button></div><ul class="rows" part="rows"></ul><p class="note" hidden></p></div><div class="target" part="target" role="status" hidden></div><ul class="marklist"></ul><div class="facing" part="facing" role="status"></div><div class="message" hidden></div>`;
       this.#canvas = root.querySelector<HTMLCanvasElement>("canvas.sky")!;
       this.#ctx = this.#canvas.getContext("2d");
       this.#panel = root.querySelector<HTMLElement>(".panel")!;
@@ -156,6 +164,7 @@ export class HoshiMySkyElement extends Base {
       });
     }
     this.#listMarks();
+    this.#syncBar();
     if (!this.hasAttribute("tabindex")) this.tabIndex = 0;
     if (!this.#attributesRead) {
       this.#attributesRead = true;
@@ -179,7 +188,10 @@ export class HoshiMySkyElement extends Base {
     this.addEventListener("pointerup", this.#up);
     this.addEventListener("pointercancel", this.#cancel);
     this.#langWatch = new MutationObserver(() => {
-      if (this.#lang() !== this.#langNow) this.#changed();
+      if (this.#lang() !== this.#langNow) {
+        this.#changed();
+        this.#bar?.sync();
+      }
     });
     this.#langWatch.observe(this.ownerDocument.documentElement, { attributes: true, attributeFilter: ["lang"], subtree: true });
     this.ownerDocument.addEventListener("visibilitychange", this.#visible);
@@ -206,6 +218,8 @@ export class HoshiMySkyElement extends Base {
     this.#stopTicking();
     this.#hands?.destroy();
     this.#hands = undefined;
+    this.#bar?.destroy();
+    this.#bar = undefined;
   }
 
   attributeChangedCallback(name: string, _old?: string | null, value?: string | null): void {
@@ -227,6 +241,7 @@ export class HoshiMySkyElement extends Base {
       this.#startTicking();
     }
     if (this.#canvas === undefined) return;
+    if (name === "filter-bar" || name === "lang" || name === STAR_FILTER_ATTRIBUTES.distanceMin || name === STAR_FILTER_ATTRIBUTES.distanceMax || name === STAR_FILTER_ATTRIBUTES.magnitudeLimit) this.#syncBar();
     if (name === "heading" || name === "pitch" || name === "fov") {
       this.#view = this.#opening();
       this.#hands?.sync();
@@ -236,6 +251,45 @@ export class HoshiMySkyElement extends Base {
     if (name === "info") this.#showPanel();
     if (name === "latitude" || name === "longitude" || name === "time") this.#recompute();
     else this.#changed();
+  }
+
+  /** The nearest star drawn, in light-years; 0 for no limit. Setting it sets the attribute `distance-min`. A star with no known distance is hidden while the distance is limited. */
+  get distanceMin(): number {
+    return filterOf(this).distanceMin ?? 0;
+  }
+
+  set distanceMin(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), distanceMin: value ?? undefined });
+  }
+
+  /** The farthest star drawn, in light-years; `Infinity` for no limit. Setting it sets the attribute `distance-max`. */
+  get distanceMax(): number {
+    return filterOf(this).distanceMax ?? Number.POSITIVE_INFINITY;
+  }
+
+  set distanceMax(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), distanceMax: value ?? undefined });
+  }
+
+  /** The faintest star drawn, an apparent magnitude; `Infinity` for no limit. Setting it sets the attribute `magnitude-limit`. The constellation lines and their names stay; only star dots and star names are filtered. */
+  get magnitudeLimit(): number {
+    return filterOf(this).magnitudeLimit ?? Number.POSITIVE_INFINITY;
+  }
+
+  set magnitudeLimit(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), magnitudeLimit: value ?? undefined });
+  }
+
+  #syncBar(): void {
+    const root = this.shadowRoot;
+    if (root === null) return;
+    if (!this.hasAttribute(STAR_FILTER_ATTRIBUTES.bar) || this.getAttribute(STAR_FILTER_ATTRIBUTES.bar) === "false") {
+      this.#bar?.destroy();
+      this.#bar = undefined;
+      return;
+    }
+    this.#bar ??= mountFilterBar(this, root, { lang: () => this.#lang(), count: () => brightCount(filterOf(this)) });
+    this.#bar.sync();
   }
 
   /** Degrees north of the equator. Setting it sets the attribute. `undefined` until it is given. */
@@ -604,6 +658,14 @@ export class HoshiMySkyElement extends Base {
     return Math.max(5, Math.min(22, Math.round((this.#size.width * this.#size.height) / 20_000)));
   }
 
+  /** The page's fonts for the canvas text, read from its custom properties at each draw: `--hoshi-label-font`, `--hoshi-label-size` and `--hoshi-label-weight` for the names, `--hoshi-sky-font` for the compass letters. */
+  #fonts(): NonNullable<Scene["fonts"]> {
+    const css = getComputedStyle(this);
+    const read = (name: string): string => css.getPropertyValue(name).trim();
+    const size = Number.parseFloat(read("--hoshi-label-size"));
+    return { label: read("--hoshi-label-font") || undefined, labelSize: size >= 6 && size <= 48 ? size : undefined, labelWeight: read("--hoshi-label-weight") || undefined, sky: read("--hoshi-sky-font") || undefined };
+  }
+
   /** The strength lines may have, from `constellation-lines`: its value, `undefined` for off, the default when the attribute is missing. */
   #lineStrength(): number | undefined {
     const text = this.getAttribute("constellation-lines");
@@ -651,6 +713,8 @@ export class HoshiMySkyElement extends Base {
       lineStrength: strength ?? 0,
       names: this.#names,
       daylight: this.getAttribute("daylight") === "show",
+      filter: filterOf(this),
+      fonts: this.#fonts(),
       picked: this.#picked,
       marks: this.#marks,
     };

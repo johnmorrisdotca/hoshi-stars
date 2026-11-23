@@ -23,4 +23,6 @@ canvas.sky{position:absolute;inset:0;width:100%;height:100%;display:block}
 .target p{margin:1px 0}
 .target .more{color:#cbd6f5}
 .marklist{position:absolute;width:1px;height:1px;margin:0;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;list-style:none}
+:host([filter-bar]) .facing{bottom:60px}
+:host([filter-bar]) .target{bottom:92px}
 [hidden]{display:none!important}`;

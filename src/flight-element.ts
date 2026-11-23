@@ -14,6 +14,8 @@ import { starProfile, type ProfileInput } from "./profile.ts";
 import { skyFrom, type SeenSky } from "./sky-from.ts";
 import { starLook, type StarLook } from "./star-body.ts";
 import { starByHr, stars } from "./stars.ts";
+import { filterOf, FILTER_BAR_STYLE, mountFilterBar, setFilterOf, type FilterBar } from "./star-filter-bar.ts";
+import { STAR_FILTER_ATTRIBUTES, starFilterActive, starFilterKey, starPasses } from "./star-filter.ts";
 
 /**
  * The tag, defined by `@johnmorrisdotca/hoshi-stars/flight/define`.
@@ -206,6 +208,10 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * without a flight), `lang` (`en` or `ja`, else the nearest above it), `ra` and `dec` (the direction it opens facing, in degrees on the equatorial axes; left out, it faces the place it is at, or the Sun from a point),
  * `fov` (the view's height in degrees at Fit, 10 to 120, 60 by default) and `sun-stop` (how far from the Sun's middle it stops, in astronomical units; six of the Sun's radii, about 0.028, by default).
  *
+ * Star filters: `distance-min` and `distance-max` (light-years from where the camera is now) and `magnitude-limit` (the apparent magnitude seen from there) keep only the stars that fit; the sky is filtered once for a place, not at each frame.
+ * `filter-bar` shows two bars for them over the view (folded on a narrow box; `filter-bar="open"` keeps them open); a bar writes the attributes and sends `hoshi-filter` (`StarFilterDetail`, with `final`). The flying sky holds only stars
+ * with a distance, so none is hidden for lacking one.
+ *
  * Properties: `status` (`FlightStatus`), `sunStop`, `live` (true while it draws in 3D) and `stats`; methods `goTo(id)` (fly to a place), `lookAt(id)` (turn to face one) and `stepSpeed(1 or -1)` (the dial). It sends
  * `hoshi-flight` (`FlightChange`) as it moves and when it stops: `moving`, `arrived`, `home` at the Sun, or `rest`.
  *
@@ -216,7 +222,7 @@ const Base = (globalThis.HTMLElement ?? class {}) as typeof HTMLElement;
  * ```
  */
 export class HoshiFlightElement extends Base {
-  static observedAttributes = ["at", "lang", "ra", "dec", "fov", "sun-stop"];
+  static observedAttributes = ["at", "lang", "ra", "dec", "fov", "sun-stop", "distance-min", "distance-max", "magnitude-limit", "filter-bar"];
 
   #stage: HTMLElement | undefined;
   #labels: HTMLElement | undefined;
@@ -248,16 +254,18 @@ export class HoshiFlightElement extends Base {
   #view: View | undefined;
   #hands: ViewController | undefined;
   #unbind: (() => void) | undefined;
-  #seen: { at: FlightPoint; sky: SeenSky } | undefined;
+  #seen: { at: FlightPoint; sky: SeenSky; key: string; shown: SeenSky } | undefined;
+  #bar: FilterBar | undefined;
 
   connectedCallback(): void {
     const root = this.shadowRoot ?? this.attachShadow({ mode: "open" });
     if (this.#stage === undefined) {
-      root.innerHTML = `<style>${STYLE}</style><div class="stage" part="stage" role="img" tabindex="0"></div><div class="marks" part="marks" aria-hidden="true"></div>`;
+      root.innerHTML = `<style>${STYLE}${FILTER_BAR_STYLE}</style><div class="stage" part="stage" role="img" tabindex="0"></div><div class="marks" part="marks" aria-hidden="true"></div>`;
       this.#stage = root.querySelector<HTMLElement>(".stage")!;
       this.#labels = root.querySelector<HTMLElement>(".marks")!;
     }
     this.#stage.setAttribute("aria-label", WORDS[this.#lang()].stage);
+    this.#syncBar();
     if (!this.#opened) {
       this.#opened = true;
       this.#readField();
@@ -278,17 +286,24 @@ export class HoshiFlightElement extends Base {
     this.#live = false;
     if (this.#renderer !== undefined) giveRendererBack();
     this.#renderer = undefined;
+    this.#bar?.destroy();
+    this.#bar = undefined;
   }
 
   attributeChangedCallback(name: string, before: string | null, after: string | null): void {
     if (!this.#opened || before === after) return;
-    if (name === "at") {
+    if (name === "filter-bar") this.#syncBar();
+    else if (name === STAR_FILTER_ATTRIBUTES.distanceMin || name === STAR_FILTER_ATTRIBUTES.distanceMax || name === STAR_FILTER_ATTRIBUTES.magnitudeLimit) {
+      this.#redraw();
+      this.#bar?.sync();
+    } else if (name === "at") {
       if (this.#writing || after === null) return;
       if (flightAddress(after)?.at === this.status.at) return this.#writeAt();
       this.#open(after);
       this.#changed();
     } else if (name === "lang") {
       this.#stage?.setAttribute("aria-label", WORDS[this.#lang()].stage);
+      this.#bar?.sync();
       for (const el of this.#markEls.values()) el.remove();
       this.#markEls.clear();
       this.#redraw();
@@ -307,6 +322,51 @@ export class HoshiFlightElement extends Base {
       this.#sync();
       this.#redraw();
     }
+  }
+
+  /** The nearest star drawn, in light-years from the camera; 0 for no limit. Setting it sets the attribute `distance-min`. */
+  get distanceMin(): number {
+    return filterOf(this).distanceMin ?? 0;
+  }
+
+  set distanceMin(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), distanceMin: value ?? undefined });
+  }
+
+  /** The farthest star drawn, in light-years from the camera; `Infinity` for no limit. Setting it sets the attribute `distance-max`. */
+  get distanceMax(): number {
+    return filterOf(this).distanceMax ?? Number.POSITIVE_INFINITY;
+  }
+
+  set distanceMax(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), distanceMax: value ?? undefined });
+  }
+
+  /** The faintest star drawn, the apparent magnitude seen from the camera; `Infinity` for no limit. Setting it sets the attribute `magnitude-limit`. */
+  get magnitudeLimit(): number {
+    return filterOf(this).magnitudeLimit ?? Number.POSITIVE_INFINITY;
+  }
+
+  set magnitudeLimit(value: number | null | undefined) {
+    setFilterOf(this, { ...filterOf(this), magnitudeLimit: value ?? undefined });
+  }
+
+  #syncBar(): void {
+    const root = this.shadowRoot;
+    if (root === null) return;
+    if (!this.hasAttribute(STAR_FILTER_ATTRIBUTES.bar) || this.getAttribute(STAR_FILTER_ATTRIBUTES.bar) === "false") {
+      this.#bar?.destroy();
+      this.#bar = undefined;
+      return;
+    }
+    this.#bar ??= mountFilterBar(this, root, {
+      lang: () => this.#lang(),
+      count: () => {
+        const seen = this.#seen;
+        return seen === undefined ? undefined : { shown: seen.shown.length, total: seen.sky.length, noDistance: 0 };
+      },
+    });
+    this.#bar.sync();
   }
 
   /** Where the flight is now. */
@@ -448,6 +508,7 @@ export class HoshiFlightElement extends Base {
     const change = status.moving ? "moving" : this.#arrived ? (status.place?.id === "sun" ? "home" : "arrived") : "rest";
     this.#arrived = false;
     this.#writeAt();
+    if (change !== "moving") this.#bar?.sync();
     this.dispatchEvent(new CustomEvent<FlightChange>("hoshi-flight", { detail: { ...status, change } }));
   }
 
@@ -523,8 +584,18 @@ export class HoshiFlightElement extends Base {
   }
 
   #frame(): FlightFrame {
-    if (this.#seen?.at !== this.#position) this.#seen = { at: this.#position, sky: skyFrom(this.#position, { among: this.#among, magnitude: FAINTEST }) };
-    return { stamp: this.#stamp, sky: this.#seen.sky, look: this.#look, fieldOfView: this.#field, body: this.#body(), marks: this.#marks() };
+    if (this.#seen?.at !== this.#position) {
+      const sky = skyFrom(this.#position, { among: this.#among, magnitude: FAINTEST });
+      this.#seen = { at: this.#position, sky, key: "", shown: sky };
+    }
+    // the filter is applied to the sky once for a place and a filter, not at each frame
+    const filter = filterOf(this);
+    const key = starFilterKey(filter);
+    if (this.#seen.key !== key) {
+      this.#seen.key = key;
+      this.#seen.shown = starFilterActive(filter) ? Object.assign(this.#seen.sky.filter((star) => starPasses(filter, star.magnitude, star.lightYears)), { skipped: this.#seen.sky.skipped }) : this.#seen.sky;
+    }
+    return { stamp: this.#stamp, sky: this.#seen.shown, look: this.#look, fieldOfView: this.#field, body: this.#body(), marks: this.#marks() };
   }
 
   /** Turn toward a direction by one step; how nearly it faces it afterwards (1 is facing). */
