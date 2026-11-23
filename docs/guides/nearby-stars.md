@@ -41,6 +41,12 @@ console.log(close[0].error.toFixed(2)); // 0.03
 
 `{ x: 0, y: 0, z: 0 }` is the Sun. Proxima Centauri is first, then the two bright stars of Alpha Centauri, then Barnard's Star. The answer's `error` (light-years) is worked out from the two parallax errors whenever both ends have one: two nearby stars, a nearby star and a point, or a bright star with a measured parallax error (2,329 of the 2,563 that have a distance); it is `undefined` against a bright star that has only the Bright Star Catalogue's parallax. A nearby star with a parallax of 0 or less has no distance and is counted in `skipped`. Nearby stars can be a target too: `nearest(nearbyStarByName("Barnard's Star"), { by: "space", among: nearbyStars() })`.
 
+## On the sky chart
+
+The demo's chart has a **Nearby stars** layer (off by default; `layers=...,nearby` in the address, and the same in the embed page and its frame). From a zoom of 4 on, each nearby star in view gets a ring in the nearby colour, with its own dot and, when names are on, its name where it has one (Proxima Centauri). The 5,593-star table is fetched the first time the layer is switched on. It sits beside the Faint stars layer without drawing a star twice: 2,135 nearby stars are also in the faint tiles (`NEARBY_IN_FAINT`), and while the faint layer draws one (it is brighter than the depth reached there) the nearby layer adds only its ring. A nearby star with no magnitude is a ring alone.
+
+`chart()` takes the stars as the `nearby` option (`NearbyMark`: `id`, `rightAscension`, `declination`, and if you like `name`, `magnitude` and `inFaint`) and tells how many it drew in `Chart.nearby`. The sky seen from another star and the distance bands do not draw it. The element `<hoshi-chart>` does not load the table, so it has no Nearby layer.
+
 ## How good is a distance
 
 The parallaxes are the catalogue's weighted means and each has a standard error. A distance is graded by its relative error, the parallax's error divided by the parallax (`relativeError`):
