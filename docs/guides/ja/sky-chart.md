@@ -141,6 +141,7 @@ console.log(JSON.stringify(filter), starPasses(filter, 3, 40), starPasses(filter
 - **距離がわからない星。** 明るい星の約半分は、距離が測られていません。距離をしぼっていないときは出し、`distance-min`か`distance-max`を決めたとたんに**出さなくなります**。距離がわからない星が範囲の中にあるとは言えないからです。何個がそうなのかは、バーの下に出ます。等級だけの制限では、その星は消えません。
 - **アドレスに入る短い数。** 属性はふつうの数（`distance-max="100"`、`magnitude-limit="4.5"`）で、3けたに丸めます。`any`、`off`、または何も書かないと、制限なしです。しぼりこみをアドレスに残すサイトは、`@johnmorrisdotca/hoshi-stars/star-filter`の`starFilterToText`と`starFilterFromText`で書いたり読んだりできます。
 - **イベント。** バーを動かすと属性が書きかわり、要素は`hoshi-filter`を`{ distanceMin, distanceMax, magnitudeLimit, final }`つきで送ります。`final`は、バーに手を置いている間は`false`、離したら`true`です（デモのように、`dmin`、`dmax`、`mlim`としてアドレスに書くのは、そのときです）。バーの値は読み上げられ（たとえば「100光年」「4.5等」）、下の1行に、条件に合う星の数が出ます。
+- **自分のバーを作る。** バーの部品も使えます。`@johnmorrisdotca/hoshi-stars/star-filter`には`STAR_FILTER_ATTRIBUTES`、`DISTANCE_STOPS`、`MAGNITUDE_STOPS`、`distanceStep`、`distanceOfStep`、`magnitudeStep`、`magnitudeOfStep`、`normaliseStarFilter`、`starFilterActive`、`distanceNarrowed`、`starFilterKey`、`/star-filter/bright`には`brightCount`、`brightShown`、`brightWithoutDistance`、`/star-filter/bar`には`mountFilterBar`、`FILTER_BAR_STYLE`、`filterOf`、`setFilterOf`、`starFilterWords`、`starFilterSummary`があります。
 - **負担。** しぼりこみは星を1つずつ毎フレームで調べるのではなく、データに1回かけます。しぼった結果は、しぼりこみごとに1回だけ作り（飛行では、場所としぼりこみごとに1回）、描き直しは引くだけです。使わないページには、何も読み込まれません。
 
 ## SVGの文字列として
