@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A Nearby stars layer on the sky chart** (MODULES-1666). The demo's chart and the embed page have a new layer, off by default (`layers=...,nearby`): from a zoom of 4, each nearby star in view is a ring in the nearby colour with its own dot and, when names are on, its name. The table is fetched when the layer is first switched on. It sits beside the Faint stars layer and never draws a star twice: of the 5,593 nearby stars, 2,135 are also in the faint tiles, and while the faint layer draws one the nearby layer adds only its ring. New: `chart()` takes `nearby` (`NearbyMark`) and returns `Chart.nearby`; `LAYERS` gains `nearby`; `NEARBY_FROM_ZOOM`. The sky seen from another star, the distance bands and `<hoshi-chart>` (which does not load the table) do not draw it. Tests: `test/nearby-layer.test.ts`.
+
 ## [0.59.0] - 2026-11-21
 
 - **The HEASARC tables are downloaded by the route HEASARC documents** (MODULES-1010). https://heasarc.gsfc.nasa.gov/robots.txt disallows `/FTP/` to robots, and the data scripts (`make-star-data.py`, `make-rotation-data.py`, `make-nearby-data.py`, `make-deep-sky-data.py`, `make-deep-sky-shapes.py`, `make-gap-sao.py`, `make-milky-way-data.py`) fetched the `heasarc_*.tdat.gz` tables from there. They now read them through `scripts/heasarc.py` (one constant, `HEASARC_TABLES`) by anonymous FTP over TLS, which HEASARC's command-line downloads page names as the replacement for its anonymous FTP. The files are the same (same sizes and modification times; the SAO and Yale checksums match), and rebuilding `src/data/stars.ts` and `src/data/rotation.ts` changes nothing. NOTICE.md has the decision and HEASARC's sentence. No shipped data changed.
