@@ -38,6 +38,8 @@ spec = importlib.util.spec_from_file_location("heasarc", Path(__file__).resolve(
 H = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(H)
 
+# SkyView's robots.txt, read 2026-11-23, allows /cgi-bin/ for a normal client and disallows /current/cgi/ except titlepage.pl.
+# The batch page (current/docs/batchpage.html) gives /cgi-bin/images as the request, so the dust maps stay on that path.
 SKYVIEW = "https://skyview.gsfc.nasa.gov/cgi-bin/images?Survey={survey}&Position=0,0&Coordinates=Galactic&Projection=Car&Size=360,100&Pixels={w},{h}&Sampler=Clip&Return=FITS"
 IRAS_URL = SKYVIEW.format(survey="IRAS+100", w=1440, h=400)
 DIRBE_URL = SKYVIEW.format(survey="COBE+DIRBE%2FZSMA", w=720, h=200)
