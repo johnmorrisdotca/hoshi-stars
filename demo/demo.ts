@@ -446,11 +446,13 @@ function words(): void {
   seg("seg-projection", PROJECTIONS.map((kind) => [kind, say(kind)] as const), (kind) => {
     setView({ ...view, projection: kind as Projection, ...(address.get("zoom") === null ? { zoom: defaultZoom(kind as Projection, width, height) } : {}) });
     address.set("proj", kind);
+    address.flush();
     everything();
   }, projectionIcon);
   seg("seg-culture", CULTURE_IDS.map((id) => [id, say(`culture${id[0]!.toUpperCase()}${id.slice(1)}`)] as const), (id) => {
     culture = cultureOf(id) ?? western;
     address.set("culture", cultureText(culture));
+    address.flush();
     if (picked?.startsWith("C:") && figureById(picked.slice(2), culture) === undefined) pick(null);
     hover = undefined;
     details();
@@ -467,6 +469,7 @@ function words(): void {
     if (layers.has(layer as Layer)) layers.delete(layer as Layer);
     else layers.add(layer as Layer);
     address.set("layers", layersText(layers));
+    address.flush();
     everything();
   });
 }
@@ -658,6 +661,7 @@ function bodyFactText(id: string): string {
 function pick(key: string | null): void {
   picked = key;
   address.set("pick", key);
+  address.flush();
   details();
   schedule();
 }

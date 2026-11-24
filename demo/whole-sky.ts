@@ -323,6 +323,7 @@ function paintRows(): void {
 
 function write(changes: Record<string, string | null>): void {
   address.setMany(changes);
+  address.flush();
   read();
   everything();
 }

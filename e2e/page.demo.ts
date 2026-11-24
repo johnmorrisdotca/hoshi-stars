@@ -1,6 +1,7 @@
 // The demo played by hand: the chart draws, a drag turns it, the wheel and the buttons zoom, a tap picks a star, a search flies to a star or a constellation in either language, the
 // layers and projections change the drawing, the address keeps every choice, and the embed page and the code panel agree with the chart.
 import { expect, test, type Page } from "@playwright/test";
+import { holdAddressTimer } from "./address-warnings.ts";
 
 const HOME = "/hoshi-stars/";
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
@@ -15,6 +16,20 @@ async function middle(page: Page): Promise<{ x: number; y: number }> {
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 const stars = (page: Page) => page.locator("#chart circle[r]").count();
+
+test("a projection writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await open(page);
+  await page.locator('#seg-projection button[data-value="orthographic"]').click();
+  await expect.poll(() => param(page, "proj")).toBe("orthographic");
+});
+
+test("zoom in writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await open(page);
+  await page.getByTestId("zoom-in").click();
+  await expect.poll(() => param(page, "zoom")).not.toBeNull();
+});
 
 test("the sky draws stars, lines, names and a grid, and says how many stars it shows", async ({ page }) => {
   await open(page);
