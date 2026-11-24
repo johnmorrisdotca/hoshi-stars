@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The embeds answer the family's gesture check** (MODULES-743). The constellation embed and the distance embed bind a view controller and now put that controller, its state and a `kazoku-viewchange` on the view, the same way the sky chart's hands do, so every gesture can be read. The sky embed already did; the sky by distance page already used the shared controls. All four are in the check. Tests: `e2e/embed-gestures.demo.ts`, `e2e/space-gestures.demo.ts`.
+
 ## [0.61.0] - 2026-11-23
 
 - **A Nearby stars layer on the sky chart** (MODULES-1666). The demo's chart and the embed page have a new layer, off by default (`layers=...,nearby`): from a zoom of 4, each nearby star in view is a ring in the nearby colour with its own dot and, when names are on, its name. The table is fetched when the layer is first switched on. It sits beside the Faint stars layer and never draws a star twice: of the 5,593 nearby stars, 2,135 are also in the faint tiles, and while the faint layer draws one the nearby layer adds only its ring. New: `chart()` takes `nearby` (`NearbyMark`) and returns `Chart.nearby`; `LAYERS` gains `nearby`; `NEARBY_FROM_ZOOM`. The sky seen from another star, the distance bands and `<hoshi-chart>` (which does not load the table) do not draw it. Tests: `test/nearby-layer.test.ts`.

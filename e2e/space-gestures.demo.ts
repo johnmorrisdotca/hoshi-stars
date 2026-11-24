@@ -14,3 +14,14 @@ test("the shared view controls' gestures all answer on the constellation in 3D",
   // the check draws for seconds, in software: the backlog is this test's, not the next one's
   await drainGpu(page);
 });
+
+test("the shared view controls' gestures all answer on the sky by distance", async ({ page, isMobile, browserName }) => {
+  test.skip(isMobile || browserName !== "chromium", "the check drives a mouse and two pointers in Chromium");
+  test.setTimeout(180_000);
+  await page.goto("/hoshi-stars/layers-3d.html?dist=100&spin=off");
+  await page.locator("#sp-stage[data-state=live]").waitFor({ timeout: 60_000 });
+  const report = await checkGestures(page, "#sp-view", { controls: "kazoku-view-controls", picture: "#sp-stage" });
+  expect(report.filter((row) => row.result === "lacks")).toEqual([]);
+  expect(report.length).toBeGreaterThan(10);
+  await drainGpu(page);
+});
