@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A sharper picture of the Crab Nebula** (MODULES-793). The wide picture of M1 was WISE, soft at a few arc-seconds a pixel. It is now NASA's Hubble mosaic of the whole nebula (PIA03606, public domain: NASA content is not subject to copyright in the United States), 0.63 arc-seconds a pixel, the black sky made clear. The ESA/Hubble copy of the same mosaic stays as the finer picture laid over it. Credit NASA/ESA/JPL/Arizona State University, in NOTICE.md.
+
 ## [0.61.0] - 2026-11-23
 
 - **A Nearby stars layer on the sky chart** (MODULES-1666). The demo's chart and the embed page have a new layer, off by default (`layers=...,nearby`): from a zoom of 4, each nearby star in view is a ring in the nearby colour with its own dot and, when names are on, its name. The table is fetched when the layer is first switched on. It sits beside the Faint stars layer and never draws a star twice: of the 5,593 nearby stars, 2,135 are also in the faint tiles, and while the faint layer draws one the nearby layer adds only its ring. New: `chart()` takes `nearby` (`NearbyMark`) and returns `Chart.nearby`; `LAYERS` gains `nearby`; `NEARBY_FROM_ZOOM`. The sky seen from another star, the distance bands and `<hoshi-chart>` (which does not load the table) do not draw it. Tests: `test/nearby-layer.test.ts`.

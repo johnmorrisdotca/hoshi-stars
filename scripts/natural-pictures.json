@@ -1,4 +1,50 @@
 {
+ "M1": {
+  "address": "https://science.nasa.gov/photojournal/most-detailed-image-of-the-crab-nebula/",
+  "agree": null,
+  "arcsecPerPixel": 0.63,
+  "avmRotation": 0,
+  "avmScale": 0.0997075569358178,
+  "avmShiftArcsec": 0.0,
+  "bytes": 86048,
+  "catalogue": 0,
+  "centre": [
+   83.6356,
+   22.0153
+  ],
+  "credit": "NASA/ESA/JPL/Arizona State University",
+  "detected": 0,
+  "fitRotation": 0,
+  "fitScale": 0.0997075569358178,
+  "height": 612,
+  "image": "PIA03606",
+  "matched": 0,
+  "placement": "stated",
+  "quality": 58,
+  "rmsArcsec": 0.0,
+  "rmsPixels": 0.0,
+  "rotation": 0.0,
+  "site": "nasa",
+  "wcsCorners": [
+   [
+    83.693335,
+    22.0688
+   ],
+   [
+    83.577855,
+    22.0688
+   ],
+   [
+    83.577899,
+    21.961781
+   ],
+   [
+    83.693292,
+    21.961781
+   ]
+  ],
+  "width": 612
+ },
  "M101-heic0602a": {
   "address": "https://esahubble.org/images/heic0602a/",
   "agree": {

@@ -11,10 +11,10 @@ const root = new URL("../", import.meta.url);
 const NATURAL = new Set(["NSF NOIRLab", "ESO"]);
 const natural = JSON.parse(readFileSync(new URL("scripts/natural-pictures.json", root), "utf8")) as Record<string, NaturalEntry>;
 interface NaturalEntry {
-  placement: "fit" | "shift" | "avm";
+  placement: "fit" | "shift" | "avm" | "stated";
   matched?: number;
   rmsArcsec?: number;
-  agree: { inside: number; near: number; medianPixels: number | null };
+  agree: { inside: number; near: number; medianPixels: number | null } | null;
   avmShiftArcsec: number;
   wcsCorners: Array<[number, number]>;
   galaxy?: { centreOffsetArcmin: number; measuredPositionAngle: number | null; cataloguePositionAngle: number | null };
@@ -133,7 +133,7 @@ test("NOTICE.md records every picture file with its survey, address, credit, lic
 
 test("the sources are all ones whose terms allow it, and none is one the package refuses", () => {
   const sources = new Set(deepSkyPictures().map((p) => p.source.name));
-  for (const name of sources) assert.ok(["SDSS g, r, i", "2MASS J, H, K", "WISE 3.4, 4.6, 12 micron", "ESA/Hubble", "NSF NOIRLab", "ESO"].includes(name), `${name} is a listed source`);
+  for (const name of sources) assert.ok(["SDSS g, r, i", "2MASS J, H, K", "WISE 3.4, 4.6, 12 micron", "ESA/Hubble", "NSF NOIRLab", "ESO", "NASA Hubble"].includes(name), `${name} is a listed source`);
   for (const picture of deepSkyPictures()) {
     assert.match(picture.source.licence, /CC BY|government work|public domain/i);
     assert.doesNotMatch(picture.source.licence, /\bSA\b|ShareAlike|\bNC\b|NonCommercial|non-commercial|all rights reserved/i, `${picture.id}: only licences an MIT package can pass on`);
@@ -181,13 +181,13 @@ test("the demo leaves out the pictures that look broken, and draws no finer pict
 const NATURAL_IDS = Object.keys(natural);
 const arcsecBetween = (a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number => separation(a, b) * 3600;
 
-test("the natural-colour pictures are an observatory's own, under CC BY, each recorded with its credit, and replace the false-colour picture of the object where they are its widest", () => {
+test("the natural-colour pictures are an observatory's own, under CC BY or NASA's public domain, each recorded with its credit, and replace the false-colour picture of the object where they are its widest", () => {
   assert.ok(NATURAL_IDS.length >= 15, `${NATURAL_IDS.length} natural pictures`);
   for (const id of NATURAL_IDS) {
     const picture = deepSkyPictures().find((p) => p.id === id);
     assert.ok(picture !== undefined, `${id} is in the index`);
-    assert.ok(["NSF NOIRLab", "ESO", "ESA/Hubble"].includes(picture.source.name));
-    assert.match(picture.source.licence, /CC BY 4\.0/);
+    assert.ok(["NSF NOIRLab", "ESO", "ESA/Hubble", "NASA Hubble"].includes(picture.source.name));
+    assert.match(picture.source.licence, picture.source.name === "NASA Hubble" ? /public domain/i : /CC BY 4\.0/);
     assert.ok(picture.address.startsWith("https://"), `${id}: its page`);
     if (picture.id === picture.object) assert.ok(!/WISE|2MASS/.test(picture.source.name), `${id}: no infrared picture is the widest view of it`);
   }
@@ -215,8 +215,11 @@ test("a natural-colour picture lies where the photograph's stars say: the index 
       assert.ok(entry.matched! >= 3, `${id}: ${entry.matched} stars matched`);
       assert.ok(entry.rmsArcsec! < 1.5, `${id}: the residual is ${entry.rmsArcsec} arc-seconds`);
       assert.ok(entry.avmShiftArcsec < 6, `${id}: the shift from the release's own tags is ${entry.avmShiftArcsec} arc-seconds`);
-      assert.ok(entry.agree.near >= 0.6 * entry.agree.inside, `${id}: ${entry.agree.near} of ${entry.agree.inside} of our stars are on a star of the picture`);
-    } else if (entry.agree.inside >= 5) {
+      assert.ok(entry.agree!.near >= 0.6 * entry.agree!.inside, `${id}: ${entry.agree!.near} of ${entry.agree!.inside} of our stars are on a star of the picture`);
+    } else if (entry.placement === "stated") {
+      // NASA's JPEG of the Crab carries no sky tags. It is the same mosaic as the finer picture, matched at the same orientation, so the centre and the turn are that picture's.
+      assert.equal(id, "M1");
+    } else if (entry.agree !== null && entry.agree.inside >= 5) {
       // the release's own position, checked against the stars there are
       assert.ok(entry.agree.near >= 0.6 * entry.agree.inside && entry.agree.medianPixels! <= 3, `${id}: ${entry.agree.near} of ${entry.agree.inside} of our stars are on a star of the picture`);
     } else unverified.push(id);

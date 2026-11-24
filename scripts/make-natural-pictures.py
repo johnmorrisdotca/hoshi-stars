@@ -6,6 +6,7 @@ Where make-deep-sky-pictures.py cuts false-colour survey pictures out of NASA's 
 - NSF NOIRLab (https://noirlab.edu/public/copyright/): "Unless specifically noted ... licensed under a Creative Commons Attribution 4.0 International License".
 - ESO (https://www.eso.org/public/outreach/copyright/): the same, with the credit line kept and any change said.
 - ESA/Hubble (https://esahubble.org/copyright/): Creative Commons Attribution 4.0.
+- NASA (https://www.nasa.gov/nasa-brand-center/images-and-media/): NASA content is not subject to copyright in the United States. A picture taken from a NASA page uses that page's file, and only when the page does not mark it as someone else's copyright.
 Never CC BY-SA, never non-commercial, never "all rights reserved". Each page of an image is read for its credit when the picture is made, and the licence page for the sentence; NOTICE.md records both with the day.
 
 Where a picture lies is found twice. The release carries its own Astronomy Visualization Metadata (AVM): a tangent-plane position, scale and turn. That is the prior. The placement used is then our own fit: the stars in
@@ -77,6 +78,17 @@ SITES = {
             "page": "https://www.eso.org/public/outreach/copyright/",
         },
     },
+    "nasa": {
+        "page": "https://science.nasa.gov/photojournal/most-detailed-image-of-the-crab-nebula/",
+        "file": "https://assets.science.nasa.gov/content/dam/science/psd/photojournal/pia/pia03/pia03606/PIA03606.jpg",
+        "source": {
+            "name": "NASA Hubble",
+            "colour": "visible light in colour, as NASA released it, resized, with the black of the sky and of the edges made clear",
+            "credit": "NASA/ESA/JPL/Arizona State University",
+            "licence": "public domain (NASA content is not subject to copyright in the United States; NASA Images and Media Usage Guidelines, https://www.nasa.gov/nasa-brand-center/images-and-media/). The photojournal page does not mark this image as third-party copyright",
+            "page": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+        },
+    },
     "hubble": {
         "page": "https://esahubble.org/images/{id}/",
         "file": "https://cdn.esahubble.org/archives/images/{variant}/{id}.jpg",
@@ -109,6 +121,10 @@ PICTURES = [
     {"id": "NGC 1316", "site": "eso", "image": "eso0024a", "long": 640},
     {"id": "NGC 5139", "site": "eso", "image": "eso1119b", "long": 800},
     {"id": "M101", "site": "hubble", "image": "heic0602a", "long": 900, "finer": True, "galaxy": True},
+    # PIA03606 is the whole Crab, the same mosaic as the finer Hubble picture already placed. Its JPEG has no sky tags.
+    # The two match at the same orientation (correlation 0.86), so the centre and the turn are that picture's and the scale is its scale times the pixel ratio.
+    {"id": "M1", "site": "nasa", "image": "PIA03606", "long": 720, "oval": False, "sky": 0,
+     "stated": {"credit": "NASA/ESA/JPL/Arizona State University", "ra": 83.63553, "dec": 22.01524, "scale": 0.59 * 653 / 3864, "rotation": 0}},
 ]
 
 
@@ -500,7 +516,27 @@ def object_table():
 def make(spec, objects, cache):
     site = SITES[spec["site"]]
     page_address = site["page"].format(id=spec["image"])
-    file_address = site["file"].format(id=spec["image"], variant=spec.get("variant", "screen"))
+    file_address = site["file"].format(id=spec.get("image"), variant=spec.get("variant", "screen")) if spec["site"] != "nasa" else site["file"]
+    if spec.get("stated"):
+        stated = spec["stated"]
+        jpeg = get(file_address, cache)
+        credit = stated["credit"]
+        image = Image.open(io.BytesIO(jpeg)).convert("RGB")
+        width, height = image.size
+        placement = Placement(stated["ra"], stated["dec"], (width - 1) / 2, (height - 1) / 2, stated["scale"], stated["rotation"], width, height)
+        numbers = {"placement": "stated", "matched": 0, "detected": 0, "catalogue": 0, "rmsPixels": 0.0, "rmsArcsec": 0.0, "agree": None,
+                   "avmShiftArcsec": 0.0, "avmScale": placement.scale, "fitScale": placement.scale, "avmRotation": placement.rotation, "fitRotation": placement.rotation}
+        obj = objects[spec["id"]]
+        box = (0, 0, width, height)
+        crop = image
+        cw, ch = crop.size
+        factor = spec["long"] / max(cw, ch)
+        size = (max(64, round(cw * factor)), max(64, round(ch * factor)))
+        small = crop.resize(size, Image.LANCZOS)
+        rgb = np.asarray(small, dtype=np.float64) / 255
+        rgba = to_rgba(rgb, sky_percent=spec.get("sky", 15), oval=spec.get("oval", True))
+        cut = Placement(placement.ra0, placement.dec0, placement.cx * factor, placement.cy * factor, placement.scale / factor, placement.rotation, size[0], size[1])
+        return {"spec": spec, "fresh": file_address in FETCHED, "credit": credit, "numbers": numbers, "rgb": rgb, "image": rgba, "cut": cut, "address": page_address, "box": box, "size": (cw, ch), "object": obj}
     page_text = get(page_address, cache, binary=False)
     page_credit = credit_of(spec["site"], page_text)
     jpeg = get(file_address, cache)
