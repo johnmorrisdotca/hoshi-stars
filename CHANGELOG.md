@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A pick and a culture button write the address at once** (MODULES-916). The address writer waits a quarter of a second so a drag is one write. Choosing a figure, or one of the three skies, is one choice, so the page writes it before the chart redraws. A drag still waits. The Japanese sky gallery waits for the tile the search names before it counts or clicks it.
+
 ## [0.60.0] - 2026-11-23
 
 - **The My sky canvas reads the page's label fonts, and the Moon card and the filter bars have parts** (MODULES-1793). The names `<hoshi-my-sky>` draws on its canvas (stars, constellations, the Moon and planets, the target, your marks) now read `--hoshi-label-font`, and `--hoshi-label-size` and `--hoshi-label-weight` for the star and constellation names, as sky-labels and the chart do; the compass letters read the new `--hoshi-sky-font`, and so do the filter bars. Each is read at each draw; left out, the font is the package's own, as before. New parts: `title`, `rows` and `toggle` on the Moon card, and `filters`, `filters-title`, `filters-toggle`, `filters-group`, `filters-legend`, `filters-label`, `filters-range`, `filters-count` and `filters-reset` on the filter bars. Documented in the My sky guide; tested by `e2e/my-sky-fonts.demo.ts`.

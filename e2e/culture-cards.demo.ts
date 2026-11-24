@@ -166,6 +166,7 @@ test("the gallery of the Japanese sky holds 106 figures, finds them by kana and 
   const tiles = page.getByTestId("gallery-grid").locator("a");
   await expect(tiles.first()).toHaveAttribute("data-abbr", "subaru");
   await page.getByTestId("gallery-search").fill("しちせい");
+  await expect(tiles.first()).toHaveAttribute("data-abbr", "hokuto-shichisei");
   await expect(tiles).toHaveCount(1);
   await page.getByTestId("gallery-search").fill("Orion's belt");
   // one tile before and one after: wait for the tile that is Orion's Belt, or the click lands on the one the last search left
@@ -182,6 +183,16 @@ test("the gallery of the Japanese sky holds 106 figures, finds them by kana and 
   await page.goto(`${HOME}constellations.html?lang=ja&culture=chinese`);
   await expect(page.getByTestId("gallery-heading")).toHaveText("中国の空: 238の図");
   await expect(page.getByTestId("gallery-mix")).toHaveText("宿28と星官210");
+});
+
+test("a gallery tile's pick is in the address without waiting for the address timer", async ({ page }) => {
+  // The address writer waits a quarter of a second. On a busy WebKit phone that timer does not run inside the test's wait, so a tile's pick never arrives. Hold the timer and the pick must already be written.
+  await page.addInitScript(() => {
+    const real = window.setTimeout.bind(window);
+    window.setTimeout = ((fn: TimerHandler, ms?: number, ...args: unknown[]) => real(fn, ms === 250 ? 30_000 : ms, ...args)) as typeof setTimeout;
+  });
+  await page.goto(`${HOME}?culture=japanese&go=mitsuboshi`);
+  await expect.poll(() => param(page, "pick")).toBe("C:mitsuboshi");
 });
 
 test("the list: three culture buttons, a table of the culture's figures with a search and the filters that fit, and Map opens the figure", async ({ page }) => {
