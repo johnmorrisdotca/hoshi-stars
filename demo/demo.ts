@@ -661,6 +661,7 @@ function bodyFactText(id: string): string {
 function pick(key: string | null): void {
   picked = key;
   address.set("pick", key);
+  // A choice, not a drag: write it now. The writer's quarter-second wait does not run while the chart is redrawing, and a busy phone then never shows the pick.
   address.flush();
   details();
   schedule();
