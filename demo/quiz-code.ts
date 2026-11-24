@@ -59,10 +59,10 @@ export function quizQuery(choice: QuizChoice): string {
 /** The address of the embed page for a choice: `embed-quiz.html` after `base`, with a query only when something is not a default. */
 export const quizFrameAddress = (base: string, choice: QuizChoice): string => `${base}embed-quiz.html${quizQuery(choice) === "" ? "" : `?${quizQuery(choice)}`}`;
 
-/** How tall the frame is for a width, so the chart, the six names, the answer, the score, a miss with its picture and the credit line fit: a square chart and two columns of names on a narrow frame, a wide chart and three columns on a wide one. The credit wraps, so a narrow frame allows more for it. */
+/** How tall the frame is for a width, so the chart, the six names, the answer, the score, a miss with its picture and the credit line fit: a square chart and two columns of names on a narrow frame, a wide chart and three columns on a wide one. The credit wraps, so a narrow frame allows more for it, and a little more again so a taller font still fits. */
 export const quizHeightFor = (width: number): number => {
   const chart = width < 600 ? Math.round(width + 480) : Math.round(width * 0.6 + 430);
-  const credit = width < 400 ? 120 : width < 600 ? 80 : 64;
+  const credit = width < 400 ? 152 : width < 600 ? 112 : 96;
   return chart + credit;
 };
 
