@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Every demo page says what it is and credits its data** (MODULES-1764). The build writes kazoku-ui's page header and credit line where the page marks `<!--frame:header-->` and `<!--frame:credits-->`. An embed has the credit line only. The data door is kazoku-ui's template again, and the family's checker is the one of 2026-11-11b. Tests: `test/page-frame.test.ts`, `test/standard.test.ts`, `test/door.test.ts`.
+
 ## [0.61.0] - 2026-11-23
 
 - **A Nearby stars layer on the sky chart** (MODULES-1666). The demo's chart and the embed page have a new layer, off by default (`layers=...,nearby`): from a zoom of 4, each nearby star in view is a ring in the nearby colour with its own dot and, when names are on, its name. The table is fetched when the layer is first switched on. It sits beside the Faint stars layer and never draws a star twice: of the 5,593 nearby stars, 2,135 are also in the faint tiles, and while the faint layer draws one the nearby layer adds only its ring. New: `chart()` takes `nearby` (`NearbyMark`) and returns `Chart.nearby`; `LAYERS` gains `nearby`; `NEARBY_FROM_ZOOM`. The sky seen from another star, the distance bands and `<hoshi-chart>` (which does not load the table) do not draw it. Tests: `test/nearby-layer.test.ts`.
