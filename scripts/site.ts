@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { publishThumbnails, thumbnailHead } from "./family-thumbnail.mjs";
-import { familyBoot, renderConstellationPage, renderIndex, renderKids, renderLayers, renderLife, renderMySky, renderPlanisphere, renderSpace, renderTap, renderTonight } from "./page.ts";
+import { familyBoot, frameFile, renderConstellationPage, renderIndex, renderKids, renderLayers, renderLife, renderMySky, renderPlanisphere, renderSpace, renderTap, renderTonight } from "./page.ts";
 import { chinese } from "../src/cultures/chinese.ts";
 import { japanese } from "../src/cultures/japanese.ts";
 import { writeCultureThumbnails, writeThumbnails } from "./thumbnail-files.ts";
@@ -44,7 +44,9 @@ cpSync(join(root, "pictures"), join(site, "pictures"), { recursive: true });
 writeFileSync(join(site, "family-boot.js"), familyBoot());
 // Michroma, the family's font for a name on a body (kazoku-ui's body-label, SIL Open Font License 1.1 beside it): copied from kazoku-ui's build so the embed page can load it from its own site, only when its names are on.
 cpSync(join(root, "node_modules", "@johnmorrisdotca", "kazoku-ui", "dist", "body-label", "fonts"), join(site, "fonts"), { recursive: true });
-for (const file of ["embed.html", "embed-3d.html", "embed-layers.html", "embed-quiz.html", "markers.html", "star.html", "flight.html", "embed-flight.html", "demo.css", "family.css", "gallery.css", "quiz.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
+for (const file of ["demo.css", "family.css", "gallery.css", "quiz.css", "whole-sky.css", "space.css"]) cpSync(join(root, "demo", file), join(site, file));
+for (const file of ["embed.html", "embed-3d.html"]) writeFileSync(join(site, file), frameFile(file, true));
+for (const file of ["embed-layers.html", "embed-quiz.html", "embed-flight.html", "markers.html", "star.html", "flight.html"]) writeFileSync(join(site, file), frameFile(file));
 await build({
   entryPoints: { demo: join(root, "demo", "demo.ts"), embed: join(root, "demo", "embed.ts"), star: join(root, "demo", "star.ts"), flight: join(root, "demo", "flight.ts"), "embed-flight": join(root, "demo", "embed-flight.ts"), kids: join(root, "demo", "kids.ts"), tonight: join(root, "demo", "tonight.ts"), "my-sky": join(root, "demo", "my-sky.ts"), life: join(root, "demo", "life.ts"), planisphere: join(root, "demo", "planisphere.ts"), "tap-dots": join(root, "demo", "tap-dots.ts"), gallery: join(root, "demo", "gallery.ts"), quiz: join(root, "demo", "quiz.ts"), "quiz-panel": join(root, "demo", "quiz-panel.ts"), constellation: join(root, "demo", "constellation.ts"), list: join(root, "demo", "list.ts"), "whole-sky": join(root, "demo", "whole-sky.ts"), "constellation-3d": join(root, "demo", "constellation-3d.ts"), "embed-3d": join(root, "demo", "embed-3d.ts"), "layers-3d": join(root, "demo", "layers-3d.ts"), "embed-layers": join(root, "demo", "embed-layers.ts"), birthday: join(root, "demo", "birthday.ts"), markers: join(root, "demo", "markers.ts") },
   outdir: join(site, "js"),
@@ -57,7 +59,7 @@ await build({
   define: { __HOSHI_VERSION__: JSON.stringify(pkg.version) },
   logLevel: "warning",
 });
-writeFileSync(join(site, "kazoku-parts.src.js"), `import "@johnmorrisdotca/kazoku-ui/language-picker/define";\nimport "@johnmorrisdotca/kazoku-ui/theme-switch/define";\n`);
+writeFileSync(join(site, "kazoku-parts.src.js"), `import "@johnmorrisdotca/kazoku-ui/language-picker/define";\nimport "@johnmorrisdotca/kazoku-ui/theme-switch/define";\nimport "@johnmorrisdotca/kazoku-ui/page-frame/define";\n`);
 await build({ entryPoints: [join(site, "kazoku-parts.src.js")], outfile: join(site, "kazoku-parts.js"), bundle: true, format: "esm", minify: true, logLevel: "warning", absWorkingDir: root });
 rmSync(join(site, "kazoku-parts.src.js"));
 writeFileSync(join(site, ".nojekyll"), "");

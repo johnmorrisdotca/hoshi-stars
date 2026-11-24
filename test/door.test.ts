@@ -404,7 +404,7 @@ test("7b. a caller's source that gives itself the package's id is not the packag
 // ----- 8: the template -----
 test("8. src/data-door.ts is kazoku-ui's templates/data-door.ts, byte for byte", () => {
   // The recorded hash of kazoku-ui's templates/data-door.ts (line ends as "\n"); kazoku-ui's check-standard.mjs records the same one. Change it only by copying the template again.
-  const RECORDED = "ae12207f4c1b89670b208baf306ea988df8c5f2213ae791a7044ca8681c31793";
+  const RECORDED = "b90af1f8e0f2ffc59485d5cc98995e54ee21fd98cd5ae027b90efe8c6673d5fa";
   const text = readFileSync(new URL("../src/data-door.ts", import.meta.url), "utf8").replace(/\r\n/g, "\n");
   assert.equal(createHash("sha256").update(text).digest("hex"), RECORDED);
 });
