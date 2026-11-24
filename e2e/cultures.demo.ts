@@ -1,6 +1,6 @@
 // Sky cultures: the Sky culture choice is kept in the address (culture=chinese), picking one redraws the figures and names that culture uses, picking a figure shows its card, and the Japanese and Chinese labels fit.
 import { expect, test, type Page } from "@playwright/test";
-import { expectParam, watchConsole } from "./address-warnings.ts";
+import { expectParam, holdAddressTimer, watchConsole } from "./address-warnings.ts";
 
 const HOME = "/hoshi-stars/";
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
@@ -17,6 +17,13 @@ test("the demo opens in the Western sky, with no culture in the address, and off
   await expect(choice(page, "Western")).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByTestId("culture-note")).toContainText("Big Dipper");
   expect(param(page, "culture")).toBeNull();
+});
+
+test("choosing the Chinese sky writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await open(page, "?ra=165&dec=55&zoom=4");
+  await choice(page, "Chinese").click();
+  await expect.poll(() => param(page, "culture")).toBe("chinese");
 });
 
 test("choosing the Chinese sky writes culture=chinese, redraws the figures and names, and choosing Western takes it out again", async ({ page }) => {

@@ -1,7 +1,7 @@
 // The list of the IAU's 88 with filters that combine, a count and Clear all. On a desk each filter is a chip that opens a menu; on a phone one Filters button opens a sheet. Every test that
 // chooses something goes through whichever one the page shows, so the same test plays on both.
 import { expect, test, type Page } from "@playwright/test";
-import { expectParam, watchConsole } from "./address-warnings.ts";
+import { expectParam, holdAddressTimer, watchConsole } from "./address-warnings.ts";
 
 const LIST = "/hoshi-stars/constellation-list.html";
 const PHONE_WIDTH = 720;
@@ -49,6 +49,13 @@ test("the table holds the IAU's 88 and says so, with their pictures, and Clear a
   await expect(page.getByTestId("list-clear")).toBeDisabled();
   await expect(rows(page).first().locator("img")).toHaveAttribute("src", /thumbnails\/png\/160\/(light|dark)\/And\.png$/);
   await expect.poll(() => rows(page).first().locator("img").evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBe(160);
+});
+
+test("a filter writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await page.goto(LIST);
+  await choose(page, "hemi", "Northern sky");
+  await expect.poll(() => param(page, "hemi")).toBe("north");
 });
 
 test("choices in one filter add up, filters narrow each other, and the count and the address follow", async ({ page }) => {
