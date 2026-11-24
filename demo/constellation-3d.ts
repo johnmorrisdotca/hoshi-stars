@@ -151,6 +151,7 @@ const picker = mountPicker({
   search: $<HTMLInputElement>("picker-search"),
   go: (to) => {
     address.set("c", to === "Ori" ? null : to);
+    address.flush();
     void load();
   },
   current: () => abbreviation,
@@ -190,6 +191,7 @@ $("sp-turn").addEventListener("click", () => {
 $("sp-front").addEventListener("click", () => controls.controller.front());
 $("sp-from").addEventListener("change", () => {
   address.set("from", $<HTMLSelectElement>("sp-from").value || null);
+  address.flush();
   void load();
 });
 const poseOf = (s: ViewChangeDetail | ViewControlsElement["state"]): Pose => ({ yaw: s.yaw, tilt: s.tilt, roll: s.roll ?? 0, zoom: s.zoom, panX: s.panX, panY: s.panY });

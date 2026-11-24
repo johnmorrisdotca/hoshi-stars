@@ -452,6 +452,7 @@ function words(): void {
   seg("seg-culture", CULTURE_IDS.map((id) => [id, say(`culture${id[0]!.toUpperCase()}${id.slice(1)}`)] as const), (id) => {
     culture = cultureOf(id) ?? western;
     address.set("culture", cultureText(culture));
+    // One sky, one write. The redraw below can hold the writer's timer past a test.
     address.flush();
     if (picked?.startsWith("C:") && figureById(picked.slice(2), culture) === undefined) pick(null);
     hover = undefined;

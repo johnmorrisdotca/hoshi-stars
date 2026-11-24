@@ -6,6 +6,8 @@
 
 - **A pick and a culture button write the address at once** (MODULES-916). The address writer waits a quarter of a second so a drag is one write. Choosing a figure, or one of the three skies, is one choice, so the page writes it before the chart redraws. A drag still waits. The Japanese sky gallery waits for the tile the search names before it counts or clicks it.
 
+- **A culture, a list filter and a 3D constellation write the address at once** (MODULES-948). The address writer waits a quarter of a second so a drag is one write. Choosing a sky, a filter, a constellation or a viewpoint is one choice, so the page writes it before the redraw. A drag and a search box still wait.
+
 ## [0.61.0] - 2026-11-23
 
 - **A Nearby stars layer on the sky chart** (MODULES-1666). The demo's chart and the embed page have a new layer, off by default (`layers=...,nearby`): from a zoom of 4, each nearby star in view is a ring in the nearby colour with its own dot and, when names are on, its name. The table is fetched when the layer is first switched on. It sits beside the Faint stars layer and never draws a star twice: of the 5,593 nearby stars, 2,135 are also in the faint tiles, and while the faint layer draws one the nearby layer adds only its ring. New: `chart()` takes `nearby` (`NearbyMark`) and returns `Chart.nearby`; `LAYERS` gains `nearby`; `NEARBY_FROM_ZOOM`. The sky seen from another star, the distance bands and `<hoshi-chart>` (which does not load the table) do not draw it. Tests: `test/nearby-layer.test.ts`.

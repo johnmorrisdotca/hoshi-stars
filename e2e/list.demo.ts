@@ -58,6 +58,13 @@ test("the table holds the IAU's 88 and says so, with their pictures, and Clear a
   await expect.poll(() => rows(page).first().locator("img").evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth)).toBe(160);
 });
 
+test("a filter writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await page.goto(LIST);
+  await choose(page, "hemi", "Northern sky");
+  await expect.poll(() => param(page, "hemi")).toBe("north");
+});
+
 test("choices in one filter add up, filters narrow each other, and the count and the address follow", async ({ page }) => {
   const said = watchConsole(page);
   await page.goto(LIST);

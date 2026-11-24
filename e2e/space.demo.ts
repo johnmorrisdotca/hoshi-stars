@@ -4,7 +4,7 @@ import { constellationIn3D, DISTANCE_QUALITIES } from "../src/constellation-3d.t
 import { constellations } from "../src/constellations.ts";
 import { drainGpu } from "@johnmorrisdotca/kazoku-ui/testing";
 import { expect, test, type Page } from "@playwright/test";
-import { expectParam, watchConsole } from "./address-warnings.ts";
+import { expectParam, holdAddressTimer, watchConsole } from "./address-warnings.ts";
 
 const PAGE = "/hoshi-stars/constellation-3d.html";
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
@@ -127,6 +127,13 @@ for (const abbreviation of ["Ori", "UMa", "Hya", "Cru"]) {
     expect(turned).toBeGreaterThan(2);
   });
 }
+
+test("the picker writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await open(page);
+  await page.getByTestId("picker-strip").locator("button").filter({ hasText: "Ursa Major" }).first().click();
+  await expect.poll(() => param(page, "c")).toBe("UMa");
+});
 
 test("the picker chooses another constellation: the heading, the table, the counts and the address follow", async ({ page }) => {
   const said = watchConsole(page);
