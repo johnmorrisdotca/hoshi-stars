@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.61.1] - 2026-11-23
+
 - **The demo server stays on 8250 to 8274.** 8300 to 8309 belong to the site, so the dev server no longer accepts them.
 
 - **A projection, a layer, a culture, a list filter and a whole-sky choice write the address at once** (MODULES-935). The address writer waits a quarter of a second so a drag is one write, and a busy full run can hold that timer past the test. Zoom and Reset already wrote at once. These choices do too. A drag, a search box and the magnitude slider still wait.
