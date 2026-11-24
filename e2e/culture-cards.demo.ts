@@ -1,6 +1,7 @@
 // The picture cards follow the sky culture: the picker's strip above the map, the gallery and the list show the Western 88, the Japanese sky or the Chinese sky, with the culture kept in the address; a card opens its figure on the map; search finds
 // a figure by its Chinese, pinyin, Japanese, kana or English name; nothing is fetched at rest but the pictures in view; and nothing overflows at 390.
 import { expect, test, type Page } from "@playwright/test";
+import { holdAddressTimer } from "./address-warnings.ts";
 
 const HOME = "/hoshi-stars/";
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
@@ -12,6 +13,13 @@ async function open(page: Page, query = ""): Promise<void> {
 }
 const loaded = (image: ReturnType<Page["locator"]>) => image.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth);
 const noOverflow = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+
+test("a culture writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await open(page);
+  await cultureButton(page, "Chinese").click();
+  await expect.poll(() => param(page, "culture")).toBe("chinese");
+});
 
 test("choosing a culture changes the strip: 88 Western, 106 Japanese (the traditional figures first), 238 Chinese (the mansions first), and the culture is in the address", async ({ page }) => {
   await open(page);

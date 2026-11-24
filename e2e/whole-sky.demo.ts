@@ -2,6 +2,7 @@
 // gestures and bar zoom and move it; names never overlap; the strip and search choose; the map prints as a page or a poster. Nothing is drawn at rest.
 import { expect, test, type Page } from "@playwright/test";
 import { checkGestures } from "@johnmorrisdotca/kazoku-ui/testing";
+import { holdAddressTimer } from "./address-warnings.ts";
 
 const PAGE = "/hoshi-stars/whole-sky.html";
 const param = (page: Page, name: string): string | null => new URL(page.url()).searchParams.get(name);
@@ -22,6 +23,13 @@ async function figureAt(page: Page, id: string): Promise<{ x: number; y: number 
 }
 const transformOf = (page: Page): Promise<string> => page.locator("#ws-world").getAttribute("transform").then((t) => t ?? "");
 const scaleOf = async (page: Page): Promise<number> => Number(/scale\(([\d.]+)\)/.exec(await transformOf(page))![1]);
+
+test("a frame writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await open(page);
+  await page.getByTestId("ws-frame").getByRole("button", { name: "Equatorial" }).click();
+  await expect.poll(() => param(page, "frame")).toBe("equatorial");
+});
 
 test("the map holds all 88 constellations, the Milky Way, and fits the page", async ({ page }) => {
   await open(page);

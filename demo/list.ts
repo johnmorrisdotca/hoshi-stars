@@ -50,6 +50,7 @@ function toggle(group: FilterGroup, value: string): void {
   const now = chosen(group);
   const next = now.includes(value) ? now.filter((one) => one !== value) : [...now, value];
   address.set(group.key, next.length === 0 ? null : group.values.filter((one) => next.includes(one)).join(","));
+  address.flush();
   render();
 }
 
@@ -179,6 +180,7 @@ function render(): void {
 
 const clearAll = (): void => {
   address.setMany(Object.fromEntries([...ALL_KEYS, "q"].map((key) => [key, null])));
+  address.flush();
   render();
 };
 $("ls-clear").addEventListener("click", clearAll);

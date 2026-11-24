@@ -17,6 +17,7 @@ export function mountCultureButtons(host: HTMLElement, address: Address, changed
     button.dataset.value = id;
     button.addEventListener("click", () => {
       address.setMany({ culture: id === DEFAULT_CULTURE ? null : id, page: null });
+      address.flush();
       changed();
     });
     return button;

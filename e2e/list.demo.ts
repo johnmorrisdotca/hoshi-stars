@@ -1,7 +1,7 @@
 // The list of the IAU's 88 with filters that combine, a count and Clear all. On a desk each filter is a chip that opens a menu; on a phone one Filters button opens a sheet. Every test that
 // chooses something goes through whichever one the page shows, so the same test plays on both.
 import { expect, test, type Page } from "@playwright/test";
-import { expectParam, watchConsole } from "./address-warnings.ts";
+import { expectParam, holdAddressTimer, watchConsole } from "./address-warnings.ts";
 
 const LIST = "/hoshi-stars/constellation-list.html";
 const PHONE_WIDTH = 720;
@@ -38,6 +38,13 @@ async function chosen(page: Page, group: string): Promise<string[]> {
   await close(page);
   return texts;
 }
+
+test("Clear all writes the address without the address timer", async ({ page }) => {
+  await holdAddressTimer(page);
+  await page.goto(`${LIST}?hemi=south`);
+  await page.getByTestId("list-clear").click();
+  await expect.poll(() => param(page, "hemi")).toBeNull();
+});
 
 test("the table holds the IAU's 88 and says so, with their pictures, and Clear all waits until a filter is on", async ({ page }) => {
   await page.goto(LIST);
