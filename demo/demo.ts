@@ -582,13 +582,20 @@ box.addEventListener("pointerleave", () => {
     schedule();
   }
 });
-$("zoom-in").addEventListener("click", () => hands.zoomBy(1.6));
-$("zoom-out").addEventListener("click", () => hands.zoomBy(1 / 1.6));
+$("zoom-in").addEventListener("click", () => {
+  hands.zoomBy(1.6);
+  address.flush();
+});
+$("zoom-out").addEventListener("click", () => {
+  hands.zoomBy(1 / 1.6);
+  address.flush();
+});
 $("reset").addEventListener("click", () => {
   fly({ ra: DEFAULT_VIEW.ra, dec: DEFAULT_VIEW.dec, zoom: opening() });
   address.set("pick", null);
   picked = null;
   details();
+  address.flush();
 });
 
 /** The figure of the sky culture under a pixel: an asterism near a line or star of it, else (in a sky with constellations) the constellation whose boundary holds the pixel. */
