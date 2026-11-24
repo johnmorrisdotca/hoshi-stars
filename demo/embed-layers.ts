@@ -33,17 +33,21 @@ const mount = mountLayers({
   },
 });
 
+const host = $("sp-view");
 const controller = createViewController({
   turnable: true,
   speed: 12,
   limits: { tiltMax: 85, zoomMin: 0.5, zoomMax: 10 },
   initial: { yaw: choice.yaw, tilt: choice.tilt },
-  onChange: (state) => {
+  onChange: (state, info) => {
+    // The family's gesture check reads the view from the element: its controller, its state and a kazoku-viewchange for every change.
+    host.dispatchEvent(new CustomEvent("kazoku-viewchange", { detail: { ...state, final: info.final, reason: info.reason } }));
     showSpin(state.turning);
     mount.pose({ yaw: state.yaw, tilt: state.tilt, roll: state.roll ?? 0, zoom: state.zoom, panX: state.panX, panY: state.panY });
   },
 });
-controller.bind($("sp-view"));
+Object.defineProperties(host, { controller: { value: controller, configurable: true }, state: { get: () => ({ ...controller.state }), configurable: true } });
+controller.bind(host);
 const spin = $("spin");
 function showSpin(turning: boolean): void {
   spin.textContent = say(turning ? "sp_pause" : "sp_play");
