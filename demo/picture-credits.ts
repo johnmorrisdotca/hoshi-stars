@@ -1,4 +1,4 @@
-// The credits of the deep-sky pictures on the chart, shown on the chart while they are drawn, not only in an object's card. ESA/Hubble, ESO and NSF NOIRLab release their images under CC BY 4.0, which asks
+// The credits of the deep-sky pictures on the chart, shown on the chart while they are drawn, not only in an object's card. ESA/Hubble, ESO, NSF NOIRLab and the Crab's NASA file (the same mosaic as heic0515a) are under CC BY 4.0, which asks
 // for the credit wherever the picture is shown, with the licence named and any change said (ESA/Hubble asks for it "clearly and visibly", with the wording unaltered); NOTICE.md has each file's source, address
 // and the day it was read.
 import { deepSkyPictures, type DeepSkyPicture } from "../src/deep-sky-pictures.ts";

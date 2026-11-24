@@ -181,13 +181,14 @@ test("the demo leaves out the pictures that look broken, and draws no finer pict
 const NATURAL_IDS = Object.keys(natural);
 const arcsecBetween = (a: { rightAscension: number; declination: number }, b: { rightAscension: number; declination: number }): number => separation(a, b) * 3600;
 
-test("the natural-colour pictures are an observatory's own, under CC BY or NASA's public domain, each recorded with its credit, and replace the false-colour picture of the object where they are its widest", () => {
+test("the natural-colour pictures are an observatory's own, under CC BY 4.0, each recorded with its credit, and replace the false-colour picture of the object where they are its widest", () => {
   assert.ok(NATURAL_IDS.length >= 15, `${NATURAL_IDS.length} natural pictures`);
   for (const id of NATURAL_IDS) {
     const picture = deepSkyPictures().find((p) => p.id === id);
     assert.ok(picture !== undefined, `${id} is in the index`);
     assert.ok(["NSF NOIRLab", "ESO", "ESA/Hubble", "NASA Hubble"].includes(picture.source.name));
-    assert.match(picture.source.licence, picture.source.name === "NASA Hubble" ? /public domain/i : /CC BY 4\.0/);
+    assert.match(picture.source.licence, /CC BY 4\.0/);
+    assert.doesNotMatch(picture.source.licence, /public domain/i);
     assert.ok(picture.address.startsWith("https://"), `${id}: its page`);
     if (picture.id === picture.object) assert.ok(!/WISE|2MASS/.test(picture.source.name), `${id}: no infrared picture is the widest view of it`);
   }

@@ -6,7 +6,7 @@ Where make-deep-sky-pictures.py cuts false-colour survey pictures out of NASA's 
 - NSF NOIRLab (https://noirlab.edu/public/copyright/): "Unless specifically noted ... licensed under a Creative Commons Attribution 4.0 International License".
 - ESO (https://www.eso.org/public/outreach/copyright/): the same, with the credit line kept and any change said.
 - ESA/Hubble (https://esahubble.org/copyright/): Creative Commons Attribution 4.0.
-- NASA (https://www.nasa.gov/nasa-brand-center/images-and-media/): NASA content is not subject to copyright in the United States. A picture taken from a NASA page uses that page's file, and only when the page does not mark it as someone else's copyright.
+- NASA photojournal PIA03606 is the same mosaic ESA/Hubble publishes as heic0515a, so it is used under that CC BY 4.0 licence and credited NASA/ESA/JPL/Arizona State University. It is not public domain.
 Never CC BY-SA, never non-commercial, never "all rights reserved". Each page of an image is read for its credit when the picture is made, and the licence page for the sentence; NOTICE.md records both with the day.
 
 Where a picture lies is found twice. The release carries its own Astronomy Visualization Metadata (AVM): a tangent-plane position, scale and turn. That is the prior. The placement used is then our own fit: the stars in
@@ -85,8 +85,8 @@ SITES = {
             "name": "NASA Hubble",
             "colour": "visible light in colour, as NASA released it, resized, with the black of the sky and of the edges made clear",
             "credit": "NASA/ESA/JPL/Arizona State University",
-            "licence": "public domain (NASA content is not subject to copyright in the United States; NASA Images and Media Usage Guidelines, https://www.nasa.gov/nasa-brand-center/images-and-media/). The photojournal page does not mark this image as third-party copyright",
-            "page": "https://www.nasa.gov/nasa-brand-center/images-and-media/",
+            "licence": "CC BY 4.0 (Creative Commons Attribution 4.0 International), the licence ESA/Hubble gives this mosaic (heic0515a) on https://esahubble.org/copyright/. The file is NASA photojournal PIA03606, credited NASA/ESA/JPL/Arizona State University",
+            "page": "https://esahubble.org/copyright/",
         },
     },
     "hubble": {

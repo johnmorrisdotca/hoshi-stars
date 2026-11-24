@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-- **A sharper picture of the Crab Nebula** (MODULES-793). The wide picture of M1 was WISE, soft at a few arc-seconds a pixel. It is now NASA's Hubble mosaic of the whole nebula (PIA03606, public domain: NASA content is not subject to copyright in the United States), 0.63 arc-seconds a pixel, the black sky made clear. The ESA/Hubble copy of the same mosaic stays as the finer picture laid over it. Credit NASA/ESA/JPL/Arizona State University, in NOTICE.md.
+- **The Crab's wide picture is CC BY 4.0** (MODULES-793). PIA03606 is the same mosaic ESA/Hubble publishes as heic0515a. It is credited NASA/ESA/JPL/Arizona State University under that licence. It is not public domain.
+
+- **A sharper picture of the Crab Nebula** (MODULES-793). The wide picture of M1 was WISE, soft at a few arc-seconds a pixel. It is now NASA's Hubble mosaic of the whole nebula (PIA03606), 0.63 arc-seconds a pixel, the black sky made clear. The ESA/Hubble copy of the same mosaic stays as the finer picture laid over it. Credit NASA/ESA/JPL/Arizona State University, under the CC BY 4.0 licence of heic0515a, in NOTICE.md.
 
 ## [0.61.0] - 2026-11-23
 

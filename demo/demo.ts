@@ -848,8 +848,8 @@ const picker = mountPicker({ strip: $("picker-strip"), search: $<HTMLInputElemen
 // ----- what is picked -----
 const SOURCE_WORDS: Record<string, string> = { RC3: "srcRC3", NED: "srcNed", "Catalogue row": "srcRow" };
 /** The sources of photographs in true colour (an observatory's own), placed by a fit to our stars. */
-const NATURAL_SOURCES: ReadonlySet<string> = new Set(["NSF NOIRLab", "ESO"]);
-const SURVEY_WORDS: Record<string, string> = { "SDSS g, r, i": "pictureSdss", "2MASS J, H, K": "picture2mass", "WISE 3.4, 4.6, 12 micron": "pictureWise", "ESA/Hubble": "pictureHubble", "NSF NOIRLab": "pictureNatural", ESO: "pictureNatural" };
+const NATURAL_SOURCES: ReadonlySet<string> = new Set(["NSF NOIRLab", "ESO", "NASA Hubble"]);
+const SURVEY_WORDS: Record<string, string> = { "SDSS g, r, i": "pictureSdss", "2MASS J, H, K": "picture2mass", "WISE 3.4, 4.6, 12 micron": "pictureWise", "ESA/Hubble": "pictureHubble", "NSF NOIRLab": "pictureNatural", ESO: "pictureNatural", "NASA Hubble": "pictureNatural" };
 const fill = (text: string, values: Record<string, string>): string => Object.entries(values).reduce((out, [key, value]) => out.replace(`{${key}}`, value), text);
 const arcmin = (n: number): string => (n < 10 ? n.toFixed(1) : String(Math.round(n * 10) / 10));
 
