@@ -156,7 +156,7 @@ CDNから読み込む普通のHTMLページでは：
 </html>
 ```
 
-Reactでは（絵は文字列なので、マークアップとして入れます。Vueでは`v-html`、Svelteでは`{@html}`で同じ行が使えます。Angularは、そのまま渡すと絵が落ちるので、その文字列を信頼するHTMLとして入れます。デモの「埋め込むもの」は選んだ星用にそれぞれを書き出します）：
+Reactでは（絵は文字列なので、マークアップとして入れます。Vueでは`v-html`、Svelteでは`{@html}`で同じ行が使えます。Angularでは、そのまま渡すと絵が取り除かれるので、その文字列を信用できるHTMLとして入れます。デモの「埋め込むもの」は選んだ星用にそれぞれを書き出します）：
 
 ```tsx
 import { starByName } from "@johnmorrisdotca/hoshi-stars";
@@ -170,7 +170,7 @@ export function Star() {
 }
 ```
 
-同じ絵を Vue で：
+Vueでの同じ絵：
 
 ```vue
 <script setup lang="ts">
@@ -186,7 +186,7 @@ const svg = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", s
 </template>
 ```
 
-Svelte で：
+Svelteでは：
 
 ```svelte
 <script lang="ts">
@@ -200,7 +200,7 @@ Svelte で：
 <div>{@html svg}</div>
 ```
 
-Angular で：
+Angularでは：
 
 ```ts
 import { Component, inject } from "@angular/core";
