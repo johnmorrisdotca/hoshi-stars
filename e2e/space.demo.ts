@@ -15,6 +15,8 @@ const across = async (page: Page): Promise<number> => Number(await page.locator(
 async function open(page: Page, query = ""): Promise<void> {
   await page.goto(`${PAGE}${query}`);
   await expect(live(page)).toBeVisible({ timeout: 60_000 });
+  // On a phone the stage is below the page's links, out of sight, and the renderer (kazoku-ui 0.54) draws nothing out of sight, so no name is placed until the reader scrolls to it: so does the test.
+  await page.locator("#sp-stage").scrollIntoViewIfNeeded();
   await expect.poll(async () => shown(page).count(), { timeout: 20_000 }).toBeGreaterThan(2);
   await page.waitForTimeout(300);
 }

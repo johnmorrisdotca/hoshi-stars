@@ -13,6 +13,8 @@ const draws = (page: Page) => page.locator("#sp-view").evaluate((el) => (Reflect
  */
 async function turnsUntouched(stage: Locator): Promise<void> {
   const page = stage.page();
+  // the stage turns only while it is on the screen (kazoku-ui 0.54 draws nothing out of sight), and on a phone it is below the page's links: the reader scrolls to it, so does the test
+  await stage.scrollIntoViewIfNeeded();
   await expect.poll(() => draws(page), { timeout: 30_000 }).toBeGreaterThan(0);
   const first = await stage.screenshot();
   const drawn = await draws(page);

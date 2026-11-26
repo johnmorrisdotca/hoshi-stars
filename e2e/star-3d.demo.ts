@@ -23,6 +23,8 @@ test.describe("turning", () => {
       const stage = page.getByTestId("star-3d");
       await expect(stage).toHaveAttribute("data-live", "true", { timeout: 60_000 });
       await expect(play(page)).toHaveAttribute("aria-pressed", "true");
+      // the star only turns while it is on the screen (kazoku-ui 0.54 draws nothing out of sight): bring it there
+      await stage.scrollIntoViewIfNeeded();
       // The two seconds start from the star's first drawn frame: on a slow runner drawing in software the first frame alone can take longer than that.
       await expect.poll(() => turnOf(page), { timeout: 30_000 }).toBeGreaterThan(0);
       const first = await stage.screenshot();
