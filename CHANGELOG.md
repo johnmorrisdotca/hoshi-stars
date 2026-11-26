@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.61.3] - 2026-11-26
+
 - **A reload of one quiz link asks the same six names** (MODULES-1219). The five wrong names and their order come from the question (the sky, the level and the answer), not from a fresh draw. Two loads of one address can no longer be compared to find which name is in both. The question asked is unchanged.
 
 ## [0.61.2] - 2026-11-26
