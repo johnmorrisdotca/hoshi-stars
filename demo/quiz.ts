@@ -8,7 +8,7 @@ import { figureThumbSrc, langNow, lookNow, nameIn, thumbSrc } from "./thumbs.ts"
 import { ALL_WORDS } from "../scripts/gallery-words.ts";
 import { CULTURE_IDS, cultureFor, figureLevelOf, itemNamed, itemsFor, levelIdsFor, mansionIdsOf, otherMansions, type CultureId, type QuizItem } from "./quiz-items.ts";
 import { FIELD_FILL, FIELD_RADIUS, marksSvg } from "./quiz-star.ts";
-import { distractors, nearestTies, shuffled, westernTies, type Ties } from "./quiz-pick.ts";
+import { distractors, nearestTies, seededRandom, shuffled, westernTies, type Ties } from "./quiz-pick.ts";
 import { MAX_LATITUDE, MIN_ALTITUDE, askedLatitude, isSeenIn, latitudeOf } from "./quiz-sky.ts";
 import { monthName, say } from "./words.ts";
 
@@ -95,9 +95,10 @@ const questionInAddress = (): string | undefined => {
 const w = (name: string, values: Record<string, string | number> = {}): string => say(kid && `qz_k_${name}` in ALL_WORDS.en ? `qz_k_${name}` : `qz_${name}`, values);
 /** The name of an item in the page's language. */
 const labelOf = (id: string): string => itemOf(id).label(langNow());
-/** The question's six names: the answer and five others of the level that are easy to mix up with it (its neighbours, then ones of the same origin: `distractors`), in a random order. */
+/** The question's six names: the answer and five others of the level that are easy to mix up with it (its neighbours, then ones of the same origin: `distractors`). The order comes from the question, so a reload of the same address asks the same six. */
 function choicesFor(answer: string): string[] {
-  return shuffled([answer, ...distractors(answer, choicePoolOf(level), CHOICES - 1, Math.random, tiesOf())]);
+  const seed = `${cultureId}|${level}|${answer}`;
+  return shuffled([answer, ...distractors(answer, choicePoolOf(level), CHOICES - 1, seededRandom(seed), tiesOf())], seededRandom(`${seed}|order`));
 }
 
 function ask(abbreviation?: string): void {

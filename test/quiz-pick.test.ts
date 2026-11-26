@@ -1,7 +1,7 @@
 // The quiz's wrong names: five, never the answer, no one twice, the neighbours first and then the same origin; a small pool gives what it has.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { distractors, shuffled } from "../demo/quiz-pick.ts";
+import { distractors, seededRandom, shuffled } from "../demo/quiz-pick.ts";
 import { constellationFacts } from "../src/constellation-facts.ts";
 import { constellations } from "../src/constellations.ts";
 import { neighbouringConstellations } from "../src/nearest.ts";
@@ -46,6 +46,12 @@ test("it only picks from the pool, and a pool of fewer than the count gives what
   const got = distractors("Ori", pool, 5, seeded(3));
   assert.deepEqual([...got].sort(), ["Cru", "Tau", "UMa"]);
   assert.deepEqual(distractors("Ori", ["Ori"], 5), []);
+});
+
+test("one address asks the same six names on every load (MODULES-1219)", () => {
+  const six = (seed: string): string[] => shuffled(["Ori", ...distractors("Ori", ALL, 5, seededRandom(seed))], seededRandom(`${seed}|order`));
+  assert.deepEqual(six("q=12|88"), six("q=12|88"));
+  assert.notDeepEqual(six("q=12|88"), six("q=13|88"));
 });
 
 test("it is random: different numbers give different wrong names, and shuffled keeps every item", () => {

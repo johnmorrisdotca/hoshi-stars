@@ -39,6 +39,21 @@ export function nearestTies(items: ReadonlyArray<{ id: string; centre: { rightAs
 
 const NEIGHBOURS = 3;
 
+/**
+ * Random numbers in [0, 1) from a text seed, the same sequence every time for that text. A quiz address uses it so a reload asks the same six names.
+ *
+ * @param text - The seed, such as the question's place in the address.
+ * @returns A function of the same kind as `Math.random`.
+ */
+export function seededRandom(text: string): () => number {
+  let seed = 2166136261;
+  for (let i = 0; i < text.length; i += 1) seed = Math.imul(seed ^ text.charCodeAt(i), 16777619) >>> 0;
+  return () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 4294967296;
+  };
+}
+
 /** A shuffled copy (Fisher-Yates) with the random numbers given. */
 export function shuffled<T>(items: readonly T[], random: () => number = Math.random): T[] {
   const out = [...items];
