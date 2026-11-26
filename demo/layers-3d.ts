@@ -6,6 +6,7 @@ import type { EmbedChangeDetail, EmbedPanelElement } from "@johnmorrisdotca/kazo
 import "@johnmorrisdotca/kazoku-ui/view-controls/define";
 import type { ViewChangeDetail, ViewControlsElement } from "@johnmorrisdotca/kazoku-ui/view-controls/element";
 import { DISTANCE_LIMITS, limitAtSlider, limitFromText, limitText, sliderOfLimit, stepLimit, type DistanceLayers } from "../src/distance.ts";
+import { followDistanceAddress } from "./layers-address.ts";
 import { layersFrameAddress, layersFrameCode, layersCode, layersSvg, type LayersChoice } from "./layers-code.ts";
 import type { LayersLayout } from "./layers-layout.ts";
 import { mountLayers } from "./layers-view.ts";
@@ -111,10 +112,11 @@ document.addEventListener("hoshi-language", () => {
   codes();
 });
 address.subscribe(({ source }) => {
-  if (source !== "navigation") return;
-  limit = limitFromText(address.get("dist")) ?? 100;
-  pressed();
-  show();
+  followDistanceAddress(source, () => {
+    limit = limitFromText(address.get("dist")) ?? 100;
+    pressed();
+    show();
+  }, codes);
 });
 
 // ----- the code to copy -----
