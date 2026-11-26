@@ -1,6 +1,9 @@
 // The sheets page: connect-the-dots constellations, the constellations for where you live, a star wheel for your latitude and a sky map for a month. Pick a sheet, say where you live (kuni's countries and regions, hata's flags,
 // or a latitude, or your location when you ask), pick the paper, see the sheet as it will print and press Print / save PDF. The sheet's header, footer and QR code are kazoku-ui's print part; the pictures are this package's (`/sheets`).
 import { createAddressState } from "@johnmorrisdotca/kazoku-ui/address-state";
+import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
+import "@johnmorrisdotca/kazoku-ui/embed-panel/define";
+import type { EmbedPanelElement } from "@johnmorrisdotca/kazoku-ui/embed-panel/element";
 import { buildSheet, printCss, printSheet, wordsFor, type Layout, type PageName, type SheetInfo } from "@johnmorrisdotca/kazoku-ui/print";
 import { countries, countryName } from "@johnmorrisdotca/kuni";
 import { facts } from "@johnmorrisdotca/kuni/facts";
@@ -8,6 +11,7 @@ import { WORDS } from "../scripts/page-words.ts";
 import { constellations } from "../src/constellations.ts";
 import { figureOf } from "../src/lines.ts";
 import { DOT_LEVELS, dotsSvg, latitudeBand, monthName, regionGuideSvg, skyForLatitude, skyMapSvg, starWheelDisc, starWheelPlate, starWheelPoster, WHEEL_LATITUDES, type DotLevel } from "../src/sheets/index.ts";
+import { kidsFrameAddress, type KidsFrame } from "./kids-address.ts";
 import { regionFlag, regionPoints, REGION_COUNTRIES } from "./places.ts";
 
 type Lang = "en" | "ja";
@@ -16,7 +20,6 @@ type Kind = (typeof KINDS)[number];
 const PAPERS: readonly PageName[] = ["a4", "letter", "a3", "tabloid"];
 const FAMOUS = ["UMa", "UMi", "Cas", "Ori", "Cru", "Leo", "Sco", "Cyg", "Lyr", "Aql", "Gem", "Tau"];
 declare const __HOSHI_VERSION__: string;
-const ADDRESS = "https://johnmorrisdotca.github.io/hoshi-stars/kids.html";
 
 const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
 const lang = (): Lang => (document.documentElement.lang === "ja" ? "ja" : "en");
@@ -161,7 +164,7 @@ function build(): HTMLElement | undefined {
   const made = plan();
   if (made === undefined) return undefined;
   const layout = layoutOf();
-  const base = { ...layout, brand: "Space Program X", packageName: "Hoshi Stars 星", title: made.title, credits: lang() === "ja" ? "ほしの データ: イェールほしカタログ。ほしざの せんは じぶんたちで かきました。" : "Stars: Yale Bright Star Catalogue. The constellation figures are our own drawings.", version: __HOSHI_VERSION__, date: new Date(), address: `${ADDRESS}?kind=${state.kind}` };
+  const base = { ...layout, brand: "Space Program X", packageName: "Hoshi Stars 星", title: made.title, credits: lang() === "ja" ? "ほしの データ: イェールほしカタログ。ほしざの せんは じぶんたちで かきました。" : "Stars: Yale Bright Star Catalogue. The constellation figures are our own drawings.", version: __HOSHI_VERSION__, date: new Date(), address: kidsFrameAddress(frameOf()) };
   if (made.poster !== undefined) {
     const holder = document.createElement("div");
     holder.innerHTML = made.poster.svg;
@@ -209,6 +212,14 @@ function fit(): void {
   $("#paper").style.height = `${inner.scrollHeight * scale}px`;
 }
 
+function frameOf(): KidsFrame {
+  return { kind: state.kind, level: state.level, which: state.which, country: state.country, region: state.region, lat: state.lat, month: state.month, paper: state.paper, type: state.type, form: state.form };
+}
+
+const panel = $<EmbedPanelElement>("#embed-panel");
+panel.kinds = ["iframe"];
+panel.generate = ({ size }) => embedSnippet("iframe", { package: "@johnmorrisdotca/hoshi-stars", cdn: "https://cdn.jsdelivr.net/npm/@johnmorrisdotca/hoshi-stars", tag: "div", element: "", entries: [], attrs: [], name: "sheet", iframe: { src: kidsFrameAddress(frameOf()), title: say("kd_heading"), width: size, height: Math.round(size * 1.3) } });
+
 let renderToken = 0;
 async function render(): Promise<void> {
   const token = (renderToken += 1);
@@ -247,6 +258,8 @@ async function render(): Promise<void> {
   $("#info").textContent = sheet === undefined ? say("kd_unknown") : say("kd_info", { paper: say(`kd_${state.paper}`), pages: pages === 1 ? say("kd_one") : say("kd_pageCount", { n: pages }) });
   ($("#print") as HTMLButtonElement).disabled = sheet === undefined;
   fit();
+  panel.openHref = kidsFrameAddress(frameOf());
+  panel.update();
 }
 
 function choose(change: Partial<State>): void {

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The sheets page can be embedded** (MODULES-714). The copied iframe, and the address printed on a sheet, carry the sheet, the place, the latitude, the month and the paper. A culture's own constellation figures still wait.
+
 - **The star portrait has Vue, Svelte and Angular examples** (MODULES-758). The tested copy was Node, a CDN page, an iframe and React. The same Sirius picture is now a Vue component, a Svelte component and an Angular component, and each one is run. Angular marks the picture as HTML it trusts, because a plain binding drops the drawing.
 
 - **The sky-by-distance code stays with the page** (MODULES-1031). Back or forward redrew the sky and left the copied code on the previous limit. The code now refreshes after that redraw. Moving this page into the one 3D view still waits.
