@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Constellation lines keep clear of a body in front of the sky** (MODULES-947). `FigureLines.update` takes the same cover as a star's name. A line with both ends behind the body is left out, a line that crosses it is cut, a figure cannot be picked through the body, and the picked figure's name is not placed on it.
+
 ## [0.61.3] - 2026-11-26
 
 - **A reload of one quiz link asks the same six names** (MODULES-1219). The five wrong names and their order come from the question (the sky, the level and the answer), not from a fresh draw. Two loads of one address can no longer be compared to find which name is in both. The question asked is unchanged.

@@ -1,7 +1,7 @@
 // The shapes of the figure lines: a box, the settings, a figure on the screen, a figure's name and the lines object itself. Moved out of figure-lines.ts as they were; figure-lines.ts re-exports them.
 import type { Culture } from "./culture.ts";
 import type { LabelStyle } from "./label-style.ts";
-import type { NameLanguage, SkyProjector, SkyView } from "./star-names.ts";
+import type { CoverMask, NameLanguage, SkyProjector, SkyView } from "./star-names.ts";
 
 /**
  * A rectangle in the page's pixels, for the boxes a figure's name must stay clear of (`StarNames.labels` are such boxes). A box that also has the star's place (`x`, `y`) and the radius of its `ring` keeps the name off the ring too.
@@ -139,13 +139,15 @@ export interface FigureLines {
   opacityOf(figure: FigureOnScreen): number;
   /**
    * Lay the lines out for the screen as it is now. Call it when the view, the size or the settings changed. A picked figure that is no longer in view is let go.
+   * A line with both ends behind `covered` is left out, and a line that crosses it is cut where it meets the body. A figure cannot be picked through the body, and its name is not placed on it.
    *
    * @param project - Where a star is on the screen.
    * @param view - The part of the screen the lines are drawn in.
    * @param avoid - Optional: boxes the picked figure's name must stay clear of, such as `StarNames.labels` (the array may be the live one; it is read when a name is placed).
+   * @param covered - Optional: the same cover a star's name takes. True where a body hides the sky.
    * @returns How many lines are in view.
    */
-  update(project: SkyProjector, view: SkyView, avoid?: readonly Box[]): number;
+  update(project: SkyProjector, view: SkyView, avoid?: readonly Box[], covered?: CoverMask): number;
   /**
    * Say where the pointer (or a finger) is, in the page's pixels, or call with nothing when it has left. The figure with a line or a star nearest the point, within `reach` pixels, is picked: on a star of the figure lights the whole figure, as on a line.
    *

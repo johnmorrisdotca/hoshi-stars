@@ -200,11 +200,23 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
   };
   const view = { width, height, margin: 6 };
 
+  // where the Moon and the planets are on the screen, so a line and a name keep clear of them
+  const boxes: { x0: number; y0: number; x1: number; y1: number }[] = [];
+  const covers: { x0: number; y0: number; x1: number; y1: number }[] = [];
+  for (const planet of report.planets) {
+    if (planet.up && place(directionOf(planet.altitude, planet.azimuth))) covers.push({ x0: spot.x - 14, y0: spot.y - 14, x1: spot.x + 70, y1: spot.y + 14 });
+  }
+  if (report.moon.altitude > -1 && place(directionOf(report.moon.altitude, report.moon.azimuth))) covers.push({ x0: spot.x - 36, y0: spot.y - 36, x1: spot.x + 80, y1: spot.y + 36 });
+  const clear = scene.keepClear;
+  const covered = (x: number, y: number): boolean => covers.some((c) => x > c.x0 && x < c.x1 && y > c.y0 && y < c.y1) || (clear !== undefined && x > clear.x0 && x < clear.x1 && y > clear.y0 && y < clear.y1);
+  boxes.push(...covers);
+  if (scene.keepClear !== undefined) boxes.push(scene.keepClear);
+
   // the constellation lines, only when the sky is dark enough to see the stars they join
   const strength = limit < 1.5 ? 0 : scene.lineStrength * Math.min(1, (limit - 1.5) / 3);
   if (scene.lines !== null && strength > 0) {
     remember(scene.lines, `${strength.toFixed(3)} ${lang}`, () => scene.lines!.set({ ...scene.lines!.settings, strength, lang }));
-    scene.lines.update(project, view);
+    scene.lines.update(project, view, undefined, covered);
     ctx.lineWidth = 1;
     ctx.lineCap = "round";
     ctx.strokeStyle = "#8fb0ff";
@@ -244,18 +256,6 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
   }
   ctx.globalAlpha = 1;
 
-  // where the Moon and the planets are on the screen, so a star's name keeps clear of them and of their own names
-  const boxes: { x0: number; y0: number; x1: number; y1: number }[] = [];
-  const covers: { x0: number; y0: number; x1: number; y1: number }[] = [];
-  for (const planet of report.planets) {
-    if (planet.up && place(directionOf(planet.altitude, planet.azimuth))) covers.push({ x0: spot.x - 14, y0: spot.y - 14, x1: spot.x + 70, y1: spot.y + 14 });
-  }
-  if (report.moon.altitude > -1 && place(directionOf(report.moon.altitude, report.moon.azimuth))) covers.push({ x0: spot.x - 36, y0: spot.y - 36, x1: spot.x + 80, y1: spot.y + 36 });
-  const clear = scene.keepClear;
-  const covered = (x: number, y: number): boolean => covers.some((c) => x > c.x0 && x < c.x1 && y > c.y0 && y < c.y1) || (clear !== undefined && x > clear.x0 && x < clear.x1 && y > clear.y0 && y < clear.y1);
-  boxes.push(...covers);
-  if (scene.keepClear !== undefined) boxes.push(scene.keepClear);
-
   // the names of the brightest stars
   ctx.textBaseline = "alphabetic";
   if (limit >= 1 && scene.names.settings.count !== 0) {
@@ -291,7 +291,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, scene: Scene): DrawnBod
       const x = Math.max(w / 2 + 4, Math.min(width - w / 2 - 4, figure.x));
       const y = Math.max(14, Math.min(height - 8, figure.top - 7));
       const box = { x0: x - w / 2 - 2, y0: y - 12, x1: x + w / 2 + 2, y1: y + 3 };
-      if (boxes.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) continue;
+      if (covered(x, y) || boxes.some((b) => box.x0 < b.x1 && box.x1 > b.x0 && box.y0 < b.y1 && box.y1 > b.y0)) continue;
       boxes.push(box);
       ctx.globalAlpha = Math.min(1, strength / 0.2);
       halo(ctx, text, x, y, "rgba(150, 180, 245, 0.95)");

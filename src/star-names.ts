@@ -58,7 +58,7 @@ export type CoverMask = (x: number, y: number) => boolean;
  * @param x - The centre's x in pixels.
  * @param y - The centre's y in pixels.
  * @param radius - The radius in pixels.
- * @returns A mask for `StarNames.update`.
+ * @returns A mask for `StarNames.update` and `FigureLines.update`.
  *
  * @example
  * ```ts

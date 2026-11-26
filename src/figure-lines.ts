@@ -5,7 +5,7 @@ import type { Asterism, Culture } from "./culture.ts";
 import { figures } from "./lines.ts";
 import type { Star } from "./stars.ts";
 import { DEFAULT_LABEL_STYLE, labelHeight, labelStyle, labelText, labelWidth, type LabelStyle } from "./label-style.ts";
-import type { NameLanguage, ScreenPoint, SkyView } from "./star-names.ts";
+import type { CoverMask, NameLanguage, ScreenPoint, SkyView } from "./star-names.ts";
 import type { Box, FigureLines, FigureLinesSettings, FigureName, FigureOnScreen } from "./figure-lines-types.ts";
 
 export type { Box, FigureLines, FigureLinesSettings, FigureName, FigureOnScreen };
@@ -98,6 +98,45 @@ function figuresOf(culture: Culture | undefined): Drawn[] {
   return figures(culture).map((one) => ({ key: one.asterism.id, segments: one.segments, name: (lang) => cultureName(one.asterism, lang) }));
 }
 
+/** The parts of one line that are not behind a body. A line that stays behind it is left out; a line that crosses it is cut at the edge. Nothing is allocated. */
+function layUncovered(x0: number, y0: number, x1: number, y1: number, covered: CoverMask | undefined, push: (ax: number, ay: number, bx: number, by: number) => void): void {
+  if (covered === undefined) {
+    push(x0, y0, x1, y1);
+    return;
+  }
+  const steps = 12;
+  const at = (t: number): [number, number] => [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
+  const free = (t: number): boolean => {
+    const [x, y] = at(t);
+    return !covered(x, y);
+  };
+  const edge = (hidden: number, shown: number): number => {
+    let lo = hidden;
+    let hi = shown;
+    for (let n = 0; n < 10; n += 1) {
+      const mid = (lo + hi) / 2;
+      if (free(mid)) hi = mid;
+      else lo = mid;
+    }
+    return hi;
+  };
+  let run = -1;
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const open = free(t);
+    if (open && run < 0) run = t;
+    if (run < 0 || (open && i < steps)) continue;
+    let t0 = run;
+    let t1 = open ? t : (i - 1) / steps;
+    if (t0 > 0) t0 = edge(t0 - 1 / steps, t0);
+    if (!open) t1 = edge(t1 + 1 / steps, t1);
+    const [ax, ay] = at(t0);
+    const [bx, by] = at(t1);
+    if ((ax - bx) * (ax - bx) + (ay - by) * (ay - by) >= 0.25) push(ax, ay, bx, by);
+    run = -1;
+  }
+}
+
 /**
  * The constellation figures as lines for a sky of your own, faint, with the figure under the pointer at full strength and its name. `strength` 0 draws nothing. The figures are the package's own, from the positions of the stars:
  * the 88 of the IAU, or with `culture` a sky culture's (the Japanese sky's 昴, the Chinese sky's mansions and asterisms).
@@ -152,7 +191,8 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
     all = figuresOf(culture);
     let total = 0;
     for (const figure of all) total += figure.segments.length;
-    segments = new Float32Array(total * 4);
+    // a line that crosses a body is cut in two, so each figure line has room for a few pieces
+    segments = new Float32Array(total * 16);
     onScreen = all.map((figure) => ({ abbreviation: figure.key, start: 0, end: 0, left: 0, top: 0, right: 0, bottom: 0, x: 0 }));
     count = 0;
     picked = -1;
@@ -166,6 +206,7 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
   let picked = -1;
   let size: SkyView = { width: 0, height: 0 };
   let avoided: readonly Box[] = [];
+  let mask: CoverMask | undefined;
   let texts: string[] = [];
 
   const set = (next: FigureLinesSettings): void => {
@@ -203,7 +244,7 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
   let nameWidth = 0;
   let nameHeight = 0;
   let nameMargin = 0;
-  const fits = (centre: number, top: number): boolean => top >= nameMargin && top + nameHeight <= size.height - nameMargin && clear(centre - nameWidth / 2, top, centre + nameWidth / 2, top + nameHeight);
+  const fits = (centre: number, top: number): boolean => top >= nameMargin && top + nameHeight <= size.height - nameMargin && (mask === undefined || !mask(centre, top + nameHeight / 2)) && clear(centre - nameWidth / 2, top, centre + nameWidth / 2, top + nameHeight);
   const put = (centre: number, top: number): void => {
     name.x = centre;
     name.y = top + nameHeight * 0.8;
@@ -244,7 +285,9 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
     }
     // nothing is free: above the figure as far as the view allows, whatever is there
     if (bestAway !== Number.POSITIVE_INFINITY) return put(bestCentre, bestTop);
-    put(inside(figure.x), Math.max(margin, Math.min(size.height - margin - height, figure.top - gap - height)));
+    const left = inside(figure.x);
+    const below = Math.max(margin, Math.min(size.height - margin - height, figure.top - gap - height));
+    if (mask === undefined || !mask(left, below + height / 2)) put(left, below);
   };
 
   const lines: FigureLines = {
@@ -273,18 +316,33 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
     opacityOf(figure) {
       return current.strength === 0 ? 0 : onScreen[picked] === figure ? 1 : current.strength;
     },
-    update(project, view, avoid) {
+    update(project, view, avoid, covered) {
       size = view;
       avoided = avoid ?? [];
+      mask = covered;
       count = 0;
       const longest = current.maxLength ?? Number.POSITIVE_INFINITY;
+      const box = { left: Number.POSITIVE_INFINITY, top: Number.POSITIVE_INFINITY, right: Number.NEGATIVE_INFINITY, bottom: Number.NEGATIVE_INFINITY };
+      const push = (x0: number, y0: number, x1: number, y1: number): void => {
+        if (count * 4 + 4 > segments.length) return;
+        const at = count * 4;
+        segments[at] = x0;
+        segments[at + 1] = y0;
+        segments[at + 2] = x1;
+        segments[at + 3] = y1;
+        count += 1;
+        box.left = Math.min(box.left, x0, x1);
+        box.right = Math.max(box.right, x0, x1);
+        box.top = Math.min(box.top, y0, y1);
+        box.bottom = Math.max(box.bottom, y0, y1);
+      };
       for (let i = 0; i < all.length; i += 1) {
         const out = onScreen[i]!;
         out.start = count;
-        let left = Number.POSITIVE_INFINITY;
-        let top = Number.POSITIVE_INFINITY;
-        let right = Number.NEGATIVE_INFINITY;
-        let bottom = Number.NEGATIVE_INFINITY;
+        box.left = Number.POSITIVE_INFINITY;
+        box.top = Number.POSITIVE_INFINITY;
+        box.right = Number.NEGATIVE_INFINITY;
+        box.bottom = Number.NEGATIVE_INFINITY;
         if (current.strength > 0) {
           const pairs = all[i]!.segments;
           for (let k = 0; k < pairs.length; k += 1) {
@@ -293,25 +351,16 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
             if (!project(from.rightAscension, from.declination, a) || !project(to.rightAscension, to.declination, b)) continue;
             if ((a.x < 0 && b.x < 0) || (a.x > view.width && b.x > view.width) || (a.y < 0 && b.y < 0) || (a.y > view.height && b.y > view.height)) continue;
             if (longest !== Number.POSITIVE_INFINITY && (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) > longest * longest) continue;
-            const at = count * 4;
-            segments[at] = a.x;
-            segments[at + 1] = a.y;
-            segments[at + 2] = b.x;
-            segments[at + 3] = b.y;
-            count += 1;
-            left = Math.min(left, a.x, b.x);
-            right = Math.max(right, a.x, b.x);
-            top = Math.min(top, a.y, b.y);
-            bottom = Math.max(bottom, a.y, b.y);
+            layUncovered(a.x, a.y, b.x, b.y, covered, push);
           }
         }
         out.end = count;
         if (out.end > out.start) {
-          out.left = left;
-          out.right = right;
-          out.top = top;
-          out.bottom = bottom;
-          out.x = Math.max(0, Math.min(view.width, (left + right) / 2));
+          out.left = box.left;
+          out.right = box.right;
+          out.top = box.top;
+          out.bottom = box.bottom;
+          out.x = Math.max(0, Math.min(view.width, (box.left + box.right) / 2));
         }
       }
       if (picked >= 0) {
@@ -321,6 +370,11 @@ export function createFigureLines(settings: FigureLinesSettings = {}): FigureLin
       return count;
     },
     point(x, y) {
+      if (x !== undefined && y !== undefined && mask !== undefined && mask(x, y)) {
+        const changed = picked >= 0;
+        picked = -1;
+        return changed;
+      }
       let best = -1;
       if (x !== undefined && y !== undefined && current.strength > 0) {
         const reach = current.reach ?? 14;

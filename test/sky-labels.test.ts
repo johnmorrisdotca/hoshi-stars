@@ -594,7 +594,8 @@ test("a culture's sky: its figures in its order keyed by id, named by its names 
   for (const lang of ["ja", "en"] as const) {
     const lines = createFigureLines({ culture: japanese, lang });
     assert.deepEqual(lines.figures.map((figure) => figure.abbreviation), japanese.asterisms().map((one) => one.id));
-    assert.equal(lines.segments.length, 4 * figures(japanese).reduce((sum, one) => sum + one.segments.length, 0));
+    // four pieces a line: a line that crosses a body is cut, and the room is made once with the figures
+    assert.equal(lines.segments.length, 16 * figures(japanese).reduce((sum, one) => sum + one.segments.length, 0));
     assert.ok(lines.update(project, view) > 0);
     const subaru = lines.figures.find((figure) => figure.abbreviation === "subaru")!;
     assert.ok(subaru.end > subaru.start, "the Pleiades' lines are in view");
@@ -635,4 +636,42 @@ test("a culture's sky: its figures in its order keyed by id, named by its names 
   assert.equal(lines.picked, mao);
   lines.set({});
   assert.equal(lines.figures.length, 88);
+});
+
+test("a cover leaves out a line behind a body, cuts one that crosses it, and keeps a pick and a name off it", () => {
+  const lines = createFigureLines({ strength: 0.2 });
+  lines.update(project, VIEW);
+  const orion = lines.figures.find((figure) => figure.abbreviation === "Ori")!;
+  const at = orion.start * 4;
+  const [x0, y0, x1, y1] = [lines.segments[at]!, lines.segments[at + 1]!, lines.segments[at + 2]!, lines.segments[at + 3]!];
+  const earth = discCover((x0 + x1) / 2, (y0 + y1) / 2, 36);
+  lines.update(project, VIEW, undefined, earth);
+  const again = lines.figures.find((figure) => figure.abbreviation === "Ori")!;
+  for (let s = again.start; s < again.end; s += 1) {
+    const k = s * 4;
+    const mx = (lines.segments[k]! + lines.segments[k + 2]!) / 2;
+    const my = (lines.segments[k + 1]! + lines.segments[k + 3]!) / 2;
+    assert.equal(earth(mx, my), false);
+    assert.equal(earth(lines.segments[k]!, lines.segments[k + 1]!), false);
+    assert.equal(earth(lines.segments[k + 2]!, lines.segments[k + 3]!), false);
+  }
+  lines.point((x0 + x1) / 2, (y0 + y1) / 2);
+  assert.equal(lines.picked, undefined);
+  assert.equal(createFigureLines({ strength: 1 }).update(project, VIEW, undefined, () => true), 0);
+
+  const named = createFigureLines({ strength: 0.2 });
+  named.update(project, VIEW);
+  const figure = named.figures.find((one) => one.end > one.start)!;
+  named.point(named.segments[figure.start * 4]!, named.segments[figure.start * 4 + 1]!);
+  assert.ok(named.name !== undefined);
+  const over = discCover(named.name.x, named.name.y, 40);
+  named.update(project, VIEW, undefined, over);
+  let px = named.segments[figure.start * 4]!;
+  let py = named.segments[figure.start * 4 + 1]!;
+  if (over(px, py) && figure.end > figure.start) {
+    px = named.segments[figure.start * 4 + 2]!;
+    py = named.segments[figure.start * 4 + 3]!;
+  }
+  if (!over(px, py)) named.point(px, py);
+  if (named.name !== undefined) assert.equal(over(named.name.x, named.name.y), false);
 });
