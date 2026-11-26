@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The copied chart code draws the Milky Way** (MODULES-630). The chart draws the band by default, and the iframe carries it, but the module, HTML, React, Vue, Angular and Svelte code drew only stars and lines. With the layer on, that code now draws the same filled, blurred bands, under the stars.
+
 - **Constellation lines keep clear of a body in front of the sky** (MODULES-947). `FigureLines.update` takes the same cover as a star's name. A line with both ends behind the body is left out, a line that crosses it is cut, a figure cannot be picked through the body, and the picked figure's name is not placed on it.
 
 ## [0.61.3] - 2026-11-26

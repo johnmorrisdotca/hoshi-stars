@@ -12,6 +12,7 @@ import { skyFrom } from "../src/sky-from.ts";
 import { blackBodyColour, starByHr, starColour, starTemperatureK, stars } from "../src/stars.ts";
 import { BAND_COLOURS } from "../demo/distance-layers.ts";
 import { layersByDistance, starInput } from "../src/distance.ts";
+import { milkyWayBands } from "../src/milky-way.ts";
 
 const choice: Choice = { ...DEFAULT_VIEW, magnitude: 4, layers: new Set(["lines"]), lang: "en" };
 
@@ -102,4 +103,26 @@ test("with a limit in light-years the code draws the bright stars within it by b
   assert.ok(circles.some((one) => one.includes(BAND_COLOURS[0]!)), "the nearest band's colour");
   for (const kind of ["html", "module", "react", "vue", "angular", "svelte"]) assert.ok(embedCode(kind, limited, width)!.includes("layersByDistance"), kind);
   assert.ok(!embedCode("module", choice, width)!.includes("layersByDistance"), "no limit, no layers");
+});
+
+test("with the Milky Way on, the code draws the chart's bands, filled and blurred, under the stars", () => {
+  const width = 480;
+  const sky: Choice = { ...choice, layers: new Set(["milky", "lines"]) };
+  const { body, imports } = chartLines(sky, width);
+  assert.ok(imports.some((one) => one.sub === "/milky-way" && one.names === "milkyWayBands"));
+  const svg = new Function("stars", "starColour", "figures", "project", "milkyWayBands", `${body}\nreturn skyChart();`)(stars, starColour, figures, project, milkyWayBands) as string;
+  const drawn = chart({ ...sky, width, height: heightFor(width) }).svg;
+  const bands = (text: string): string[] => {
+    const group = /<g data-layer="milky"[^>]*>([\s\S]*?)<\/g>/.exec(text)?.[1] ?? "";
+    return [...group.matchAll(/<path d="([^"]*)"/g)].map((found) => found[1]!);
+  };
+  const mine = bands(svg);
+  const theirs = bands(drawn);
+  assert.ok(theirs.length > 3);
+  assert.deepEqual(mine, theirs);
+  const blur = (text: string): string => /feGaussianBlur stdDeviation="([^"]*)"/.exec(text)?.[1] ?? "";
+  assert.equal(blur(svg), blur(drawn));
+  assert.ok(svg.indexOf('data-layer="milky"') < svg.indexOf("<circle"));
+  assert.ok(!chartLines(choice, width).body.includes("milkyWayBands"));
+  for (const kind of ["html", "module", "react", "vue", "angular", "svelte"]) assert.ok(embedCode(kind, sky, width)!.includes("milkyWayBands"), kind);
 });

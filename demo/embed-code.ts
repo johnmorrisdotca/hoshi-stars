@@ -1,4 +1,4 @@
-// The text that puts a star chart in a page, for each way a page is made. The package gives numbers, not pictures, so every way ends in the same few lines: the stars and the constellation
+// The text that puts a star chart in a page, for each way a page is made. The package gives numbers, not pictures, so every way ends in the same few lines: the Milky Way's bands, the stars and the constellation
 // lines, projected with `/projection` and written as SVG. The tests run the module's lines and compare their stars with the chart the demo draws.
 import { embedSnippet } from "@johnmorrisdotca/kazoku-ui/embed-panel";
 import { fitScale, growOf } from "../src/chart/chart.ts";
@@ -19,10 +19,53 @@ interface Import {
   sub: string;
 }
 
+/** The Milky Way, under the stars: the same ribbons, fills and blur as the chart, for a map of one side of the sky. */
+function milkyLines(choice: Choice, width: number, height: number): string[] {
+  const aside = choice.dec > 89 ? choice.dec - 1 : choice.dec + 1;
+  const levels = JSON.stringify([0.04, 0.08, 0.13, 0.2, 0.3, 0.42, 0.58, 0.76]);
+  const fills = JSON.stringify(["#6a80c8", "#7a90d2", "#8da1dc", "#a6b6e6", "#c3cdee", "#e0e4f2", "#f7eedd", "#fff3d8"]);
+  const opacities = JSON.stringify([0.16, 0.14, 0.14, 0.14, 0.15, 0.16, 0.18, 0.2]);
+  return [
+    `  {`,
+    `    const bands = milkyWayBands(${levels}, { step: ${choice.zoom >= 1.8 ? 1 : 2} });`,
+    `    const fills = ${fills};`,
+    `    const opacities = ${opacities};`,
+    `    const here = place({ rightAscension: ${choice.ra}, declination: ${choice.dec} });`,
+    `    const aside = place({ rightAscension: ${choice.ra}, declination: ${aside} });`,
+    `    const perDegree = here && aside ? Math.hypot(here[0] - aside[0], here[1] - aside[1]) : 4;`,
+    `    const blur = Math.max(1.2, Math.min(16, perDegree * 0.9));`,
+    `    const margin = 60 + blur * 3;`,
+    `    let glow = "";`,
+    `    bands.forEach((band, i) => {`,
+    `      let d = "";`,
+    `      for (const strip of band.strips) {`,
+    `        const upper = strip.upper.map(place);`,
+    `        const lower = strip.lower.map(place);`,
+    `        let run = [];`,
+    `        const flush = () => {`,
+    `          if (run.length >= 2) {`,
+    `            const points = [...run.map((k) => upper[k]), ...run.slice().reverse().map((k) => lower[k])];`,
+    `            let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;`,
+    `            for (const [x, y] of points) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }`,
+    `            if (x1 >= -margin && x0 <= ${width} + margin && y1 >= -margin && y0 <= ${height} + margin) d += "M" + points.map(([x, y]) => x.toFixed(1) + " " + y.toFixed(1)).join("L") + "Z";`,
+    `          }`,
+    `          run = [];`,
+    `        };`,
+    `        for (let k = 0; k < upper.length; k += 1) upper[k] === undefined || lower[k] === undefined ? flush() : run.push(k);`,
+    `        flush();`,
+    `      }`,
+    `      if (d !== "") glow += '<path d="' + d + '" fill="' + fills[i] + '" fill-opacity="' + opacities[i] + '"/>';`,
+    `    });`,
+    `    svg += '<defs><filter id="hoshi-milky-blur" filterUnits="userSpaceOnUse" x="-30" y="-30" width="${width + 60}" height="${height + 60}"><feGaussianBlur stdDeviation="' + blur.toFixed(1) + '"/></filter></defs><g data-layer="milky" filter="url(#hoshi-milky-blur)">' + glow + "</g>";`,
+    `  }`,
+  ];
+}
+
 /** What the chart needs from the package and the lines that draw it, for `choice` at `width` pixels. */
 export function chartLines(choice: Choice, width: number): { imports: Import[]; body: string } {
   const height = heightFor(width);
   const withLines = choice.layers.has("lines");
+  const withMilky = choice.layers.has("milky");
   // a limit in light-years: the bright stars within it, each in the colour of its band, an uncertain one as a ring (the demo adds the nearby stars and the galaxies, which are separate tables)
   const layered = choice.limit !== undefined && choice.from === undefined;
   const hr = choice.from === undefined ? undefined : Number(choice.from.slice(2));
@@ -33,6 +76,7 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
     ...(layered ? [{ names: "layersByDistance, starInput", sub: "/distance" }] : []),
     ...(hr === undefined ? [] : [{ names: "skyFrom", sub: "/sky-from" }]),
     ...(filtered ? [{ names: "starPasses", sub: "/star-filter" }] : []),
+    ...(withMilky ? [{ names: "milkyWayBands", sub: "/milky-way" }] : []),
     ...(withLines ? [{ names: "figures", sub: "/lines" }] : []),
     ...(withLines && culture !== undefined ? [{ names: culture, sub: `/cultures/${culture}` }] : []),
     { names: "project", sub: "/projection" },
@@ -48,6 +92,7 @@ export function chartLines(choice: Choice, width: number): { imports: Import[]; 
     `    return at && [${width / 2} + at.x, ${height / 2} - at.y];`,
     `  };`,
     `  let svg = \`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="${width}" height="${height}" fill="#0b1020"/>\`;`,
+    ...(withMilky ? milkyLines(choice, width, height) : []),
     ...(withLines
       ? [
           `  let d = "";`,
