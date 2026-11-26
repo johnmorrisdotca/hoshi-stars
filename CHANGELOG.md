@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.61.2] - 2026-11-26
+
+Tests and the demo's dependency: the package is unchanged by this release.
+
+- **The demo is on kazoku-ui 0.54.5** (MODULES-1852, 1827), from `^0.41.0`. A quick double tap on a button no longer zooms an iPhone's page (the page frame sets `touch-action: manipulation` on the document), and every page-frame improvement since 0.41 comes with it. The demo's pictures are the same at a desk's width and a phone's. `e2e/credits.demo.ts` reads `touch-action` on every demo page.
+- **What the jump changed in the tests.** The renderer now draws nothing while the stage is out of sight, so on a phone, where the constellation page's stage is below the page's links, no name is placed and the star does not turn until the stage is scrolled to: `e2e/space.demo.ts`, `e2e/space-motion.demo.ts` and `e2e/star-3d.demo.ts` scroll to it first, as a reader does. The printed sheet's name label is `なまえ：` with a full-width colon (`e2e/kids.demo.ts` and the Japanese printable-sheets guide).
+
 ## [0.61.1] - 2026-11-23
 
 - **The demo server stays on 8250 to 8274.** 8300 to 8309 belong to the site, so the dev server no longer accepts them.
