@@ -156,7 +156,7 @@ CDNから読み込む普通のHTMLページでは：
 </html>
 ```
 
-Reactでは（絵は文字列なので、マークアップとして入れます。Vueでは`v-html`、Svelteでは`{@html}`、Angularでは`[innerHTML]`で同じ行が使え、デモの「埋め込むもの」は選んだ星用にそれぞれを書き出します）：
+Reactでは（絵は文字列なので、マークアップとして入れます。Vueでは`v-html`、Svelteでは`{@html}`で同じ行が使えます。Angularは、そのまま渡すと絵が落ちるので、その文字列を信頼するHTMLとして入れます。デモの「埋め込むもの」は選んだ星用にそれぞれを書き出します）：
 
 ```tsx
 import { starByName } from "@johnmorrisdotca/hoshi-stars";
@@ -167,6 +167,56 @@ const svg = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", s
 
 export function Star() {
   return <div dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+```
+
+同じ絵を Vue で：
+
+```vue
+<script setup lang="ts">
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { starPortrait } from "@johnmorrisdotca/hoshi-stars/portrait";
+import { starProfile } from "@johnmorrisdotca/hoshi-stars/profile";
+
+const svg = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", size: 320 }) ?? "";
+</script>
+
+<template>
+  <div v-html="svg"></div>
+</template>
+```
+
+Svelte で：
+
+```svelte
+<script lang="ts">
+  import { starByName } from "@johnmorrisdotca/hoshi-stars";
+  import { starPortrait } from "@johnmorrisdotca/hoshi-stars/portrait";
+  import { starProfile } from "@johnmorrisdotca/hoshi-stars/profile";
+
+  const svg = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", size: 320 }) ?? "";
+</script>
+
+<div>{@html svg}</div>
+```
+
+Angular で：
+
+```ts
+import { Component, inject } from "@angular/core";
+import { DomSanitizer } from "@angular/platform-browser";
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { starPortrait } from "@johnmorrisdotca/hoshi-stars/portrait";
+import { starProfile } from "@johnmorrisdotca/hoshi-stars/profile";
+
+const drawn = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", size: 320 }) ?? "";
+
+@Component({
+  selector: "app-star",
+  template: `<div [innerHTML]="picture"></div>`,
+})
+export class StarComponent {
+  readonly picture = inject(DomSanitizer).bypassSecurityTrustHtml(drawn);
 }
 ```
 

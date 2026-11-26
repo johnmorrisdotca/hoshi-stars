@@ -320,6 +320,40 @@ await step("portrait-react-ssr", async () => {
   if (!html.includes('aria-label="Sirius, drawn from its numbers"') || !html.includes("not a photo")) throw new Error(`the server render lost the picture: ${html.slice(0, 300)}`);
 });
 
+const seesSirius = async (page: Page): Promise<void> => {
+  const svg = page.locator("svg").first();
+  await svg.waitFor({ state: "attached", timeout: 20_000 });
+  if ((await svg.getAttribute("aria-label")) !== "Sirius, drawn from its numbers") throw new Error(`the picture's label is ${await svg.getAttribute("aria-label")}`);
+  if ((await svg.locator("ellipse").count()) < 3) throw new Error("the portrait has no disc");
+  if (!/not a photo/.test((await svg.textContent()) ?? "")) throw new Error("the portrait does not say it is not a photo");
+};
+
+const portraitApp = async (name: string, plugins: unknown[] = []): Promise<void> => {
+  const dir = examples(join("portrait", name));
+  const out = join(usage, "out", `portrait-${name}`);
+  await viteBuild({ root: dir, plugins: plugins as never[], logLevel: "warn", build: { outDir: out, emptyOutDir: true }, base: "./", configFile: false });
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesSirius(page);
+  });
+};
+await step("portrait-vue", async () => portraitApp("vue", [(await import("@vitejs/plugin-vue")).default()]));
+await step("portrait-svelte", async () => portraitApp("svelte", [(await import("@sveltejs/vite-plugin-svelte")).svelte()]));
+await step("portrait-angular", async () => {
+  const dir = examples(join("portrait", "angular"));
+  const out = join(usage, "out", "portrait-angular");
+  writeFileSync(join(dir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022", module: "esnext", experimentalDecorators: true, useDefineForClassFields: false } }));
+  await esbuild({ entryPoints: [join(dir, "main.ts")], outdir: out, bundle: true, splitting: true, format: "esm", tsconfig: join(dir, "tsconfig.json"), absWorkingDir: root, logLevel: "silent", minify: true });
+  writeFileSync(join(out, "index.html"), readFileSync(join(dir, "index.html")));
+  rmSync(join(dir, "tsconfig.json"), { force: true });
+  await opened(browser, async (page) => {
+    await serve(page, "https://app.test", out);
+    await page.goto("https://app.test/");
+    await seesSirius(page);
+  });
+});
+
 await step("webpack", async () => {
   const { default: webpack } = await import("webpack");
   const dir = examples("webpack");
@@ -728,6 +762,9 @@ const FILES: Record<string, string[]> = {
   "portrait/iframe.html": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "portrait/iframe-3d.html": ["docs/guides/star-in-3d.md", "docs/guides/ja/star-in-3d.md"],
   "portrait/Star.tsx": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "portrait/vue/Star.vue": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "portrait/svelte/Star.svelte": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
+  "portrait/angular/star.component.ts": ["docs/guides/star-profile.md", "docs/guides/ja/star-profile.md"],
   "sky-labels/labels.mjs": ["README.md", "docs/guides/sky-names-and-lines.md", "docs/guides/ja/sky-names-and-lines.md"],
   "sky-labels/iframe.html": ["docs/guides/sky-names-and-lines.md", "docs/guides/ja/sky-names-and-lines.md"],
   "distance/layers.mjs": ["README.md", "docs/guides/sky-by-distance.md", "docs/guides/ja/sky-by-distance.md"],
@@ -774,7 +811,7 @@ for (const [file, places] of everything ? Object.entries(FILES) : []) {
   }
 }
 const unlisted = (folder: string): string[] => readdirSync(at("examples", folder), { withFileTypes: true }).flatMap((entry) => (entry.isDirectory() ? unlisted(join(folder, entry.name)) : [relative("", join(folder, entry.name)).split("\\").join("/")]));
-const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html", "chart/vite/index.html", "chart/react/index.html", "chart/react/main.tsx", "chart/vue/index.html", "chart/vue/main.ts", "chart/svelte/index.html", "chart/svelte/main.ts", "chart/angular/index.html", "chart/angular/main.ts", "flight/vite/index.html", "flight/react/index.html", "flight/react/main.tsx", "flight/vue/index.html", "flight/vue/main.ts", "flight/svelte/index.html", "flight/svelte/main.ts", "flight/angular/index.html", "flight/angular/main.ts"]);
+const known = new Set([...Object.keys(FILES), "angular/index.html", "angular/main.ts", "react/index.html", "react/main.tsx", "svelte/index.html", "svelte/main.ts", "vue/index.html", "portrait/vue/index.html", "portrait/vue/main.ts", "portrait/svelte/index.html", "portrait/svelte/main.ts", "portrait/angular/index.html", "portrait/angular/main.ts", "chart/vite/index.html", "chart/react/index.html", "chart/react/main.tsx", "chart/vue/index.html", "chart/vue/main.ts", "chart/svelte/index.html", "chart/svelte/main.ts", "chart/angular/index.html", "chart/angular/main.ts", "flight/vite/index.html", "flight/react/index.html", "flight/react/main.tsx", "flight/vue/index.html", "flight/vue/main.ts", "flight/svelte/index.html", "flight/svelte/main.ts", "flight/angular/index.html", "flight/angular/main.ts"]);
 for (const file of everything ? unlisted("") : []) if (!known.has(file)) failures.push(`examples/${file} is not listed in scripts/check-usage.ts: say where the guides show it`);
 
 console.log(failures.length === 0 ? `\nusage ok: ${results.length} ways to use ${NAME}` : `\n${failures.length} failure${failures.length === 1 ? "" : "s"}:\n- ${failures.join("\n- ")}`);

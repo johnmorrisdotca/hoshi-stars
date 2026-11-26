@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The star portrait has Vue, Svelte and Angular examples** (MODULES-758). The tested copy was Node, a CDN page, an iframe and React. The same Sirius picture is now a Vue component, a Svelte component and an Angular component, and each one is run. Angular marks the picture as HTML it trusts, because a plain binding drops the drawing.
+
 - **The sky-by-distance code stays with the page** (MODULES-1031). Back or forward redrew the sky and left the copied code on the previous limit. The code now refreshes after that redraw. Moving this page into the one 3D view still waits.
 
 - **The copied chart code draws the Milky Way** (MODULES-630). The chart draws the band by default, and the iframe carries it, but the module, HTML, React, Vue, Angular and Svelte code drew only stars and lines. With the layer on, that code now draws the same filled, blurred bands, under the stars.

@@ -156,7 +156,7 @@ In a plain HTML page from a CDN:
 </html>
 ```
 
-In React (the picture is a string, so it goes in as markup; the same lines work in Vue with `v-html`, in Svelte with `{@html}` and in Angular with `[innerHTML]`, and the demo's "What to embed" writes each of them for the star you picked):
+In React (the picture is a string, so it goes in as markup; the same lines work in Vue with `v-html` and in Svelte with `{@html}`. Angular marks that string as HTML it trusts, because a plain binding drops the drawing. The demo's "What to embed" writes each of them for the star you picked):
 
 ```tsx
 import { starByName } from "@johnmorrisdotca/hoshi-stars";
@@ -167,6 +167,56 @@ const svg = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", s
 
 export function Star() {
   return <div dangerouslySetInnerHTML={{ __html: svg }} />;
+}
+```
+
+The same picture in Vue:
+
+```vue
+<script setup lang="ts">
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { starPortrait } from "@johnmorrisdotca/hoshi-stars/portrait";
+import { starProfile } from "@johnmorrisdotca/hoshi-stars/profile";
+
+const svg = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", size: 320 }) ?? "";
+</script>
+
+<template>
+  <div v-html="svg"></div>
+</template>
+```
+
+In Svelte:
+
+```svelte
+<script lang="ts">
+  import { starByName } from "@johnmorrisdotca/hoshi-stars";
+  import { starPortrait } from "@johnmorrisdotca/hoshi-stars/portrait";
+  import { starProfile } from "@johnmorrisdotca/hoshi-stars/profile";
+
+  const svg = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", size: 320 }) ?? "";
+</script>
+
+<div>{@html svg}</div>
+```
+
+In Angular:
+
+```ts
+import { Component, inject } from "@angular/core";
+import { DomSanitizer } from "@angular/platform-browser";
+import { starByName } from "@johnmorrisdotca/hoshi-stars";
+import { starPortrait } from "@johnmorrisdotca/hoshi-stars/portrait";
+import { starProfile } from "@johnmorrisdotca/hoshi-stars/profile";
+
+const drawn = starPortrait(starProfile(starByName("Sirius")!), { name: "Sirius", size: 320 }) ?? "";
+
+@Component({
+  selector: "app-star",
+  template: `<div [innerHTML]="picture"></div>`,
+})
+export class StarComponent {
+  readonly picture = inject(DomSanitizer).bypassSecurityTrustHtml(drawn);
 }
 ```
 
