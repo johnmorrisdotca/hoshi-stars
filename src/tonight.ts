@@ -358,3 +358,80 @@ export function visibleStars(query: { observer: Observer; when: When; sky?: Toni
   list.sort((a, b) => a.apparentMagnitude - b.apparentMagnitude || a.star.hr - b.star.hr);
   return { sunAltitude: sun, twilight: twilightOf(sun), limitingMagnitude, stars: list };
 }
+
+/**
+ * The four seasons. Winter is January, spring April, summer July and autumn October, the middle month of each.
+ *
+ * @example
+ * ```ts
+ * import { SEASONS } from "@johnmorrisdotca/hoshi-stars/tonight";
+ *
+ * console.log(SEASONS.join(","));
+ * ```
+ */
+export const SEASONS = ["winter", "spring", "summer", "autumn"] as const;
+
+/**
+ * One of `SEASONS`.
+ *
+ * @example
+ * ```ts
+ * import { SEASONS, type Season } from "@johnmorrisdotca/hoshi-stars/tonight";
+ *
+ * const season: Season = SEASONS[0];
+ * console.log(season);
+ * ```
+ */
+export type Season = (typeof SEASONS)[number];
+
+const SEASON_MONTH: Record<Season, number> = { winter: 0, spring: 3, summer: 6, autumn: 9 };
+
+/**
+ * One bright star of a season's evening.
+ *
+ * @example
+ * ```ts
+ * import { brightestOfSeason, type SeasonStar } from "@johnmorrisdotca/hoshi-stars/tonight";
+ *
+ * const first: SeasonStar | undefined = brightestOfSeason("winter", { latitude: 49.28, longitude: -123.12 })[0];
+ * console.log(first?.star.name);
+ * ```
+ */
+export interface SeasonStar {
+  star: Star;
+  /** Degrees above the horizon at the season's evening. */
+  altitude: number;
+}
+
+/**
+ * The brightest stars at least 30 degrees up at 21:00 local mean time on the 15th of the middle month, at the place you pass. Winter is 15 January, spring 15 April, summer 15 July, autumn 15 October, of `year` (2026 when left out). The southern hemisphere uses the same months. Six stars when `count` is left out.
+ *
+ * @param season - `winter`, `spring`, `summer` or `autumn`.
+ * @param observer - Latitude north and longitude east, in degrees.
+ * @param options - `year`, `count` (1 to 20) and `minAltitude` (degrees).
+ * @returns The stars, brightest first.
+ * @throws RangeError naming the bad value.
+ * @example
+ * ```ts
+ * import { brightestOfSeason } from "@johnmorrisdotca/hoshi-stars/tonight";
+ *
+ * const winter = brightestOfSeason("winter", { latitude: 49.28, longitude: -123.12 });
+ * console.log(winter[0]?.star.name);
+ * ```
+ */
+export function brightestOfSeason(season: Season, observer: Observer, options: { year?: number; count?: number; minAltitude?: number } = {}): SeasonStar[] {
+  if (!(SEASONS as readonly string[]).includes(season)) throw new RangeError(`season must be winter, spring, summer or autumn, got ${String(season)}`);
+  const year = options.year === undefined ? 2026 : finite("year", options.year);
+  const count = options.count === undefined ? 6 : finite("count", options.count);
+  if (count < 1 || count > 20) throw new RangeError(`count must be from 1 to 20, got ${count}`);
+  const minAltitude = options.minAltitude === undefined ? 30 : finite("minAltitude", options.minAltitude);
+  const local = Date.UTC(year, SEASON_MONTH[season], 15, 21, 0, 0);
+  const when = local - (finite("longitude", observer.longitude) / 15) * 3_600_000;
+  const up: SeasonStar[] = [];
+  for (const star of stars({ magnitude: 2 })) {
+    const at = horizontal(starPosition(star, when), observer, when);
+    if (at.altitude >= minAltitude) up.push({ star, altitude: at.altitude });
+  }
+  up.sort((a, b) => a.star.magnitude - b.star.magnitude || a.star.hr - b.star.hr);
+  return up.slice(0, count);
+}

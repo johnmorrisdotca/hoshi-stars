@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { starByName, starPosition } from "../src/stars.ts";
 import { horizontal } from "../src/sky.ts";
 import { moonHorizontal, moonPhase } from "../src/my-sky/moon.ts";
-import { airmass, moonGlare, SKY_LIMITS, starsBelowHorizon, sunAltitude, sunPosition, twilightOf, visibleStars } from "../src/tonight.ts";
+import { airmass, brightestOfSeason, moonGlare, SKY_LIMITS, starsBelowHorizon, sunAltitude, sunPosition, twilightOf, visibleStars } from "../src/tonight.ts";
 
 const vancouver = { latitude: 49.28, longitude: -123.12 };
 const HOUR = 3_600_000;
@@ -130,4 +130,15 @@ test("a number for the limit and a given Sun altitude, and bad input says what i
   assert.throws(() => visibleStars({ observer: vancouver, when: 0, sky: { limit: "bright" as never } }), /sky\.limit/);
   assert.throws(() => visibleStars({ observer: vancouver, when: 0, sky: { extinction: -1 } }), /sky\.extinction/);
   assert.throws(() => visibleStars({ observer: vancouver, when: 0, sky: { moonPenalty: -1 } }), /sky\.moonPenalty/);
+});
+
+test("a season's evening names the stars that are up then: Orion in winter, Vega in summer", () => {
+  const winter = brightestOfSeason("winter", vancouver).map((row) => row.star.name);
+  const summer = brightestOfSeason("summer", vancouver).map((row) => row.star.name);
+  assert.ok(winter.includes("Betelgeuse") && winter.includes("Rigel"), winter.join(", "));
+  assert.equal(winter.includes("Vega"), false);
+  assert.ok(summer.includes("Vega"), summer.join(", "));
+  assert.equal(summer.includes("Betelgeuse"), false);
+  assert.equal(brightestOfSeason("winter", vancouver, { count: 3 }).length, 3);
+  assert.throws(() => brightestOfSeason("monsoon" as never, vancouver), /season/);
 });

@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The brightest stars of a season** (MODULES-1211). `brightestOfSeason` lists the brightest stars at least 30 degrees up at 21:00 local mean time on the 15th of the middle month, at the place you pass. Winter is January, spring April, summer July, autumn October. The chart's Tonight toggle and the Moon's glare were already there.
+
 - **The sheets page can be embedded** (MODULES-714). The copied iframe, and the address printed on a sheet, carry the sheet, the place, the latitude, the month and the paper. A culture's own constellation figures still wait.
 
 - **The star portrait has Vue, Svelte and Angular examples** (MODULES-758). The tested copy was Node, a CDN page, an iframe and React. The same Sirius picture is now a Vue component, a Svelte component and an Angular component, and each one is run. Angular marks the picture as HTML it trusts, because a plain binding drops the drawing.
