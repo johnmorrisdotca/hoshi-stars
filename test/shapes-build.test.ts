@@ -106,6 +106,12 @@ test("only the shapes build may name NED's diameters page, and only to fill size
       assert.match(code, /LOCK_NB/);
       assert.doesNotMatch(code, /ThreadPoolExecutor/);
       assert.match(code, /--fetch-missing/);
+    } else if (file === "make-black-hole-data.py") {
+      assert.match(code, /https:\/\/ned\.ipac\.caltech\.edu\/srs\/ObjectLookup/);
+      assert.match(code, /GAP_SECONDS = 10/);
+      assert.match(code, /LOCK_NB/);
+      assert.doesNotMatch(code, /ThreadPoolExecutor/);
+      assert.match(code, /--fetch-hosts/);
     } else {
       assert.doesNotMatch(code, /["']https?:\/\/ned\.ipac\.caltech\.edu\/(srs|cgi-bin)\//, `${file} holds an address of NED's pages`);
     }

@@ -7,8 +7,7 @@ Sources (the sentence relied on and the date read are in NOTICE.md)
   distance, a mass, a spectral type, a year, and the paper each comes from), never its text, pictures or layout, and cites it.
 - Supermassive black holes: the table of black hole masses in van den Bosch (2016, ApJ 831, 134), read from the paper's LaTeX source on arXiv (arXiv:1606.01246), with the
   galaxy's place from NASA/IPAC NED (the nucleus's position, a fact; NED asks for an acknowledgement, which NOTICE.md gives). Rows that are only upper limits are left out.
-  NED's places were looked up on 2026-11-09 at its /srs/ObjectLookup, which NED's robots.txt asks scripts not to use, so they are read only from the cache (ned.json) saved then:
-  a host missing from it stops the build, and NED is never asked. With --no-ned the build reads no NED answer: a host's place is then Wikidata's (CC0), the position src/data/messier.ts
+  NED's places were looked up on 2026-11-09 at its /srs/ObjectLookup. A rebuild reads them from the cache (ned.json) saved then and does not ask NED. `--fetch-hosts` is the one path that asks, and only for the hosts that are not an NGC, IC or Messier object (Sagittarius A* stays the paper's place): one request every 10 seconds, never two at once. With --no-ned the build reads no NED answer: a host's place is then Wikidata's (CC0), the position src/data/messier.ts
   and ngc-ic.ts hold for that NGC, IC or Messier object (Wikidata's own, not the NED one scripts/deep-sky-ned-positions.tsv replaced it with), and a host those files do not hold has no place, so it is left out.
 - The few systems typed here (HAND_STELLAR, HAND_QUIET, HAND_SUPERMASSIVE) are facts from the discovery papers named in each row; their places are Wikidata's (CC0),
   checked against the papers or against BlackCAT.
@@ -17,9 +16,11 @@ Sources (the sentence relied on and the date read are in NOTICE.md)
     python3 -I scripts/make-black-hole-data.py --save DIR         # ... and keeps every answer in DIR
     python3 -I scripts/make-black-hole-data.py --from DIR         # reads answers saved earlier, never the network
     python3 -I scripts/make-black-hole-data.py --no-ned           # no NED value at all: each host's place is Wikidata's, as src/data/messier.ts and ngc-ic.ts hold it; a host they do not hold is left out
+    python3 -I scripts/make-black-hole-data.py --fetch-hosts     # asks NED for the hosts the deep-sky tables do not hold, one request every 10 seconds
 
 None of this runs in the test.
 """
+import fcntl
 import html
 import json
 import math
@@ -27,8 +28,10 @@ import re
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -37,7 +40,9 @@ USER_AGENT = "hoshi-stars-data-script/0.1 (https://github.com/johnmorrisdotca/ho
 BLACKCAT = "https://www.astro.puc.cl/BlackCAT"
 VDB16_SOURCE = "https://arxiv.org/e-print/1606.01246"
 REFUSE_NED = ("make-black-hole-data.py does not ask NASA/IPAC NED's web pages (MODULES-839): its /srs/ObjectLookup is a part of NED's site that robots.txt keeps scripts out of "
-              "(with /cgi-bin/ and a 10 s crawl delay). Put the host's answer in the saved ned.json, or leave the host out (NED_DROP).")
+              "(with /cgi-bin/ and a 10 s crawl delay). Put the host's answer in the saved ned.json, leave the host out (NED_DROP), or use --fetch-hosts, which asks one host every 10 seconds.")
+GAP_SECONDS = 10
+NED_LOOKUP = "https://ned.ipac.caltech.edu/srs/ObjectLookup"
 WIKIDATA = "https://query.wikidata.org/sparql"
 
 KINDS = ["stellar", "quiet", "supermassive"]
@@ -471,6 +476,158 @@ def ned_lookup(name: str):
     raise SystemExit(f"{REFUSE_NED} No saved answer for {name}.")
 
 
+# The name NED resolved on 2026-11-09, where it is not the name the row shows.
+HOST_LOOKUP = {
+    "Circinus Galaxy": "Circinus Galaxy",
+    "Cygnus A": "Cygnus A",
+    "NGC 6240 S": "NGC 6240",
+    "M60-UCD1": "M60-UCD1",
+    "ESO 558-009": "ESO 558- G 009",
+    "J0437+2456": "SDSS J043703.67+245606.8",
+    "Arp 151": "Mrk 40",
+    "Zw 229-015": "ZW 229-015",
+}
+
+
+def hosts_taken_from_ned() -> list[str]:
+    """Supermassive hosts the deep-sky tables do not hold. Sagittarius A* keeps the place its paper gives."""
+    text = OUT.read_text(encoding="utf-8")
+    body = re.search(r"BLACK_HOLE_ROWS = `(.*?)`;", text, re.S).group(1)
+    names = []
+    for row in body.split("\n"):
+        if row == "":
+            continue
+        fields = row.split("|")
+        if fields[3] != "2":
+            continue
+        name = fields[1].rstrip("*")
+        if name != "Sagittarius A":
+            names.append(name)
+    held = set()
+    for name, constant in (("messier.ts", "MESSIER_ROWS"), ("ngc-ic.ts", "NGC_IC_ROWS")):
+        rows = re.search(constant + r" = `(.*?)`;", (ROOT / "src" / "data" / name).read_text(encoding="utf-8"), re.S).group(1).split("\n")
+        for row in rows:
+            if row == "":
+                continue
+            fields = row.split("|")
+            if fields[0]:
+                held.add(f"M{fields[0]}")
+            held.update(f"NGC {n}" for n in fields[1].split(",") if n)
+            held.update(f"IC {n}" for n in fields[2].split(",") if n)
+    return [name for name in names if name not in held]
+
+
+class NedGate:
+    """One NED read at a time, shared with the shapes build by the same lock file, with 10 seconds between requests."""
+
+    def __init__(self, path: Path):
+        self.path = path
+        self.handle = None
+        self.last = time.monotonic()
+
+    def acquire(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.handle = self.path.open("a", encoding="utf-8")
+        try:
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise SystemExit("another NED read already holds the lock, so this one stops: never two at once")
+
+    def wait(self) -> None:
+        left = GAP_SECONDS - (time.monotonic() - self.last)
+        if left > 0:
+            time.sleep(left)
+
+    def mark(self) -> None:
+        self.last = time.monotonic()
+
+
+def ned_object(name: str, gate: NedGate):
+    """One object-name lookup. Returns (status, body)."""
+    gate.wait()
+    url = NED_LOOKUP + "?" + urllib.parse.urlencode({"name": name})
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            status, body = resp.status, resp.read().decode("utf-8", errors="replace")
+    except urllib.error.HTTPError as err:
+        status, body = err.code, err.read().decode("utf-8", errors="replace")
+    except (urllib.error.URLError, TimeoutError, ConnectionError) as err:
+        gate.mark()
+        return None, str(err)
+    gate.mark()
+    return status, body
+
+
+def preferred_place(body: str):
+    """(ra, dec) from an ObjectLookup answer, or None."""
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return None
+    pos = (data.get("Preferred") or {}).get("Position") or {}
+    if "RA" not in pos or "Dec" not in pos:
+        return None
+    return float(pos["RA"]), float(pos["Dec"])
+
+
+def apply_host_places(places: dict[str, tuple[float, float]]) -> int:
+    """Write a host's place where NED's, rounded the way the file stores it, is not the number already there. Every other column stays."""
+    lines = OUT.read_text(encoding="utf-8").split("\n")
+    changed = 0
+    for index, line in enumerate(lines):
+        fields = line.split("|")
+        if len(fields) < 7 or fields[3] != "2":
+            continue
+        name = fields[1].rstrip("*")
+        if name not in places:
+            continue
+        ra, dec = places[name]
+        ra_i, dec_i = str(ten_thousandths(ra % 360)), str(ten_thousandths(dec))
+        if fields[5] == ra_i and fields[6] == dec_i:
+            continue
+        fields[5], fields[6] = ra_i, dec_i
+        lines[index] = "|".join(fields)
+        changed += 1
+    if changed:
+        OUT.write_text("\n".join(lines), encoding="utf-8")
+    return changed
+
+
+def fetch_hosts() -> None:
+    """Ask NED for the hosts the deep-sky tables do not hold, and keep a shipped place that still rounds to NED's."""
+    gate = NedGate(ROOT / ".cache" / "deep-sky-shapes" / "ned.lock")
+    gate.acquire()
+    cache = ROOT / ".cache" / "black-hole-hosts"
+    cache.mkdir(parents=True, exist_ok=True)
+    log_path = cache / "fetches.log"
+    hosts = hosts_taken_from_ned()
+    places = {}
+    failed = []
+    asked = 0
+    for index, host in enumerate(hosts, start=1):
+        lookup = HOST_LOOKUP.get(host, host)
+        path = cache / (re.sub(r"[^A-Za-z0-9]+", "-", lookup) + ".json")
+        if path.exists() and path.stat().st_size > 0 and preferred_place(path.read_text(encoding="utf-8")) is not None:
+            body = path.read_text(encoding="utf-8")
+        else:
+            status, body = ned_object(lookup, gate)
+            stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            with log_path.open("a", encoding="utf-8") as log:
+                log.write(f"{stamp}\t{lookup}\t{status if status is not None else 'FAILED'}\n")
+            asked += 1
+            print(f"{index}/{len(hosts)} {lookup} {status if status is not None else 'FAILED'}", flush=True)
+            if status != 200 or preferred_place(body) is None:
+                failed.append(lookup)
+                continue
+            path.write_text(body, encoding="utf-8")
+        places[host] = preferred_place(body)
+    changed = apply_host_places(places)
+    dates = [line.split("\t", 1)[0][:10] for line in log_path.read_text(encoding="utf-8").split("\n") if line] if log_path.exists() else []
+    span = dates[0] if dates and dates[0] == dates[-1] else (f"{dates[0]} to {dates[-1]}" if dates else "none")
+    print(f"hosts {len(hosts)}; asked {asked}; placed {len(places)}; changed {changed}; failed {len(failed)}; fetch dates {span}")
+
+
 def wikidata_places() -> dict[str, dict]:
     """Wikidata's place of each Messier, NGC and IC object (`M31`, `NGC 224`, `IC 342`) from the deep-sky rows, where an object whose position scripts/deep-sky-ned-positions.tsv replaced with NED's gets
     the Wikidata position that file keeps beside it."""
@@ -542,6 +699,9 @@ def cell(value) -> str:
 
 def main() -> None:
     args = sys.argv[1:]
+    if "--fetch-hosts" in args:
+        fetch_hosts()
+        return
     cache = Path(args[args.index("--from") + 1]) if "--from" in args else (Path(args[args.index("--save") + 1]) if "--save" in args else Path("/tmp/hoshi-black-hole-cache"))
     offline = "--from" in args
     no_ned = "--no-ned" in args
