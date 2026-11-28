@@ -97,21 +97,49 @@ test("the shapes build stops when --from has no folder of NED's saved answers, a
   assert.match(build([]).log, /no saved NED answer for 0 of 7 galaxies/);
 });
 
-test("no script holds an address of NED's /srs/ or /cgi-bin/ pages, and the black-hole build stops rather than ask NED", () => {
+test("only the shapes build may name NED's diameters page, and only to fill sizes that are not already shipped, one request every 10 seconds", () => {
   for (const file of readdirSync("scripts").filter((name) => name.endsWith(".py"))) {
     const code = readFileSync(join("scripts", file), "utf8");
-    assert.doesNotMatch(code, /["']https?:\/\/ned\.ipac\.caltech\.edu\/(srs|cgi-bin)\//, `${file} holds an address of NED's pages that robots.txt keeps scripts out of`);
+    if (file === "make-deep-sky-shapes.py") {
+      assert.match(code, /https:\/\/ned\.ipac\.caltech\.edu\/cgi-bin\/nph-datasearch/);
+      assert.match(code, /GAP_SECONDS = 10/);
+      assert.match(code, /LOCK_NB/);
+      assert.doesNotMatch(code, /ThreadPoolExecutor/);
+      assert.match(code, /--fetch-missing/);
+    } else {
+      assert.doesNotMatch(code, /["']https?:\/\/ned\.ipac\.caltech\.edu\/(srs|cgi-bin)\//, `${file} holds an address of NED's pages`);
+    }
   }
   const blackHoles = readFileSync("scripts/make-black-hole-data.py", "utf8");
   assert.match(/def ned_lookup\(name: str\):\n(.*)\n/.exec(blackHoles)![1]!, /raise SystemExit\(f"\{REFUSE_NED\}/);
   assert.match(blackHoles, /REFUSE_NED = \("make-black-hole-data\.py does not ask NASA\/IPAC NED's web pages \(MODULES-839\)/);
 });
 
+test("an SDSS 25 mag isophote is kept when the older catalogues have none, and a Petrosian radius, an eye estimate and an RC3 row are not", () => {
+  const program = [
+    "import importlib.util",
+    "spec = importlib.util.spec_from_file_location('shapes', 'scripts/make-deep-sky-shapes.py')",
+    "m = importlib.util.module_from_spec(spec)",
+    "spec.loader.exec_module(m)",
+    "text = '\\n'.join([",
+    "  'No.|Frequency targeted|Refcode|Reference Level|NED Major Axis|NED Minor Axis|NED Position Angle',",
+    "  '1|r (SDSS Petrosian)|2007SDSS6.C...0000:||10|8|20',",
+    "  '2|r (SDSS Isophotal)|2007SDSS6.C...0000:|25.0 mag arcsec^-2^|60|30|40',",
+    "  '3|B|1991RC3.9.C...0000d|25.0 B-mag arcsec^-2^|100|50|10',",
+    "  '4|POSS1|1963MCG3..C...0000V|Very high surface brightness|80|40|15',",
+    "])",
+    "print(m.ned_shape(text))",
+  ].join("\n");
+  const run = spawnSync("python3", ["-I", "-c", program], { encoding: "utf8", timeout: 30_000 });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(run.stdout.trim(), "(1.0, 0.5, 40)");
+});
+
 test("one switch, --no-ned, is in the three data builds, and NOTICE.md says which values are NED's and that it removes them", () => {
   for (const file of ["scripts/make-deep-sky-data.py", "scripts/make-deep-sky-shapes.py", "scripts/make-black-hole-data.py"]) assert.match(readFileSync(file, "utf8"), /"--no-ned" (not )?in /, `${file} has no --no-ned`);
   const notice = readFileSync("NOTICE.md", "utf8");
   const section = /## Values taken from NASA\/IPAC NED[^\n]*\n([\s\S]*?)\n## /.exec(notice)![1]!;
-  for (const word of ["--no-ned", "545", "2,698", "217", "scripts/make-black-hole-data.py"]) assert.ok(section.includes(word), `NOTICE.md's NED section does not mention ${word}`);
+  for (const word of ["--no-ned", "545", "2,799", "217", "scripts/make-black-hole-data.py", "2026-11-27", "2026-11-28"]) assert.ok(section.includes(word), `NOTICE.md's NED section does not mention ${word}`);
 });
 
 test("the black-hole build without NED takes a host's place from Wikidata's position: the one kept beside NED's where NED replaced it, and none where the deep-sky rows hold no such object", () => {

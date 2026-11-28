@@ -49,13 +49,13 @@ test("M45 has the 110 arc-minutes its row carries, and M40 has no size at all", 
   assert.deepEqual(measuredParts(m40), { size: false, ratio: false, angle: false, oval: false });
 });
 
-test("the large table gives 9,787 of the 11,898 objects a size and 7,286 an angle: RC3's for 7,013 galaxies, NED's for 2,698 more, and no angle for anything that is not a galaxy", () => {
+test("the large table gives 9,888 of the 11,898 objects a size and 7,385 an angle: RC3's for 7,013 galaxies, NED's for 2,799 more, and no angle for anything that is not a galaxy", () => {
   const all = deepSky();
   const shapes = all.map((o) => deepSkyShapeAll(o));
-  assert.equal(shapes.filter((x) => x.majorArcmin !== undefined).length, 9787);
-  assert.equal(shapes.filter((x) => x.positionAngle !== undefined).length, 7286);
+  assert.equal(shapes.filter((x) => x.majorArcmin !== undefined).length, 9888);
+  assert.equal(shapes.filter((x) => x.positionAngle !== undefined).length, 7385);
   assert.equal(shapes.filter((x) => x.source === "RC3").length, 7013);
-  assert.equal(shapes.filter((x) => x.source === "NED").length, 2698);
+  assert.equal(shapes.filter((x) => x.source === "NED").length, 2799);
   assert.deepEqual([...new Set(shapes.map((x) => x.source))].sort(), ["Catalogue row", "NED", "RC3", undefined].sort());
   const ngc253 = deepSkyShapeAll(deepSkyObject("NGC 253")!);
   assert.equal(ngc253.source, "RC3");
@@ -66,7 +66,7 @@ test("the large table gives 9,787 of the 11,898 objects a size and 7,286 an angl
   assert.ok(all.every((o) => Object.isFrozen(deepSkyShapeAll(o))));
 });
 
-test("the fallback without NED (`--no-ned`, not shipped): RC3's 7,013 galaxies keep their shape, the 2,698 that had NED's have none and are drawn dotted, and nothing else changes", () => {
+test("the fallback without NED (`--no-ned`, not shipped): RC3's 7,013 galaxies keep their shape, the 2,799 that had NED's have none and are drawn dotted, and nothing else changes", () => {
   const noNed = (rows: string): string => rows.split("\n").filter((row) => !row.endsWith("|d")).join("\n");
   const fallback = shapeTable([noNed(MESSIER_SHAPES), noNed(NGC_IC_SHAPES)]);
   const all = deepSky();
