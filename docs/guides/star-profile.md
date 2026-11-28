@@ -202,7 +202,7 @@ In Svelte:
 
 In Angular:
 
-```ts
+```ts no-run
 import { Component, inject } from "@angular/core";
 import { DomSanitizer } from "@angular/platform-browser";
 import { starByName } from "@johnmorrisdotca/hoshi-stars";

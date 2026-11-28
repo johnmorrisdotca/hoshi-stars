@@ -48,7 +48,7 @@ The pieces are exported too: `sunPosition(when)`, `sunAltitude(observer, when)`,
 
 ## The brightest of a season
 
-`brightestOfSeason(season, observer)` lists the brightest stars at least 30 degrees up at 21:00 local mean time on the 15th of the middle month, at the place you pass. Winter is 15 January, spring 15 April, summer 15 July and autumn 15 October. The southern hemisphere uses the same months. Six stars, brightest first, when you leave the count out. Cloud and city lights are not in it. A planet is not in it.
+`brightestOfSeason(season, observer)` lists the brightest stars at least 30 degrees up at 21:00 local mean time on the 15th of the middle month, at the place you pass. Winter is 15 January, spring 15 April, summer 15 July and autumn 15 October. The southern hemisphere uses the same months. Six stars, brightest first, when you leave the count out. Cloud and city lights are not in it. A planet is not in it. `SEASONS` lists the four season names in that order, `["winter", "spring", "summer", "autumn"]`, for a menu or a loop.
 
 ## Known cases
 
