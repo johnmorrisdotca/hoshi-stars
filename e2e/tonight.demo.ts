@@ -77,6 +77,26 @@ test("dimming stars below the horizon is one control, off until it is turned on"
   await expect(page.getByText("その等級表からは何も写していません。")).toBeVisible();
 });
 
+test("Play moves the moment, Pause holds it, and Back returns to the chosen time", async ({ page }) => {
+  await page.goto(`${PAGE}?country=CA&region=CA-BC&${NIGHT}`);
+  const moment = page.locator("#moment");
+  await expect(moment).not.toHaveValue("");
+  const start = await moment.inputValue();
+  await page.getByRole("button", { name: "Play" }).click();
+  await expect.poll(() => param(page, "play")).toBe("on");
+  expect(param(page, "speed")).toBeNull();
+  await expect.poll(async () => moment.inputValue()).not.toBe(start);
+  const moved = await moment.inputValue();
+  await page.getByRole("button", { name: "Pause" }).click();
+  await expect.poll(() => param(page, "play")).toBeNull();
+  await expect.poll(() => param(page, "t")).not.toBe("2026-11-08T10:00Z");
+  await page.waitForTimeout(700);
+  await expect(moment).toHaveValue(moved);
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(moment).toHaveValue(start);
+  await expect.poll(() => param(page, "t")).toBe("2026-11-08T10:00Z");
+});
+
 test("the darkness of the site changes how many stars show, and the moment is kept in the address", async ({ page }) => {
   await page.goto(`${PAGE}?country=CA&region=CA-BC&${NIGHT}`);
   const stars = page.locator('[data-testid="tn-stars"] circle');

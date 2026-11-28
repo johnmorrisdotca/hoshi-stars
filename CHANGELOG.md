@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **Play runs a dated sky** (MODULES-755). Tonight and My sky have the family's replay bar beside the moment: Play moves the sky on from that date, Pause holds it, and Back returns to the date that was chosen. `play=on` and `speed` stay in the address. A paused sky is not drawn again, and reduced motion does not start Play on its own.
+
 ## [0.62.0] - 2026-11-28
 
 - **The brightest stars of a season** (MODULES-1211). `brightestOfSeason` lists the brightest stars at least 30 degrees up at 21:00 local mean time on the 15th of the middle month, at the place you pass. Winter is January, spring April, summer July, autumn October. The chart's Tonight toggle and the Moon's glare were already there.

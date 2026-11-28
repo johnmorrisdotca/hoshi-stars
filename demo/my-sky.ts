@@ -7,6 +7,7 @@ import type { HoshiMySkyElement, MySkyMarkDetail, StarFilterDetail } from "../sr
 import { mySkyWords } from "../src/my-sky/words.ts";
 import { starByName } from "../src/stars.ts";
 import { WORDS } from "../scripts/page-words.ts";
+import { attachSkyPlay } from "./sky-play.ts";
 
 type Lang = "en" | "ja";
 const $ = <T extends HTMLElement = HTMLElement>(selector: string): T => document.querySelector<T>(selector)!;
@@ -97,6 +98,22 @@ function fillPlaces(): void {
     }),
   );
 }
+
+/** Move the sky to a moment without rebuilding the page. Play calls this; the address is written when Play stops. */
+function showMoment(ms: number): void {
+  state.t = ms;
+  momentInput.value = localInput(ms);
+  sky.setAttribute("time", new Date(ms).toISOString());
+}
+
+const play = attachSkyPlay({
+  address,
+  time: () => state.t,
+  show: showMoment,
+  settle: () => address.set("t", state.t === null ? null : new Date(state.t).toISOString().slice(0, 16) + "Z"),
+  label: () => say("play_back"),
+  lang,
+});
 
 function render(): void {
   fillPlaces();
@@ -215,6 +232,7 @@ momentInput.addEventListener("change", () => {
   const ms = new Date(momentInput.value).getTime();
   if (Number.isFinite(ms)) {
     state.t = ms;
+    play.chose(ms);
     render();
 {
   const asked = address.get("target");
@@ -227,6 +245,7 @@ momentInput.addEventListener("change", () => {
   }
 });
 $("#now").addEventListener("click", () => {
+  play.stopped();
   state.t = null;
   render();
 {

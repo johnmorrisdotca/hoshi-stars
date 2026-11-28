@@ -7,6 +7,7 @@ import { WORDS } from "../scripts/page-words.ts";
 import { starColour } from "../src/stars.ts";
 import { starsBelowHorizon, visibleStars, type SkyLimit, type TonightSky, type Twilight, type VisibleStar } from "../src/tonight.ts";
 import { regionFlag, regionPoints, REGION_COUNTRIES } from "./places.ts";
+import { attachSkyPlay } from "./sky-play.ts";
 
 type Lang = "en" | "ja";
 const LIMITS = ["city", "suburb", "rural", "dark"] as const;
@@ -207,13 +208,31 @@ function choose(change: Partial<State>): void {
   void (change.country !== undefined ? loadRegions() : Promise.resolve()).then(render);
 }
 
+const play = attachSkyPlay({
+  address,
+  time: () => state.t,
+  show: (ms) => {
+    state.t = ms;
+    void render();
+  },
+  settle: () => address.set("t", state.t === null ? null : new Date(state.t).toISOString().slice(0, 16) + "Z"),
+  label: () => say("play_back"),
+  lang,
+});
+
 countrySelect.addEventListener("change", () => choose({ country: countrySelect.value, region: "", here: null }));
 regionSelect.addEventListener("change", () => choose({ region: regionSelect.value, here: null }));
 $("#below").addEventListener("click", () => choose({ below: !state.below }));
-$("#now").addEventListener("click", () => choose({ t: null }));
+$("#now").addEventListener("click", () => {
+  play.stopped();
+  choose({ t: null });
+});
 $<HTMLInputElement>("#moment").addEventListener("change", (event) => {
   const value = Date.parse((event.target as HTMLInputElement).value);
-  if (Number.isFinite(value)) choose({ t: value });
+  if (Number.isFinite(value)) {
+    choose({ t: value });
+    play.chose(value);
+  }
 });
 $("#here").addEventListener("click", () => {
   $("#where-note").textContent = say("tn_hereNote");
