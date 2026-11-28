@@ -12,7 +12,7 @@ interface Template {
   FAMILY_NOT_ON_NPM: string[];
   FAMILY_TEMPLATE_VERSION: string;
   familyRepo(id: string): string;
-  familyHeader(options: { id: string }): string;
+  familyHeader(options: { id: string; links?: { href: string; say: string; group?: "resources"; also?: readonly string[] }[]; current?: string }): string;
   familyFooter(options: { id: string }): string;
 }
 interface Writer {
@@ -27,9 +27,9 @@ const sha = (path: string) => createHash("sha256").update(readFileSync(path)).di
 const pkg = JSON.parse(read("package.json")) as { name: string };
 const id = pkg.name.replace(/^@[^/]+\//, "");
 
-const TEMPLATE = { version: "2026-11-09", sha256: "75ca7e7da99092f360e5a539e34b109b14c92e9c04e7ad98f9e4b1e715c9240e" };
+const TEMPLATE = { version: "2026-11-27", sha256: "7ef6eeceabc7d049a6b5547a989e0d37cc55b9c704958375199954dc71202391" };
 const WRITER_SHA = "dfd4c27b70fe5d7d5f82724180cc739812f0dd13d209c41c053dbdc61bf90188";
-const CSS_SHA = "31df0a58f422070ca4023d5498566b26bc55a5f9a0751f1520d36c61bbb562c9";
+const CSS_SHA = "4d4f5775c436759b8032c106481b4efba1a275d59a0d983860170276972f5d91";
 
 test("the family template, the README writer and family.css are the recorded files, byte for byte", () => {
   assert.equal(template.FAMILY_TEMPLATE_VERSION, TEMPLATE.version);
@@ -72,6 +72,28 @@ test("the demo page is made with the family's header and footer, with the kazoku
   const header = template.familyHeader({ id });
   assert.ok(header.includes("<kazoku-language-picker"));
   assert.ok(header.includes("<kazoku-theme-switch"));
+});
+
+test("a header marks the page being read, and only that one, and school pages sit in Resources", () => {
+  const links = [
+    { href: "index.html", say: "pageMap" },
+    { href: "constellations.html", say: "pageGallery", also: ["constellation.html"] },
+    { href: "kids.html", say: "pageKids", group: "resources" as const },
+    { href: "tap-dots.html", say: "pageTap", group: "resources" as const },
+    { href: "docs/index.html", say: "pageDocs" },
+  ];
+  const kids = template.familyHeader({ id, links, current: "kids.html" });
+  assert.ok(kids.indexOf('href="index.html"') < kids.indexOf('href="constellations.html"'), "Map is the first page link");
+  assert.match(kids, /<kazoku-menu which="resources" aria-current="page">/);
+  assert.match(kids, /<a href="kids.html" data-say="pageKids" aria-current="page"><\/a>/);
+  assert.doesNotMatch(kids, /href="constellations.html"[^>]*aria-current/);
+  assert.equal(kids.match(/aria-current="page"/g)?.length, 2); // the menu and its link
+  const star = template.familyHeader({ id, links, current: "constellation.html" });
+  assert.match(star, /<a href="constellations.html" data-say="pageGallery" aria-current="page">/);
+  assert.equal(star.match(/aria-current="page"/g)?.length, 1);
+  const home = template.familyHeader({ id, links, current: "index.html" });
+  assert.match(home, /<a href="index.html" data-say="pageMap" aria-current="page">/);
+  assert.doesNotMatch(home, /kazoku-menu which="resources" aria-current/);
 });
 
 test("the README's family is the block scripts/family-readme.mjs writes from the template, under a heading of its own, naming every package once", () => {

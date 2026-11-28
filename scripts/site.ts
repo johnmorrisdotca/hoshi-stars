@@ -59,7 +59,7 @@ await build({
   define: { __HOSHI_VERSION__: JSON.stringify(pkg.version) },
   logLevel: "warning",
 });
-writeFileSync(join(site, "kazoku-parts.src.js"), `import "@johnmorrisdotca/kazoku-ui/language-picker/define";\nimport "@johnmorrisdotca/kazoku-ui/theme-switch/define";\nimport "@johnmorrisdotca/kazoku-ui/page-frame/define";\n`);
+writeFileSync(join(site, "kazoku-parts.src.js"), `import "@johnmorrisdotca/kazoku-ui/language-picker/define";\nimport "@johnmorrisdotca/kazoku-ui/theme-switch/define";\nimport "@johnmorrisdotca/kazoku-ui/page-frame/define";\nimport "@johnmorrisdotca/kazoku-ui/menu/define";\n`);
 await build({ entryPoints: [join(site, "kazoku-parts.src.js")], outfile: join(site, "kazoku-parts.js"), bundle: true, format: "esm", minify: true, logLevel: "warning", absWorkingDir: root });
 rmSync(join(site, "kazoku-parts.src.js"));
 writeFileSync(join(site, ".nojekyll"), "");
