@@ -562,7 +562,7 @@ export const WORDS = {
     nameLink: "名前",
     foot: "MITライセンス。星はイェール輝星カタログ、星座の線は自作の図、天の川はSAOの星の数とNASAのIRAS塵の地図から作りました。",
     creditsAll: "データの出典一覧(NOTICE.md)",
-    pageMap: "地図",
+    pageMap: "星図",
     pageDocs: "ドキュメント",
     pageEmbed: "埋め込みページ",
     pageKids: "印刷するシート",
